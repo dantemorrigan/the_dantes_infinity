@@ -5,12 +5,12 @@ import net.minecraft.world.item.ItemStack;
 
 /** The six stones, in gauntlet slot order. */
 public enum Stone {
-	POWER("power", 0x9628DC),
-	SPACE("space", 0x286EF0),
-	REALITY("reality", 0xDC1E28),
-	SOUL("soul", 0xF08214),
-	MIND("mind", 0xF0C81E),
-	TIME("time", 0x28C850);
+	POWER("power", 0x9B0FD0),
+	SPACE("space", 0x0042EF),
+	REALITY("reality", 0xC80A14),
+	SOUL("soul", 0xEE6302),
+	MIND("mind", 0xF3B902),
+	TIME("time", 0x04A834);
 
 	public final String id;
 	public final int color;
