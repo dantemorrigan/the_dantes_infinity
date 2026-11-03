@@ -33,7 +33,8 @@ public final class ShatteredPlanet {
 
     public ShatteredPlanet(long seed) {
         model=PlanetGeometry.build(seed);
-        for(int m=0;m<types.length;m++) types[m]=RenderTypes.entityCutoutNoCull(Identifier.parse("minecraft:textures/block/"+TEXTURES[m]+".png"));
+        // These vanilla block PNGs are opaque; the existing emissive entity pipeline preserves our baked shading.
+        for(int m=0;m<types.length;m++) types[m]=RenderTypes.entityTranslucentEmissive(Identifier.parse("minecraft:textures/block/"+TEXTURES[m]+".png"));
         Random r=new Random(seed ^ 0x5B71A9L);
         // Hundreds of tiny fragments at planetary distances, separate from the near-player debris.
         for(int i=0;i<650;i++) {
