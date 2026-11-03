@@ -30,6 +30,7 @@ public class InfinityGauntlet implements ModInitializer {
 		com.dantemorrigan.gauntlet.power.InfinityBeam.init();
 		ServerPlayNetworking.registerGlobalReceiver(ModNetwork.BeamAction.TYPE, (payload, context) -> com.dantemorrigan.gauntlet.power.InfinityBeam.request(context.player(), payload.start()));
 		SpaceManager.init();
+        com.dantemorrigan.gauntlet.cosmos.CosmosTravel.init();
 		PlanetDestruction.init();
 		TimeAbility.init();
 		com.dantemorrigan.gauntlet.power.RealityStone.init();
@@ -48,3 +49,4 @@ public class InfinityGauntlet implements ModInitializer {
 		return Identifier.fromNamespaceAndPath(MOD_ID, path);
 	}
 }
+

@@ -8,6 +8,10 @@ import org.joml.Vector3f;
 /** Client providers: frames come from the particle JSONs; timing/size/orientation from {@link VfxPresets}. */
 public final class ModParticleProviders {
 	public static void init() {
+        billboard(ModParticles.COSMOS_BOOST_FLASH,"cosmos_boost_flash");
+        flat(ModParticles.COSMOS_WARP_RING,"cosmos_warp_ring");
+        cosmos(ModParticles.COSMOS_SPEED_STREAK,"cosmos_speed_streak");
+        cosmos(ModParticles.COSMOS_STAR_DUST,"cosmos_star_dust");
 		// Charge aura: follows the owner's fist while they charge; xa = owner entity id.
 		ParticleProviderRegistry.getInstance().register(ModParticles.POWER_CHARGE, sprites -> (type, level, x, y, z, xa, ya, za, random) ->
 				new FxParticle(level, x, y, z, sprites, VfxPresets.get("power_charge"), 1f, null, (int) xa,
@@ -46,6 +50,10 @@ public final class ModParticleProviders {
 		});
 	}
 
+    private static void cosmos(SimpleParticleType type,String name) {
+        ParticleProviderRegistry.getInstance().register(type,sprites -> (t,level,x,y,z,xa,ya,za,random) ->
+            new com.dantemorrigan.gauntlet.client.cosmos.CosmosParticle(level,x,y,z,xa,ya,za,sprites,name));
+    }
 	private static void motion(SimpleParticleType type, String name, MotionParticle.Kind kind) {
 		ParticleProviderRegistry.getInstance().register(type, sprites -> (t, level, x, y, z, xa, ya, za, random) ->
 				new MotionParticle(level, x, y, z, xa, ya, za, sprites, VfxPresets.get(name), 1f, kind));
@@ -73,3 +81,4 @@ public final class ModParticleProviders {
 
 	private ModParticleProviders() {}
 }
+

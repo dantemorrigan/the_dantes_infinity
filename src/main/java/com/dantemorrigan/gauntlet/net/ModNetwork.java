@@ -208,7 +208,23 @@ public final class ModNetwork {
 		@Override public Type<RealityFx> type() { return TYPE; }
 	}
 
+    /** C2S: toggle flight/return, next destination, warp. No client coordinates accepted. */
+    public record CosmosAction(int action) implements CustomPacketPayload {
+        public static final Type<CosmosAction> TYPE = newType("cosmos_action");
+        public static final StreamCodec<ByteBuf,CosmosAction> CODEC = StreamCodec.composite(ByteBufCodecs.VAR_INT,CosmosAction::action,CosmosAction::new);
+        @Override public Type<CosmosAction> type() { return TYPE; }
+    }
+    public record CosmosState(boolean enabled,int destination,int warpTicks,int cooldown) implements CustomPacketPayload {
+        public static final Type<CosmosState> TYPE = newType("cosmos_state");
+        public static final StreamCodec<ByteBuf,CosmosState> CODEC = StreamCodec.composite(
+            ByteBufCodecs.BOOL,CosmosState::enabled,ByteBufCodecs.VAR_INT,CosmosState::destination,
+            ByteBufCodecs.VAR_INT,CosmosState::warpTicks,ByteBufCodecs.VAR_INT,CosmosState::cooldown,CosmosState::new);
+        @Override public Type<CosmosState> type() { return TYPE; }
+    }
+
 	public static void init() {
+        PayloadTypeRegistry.serverboundPlay().register(CosmosAction.TYPE,CosmosAction.CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(CosmosState.TYPE,CosmosState.CODEC);
 		PayloadTypeRegistry.serverboundPlay().register(RealityHold.TYPE, RealityHold.CODEC);
 		PayloadTypeRegistry.serverboundPlay().register(RealityStrike.TYPE, RealityStrike.CODEC);
 		PayloadTypeRegistry.clientboundPlay().register(RealityState.TYPE, RealityState.CODEC);
@@ -236,3 +252,4 @@ public final class ModNetwork {
 
 	private ModNetwork() {}
 }
+

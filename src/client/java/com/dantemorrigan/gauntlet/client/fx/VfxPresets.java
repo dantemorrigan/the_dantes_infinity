@@ -23,6 +23,10 @@ public final class VfxPresets {
 	public record Spec(int frames, int ticksPerFrame, int lifetime, boolean loop, float width, boolean fullBright, Orientation orientation) {}
 
 	private static final Map<String, Spec> DEFAULTS = Map.ofEntries(
+            Map.entry("cosmos_speed_streak",new Spec(4,2,12,false,.18f,true,Orientation.CAMERA)),
+            Map.entry("cosmos_boost_flash",new Spec(4,2,8,false,2.2f,true,Orientation.CAMERA)),
+            Map.entry("cosmos_warp_ring",new Spec(4,3,12,false,6f,true,Orientation.FLAT)),
+            Map.entry("cosmos_star_dust",new Spec(4,3,36,false,.12f,true,Orientation.CAMERA)),
 			Map.entry("power_charge", new Spec(4, 4, 16, true, 0.55f, true, Orientation.CAMERA)),
 			Map.entry("power_impact", new Spec(4, 1, 4, false, 1.2f, true, Orientation.CAMERA)),
 			Map.entry("power_shockwave", new Spec(4, 2, 8, false, 3.0f, true, Orientation.FLAT)),
@@ -57,7 +61,7 @@ public final class VfxPresets {
 
 	private static void load() {
 		Map<String, Spec> map = new HashMap<>(DEFAULTS);
-		for (String file : new String[]{"power_vfx_presets.json", "destruction_vfx_presets.json", "../celestial_apocalypse/meteor_vfx_presets.json", "../space_stone/particle_presets.json", "../reality_stone/particle_presets.json"}) {
+		for (String file : new String[]{"power_vfx_presets.json", "destruction_vfx_presets.json", "../celestial_apocalypse/meteor_vfx_presets.json", "../space_stone/particle_presets.json", "../reality_stone/particle_presets.json", "../cosmos/particle_presets.json"}) {
 			JsonObject root = readJson(InfinityGauntlet.id(file.startsWith("../") ? file.substring(3) : "planet_destruction/" + file));
 			if (root == null) continue;
 			JsonObject effects = root.has("effects") ? root.getAsJsonObject("effects") : root;
@@ -97,3 +101,4 @@ public final class VfxPresets {
 
 	private VfxPresets() {}
 }
+

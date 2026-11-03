@@ -1,0 +1,57 @@
+{
+  "format": "infinity_gauntlet:cosmos_particles_v1",
+  "effects": {
+    "cosmos_speed_streak": {
+      "frames": 4,
+      "ticks_per_frame": 2,
+      "lifetime_ticks": 12,
+      "loop": true,
+      "full_bright": true,
+      "width_blocks": 0.18,
+      "orientation": "velocity",
+      "resolution": [
+        64,
+        64
+      ]
+    },
+    "cosmos_boost_flash": {
+      "frames": 4,
+      "ticks_per_frame": 2,
+      "lifetime_ticks": 8,
+      "loop": false,
+      "full_bright": true,
+      "width_blocks": 2.2,
+      "orientation": "camera",
+      "resolution": [
+        64,
+        64
+      ]
+    },
+    "cosmos_warp_ring": {
+      "frames": 4,
+      "ticks_per_frame": 3,
+      "lifetime_ticks": 12,
+      "loop": false,
+      "full_bright": true,
+      "width_blocks": 6.0,
+      "orientation": "camera",
+      "resolution": [
+        128,
+        128
+      ]
+    },
+    "cosmos_star_dust": {
+      "frames": 4,
+      "ticks_per_frame": 3,
+      "lifetime_ticks": 60,
+      "loop": true,
+      "full_bright": true,
+      "width_blocks": 0.08,
+      "orientation": "camera",
+      "resolution": [
+        32,
+        32
+      ]
+    }
+  }
+}

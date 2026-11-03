@@ -1,0 +1,42 @@
+{
+  "format": "infinity_gauntlet:cosmos_layers_v1",
+  "nebulae": [
+    {
+      "id": "nebula_cyan_arch",
+      "texture": "infinity_gauntlet:textures/environment/cosmos/nebulae/nebula_cyan_arch.png",
+      "yaw_degrees": 35,
+      "pitch_degrees": 12,
+      "angular_width_degrees": 55,
+      "opacity": 0.5,
+      "parallax_factor": 0.012
+    },
+    {
+      "id": "nebula_violet_crescent",
+      "texture": "infinity_gauntlet:textures/environment/cosmos/nebulae/nebula_violet_crescent.png",
+      "yaw_degrees": 155,
+      "pitch_degrees": -18,
+      "angular_width_degrees": 62,
+      "opacity": 0.45,
+      "parallax_factor": 0.006
+    },
+    {
+      "id": "nebula_amber_nursery",
+      "texture": "infinity_gauntlet:textures/environment/cosmos/nebulae/nebula_amber_nursery.png",
+      "yaw_degrees": 255,
+      "pitch_degrees": 24,
+      "angular_width_degrees": 48,
+      "opacity": 0.4,
+      "parallax_factor": 0.009
+    },
+    {
+      "id": "nebula_ice_ribbon",
+      "texture": "infinity_gauntlet:textures/environment/cosmos/nebulae/nebula_ice_ribbon.png",
+      "yaw_degrees": 320,
+      "pitch_degrees": -35,
+      "angular_width_degrees": 65,
+      "opacity": 0.35,
+      "parallax_factor": 0.018
+    }
+  ],
+  "note": "Art-direction defaults; the future client renderer implements layering and movement. Nebulae are distant clouds, not nearby solid surfaces."
+}

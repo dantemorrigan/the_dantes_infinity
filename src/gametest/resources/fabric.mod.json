@@ -1,23 +1,24 @@
 {
-	"schemaVersion": 1,
-	"id": "infinity_gauntlet_gametest",
-	"version": "1.0.0",
-	"name": "Infinity Gauntlet visual tests",
-	"environment": "*",
-	"entrypoints": {
-		"fabric-client-gametest": [
-			"com.dantemorrigan.gauntlet.gametest.VisualTest",
-			"com.dantemorrigan.gauntlet.gametest.CelestialTest",
-			"com.dantemorrigan.gauntlet.gametest.EternalNightTest",
-			"com.dantemorrigan.gauntlet.gametest.SpaceStoneTest",
-			"com.dantemorrigan.gauntlet.gametest.InfinityBeamTest",
-			"com.dantemorrigan.gauntlet.gametest.PlanetDestructionRegressionTest",
-			"com.dantemorrigan.gauntlet.gametest.SpaceCollisionTest",
-			"com.dantemorrigan.gauntlet.gametest.RealityStoneTest",
-			"com.dantemorrigan.gauntlet.gametest.RealityStrikeTest"
-		]
-	},
-	"depends": {
-		"infinity_gauntlet": "*"
-	}
+  "schemaVersion": 1,
+  "id": "infinity_gauntlet_gametest",
+  "version": "1.0.0",
+  "name": "Infinity Gauntlet visual tests",
+  "environment": "*",
+  "entrypoints": {
+    "fabric-client-gametest": [
+      "com.dantemorrigan.gauntlet.gametest.VisualTest",
+      "com.dantemorrigan.gauntlet.gametest.CelestialTest",
+      "com.dantemorrigan.gauntlet.gametest.EternalNightTest",
+      "com.dantemorrigan.gauntlet.gametest.SpaceStoneTest",
+      "com.dantemorrigan.gauntlet.gametest.InfinityBeamTest",
+      "com.dantemorrigan.gauntlet.gametest.PlanetDestructionRegressionTest",
+      "com.dantemorrigan.gauntlet.gametest.SpaceCollisionTest",
+      "com.dantemorrigan.gauntlet.gametest.RealityStoneTest",
+      "com.dantemorrigan.gauntlet.gametest.RealityStrikeTest",
+      "com.dantemorrigan.gauntlet.gametest.CosmosTravelTest"
+    ]
+  },
+  "depends": {
+    "infinity_gauntlet": "*"
+  }
 }

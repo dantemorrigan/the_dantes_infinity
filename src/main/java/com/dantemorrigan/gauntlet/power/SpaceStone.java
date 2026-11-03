@@ -104,7 +104,7 @@ public final class SpaceStone {
 
 	public static void action(ServerPlayer player, int action) {
 		ItemStack g = gauntletWithSpace(player);
-		if (g.isEmpty() || SpaceManager.inSpace(player)) return;
+		if (g.isEmpty() || SpaceManager.inSpace(player) || com.dantemorrigan.gauntlet.cosmos.CosmosTravel.inCosmos(player)) return;
 		switch (action) {
 			case 0 -> togglePortal(player, g);
 			case 1 -> {
@@ -330,3 +330,4 @@ public final class SpaceStone {
 
 	private SpaceStone() {}
 }
+

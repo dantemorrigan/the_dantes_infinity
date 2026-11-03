@@ -1,0 +1,48 @@
+{
+  "format": "infinity_gauntlet:cosmos_cubemap_v1",
+  "resolution": 512,
+  "camera_centered": true,
+  "u": "right, -1..1",
+  "v": "down, -1..1",
+  "pixel_directions": {
+    "+X": [
+      "1",
+      "-v",
+      "-u"
+    ],
+    "-X": [
+      "-1",
+      "-v",
+      "u"
+    ],
+    "+Y": [
+      "u",
+      "1",
+      "v"
+    ],
+    "-Y": [
+      "u",
+      "-1",
+      "-v"
+    ],
+    "+Z": [
+      "u",
+      "-v",
+      "1"
+    ],
+    "-Z": [
+      "-u",
+      "-v",
+      "-1"
+    ]
+  },
+  "source_projection": "equirectangular: longitude=atan2(z,x); latitude=asin(y)",
+  "faces": {
+    "+X": "infinity_gauntlet:textures/environment/cosmos/faces/positive_x.png",
+    "-X": "infinity_gauntlet:textures/environment/cosmos/faces/negative_x.png",
+    "+Y": "infinity_gauntlet:textures/environment/cosmos/faces/positive_y.png",
+    "-Y": "infinity_gauntlet:textures/environment/cosmos/faces/negative_y.png",
+    "+Z": "infinity_gauntlet:textures/environment/cosmos/faces/positive_z.png",
+    "-Z": "infinity_gauntlet:textures/environment/cosmos/faces/negative_z.png"
+  }
+}

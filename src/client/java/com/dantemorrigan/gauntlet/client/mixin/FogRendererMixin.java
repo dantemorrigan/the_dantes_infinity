@@ -27,7 +27,16 @@ public abstract class FogRendererMixin {
 					fog.color.y + (n[1] + (d[1] - n[1]) * day - fog.color.y) * red,
 					fog.color.z + (n[2] + (d[2] - n[2]) * day - fog.color.z) * red, fog.color.w);
 		}
-		if (level != null && level.dimension().equals(SpaceManager.DEAD_SPACE)) {
+        float altitude = com.dantemorrigan.gauntlet.client.cosmos.CosmosClient.atmosphere();
+        if (altitude > 0) {
+            FogData fog=cir.getReturnValue();
+            fog.color.set(fog.color.x*(1-altitude),fog.color.y*(1-altitude),fog.color.z*(1-altitude),fog.color.w);
+            fog.environmentalStart += altitude * 4000;
+            fog.environmentalEnd += altitude * 4000;
+            fog.renderDistanceStart += altitude * 4000;
+            fog.renderDistanceEnd += altitude * 4000;
+        }
+		if (level != null && (level.dimension().equals(SpaceManager.DEAD_SPACE) || level.dimension().equals(com.dantemorrigan.gauntlet.cosmos.CosmosTravel.DIMENSION))) {
 			FogData fog = cir.getReturnValue();
 			fog.environmentalStart = fog.renderDistanceStart = 1.0e5f;
 			fog.environmentalEnd = fog.renderDistanceEnd = 1.0e5f + 1;
@@ -35,3 +44,4 @@ public abstract class FogRendererMixin {
 		}
 	}
 }
+

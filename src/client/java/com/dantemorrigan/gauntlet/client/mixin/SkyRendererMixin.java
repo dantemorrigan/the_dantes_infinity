@@ -21,6 +21,12 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public abstract class SkyRendererMixin {
 	@Inject(method = "extractRenderState", at = @At("RETURN"))
 	private void infinityGauntlet$tint(ClientLevel level, float partialTicks, Camera camera, SkyRenderState state, CallbackInfo ci) {
+        float altitude = com.dantemorrigan.gauntlet.client.cosmos.CosmosClient.atmosphere();
+        if (altitude > 0) {
+            state.skyColor = ARGB.srgbLerp(altitude, state.skyColor, 0xFF000008);
+            state.sunriseAndSunsetColor = ARGB.srgbLerp(altitude,state.sunriseAndSunsetColor,0);
+            state.starBrightness = Math.max(state.starBrightness,altitude);
+        }
 		float f = CelestialClient.redFactor(camera.position(), partialTicks);
 		if (f <= 0) return;
 		float day = CelestialClientAccess.daylight(partialTicks);
@@ -38,6 +44,7 @@ public abstract class SkyRendererMixin {
 	@Inject(method = "renderSunMoonAndStars", at = @At("HEAD"))
 	private void infinityGauntlet$redSky(PoseStack poseStack, float sunAngle, float moonAngle, float starAngle, MoonPhase moonPhase,
 			float rainBrightness, float starBrightness, CallbackInfo ci) {
+        com.dantemorrigan.gauntlet.client.cosmos.CosmosRenderer.sky(com.dantemorrigan.gauntlet.client.cosmos.CosmosClient.atmosphere());
 		CelestialSky.drawRedSky(poseStack, Minecraft.getInstance().getDeltaTracker().getGameTimeDeltaPartialTick(false));
 	}
 
@@ -61,6 +68,10 @@ public abstract class SkyRendererMixin {
 	/** Dead Space uses skybox "end" only to get a sky pass; we replace the End sky with the space cube-map. */
 	@Inject(method = "renderEndSky", at = @At("HEAD"), cancellable = true)
 	private void infinityGauntlet$deadSpaceSky(CallbackInfo ci) {
+        if (com.dantemorrigan.gauntlet.client.cosmos.CosmosClient.inCosmos()) {
+            com.dantemorrigan.gauntlet.client.cosmos.CosmosRenderer.sky(1);
+            ci.cancel(); return;
+        }
 		if (com.dantemorrigan.gauntlet.client.space.SpaceScene.active()) {
 			com.dantemorrigan.gauntlet.client.space.SpaceScene.drawSkyPass();
 			ci.cancel();
@@ -69,6 +80,7 @@ public abstract class SkyRendererMixin {
 
 	@Inject(method = "renderEndFlash", at = @At("HEAD"), cancellable = true)
 	private void infinityGauntlet$noEndFlash(PoseStack poseStack, float intensity, float xAngle, float yAngle, CallbackInfo ci) {
-		if (com.dantemorrigan.gauntlet.client.space.SpaceScene.active()) ci.cancel();
+		if (com.dantemorrigan.gauntlet.client.space.SpaceScene.active() || com.dantemorrigan.gauntlet.client.cosmos.CosmosClient.inCosmos()) ci.cancel();
 	}
 }
+

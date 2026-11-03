@@ -42,6 +42,11 @@ public final class ModParticles {
 	/** Space stone: blue energy wisps (xa = size). */
 	public static final SimpleParticleType SPACE_ENERGY_WISPS = register("space_energy_wisps");
 
+    public static final SimpleParticleType COSMOS_SPEED_STREAK = register("cosmos_speed_streak");
+    public static final SimpleParticleType COSMOS_BOOST_FLASH = register("cosmos_boost_flash");
+    public static final SimpleParticleType COSMOS_WARP_RING = register("cosmos_warp_ring");
+    public static final SimpleParticleType COSMOS_STAR_DUST = register("cosmos_star_dust");
+
 	private static SimpleParticleType register(String name) {
 		return Registry.register(BuiltInRegistries.PARTICLE_TYPE, InfinityGauntlet.id(name), FabricParticleTypes.simple(true));
 	}
@@ -50,3 +55,4 @@ public final class ModParticles {
 
 	private ModParticles() {}
 }
+

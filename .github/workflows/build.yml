@@ -25,8 +25,25 @@ jobs:
         run: ./gradlew build compileGametestJava
       - name: check planet fracture geometry
         run: java -cp build/classes/java/client src/geometryTest/java/PlanetGeometryCheck.java
+      - name: check cosmos navigation
+        run: java -cp build/classes/java/main src/geometryTest/java/CosmosRoutesCheck.java
+      - name: cosmos client regression
+        timeout-minutes: 12
+        env:
+          LIBGL_ALWAYS_SOFTWARE: 'true'
+        run: xvfb-run -a ./gradlew runClientGameTest -PcosmosTest
+      - name: cosmos screenshots and logs
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: Cosmos-regression
+          path: |
+            build/run/clientGameTest/screenshots/
+            build/run/clientGameTest/logs/
+            run/logs/
       - name: capture build artifacts
         uses: actions/upload-artifact@v7
         with:
           name: Artifacts
           path: build/libs/
+
