@@ -30,7 +30,8 @@ public class SupersonicFlightTest implements FabricClientGameTest {
             ctx.waitFor(mc->CosmosClient.sonicBooms()>0,150);
             ctx.takeScreenshot("sonic_barrier");
             ctx.getInput().holdKey(o->o.keyUp);ctx.getInput().holdKey(o->o.keySprint);
-            ctx.waitTicks(60);
+            // Wait for the real condition (software rendering makes tick counts unreliable); a blocked player never gets there.
+            try { ctx.waitFor(mc->mc.player.getZ()>24,300); } catch(AssertionError ignored) {}
             ctx.takeScreenshot("sonic_tree_passage");
             if(!ctx.computeOnClient(mc->mc.player.getZ()>24))
                 throw new AssertionError("Tree passage blocked: "+ctx.computeOnClient(mc->mc.player.position()+" / "+mc.player.getDeltaMovement()+" impacts="+CosmosClient.impactBursts()));

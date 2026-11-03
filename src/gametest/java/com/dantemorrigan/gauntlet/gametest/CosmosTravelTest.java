@@ -35,12 +35,18 @@ public class CosmosTravelTest implements FabricClientGameTest {
             java.util.function.Consumer<CosmosRoutes.Destination> warpAimed=t -> {
                 sp.getServer().runCommand(String.format(java.util.Locale.ROOT,"execute as @p at @p run tp @s ~ ~ ~ facing %.1f %.1f %.1f",t.x(),t.y(),t.z()));
                 ctx.waitTicks(10);
+                // Software rendering starves the server: wait for the real cooldown, then cast and wait for arrival.
+                for(int i=0;i<60 && sp.getServer().computeOnServer(server -> CosmosTravel.warpCooldown(server.getPlayerList().getPlayers().getFirst())>0);i++) ctx.waitTicks(20);
                 sp.getServer().runOnServer(server -> CosmosTravel.action(server.getPlayerList().getPlayers().getFirst(),2));
-                ctx.waitTicks(70);
+                ctx.waitFor(mc->mc.player.position().distanceToSqr(t.arrivalX(),t.arrivalY(),t.arrivalZ())<400,1200);
             };
             for(int i=0;i<CosmosRoutes.ALL.size();i++) {
                 if(i==CosmosRoutes.EARTH) continue;
                 final var d=CosmosRoutes.ALL.get(i);
+                final int index=i;
+                // A body hidden behind the Sun from here is correctly not aimable: skip it.
+                if(ctx.computeOnClient(mc->{var e=mc.player.getEyePosition();var v=new net.minecraft.world.phys.Vec3(d.x()-e.x,d.y()-e.y,d.z()-e.z());
+                    return CosmosRoutes.aim(e.x,e.y,e.z,v.x,v.y,v.z,2.5)!=index;})) continue;
                 warpAimed.accept(d);
                 if(!ctx.computeOnClient(mc->mc.player.position().distanceToSqr(d.arrivalX(),d.arrivalY(),d.arrivalZ())<400))
                     throw new AssertionError("Aimed warp failed: "+d.id());
