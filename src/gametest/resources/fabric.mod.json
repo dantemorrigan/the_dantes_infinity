@@ -11,11 +11,11 @@
 			"com.dantemorrigan.gauntlet.gametest.EternalNightTest",
 			"com.dantemorrigan.gauntlet.gametest.SpaceStoneTest",
 			"com.dantemorrigan.gauntlet.gametest.InfinityBeamTest",
-			"com.dantemorrigan.gauntlet.gametest.PlanetDestructionRegressionTest"
+			"com.dantemorrigan.gauntlet.gametest.PlanetDestructionRegressionTest",
+			"com.dantemorrigan.gauntlet.gametest.SpaceCollisionTest"
 		]
 	},
 	"depends": {
 		"infinity_gauntlet": "*"
 	}
 }
-

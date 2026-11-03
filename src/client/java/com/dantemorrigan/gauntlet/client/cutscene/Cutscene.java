@@ -223,6 +223,21 @@ public final class Cutscene {
 			l.vel = l.vel.scale(1.02);
 			l.angle += l.spin;
 		}
+		if (mc.player != null && !LIFTED.isEmpty() && mc.level != null && (mc.level == sceneLevel || mc.level == hiddenLevel)) {
+			// Rising pieces are solid: they shove the player (and are slowed a little by the contact).
+			for (Lifted l : LIFTED) {
+				var hit = com.dantemorrigan.gauntlet.client.render.DebrisCollision.test(l.mesh, l.pos,
+						new org.joml.Quaternionf().rotationAxis(l.angle * Mth.DEG_TO_RAD, l.axis), l.scale, mc.player.position());
+				if (hit == null) continue;
+				Vec3 n = hit.normal();
+				double depth = Math.min(hit.depth(), 1.5);
+				mc.player.setPos(mc.player.getX() + n.x * depth, mc.player.getY() + n.y * depth, mc.player.getZ() + n.z * depth);
+				Vec3 push = n.scale(0.35).add(l.vel.scale(0.8)).add(0, 0.15, 0);
+				mc.player.setDeltaMovement(mc.player.getDeltaMovement().add(push));
+				l.vel = l.vel.scale(0.85);
+				shake(0.3f, 6);
+			}
+		}
 		if (flashDemoTicks >= 0) {
 			flashDemoTicks++;
 			flash = flashDemoTicks < 4 ? flashDemoTicks / 4f : Math.max(0, 1f - (flashDemoTicks - 8) / 12f);

@@ -34,7 +34,10 @@ import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.biome.Biomes;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
+import org.joml.Quaternionf;
 import org.joml.Vector3f;
+import com.dantemorrigan.gauntlet.client.render.DebrisCollision;
+import com.dantemorrigan.gauntlet.client.cutscene.Cutscene;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -59,7 +62,52 @@ public final class SpaceScene {
 	private static ShatteredPlanet planet;
 	private static int particleBudget;
 
-	private record Debris(BlockMeshes.Mesh mesh, Vec3 base, Vec3 drift, Vector3f axis, float spin, float phase, float scale) {}
+	/** Debris piece. kickOffset/kickVel: what collisions (player, other pieces) added on top of the scripted drift. */
+	private static final class Debris {
+		final BlockMeshes.Mesh mesh;
+		final Vec3 base, drift;
+		final Vector3f axis;
+		final float spin, phase, scale;
+		Vec3 kickOffset = Vec3.ZERO, kickVel = Vec3.ZERO;
+
+		Debris(BlockMeshes.Mesh mesh, Vec3 base, Vec3 drift, Vector3f axis, float spin, float phase, float scale) {
+			this.mesh = mesh;
+			this.base = base;
+			this.drift = drift;
+			this.axis = axis;
+			this.spin = spin;
+			this.phase = phase;
+			this.scale = scale;
+		}
+
+		/** Mass grows with volume: big rocks barely move, small ones fly. */
+		float mass() {
+			return Math.max(1f, scale * scale * scale * Math.min(6f, 0.15f * mesh.blocks().size()));
+		}
+	}
+
+	private static int bumpCooldown;
+
+	/** Test hook: position of the debris piece nearest to {@code from} (null if none). */
+	public static Vec3 nearestDebris(Vec3 from) {
+		if (debris == null) return null;
+		Vec3 best = null;
+		for (Debris d : debris) {
+			Vec3 p = debrisPos(d, age(0));
+			if (best == null || p.distanceToSqr(from) < best.distanceToSqr(from)) best = p;
+		}
+		return best;
+	}
+
+	/** Test hook: current scripted velocity of the player. */
+	public static Vec3 playerVelocity() {
+		return velocity;
+	}
+
+	/** Test hook: launch the player with a velocity. */
+	public static void setPlayerVelocity(Vec3 v) {
+		velocity = v;
+	}
 
 	public static void init() {
 		ClientPlayNetworking.registerGlobalReceiver(ModNetwork.SpaceState.TYPE, (p, ctx) -> enter(p.record(), p.eventAge()));
@@ -122,6 +170,7 @@ public final class SpaceScene {
 		if (rewindTick >= 0) rewindTick++;
 		else ticksSince++;
 		move(mc.player);
+		collide(mc.player);
 		// A few dissolving motes near the debris, with a hard budget.
 		particleBudget = Math.max(0, particleBudget - 1);
 		if (debris != null && !debris.isEmpty() && mc.level.getGameTime() % 6 == 0 && particleBudget < GauntletConfig.get().maxSpaceParticles) {
@@ -131,6 +180,47 @@ public final class SpaceScene {
 			ClientPower.spawn(ModParticles.VOID_DISSOLVE, p, 0.6 + rnd.nextDouble() * 0.6, 0, 0);
 			particleBudget += 12;
 		}
+	}
+
+	/**
+	 * Pieces are solid: the player bounces off them, is knocked back by moving ones, and shoves light pieces away.
+	 * Runs after the movement step so the correction is never fought by input.
+	 */
+	private static void collide(LocalPlayer player) {
+		if (debris == null || rewindTick >= 0) return;
+		if (bumpCooldown > 0) bumpCooldown--;
+		float age = age(0);
+		for (Debris d : debris) {
+			d.kickOffset = d.kickOffset.add(d.kickVel);
+			d.kickVel = d.kickVel.scale(0.985);
+			if (d.kickVel.lengthSqr() < 1e-7) d.kickVel = Vec3.ZERO;
+		}
+		for (Debris d : debris) {
+			Vec3 p = debrisPos(d, age);
+			Quaternionf rot = new Quaternionf().rotationAxis((d.phase + age * d.spin) * Mth.DEG_TO_RAD, d.axis);
+			var hit = DebrisCollision.test(d.mesh, p, rot, d.scale, player.position());
+			if (hit == null) continue;
+			Vec3 n = hit.normal();
+			double depth = Math.min(hit.depth(), 1.5);
+			// Un-penetrate, then exchange momentum along the contact normal (player mass 1).
+			player.setPos(player.getX() + n.x * depth, player.getY() + n.y * depth, player.getZ() + n.z * depth);
+			Vec3 pieceVel = d.drift.add(d.kickVel);
+			double closing = velocity.subtract(pieceVel).dot(n); // < 0: moving into the piece
+			float m = d.mass();
+			double impulse = closing < 0 ? -(1 + 0.55) * closing : 0;
+			double playerShare = m / (m + 1.0);
+			velocity = velocity.add(n.scale(impulse * playerShare + 0.12));      // knocked away
+			d.kickVel = d.kickVel.subtract(n.scale(impulse * (1 - playerShare) + 0.01)); // light pieces get pushed
+			double speed = Math.max(impulse, 0.15);
+			if (bumpCooldown == 0) {
+				bumpCooldown = 6;
+				Cutscene.shake((float) Math.min(0.5, 0.12 + speed * 0.8), 6);
+				player.playSound(net.minecraft.sounds.SoundEvents.STONE_HIT, (float) Math.min(1.0, 0.4 + speed), 0.6f);
+			}
+		}
+		GauntletConfig cfg = GauntletConfig.get();
+		if (velocity.length() > cfg.spaceMaxSpeed * 1.8) velocity = velocity.normalize().scale(cfg.spaceMaxSpeed * 1.8);
+		player.setDeltaMovement(velocity);
 	}
 
 	/** Zero-g: thrust along the view with WASD, Space/Shift for up/down, slow damping (inertia). */
@@ -223,7 +313,7 @@ public final class SpaceScene {
 
 	private static Vec3 debrisPos(Debris d, float age) {
 		float t = Math.min(age, 20000);
-		return d.base.add(d.drift.scale(t)).add(0, Math.sin((age + d.phase) * 0.01) * 0.6, 0);
+		return d.base.add(d.drift.scale(t)).add(0, Math.sin((age + d.phase) * 0.01) * 0.6, 0).add(d.kickOffset);
 	}
 
 	// ---------------------------------------------------------------- render
