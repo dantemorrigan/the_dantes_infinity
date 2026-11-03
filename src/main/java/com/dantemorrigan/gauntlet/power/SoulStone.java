@@ -1,5 +1,6 @@
 package com.dantemorrigan.gauntlet.power;
 
+import com.dantemorrigan.gauntlet.CoopRules;
 import com.dantemorrigan.gauntlet.GauntletConfig;
 import com.dantemorrigan.gauntlet.GauntletState;
 import com.dantemorrigan.gauntlet.InfinityGauntlet;
@@ -59,6 +60,7 @@ public final class SoulStone {
 	private static final class Extraction {
 		final UUID owner;
 		final LivingEntity target;
+		final ServerLevel level;
 		final int delay, extract, flight;
 		boolean frozen, hadNoAi, hadNoGravity, killed;
 		int tick;
@@ -66,6 +68,7 @@ public final class SoulStone {
 		Extraction(UUID owner, LivingEntity target, int delay, int extract, int flight) {
 			this.owner = owner;
 			this.target = target;
+			this.level = (ServerLevel) target.level();
 			this.delay = delay;
 			this.extract = extract;
 			this.flight = flight;
@@ -112,10 +115,11 @@ public final class SoulStone {
 			MASS_CD.put(player.getUUID(), now + cfg.soulMassCooldownTicks);
 		} else {
 			if (now < POINT_CD.getOrDefault(player.getUUID(), 0L) && !player.isCreative()) return;
-			LivingEntity target = MindStone.lookTarget(player, cfg.soulRange);
-			if (target == null || busy(target)) return;
+			LivingEntity target = MindStone.lookTarget(player, cfg.soulRange, cfg.soulPlayerDrain);
+			if (target == null || busy(target) || !player.hasLineOfSight(target)) return;
 			POINT_CD.put(player.getUUID(), now + cfg.soulPointCooldownTicks);
-			start(player, target, 0, POINT_EXTRACT, POINT_FLIGHT);
+			if (target instanceof ServerPlayer) ACTIVE.add(new Extraction(player.getUUID(), target, 0, POINT_EXTRACT, 0));
+			else start(player, target, 0, POINT_EXTRACT, POINT_FLIGHT);
 			level.playSound(null, target.blockPosition(), SoundEvents.SOUL_ESCAPE.value(), SoundSource.PLAYERS, 2.0F, 0.6F);
 		}
 		GauntletState.setInUse(g, EnumSet.of(Stone.SOUL));
@@ -146,6 +150,10 @@ public final class SoulStone {
 	}
 
 	private static boolean busy(LivingEntity e) {
+		return MindStone.holdsEntity(e) || isExtracting(e);
+	}
+
+	public static boolean isExtracting(LivingEntity e) {
 		for (Extraction x : ACTIVE) if (x.target == e) return true;
 		return false;
 	}
@@ -162,12 +170,16 @@ public final class SoulStone {
 			Extraction e = it.next();
 			e.tick++;
 			ServerPlayer owner = server.getPlayerList().getPlayer(e.owner);
-			if (owner == null || !owner.isAlive()) {
+			if (owner == null || !owner.isAlive() || owner.level() != e.level || e.target.level() != e.level) {
 				unfreeze(e);
 				it.remove();
 				continue;
 			}
 			LivingEntity t = e.target;
+			if (t instanceof ServerPlayer victim) {
+				if (stepPlayerDrain(owner, victim, e.tick)) it.remove();
+				continue;
+			}
 			if (e.tick < e.delay) {
 				if (!t.isAlive()) it.remove();
 				continue;
@@ -185,9 +197,10 @@ public final class SoulStone {
 				if ((e.tick - e.delay) % 8 == 0) t.level().playSound(null, t.blockPosition(), SoundEvents.SOUL_ESCAPE.value(), SoundSource.HOSTILE, 1.0F, 0.7F);
 				if (e.tick >= e.delay + e.extract) {
 					unfreeze(e);
-					e.killed = true;
-					ServerLevel level = (ServerLevel) t.level();
+					ServerLevel level = e.level;
 					t.hurtServer(level, level.damageSources().playerAttack(owner), Float.MAX_VALUE);
+					e.killed = !t.isAlive();
+					if (!e.killed) it.remove();
 				}
 				continue;
 			}
@@ -217,6 +230,26 @@ public final class SoulStone {
 				if (!any && !g.isEmpty() && GauntletState.inUse(g).contains(Stone.SOUL)) GauntletState.setInUse(g, EnumSet.noneOf(Stone.class));
 			}
 		}
+	}
+
+	private static boolean stepPlayerDrain(ServerPlayer owner, ServerPlayer victim, int tick) {
+		GauntletConfig config = GauntletConfig.get();
+		ItemStack gauntlet = GauntletState.activeGauntlet(owner);
+		if (!config.soulPlayerDrain || gauntlet.isEmpty() || !GauntletState.inserted(gauntlet).contains(Stone.SOUL)
+				|| owner.level().getEntity(victim.getUUID()) != victim || !CoopRules.canAffect(owner, victim)
+				|| victim.isShiftKeyDown() || victim.distanceToSqr(owner) > config.soulRange * config.soulRange
+				|| !owner.hasLineOfSight(victim)) return true;
+		Vec3 from = victim.getEyePosition(), to = owner.getEyePosition();
+		Vec3 point = from.lerp(to, (tick % 10) / 10.0);
+		owner.level().sendParticles(net.minecraft.core.particles.ParticleTypes.SOUL,
+				point.x, point.y, point.z, 3, 0.08, 0.08, 0.08, 0.01);
+		if (tick < POINT_EXTRACT) return false;
+		float before = victim.getHealth();
+		float damage = Math.min(4f, before - 1f);
+		if (damage > 0 && victim.hurtServer(owner.level(), owner.damageSources().playerAttack(owner), damage)) {
+			owner.heal(Math.max(0, before - victim.getHealth()));
+		}
+		return true;
 	}
 
 	private static void freeze(Extraction e) {

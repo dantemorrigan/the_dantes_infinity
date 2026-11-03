@@ -85,6 +85,7 @@ public final class PlanetDestruction {
 
 	/** Start the event. Validation (stone, mode, charge, cooldown) is done by the caller. */
 	public static boolean start(ServerPlayer activator, Vec3 impact) {
+		if (!GauntletConfig.get().allowPlanetDestruction) return false;
 		if (isBusy(activator)) {
 			com.dantemorrigan.gauntlet.net.ModStatus.send(activator, Component.literal("Событие уже идёт"));
 			return false;

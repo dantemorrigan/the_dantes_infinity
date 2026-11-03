@@ -7,7 +7,6 @@ import com.dantemorrigan.gauntlet.Stone;
 import com.dantemorrigan.gauntlet.net.ModNetwork;
 import com.dantemorrigan.gauntlet.space.SpaceManager;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
-import net.fabricmc.fabric.api.entity.event.v1.ServerEntityWorldChangeEvents;
 import net.fabricmc.fabric.api.networking.v1.PlayerLookup;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
@@ -78,15 +77,25 @@ public final class SpaceStone {
 	private static final Map<UUID, Long> COOLDOWN = new HashMap<>();
 	private static final Map<UUID, Long> BLINK_COOLDOWN = new HashMap<>();
 	private static final Map<UUID, Integer> TRAVEL_GRACE = new HashMap<>();
+	private static final Map<UUID, ServerLevel> VIEW_LEVELS = new HashMap<>();
 	private static int nextId = 1;
 
 	public static void init() {
 		ServerTickEvents.END_SERVER_TICK.register(SpaceStone::tick);
 		ServerPlayConnectionEvents.JOIN.register((h, s, server) -> syncPortals(h.getPlayer()));
-		ServerEntityWorldChangeEvents.AFTER_PLAYER_CHANGE_WORLD.register((player, origin, destination) -> syncPortals(player));
+		ServerPlayConnectionEvents.DISCONNECT.register((h, server) -> VIEW_LEVELS.remove(h.getPlayer().getUUID()));
+		net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents.SERVER_STOPPED.register(server -> {
+			VIEW_LEVELS.clear();
+			PORTALS.clear();
+			TRAVEL_GRACE.clear();
+			COOLDOWN.clear();
+			BLINK_COOLDOWN.clear();
+			CLEAR_GLOW.clear();
+		});
 	}
 
 	private static void syncPortals(ServerPlayer player) {
+		VIEW_LEVELS.put(player.getUUID(), player.level());
 		for (Portal portal : PORTALS) {
 			if (portal.level == player.level()) ServerPlayNetworking.send(player, portal.packet());
 		}
@@ -179,6 +188,9 @@ public final class SpaceStone {
 	}
 
 	private static void tick(MinecraftServer server) {
+		for (ServerPlayer player : server.getPlayerList().getPlayers()) {
+			if (VIEW_LEVELS.get(player.getUUID()) != player.level()) syncPortals(player);
+		}
 		TRAVEL_GRACE.replaceAll((k, v) -> v - 1);
 		TRAVEL_GRACE.values().removeIf(v -> v <= 0);
 		// Iterate over a copy: travelling opens an exit portal (adds to the list).

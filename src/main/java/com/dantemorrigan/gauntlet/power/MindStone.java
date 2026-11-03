@@ -1,5 +1,6 @@
 package com.dantemorrigan.gauntlet.power;
 
+import com.dantemorrigan.gauntlet.CoopRules;
 import com.dantemorrigan.gauntlet.GauntletConfig;
 import com.dantemorrigan.gauntlet.GauntletState;
 import com.dantemorrigan.gauntlet.Stone;
@@ -66,6 +67,8 @@ public final class MindStone {
 		final List<BlockState> states = new ArrayList<>();
 		final List<BlockPos> offsets = new ArrayList<>();
 		LivingEntity mob;
+		ServerLevel level;
+		Vec3 lastPoint;
 		boolean hadNoAi, hadNoGravity;
 		double radius;
 		int tick;
@@ -94,7 +97,7 @@ public final class MindStone {
 		}
 	}
 
-	private record ThrownMob(LivingEntity mob, UUID owner, Set<Integer> hit, int[] tick, boolean loose) {}
+	private record ThrownMob(LivingEntity mob, ServerLevel level, UUID owner, Set<Integer> hit, int[] tick, boolean loose) {}
 
 	private static final Map<UUID, Hold> HOLDS = new HashMap<>();
 	private static final List<Flight> FLIGHTS = new ArrayList<>();
@@ -120,7 +123,11 @@ public final class MindStone {
 	public static void action(ServerPlayer player, int action) {
 		Hold hold = HOLDS.get(player.getUUID());
 		if (hold != null) {
-			if (action == 1 && hold.mob != null) startTear(player, hold);
+			if (hold.level != player.level() || hold.mob != null && hold.mob.level() != player.level()) {
+				drop(player);
+				return;
+			}
+			if (action == 1 && hold.mob != null && !(hold.mob instanceof ServerPlayer)) startTear(player, hold);
 			else if (action == 1) drop(player);
 			else if (hold.tear < 0) throwHeld(player, hold);
 			return;
@@ -141,7 +148,7 @@ public final class MindStone {
 		Vec3 look = player.getViewVector(1f);
 		BlockHitResult bh = level.clip(new ClipContext(eye, eye.add(look.scale(cfg.mindRange)), ClipContext.Block.OUTLINE, ClipContext.Fluid.NONE, player));
 		double reach = bh.getType() == HitResult.Type.MISS ? cfg.mindRange : bh.getLocation().distanceTo(eye);
-		LivingEntity target = lookTarget(player, reach);
+		LivingEntity target = lookTarget(player, reach, cfg.mindPlayerGrab);
 		if (target != null) {
 			grabMob(player, target);
 		} else if (bh.getType() == HitResult.Type.BLOCK) {
@@ -158,12 +165,16 @@ public final class MindStone {
 
 	/** The living entity under the crosshair (bosses and players excluded), not farther than {@code reach}. */
 	public static LivingEntity lookTarget(ServerPlayer player, double reach) {
+		return lookTarget(player, reach, false);
+	}
+
+	static LivingEntity lookTarget(ServerPlayer player, double reach, boolean allowPlayers) {
 		Vec3 eye = player.getEyePosition();
 		Vec3 look = player.getViewVector(1f);
 		Vec3 end = eye.add(look.scale(reach));
 		AABB box = player.getBoundingBox().expandTowards(look.scale(reach)).inflate(1.5);
 		EntityHitResult hit = ProjectileUtil.getEntityHitResult(player, eye, end, box,
-				e -> e instanceof LivingEntity l && l.isAlive() && !e.isSpectator() && !(e instanceof Player) && !isBoss(e), reach * reach);
+				e -> e instanceof LivingEntity l && l.isAlive() && !e.isSpectator() && (!(e instanceof Player) || allowPlayers && CoopRules.canAffect(player, e)) && !isBoss(e), reach * reach);
 		return hit != null ? (LivingEntity) hit.getEntity() : null;
 	}
 
@@ -174,6 +185,7 @@ public final class MindStone {
 	// ------------------------------------------------------------------ grab
 
 	private static void grabBlocks(ServerPlayer player, BlockPos center) {
+		if (!GauntletConfig.get().abilityBlockChanges) return;
 		ServerLevel level = player.level();
 		GauntletConfig cfg = GauntletConfig.get();
 		double r = cfg.mindGrabRadius;
@@ -212,29 +224,38 @@ public final class MindStone {
 		}
 		HOLDS.put(player.getUUID(), hold);
 		Vec3 origin = Vec3.atCenterOf(center);
+		hold.level = level;
+		hold.lastPoint = origin;
 		send(level, origin, new ModNetwork.MindFx(0, player.getId(), 0, origin, Vec3.ZERO, ids(hold.states), List.copyOf(hold.offsets)));
 		level.playSound(null, center, SoundEvents.GENERIC_EXPLODE.value(), SoundSource.PLAYERS, 0.7F, 0.6F);
 		level.playSound(null, center, SoundEvents.STONE_BREAK, SoundSource.BLOCKS, 1.6F, 0.5F);
 	}
 
 	private static boolean grabbable(ServerLevel level, ServerPlayer player, BlockPos p) {
+		if (!CoopRules.canEdit(player, level, p)) return false;
 		BlockState s = level.getBlockState(p);
 		return !s.isAir() && !(s.getBlock() instanceof LiquidBlock) && !s.hasBlockEntity()
-				&& s.getDestroySpeed(level, p) >= 0 && level.mayInteract(player, p);
+				&& s.getDestroySpeed(level, p) >= 0;
+	}
+
+	public static boolean holdsEntity(LivingEntity entity) {
+		return HOLDS.values().stream().anyMatch(hold -> hold.mob == entity);
 	}
 
 	private static void grabMob(ServerPlayer player, LivingEntity mob) {
-		for (Hold h : HOLDS.values()) if (h.mob == mob) return; // already held by someone
+		if (holdsEntity(mob) || SoulStone.isExtracting(mob)) return;
+		if (mob instanceof ServerPlayer victim && victim.isShiftKeyDown()) return;
 		THROWN.removeIf(t -> t.mob() == mob);
 		Hold hold = new Hold();
 		hold.mob = mob;
+		hold.level = player.level();
 		hold.radius = Math.max(mob.getBbWidth(), mob.getBbHeight()) * 0.6 + 0.4;
 		hold.hadNoGravity = mob.isNoGravity();
 		if (mob instanceof Mob m) {
 			hold.hadNoAi = m.isNoAi();
 			m.setNoAi(true);
 		}
-		mob.setNoGravity(true);
+		if (!(mob instanceof ServerPlayer)) mob.setNoGravity(true);
 		HOLDS.put(player.getUUID(), hold);
 		ServerLevel level = player.level();
 		send(level, mob.position(), new ModNetwork.MindFx(1, player.getId(), mob.getId(), mob.position(), Vec3.ZERO, List.of(), List.of()));
@@ -247,20 +268,24 @@ public final class MindStone {
 		mob.setDeltaMovement(player.getLookAngle().scale(2).add(0, 0.2, 0));
 		mob.hurtMarked = true;
 		THROWN.removeIf(thrown -> thrown.mob() == mob);
-		THROWN.add(new ThrownMob(mob, player.getUUID(), new HashSet<>(), new int[1], true));
+		THROWN.add(new ThrownMob(mob, player.level(), player.getUUID(), new HashSet<>(), new int[1], true));
 	}
 
 	private static void throwHeld(ServerPlayer player, Hold hold) {
 		ServerLevel level = player.level();
 		GauntletConfig cfg = GauntletConfig.get();
 		Vec3 look = player.getViewVector(1f);
+		if (hold.level != level || hold.mob instanceof ServerPlayer victim && !playerHoldValid(player, victim, hold)) {
+			drop(player);
+			return;
+		}
 		end(player);
 		if (hold.mob != null) {
 			LivingEntity mob = hold.mob;
 			restore(hold);
 			mob.setDeltaMovement(look.scale(cfg.mindMobThrowSpeed).add(0, 0.15, 0));
 			mob.hurtMarked = true;
-			THROWN.add(new ThrownMob(mob, player.getUUID(), new HashSet<>(), new int[1], false));
+			THROWN.add(new ThrownMob(mob, player.level(), player.getUUID(), new HashSet<>(), new int[1], false));
 		} else {
 			Vec3 start = holdPoint(player, hold);
 			Flight f = new Flight(level, player.getUUID(), nextFlight++, hold.states, hold.offsets, hold.radius, start, look.scale(cfg.mindThrowSpeed));
@@ -280,12 +305,16 @@ public final class MindStone {
 			restore(hold);
 			return;
 		}
-		scatter(player.level(), holdPoint(player, hold), hold.states, hold.offsets, Vec3.ZERO, 0.05);
+		scatter(hold.level, hold.lastPoint, hold.states, hold.offsets, Vec3.ZERO, 0.05);
 	}
 
 	private static void end(ServerPlayer player) {
-		HOLDS.remove(player.getUUID());
-		send(player.level(), player.position(), new ModNetwork.MindFx(2, player.getId(), 0, Vec3.ZERO, Vec3.ZERO, List.of(), List.of()));
+		Hold hold = HOLDS.remove(player.getUUID());
+		ServerLevel level = hold == null ? player.level() : hold.level;
+		Vec3 at = level == player.level() ? player.position() : hold.lastPoint;
+		if (at == null && hold != null && hold.mob != null) at = hold.mob.position();
+		if (at == null) at = player.position();
+		send(level, at, new ModNetwork.MindFx(2, player.getId(), 0, Vec3.ZERO, Vec3.ZERO, List.of(), List.of()));
 		ItemStack g = GauntletState.activeGauntlet(player);
 		if (!g.isEmpty()) GauntletState.setInUse(g, EnumSet.noneOf(Stone.class));
 	}
@@ -293,7 +322,7 @@ public final class MindStone {
 	private static void restore(Hold hold) {
 		LivingEntity mob = hold.mob;
 		if (mob instanceof Mob m) m.setNoAi(hold.hadNoAi);
-		mob.setNoGravity(hold.hadNoGravity);
+		if (!(mob instanceof ServerPlayer)) mob.setNoGravity(hold.hadNoGravity);
 		mob.fallDistance = 0;
 	}
 
@@ -318,18 +347,20 @@ public final class MindStone {
 			Hold h = e.getValue();
 			if (p == null) { // left the game: a mob is let go; blocks were already dropped on disconnect
 				if (h.mob != null) restore(h);
+				else scatter(h.level, h.lastPoint, h.states, h.offsets, Vec3.ZERO, 0.05);
 				HOLDS.remove(e.getKey());
 				continue;
 			}
 			ItemStack g = GauntletState.activeGauntlet(p);
-			boolean lost = !p.isAlive() || g.isEmpty() || !GauntletState.inserted(g).contains(Stone.MIND)
+			boolean lost = !p.isAlive() || h.level != p.level() || g.isEmpty() || !GauntletState.inserted(g).contains(Stone.MIND)
 					|| h.mob != null && (!h.mob.isAlive() || h.mob.level() != p.level() || h.mob.position().distanceTo(p.position()) > 64);
-			if (lost) {
+			if (lost || h.mob instanceof ServerPlayer victim && !playerHoldValid(p, victim, h)) {
 				drop(p);
 				continue;
 			}
 			h.tick++;
 			if (h.mob != null) holdMob(p, h);
+			else h.lastPoint = holdPoint(p, h);
 		}
 		// Thrown clusters
 		for (Iterator<Flight> it = FLIGHTS.iterator(); it.hasNext(); ) {
@@ -341,15 +372,19 @@ public final class MindStone {
 			ThrownMob t = it.next();
 			LivingEntity mob = t.mob();
 			int tick = ++t.tick()[0];
-			if (!mob.isAlive() || tick > 80) {
+			if (!mob.isAlive() || mob.level() != t.level() || tick > 80) {
 				it.remove();
 				continue;
 			}
 			mob.fallDistance = 0;
 			ServerLevel level = (ServerLevel) mob.level();
 			ServerPlayer owner = server.getPlayerList().getPlayer(t.owner());
+			if (!CoopRules.canAffect(owner, mob)) {
+				it.remove();
+				continue;
+			}
 			double speed = mob.getDeltaMovement().length();
-			for (Entity other : level.getEntities(mob, mob.getBoundingBox().inflate(0.4), x -> x instanceof LivingEntity && x != owner && !t.hit().contains(x.getId()))) {
+			for (Entity other : level.getEntities(mob, mob.getBoundingBox().inflate(0.4), x -> x instanceof LivingEntity && x != owner && CoopRules.canAffect(owner, x) && !t.hit().contains(x.getId()))) {
 				t.hit().add(other.getId());
 				other.hurtServer(level, owner != null ? level.damageSources().playerAttack(owner) : level.damageSources().magic(), GauntletConfig.get().mindMobThrowDamage * 0.6f);
 				other.push(mob.getDeltaMovement().scale(0.8));
@@ -374,10 +409,24 @@ public final class MindStone {
 		}
 	}
 
+	private static boolean playerHoldValid(ServerPlayer owner, ServerPlayer victim, Hold hold) {
+		return GauntletConfig.get().mindPlayerGrab && hold.tick < 40 && !victim.isShiftKeyDown()
+				&& victim.level().getEntity(victim.getUUID()) == victim && CoopRules.canAffect(owner, victim)
+				&& owner.hasLineOfSight(victim);
+	}
+
 	private static void holdMob(ServerPlayer p, Hold h) {
 		LivingEntity mob = h.mob;
 		Vec3 target = holdPoint(p, h).subtract(0, mob.getBbHeight() / 2, 0);
 		Vec3 now = mob.position();
+		if (mob instanceof ServerPlayer) {
+			Vec3 pull = target.subtract(now).scale(0.25);
+			if (pull.lengthSqr() > 0.49) pull = pull.normalize().scale(0.7);
+			mob.setDeltaMovement(pull);
+			mob.fallDistance = 0;
+			mob.hurtMarked = true;
+			return;
+		}
 		// Rise smoothly from where it stood, then follow the view.
 		float k = Math.min(1f, h.tick / (float) LIFT_TICKS);
 		Vec3 pos = now.add(target.subtract(now).scale(0.15 + 0.35 * k));
@@ -429,7 +478,7 @@ public final class MindStone {
 			at = bh.getLocation();
 		}
 		AABB sweep = new AABB(f.pos, next).inflate(f.radius * 0.8);
-		List<Entity> hit = f.level.getEntities((Entity) null, sweep, x -> x instanceof LivingEntity l && l.isAlive() && x != owner && !x.isSpectator());
+		List<Entity> hit = f.level.getEntities((Entity) null, sweep, x -> x instanceof LivingEntity l && l.isAlive() && x != owner && !x.isSpectator() && CoopRules.canAffect(owner, x));
 		if (!hit.isEmpty()) impact = true;
 		if (!impact && (f.tick > 200 || next.y < f.level.getMinY() - 16)) return true; // lost in the void
 		if (!impact) {
@@ -446,7 +495,7 @@ public final class MindStone {
 		GauntletConfig cfg = GauntletConfig.get();
 		float dmg = cfg.mindThrowDamage * (1f + f.states.size() / 32f) * (float) Math.min(1.4, 0.5 + f.vel.length() / 2);
 		double r = f.radius + 2;
-		for (Entity e : level.getEntities((Entity) null, new AABB(at, at).inflate(r), x -> x instanceof LivingEntity && x != owner && x.isAlive())) {
+		for (Entity e : level.getEntities((Entity) null, new AABB(at, at).inflate(r), x -> x instanceof LivingEntity && x != owner && x.isAlive() && !x.isSpectator() && CoopRules.canAffect(owner, x))) {
 			double d = e.position().distanceTo(at);
 			if (d > r) continue;
 			float k = (float) (1 - d / r * 0.6);
@@ -494,6 +543,6 @@ public final class MindStone {
 	private MindStone() {}
     public static int cooldown(ServerPlayer p) { return (int)Math.max(0, COOLDOWN.getOrDefault(p.getUUID(),0L)-p.level().getGameTime()); }
 
-    public static boolean holdingMob(ServerPlayer p) { Hold h=HOLDS.get(p.getUUID()); return h!=null && h.mob!=null && h.tear<0; }
+    public static boolean holdingMob(ServerPlayer p) { Hold h=HOLDS.get(p.getUUID()); return h!=null && h.mob!=null && !(h.mob instanceof ServerPlayer) && h.tear<0; }
 
 }

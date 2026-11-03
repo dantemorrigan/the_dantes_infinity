@@ -75,7 +75,7 @@ final class LooseStoneItem extends Item {
 		}
 
 		LivingEntity target = MindStone.lookTarget(player, 8);
-		if (target == null || !player.hasLineOfSight(target)
+		if (target == null || MindStone.holdsEntity(target) || SoulStone.isExtracting(target) || !player.hasLineOfSight(target)
 				|| HOLDS.values().stream().anyMatch(hold -> hold.target() == target)) return false;
 		long now = player.level().getGameTime();
 		if (stone == Stone.MIND) {
@@ -89,6 +89,7 @@ final class LooseStoneItem extends Item {
 	private static boolean validHold(ServerPlayer player, Hold hold) {
 		LivingEntity target = hold.target();
 		return player != null && player.isAlive() && target.isAlive() && !target.isRemoved()
+				&& !MindStone.holdsEntity(target) && !SoulStone.isExtracting(target)
 				&& target.level() == player.level() && target.distanceToSqr(player) <= 144
 				&& Stone.MIND.matches(player.getItemInHand(hold.hand()))
 				&& player.level().getGameTime() < hold.until();

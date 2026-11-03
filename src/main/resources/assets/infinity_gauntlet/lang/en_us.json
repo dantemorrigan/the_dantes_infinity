@@ -129,5 +129,6 @@
   "tooltip.infinity_gauntlet.loose_reality": "Right-click: send out a red wave that damages mobs within 4 blocks.",
   "tooltip.infinity_gauntlet.loose_mind": "Right-click: lift and hold a mob. Right-click again to throw it and deal impact damage.",
   "tooltip.infinity_gauntlet.loose_time": "Right-click: rewind your position and health. In the White Void, undo the Snap.",
-  "tooltip.infinity_gauntlet.loose_soul": "Right-click: extract one soul. Cooldown: 20 seconds."
+  "tooltip.infinity_gauntlet.loose_soul": "Right-click: extract one soul. Cooldown: 20 seconds.",
+  "ability.infinity_gauntlet.reason.disabled": "Ability disabled by the server"
 }

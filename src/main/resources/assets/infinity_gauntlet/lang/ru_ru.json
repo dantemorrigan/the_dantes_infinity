@@ -129,5 +129,6 @@
   "tooltip.infinity_gauntlet.loose_reality": "ПКМ: красная волна наносит мобам урон в радиусе 4 блоков.",
   "tooltip.infinity_gauntlet.loose_mind": "ПКМ: поднимает и удерживает моба. Повторный ПКМ: бросок с уроном при столкновении.",
   "tooltip.infinity_gauntlet.loose_time": "ПКМ: отматывает твою позицию и здоровье. В Белой пустоте отменяет щелчок.",
-  "tooltip.infinity_gauntlet.loose_soul": "ПКМ: извлекает одну душу. Перезарядка — 20 секунд."
+  "tooltip.infinity_gauntlet.loose_soul": "ПКМ: извлекает одну душу. Перезарядка — 20 секунд.",
+  "ability.infinity_gauntlet.reason.disabled": "Способность отключена настройками сервера"
 }

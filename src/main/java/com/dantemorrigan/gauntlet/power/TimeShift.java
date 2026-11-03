@@ -44,6 +44,7 @@ public final class TimeShift {
 	}
 
 	public static void request(ServerPlayer player) {
+		if (!GauntletConfig.get().allowTimeShift) return;
 		GauntletConfig cfg = GauntletConfig.get();
 		ItemStack gauntlet = GauntletState.activeGauntlet(player);
 		if (gauntlet.isEmpty() || !GauntletState.inserted(gauntlet).contains(Stone.TIME)) {

@@ -1,5 +1,6 @@
 package com.dantemorrigan.gauntlet.power;
 
+import com.dantemorrigan.gauntlet.CoopRules;
 import com.dantemorrigan.gauntlet.GauntletConfig;
 import com.dantemorrigan.gauntlet.GauntletState;
 import com.dantemorrigan.gauntlet.ModComponents;
@@ -133,6 +134,7 @@ public final class PowerAbility {
 		Entity direct = hit instanceof EntityHitResult eh ? eh.getEntity() : null;
 		AABB area = new AABB(impact, impact).inflate(radius);
 		for (Entity e : level.getEntities(player, area, e -> e instanceof LivingEntity le && le.isAlive() && !e.isSpectator())) {
+			if (!CoopRules.canAffect(player, e)) continue;
 			double dist = e.position().distanceTo(impact);
 			if (e != direct && dist > radius) continue;
 			float falloff = e == direct ? 1f : (float) Math.max(0.25, 1.0 - dist / radius);

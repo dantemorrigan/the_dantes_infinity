@@ -1,5 +1,7 @@
 package com.dantemorrigan.gauntlet.extractor;
 
+import com.dantemorrigan.gauntlet.CoopRules;
+import com.dantemorrigan.gauntlet.GauntletConfig;
 import com.dantemorrigan.gauntlet.GauntletState;
 import com.dantemorrigan.gauntlet.ModComponents;
 import com.dantemorrigan.gauntlet.ModItems;
@@ -196,7 +198,7 @@ public final class StoneExtraction {
 		if (s == null || !s.channeling) return;
 		ServerLevel level = p.level();
 		Entity found = level.getEntity(s.target);
-		if (!(found instanceof LivingEntity target) || !target.isAlive()) {
+		if (!(found instanceof LivingEntity target) || !target.isAlive() || !canExtract(p, target)) {
 			abort(p, extractor, s, null, true);
 			return;
 		}
@@ -301,13 +303,17 @@ public final class StoneExtraction {
 		notice(p, Component.translatable("extractor.infinity_gauntlet.returned", inside.getHoverName()), true);
 	}
 
+	private static boolean canExtract(ServerPlayer owner, LivingEntity target) {
+		return !(target instanceof ServerPlayer) || GauntletConfig.get().extractorPlayerTheft && CoopRules.canAffect(owner, target);
+	}
+
 	private static LivingEntity findTarget(ServerPlayer p) {
 		Vec3 eye = p.getEyePosition();
 		Vec3 look = p.getLookAngle();
 		Vec3 end = eye.add(look.scale(RANGE));
 		AABB box = p.getBoundingBox().expandTowards(look.scale(RANGE)).inflate(1.0);
 		EntityHitResult hit = ProjectileUtil.getEntityHitResult(p, eye, end, box,
-				e -> e != p && !e.isSpectator() && e.isAlive() && e instanceof LivingEntity le && !GauntletState.activeGauntlet(le).isEmpty(), RANGE * RANGE);
+				e -> e != p && !e.isSpectator() && e.isAlive() && e instanceof LivingEntity le && canExtract(p, le) && !GauntletState.activeGauntlet(le).isEmpty(), RANGE * RANGE);
 		if (hit == null || !(hit.getEntity() instanceof LivingEntity target) || !p.hasLineOfSight(target)) return null;
 		return target;
 	}

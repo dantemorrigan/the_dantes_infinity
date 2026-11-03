@@ -1,5 +1,6 @@
 package com.dantemorrigan.gauntlet.snap;
 
+import com.dantemorrigan.gauntlet.GauntletConfig;
 import com.dantemorrigan.gauntlet.GauntletState;
 import com.dantemorrigan.gauntlet.InfinityGauntlet;
 import com.dantemorrigan.gauntlet.ModComponents;
@@ -125,6 +126,7 @@ public final class InfinitySnap {
 
 	/** Starts the snap (already validated: six stones, gauntlet intact, normal world). */
 	public static void cast(ServerPlayer player) {
+		if (!GauntletConfig.get().allowInfinitySnap) return;
 		ItemStack gauntlet = GauntletState.activeGauntlet(player);
 		if (gauntlet.isEmpty() || snapped(gauntlet) || !CASTS.isEmpty()) return;
 		CASTS.put(player.getUUID(), new Cast(player.tickCount, gauntlet.copy()));

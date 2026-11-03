@@ -152,6 +152,7 @@ public final class CelestialApocalypse {
 
 	/** Start the event (also used by the debug command). The event clock starts at the end of the lock. */
 	public static boolean start(ServerPlayer player, String body) {
+		if (!GauntletConfig.get().allowCelestialDestruction) return false;
 		if (!player.level().dimension().equals(Level.OVERWORLD)
 				|| com.dantemorrigan.gauntlet.space.PlanetDestruction.isBusy(player)) return false;
 		MinecraftServer server = player.level().getServer();
@@ -333,10 +334,11 @@ public final class CelestialApocalypse {
 		RandomSource rnd = level.getRandom();
 		BlockState ground = level.getBlockState(BlockPos.containing(m.to()).below());
 		float power = Mth.lerp((m.size() + rnd.nextFloat()) / 3f, cfg.craterPowerMin, cfg.craterPowerMax);
-		level.explode(null, m.to().x, m.to().y + 0.5, m.to().z, power, true, Level.ExplosionInteraction.TNT);
+		level.explode(null, m.to().x, m.to().y + 0.5, m.to().z, power, cfg.abilityBlockChanges,
+				cfg.abilityBlockChanges ? Level.ExplosionInteraction.TNT : Level.ExplosionInteraction.NONE);
 		// Extra fires around the crater rim.
 		int radius = Math.round(power) + 2;
-		for (int i = 0; i < 6 + m.size() * 4; i++) {
+		for (int i = 0; cfg.abilityBlockChanges && i < 6 + m.size() * 4; i++) {
 			BlockPos p = level.getHeightmapPos(Heightmap.Types.MOTION_BLOCKING,
 					BlockPos.containing(m.to().x + rnd.nextGaussian() * radius, m.to().y, m.to().z + rnd.nextGaussian() * radius));
 			if (level.getBlockState(p).isAir() && BaseFireBlock.canBePlacedAt(level, p, net.minecraft.core.Direction.UP)) {

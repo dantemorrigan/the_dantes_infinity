@@ -63,6 +63,11 @@ public final class AbilityController {
     }
     public static String reason(ServerPlayer p,Ability a) {
         if(!p.isAlive() || p.isSpectator()) return "unavailable";
+        GauntletConfig config = GauntletConfig.get();
+        if (a == Ability.PLANET && !config.allowPlanetDestruction
+                || a == Ability.CELESTIAL && !config.allowCelestialDestruction
+                || a == Ability.SNAP && !config.allowInfinitySnap
+                || a == Ability.DAY_NIGHT && !config.allowTimeShift) return "disabled";
         if(p.containerMenu!=p.inventoryMenu) return "busy";
         if(com.dantemorrigan.gauntlet.snap.InfinitySnap.snapped(GauntletState.wornGauntlet(p))) return "broken";
         ItemStack g=GauntletState.activeGauntlet(p);

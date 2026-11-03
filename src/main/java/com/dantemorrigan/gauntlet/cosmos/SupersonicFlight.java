@@ -1,5 +1,6 @@
 package com.dantemorrigan.gauntlet.cosmos;
 
+import com.dantemorrigan.gauntlet.CoopRules;
 import com.dantemorrigan.gauntlet.net.ModNetwork;
 import net.fabricmc.fabric.api.event.lifecycle.v1.*;
 import net.fabricmc.fabric.api.networking.v1.*;
@@ -26,7 +27,7 @@ public final class SupersonicFlight {
         boolean sonic;
         Flight(ServerPlayer p) { previous=p.position(); level=p.level(); }
     }
-    private record Blast(ServerLevel level, ArrayDeque<BlockPos> blocks, ArrayDeque<BlockPos> fire) {}
+    private record Blast(ServerPlayer owner, ServerLevel level, ArrayDeque<BlockPos> blocks, ArrayDeque<BlockPos> fire) {}
     public static void init() {
         ServerTickEvents.END_SERVER_TICK.register(SupersonicFlight::tick);
         ServerPlayConnectionEvents.DISCONNECT.register((h,s)->FLIGHTS.remove(h.getPlayer().getUUID()));
@@ -70,17 +71,21 @@ public final class SupersonicFlight {
         int budget=256;
         while(budget>0 && !BLASTS.isEmpty()) {
             Blast b=BLASTS.peekFirst();
+            if (server.getPlayerList().getPlayer(b.owner().getUUID()) != b.owner()) {
+                BLASTS.removeFirst();
+                continue;
+            }
             while(budget>0 && !b.blocks().isEmpty()) {
                 BlockPos pos=b.blocks().removeFirst();budget--;
-                if(!b.level().hasChunkAt(pos)) continue;
+                if(!CoopRules.canEdit(b.owner(), b.level(), pos)) continue;
                 var state=b.level().getBlockState(pos);
-                if(!state.isAir() && !state.is(Blocks.BEDROCK) && state.getDestroySpeed(b.level(),pos)>=0)
+                if(!state.isAir() && !state.hasBlockEntity() && !state.is(Blocks.BEDROCK) && state.getDestroySpeed(b.level(),pos)>=0)
                     b.level().setBlock(pos,Blocks.AIR.defaultBlockState(),Block.UPDATE_ALL);
             }
             while(budget>0 && b.blocks().isEmpty() && !b.fire().isEmpty()) {
                 BlockPos pos=b.fire().removeFirst();budget--;
                 var state=Blocks.FIRE.defaultBlockState();
-                if(b.level().hasChunkAt(pos) && b.level().getBlockState(pos).isAir() && state.canSurvive(b.level(),pos))
+                if(CoopRules.canEdit(b.owner(), b.level(), pos) && b.level().getBlockState(pos).isAir() && state.canSurvive(b.level(),pos))
                     b.level().setBlock(pos,state,Block.UPDATE_ALL);
             }
             if(b.blocks().isEmpty() && b.fire().isEmpty()) BLASTS.removeFirst();
@@ -100,7 +105,7 @@ public final class SupersonicFlight {
             double t=length<.001?0:Math.max(0,Math.min(1,center.subtract(from).dot(segment)/length));
             if(center.distanceToSqr(from.add(segment.scale(t)))>2.56) continue;
             var state=p.level().getBlockState(pos);
-            if(vegetation(state) && state.getDestroySpeed(p.level(),pos)>=0) {
+            if(CoopRules.canEdit(p, p.level(), pos) && vegetation(state) && state.getDestroySpeed(p.level(),pos)>=0) {
                 p.level().setBlock(pos,Blocks.AIR.defaultBlockState(),Block.UPDATE_ALL);
                 if(--budget==0) break;
             }
@@ -134,8 +139,9 @@ public final class SupersonicFlight {
         // Search the entire cavity after excavation, so ground and wall impacts can both ignite surviving surfaces.
         for(BlockPos pos:BlockPos.betweenClosed(center.offset(-r,-r-1,-r),center.offset(r,r,r)))
             if(Vec3.atCenterOf(pos).distanceTo(point)<=radius+1 && Math.floorMod(pos.getX()*31+pos.getY()*17+pos.getZ()*13,4)==0) fire.add(pos.immutable());
-        if(BLASTS.size()<8) BLASTS.addLast(new Blast(level,blocks,fire));
+        if(BLASTS.size()<8) BLASTS.addLast(new Blast(p,level,blocks,fire));
         for(var entity:level.getEntities(p,new AABB(point,point).inflate(radius*1.8),e->e instanceof LivingEntity && e.isAlive() && !e.isSpectator())) {
+            if (!CoopRules.canAffect(p, entity)) continue;
             Vec3 away=entity.position().subtract(point); double distance=away.length();
             double force=Math.max(0,1-distance/(radius*1.8));
             entity.hurtServer(level,p.damageSources().playerAttack(p),(float)(28*force));

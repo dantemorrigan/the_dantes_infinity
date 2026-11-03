@@ -1,5 +1,6 @@
 package com.dantemorrigan.gauntlet.power;
 
+import com.dantemorrigan.gauntlet.CoopRules;
 import com.dantemorrigan.gauntlet.*;
 import com.dantemorrigan.gauntlet.net.ModNetwork;
 import com.dantemorrigan.gauntlet.space.PlanetDestruction;
@@ -127,7 +128,7 @@ public final class InfinityBeam {
             for (int x = -bound; x <= bound; x++) for (int y = -bound; y <= bound; y++) for (int z = -bound; z <= bound; z++) {
                 BlockPos pos = origin.offset(x, y, z);
                 if (!visited.add(pos.asLong()) || pos.getCenter().distanceToSqr(center) > r * r
-                        || pos.getCenter().distanceToSqr(c.owner.position()) < 9 || !c.level.hasChunkAt(pos)) continue;
+                        || pos.getCenter().distanceToSqr(c.owner.position()) < 9 || !CoopRules.canEdit(c.owner, c.level, pos)) continue;
                 var block = c.level.getBlockState(pos);
                 if (block.isAir() || block.getDestroySpeed(c.level, pos) < 0) continue;
                 // No drops, falling-block entities or hundreds of separate explosions per tick.
@@ -143,6 +144,7 @@ public final class InfinityBeam {
         AABB area = new AABB(from, to).inflate(radius + 16);
         for (LivingEntity target : c.level.getEntitiesOfClass(LivingEntity.class, area,
                 e -> e != c.owner && e.isAlive() && !e.isSpectator())) {
+            if (!CoopRules.canAffect(c.owner, target)) continue;
             boolean hit = intersects(target.getBoundingBox().inflate(radius), from, to);
             if (target instanceof EnderDragon dragon) {
                 for (var part : dragon.getSubEntities()) hit |= intersects(part.getBoundingBox().inflate(radius), from, to);

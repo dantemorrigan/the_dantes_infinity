@@ -18,6 +18,17 @@ public final class GauntletConfig {
     // Wheel input options (read on the client); legacy worn-gauntlet RMB is opt-in.
     public boolean abilityWheelToggle = false;
     public boolean legacyRightClickPower = false;
+	// ---- Co-op server rules ----
+	public boolean abilityPvp = true;
+	public boolean abilityBlockChanges = true;
+	public boolean allowPlanetDestruction = true;
+	public boolean allowCelestialDestruction = true;
+	public boolean allowInfinitySnap = true;
+	public boolean allowTimeShift = true;
+	public boolean mindPlayerGrab = true;
+	public boolean soulPlayerDrain = true;
+	public boolean extractorPlayerTheft = true;
+
 	// ---- Power strike (server) ----
 	/** Damage at full charge to the directly hit target. */
 	public float strikeDamage = 18f;

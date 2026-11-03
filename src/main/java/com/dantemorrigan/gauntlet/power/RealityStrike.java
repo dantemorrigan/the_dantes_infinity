@@ -1,5 +1,6 @@
 package com.dantemorrigan.gauntlet.power;
 
+import com.dantemorrigan.gauntlet.CoopRules;
 import com.dantemorrigan.gauntlet.GauntletConfig;
 import com.dantemorrigan.gauntlet.GauntletState;
 import com.dantemorrigan.gauntlet.Stone;
@@ -157,16 +158,22 @@ public final class RealityStrike {
 	private static void tick(MinecraftServer server) {
 		for (Iterator<Wave> it = WAVES.iterator(); it.hasNext(); ) {
 			Wave w = it.next();
+			ServerPlayer owner = server.getPlayerList().getPlayer(w.caster);
+			if (owner == null || !owner.isAlive() || owner.level() != w.level) {
+				it.remove();
+				continue;
+			}
 			double front = ++w.tick * WAVE_SPEED;
 			// Ground turns red as the wave passes.
 			int changed = 0;
 			while (!w.columns.isEmpty() && w.columns.getFirst().dist <= front) {
 				Column col = w.columns.removeFirst();
+				if (!CoopRules.canEdit(owner, w.level, col.ground)) continue;
 				BlockState now = w.level.getBlockState(col.ground);
-				if (now.isAir() || now.hasBlockEntity()) continue;
+				if (now.isAir() || now.hasBlockEntity() || now.getDestroySpeed(w.level, col.ground) < 0) continue;
 				w.level.setBlock(col.ground, Blocks.REDSTONE_BLOCK.defaultBlockState(), 3);
 				BlockPos above = col.ground.above();
-				if (col.fire && w.level.getBlockState(above).canBeReplaced() && w.level.getFluidState(above).isEmpty()) {
+				if (col.fire && CoopRules.canEdit(owner, w.level, above) && w.level.getBlockState(above).canBeReplaced() && w.level.getFluidState(above).isEmpty()) {
 					w.level.setBlock(above, Blocks.FIRE.defaultBlockState(), 3);
 				}
 				if (changed++ % 3 == 0) {
@@ -196,7 +203,7 @@ public final class RealityStrike {
 			// Mobs the wave reaches become red butterflies and dissolve.
 			while (!w.mobs.isEmpty() && w.mobs.getFirst().position().distanceTo(w.center) <= front + 0.5) {
 				Mob mob = w.mobs.removeFirst();
-				if (!mob.isAlive()) continue;
+				if (!mob.isAlive() || mob.level() != w.level) continue;
 				Vec3 at = mob.position().add(0, mob.getBbHeight() / 2, 0);
 				send(w.level, at, new ModNetwork.RealityFx(3, at, new Vec3(mob.getBbWidth(), mob.getBbHeight(), 0)));
 				w.level.playSound(null, mob.blockPosition(), SoundEvents.AMETHYST_CLUSTER_BREAK, SoundSource.HOSTILE, 1.0F, 1.4F);
