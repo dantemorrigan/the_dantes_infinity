@@ -1,6 +1,7 @@
 package com.dantemorrigan.gauntlet;
 
 import com.dantemorrigan.gauntlet.power.MindStone;
+import com.dantemorrigan.gauntlet.power.RealityStrike;
 import com.dantemorrigan.gauntlet.power.SpaceStone;
 import com.dantemorrigan.gauntlet.power.SoulStone;
 import java.util.HashMap;
@@ -21,7 +22,6 @@ import net.minecraft.world.phys.Vec3;
 
 final class LooseStoneItem extends Item {
 	private static final Map<UUID, Hold> HOLDS = new HashMap<>();
-	private static final Map<LivingEntity, Long> SLAMS = new HashMap<>();
 
 	private record Hold(LivingEntity target, InteractionHand hand, Vec3 anchor, long until) {}
 
@@ -56,6 +56,12 @@ final class LooseStoneItem extends Item {
 			return true;
 		}
 
+		if (stone == Stone.REALITY) {
+			if (!RealityStrike.strikeLoose(player)) return false;
+			player.getCooldowns().addCooldown(player.getItemInHand(hand), 100);
+			return true;
+		}
+
 		if (stone == Stone.MIND) {
 			Hold hold = HOLDS.get(player.getUUID());
 			if (hold != null && hold.hand() == hand && validHold(player, hold)) {
@@ -69,16 +75,9 @@ final class LooseStoneItem extends Item {
 		}
 
 		LivingEntity target = MindStone.lookTarget(player, 8);
-		if (target == null || !player.hasLineOfSight(target) || SLAMS.containsKey(target)
+		if (target == null || !player.hasLineOfSight(target)
 				|| HOLDS.values().stream().anyMatch(hold -> hold.target() == target)) return false;
 		long now = player.level().getGameTime();
-		if (stone == Stone.REALITY) {
-			launch(target, new Vec3(0, 1.7, 0));
-			burst(target, Stone.REALITY, 24);
-			SLAMS.put(target, now + 19);
-			player.getCooldowns().addCooldown(player.getItemInHand(hand), 100);
-			return true;
-		}
 		if (stone == Stone.MIND) {
 			burst(target, Stone.MIND, 16);
 			HOLDS.put(player.getUUID(), new Hold(target, hand, target.position().add(0, 2, 0), now + 80));
@@ -103,14 +102,6 @@ final class LooseStoneItem extends Item {
 			if (owner.level().getGameTime() % 5 == 0) burst(hold.target(), Stone.MIND, 4);
 			launch(hold.target(), hold.anchor().subtract(hold.target().position()).scale(0.45));
 			return false;
-		});
-		SLAMS.entrySet().removeIf(entry -> {
-			LivingEntity target = entry.getKey();
-			if (!target.isAlive() || target.isRemoved()) return true;
-			if (target.level().getGameTime() < entry.getValue()) return false;
-			launch(target, new Vec3(0, -2.8, 0));
-			burst(target, Stone.REALITY, 28);
-			return true;
 		});
 	}
 

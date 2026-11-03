@@ -126,7 +126,7 @@
   "extractor.infinity_gauntlet.victim_lost": "%s вытянули из перчатки!",
   "tooltip.infinity_gauntlet.loose_power": "Смертелен в любой руке.",
   "tooltip.infinity_gauntlet.loose_space": "ПКМ: телепорт на ближайшую поверхность под прицелом.",
-  "tooltip.infinity_gauntlet.loose_reality": "ПКМ: высоко подбрасывает моба и швыряет его вниз.",
+  "tooltip.infinity_gauntlet.loose_reality": "ПКМ: красная волна наносит мобам урон в радиусе 4 блоков.",
   "tooltip.infinity_gauntlet.loose_mind": "ПКМ: поднимает и удерживает моба. Повторный ПКМ: бросок с уроном при столкновении.",
   "tooltip.infinity_gauntlet.loose_time": "ПКМ: отматывает твою позицию и здоровье. В Белой пустоте отменяет щелчок.",
   "tooltip.infinity_gauntlet.loose_soul": "ПКМ: извлекает одну душу. Перезарядка — 20 секунд."

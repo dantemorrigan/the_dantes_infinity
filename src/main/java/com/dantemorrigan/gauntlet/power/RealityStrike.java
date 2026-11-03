@@ -46,6 +46,9 @@ import java.util.UUID;
 public final class RealityStrike {
 	private static final double WAVE_SPEED = 0.9; // blocks per tick
 
+	private static final double LOOSE_RADIUS = 4;
+	private static final float LOOSE_DAMAGE = 4;
+
 	private record Column(BlockPos ground, double dist, boolean fire) {}
 
 	private static final class Wave {
@@ -54,14 +57,16 @@ public final class RealityStrike {
 		final UUID caster;
 		final List<Column> columns;
 		final List<Mob> mobs;
+		final boolean loose;
 		int tick;
 
-		Wave(ServerLevel level, Vec3 center, UUID caster, List<Column> columns, List<Mob> mobs) {
+		Wave(ServerLevel level, Vec3 center, UUID caster, List<Column> columns, List<Mob> mobs, boolean loose) {
 			this.level = level;
 			this.center = center;
 			this.caster = caster;
 			this.columns = columns;
 			this.mobs = mobs;
+			this.loose = loose;
 		}
 	}
 
@@ -109,19 +114,35 @@ public final class RealityStrike {
 		}
 		columns.sort(Comparator.comparingDouble(Column::dist));
 
-		// Everyone around (bosses are too real; your own pets and named mobs are spared).
-		List<Mob> mobs = new ArrayList<>(level.getEntitiesOfClass(Mob.class, new AABB(center, center).inflate(r, r * 0.6, r), m -> m.isAlive()
-				&& !(m instanceof EnderDragon) && !(m instanceof WitherBoss) && !m.hasCustomName()
-				&& !(m instanceof OwnableEntity o && player.getUUID().equals(o.getOwnerReference() != null ? o.getOwnerReference().getUUID() : null))
-				&& m.position().distanceTo(center) <= r + 1));
-		mobs.sort(Comparator.comparingDouble(m -> m.position().distanceToSqr(center)));
-
-		WAVES.add(new Wave(level, center, player.getUUID(), columns, mobs));
+		WAVES.add(new Wave(level, center, player.getUUID(), columns, targets(player, center, r, 1), false));
 		player.swing(InteractionHand.OFF_HAND, true);
 		GauntletState.setInUse(g, EnumSet.of(Stone.REALITY));
 		send(level, center, new ModNetwork.RealityFx(4, center, new Vec3(r, 0, 0)));
 		level.playSound(null, c, SoundEvents.GENERIC_EXPLODE.value(), SoundSource.PLAYERS, 1.4F, 0.55F);
 		level.playSound(null, c, SoundEvents.AMETHYST_BLOCK_BREAK, SoundSource.PLAYERS, 2.0F, 0.5F);
+	}
+
+	public static boolean strikeLoose(ServerPlayer player) {
+		if (SpaceManager.inSpace(player) || player.isSpectator()) return false;
+		ServerLevel level = player.level();
+		Vec3 center = player.position();
+		WAVES.add(new Wave(level, center, player.getUUID(), new ArrayList<>(),
+				targets(player, center, LOOSE_RADIUS, 0), true));
+		send(level, center, new ModNetwork.RealityFx(4, center, new Vec3(LOOSE_RADIUS, 0, 0)));
+		level.playSound(null, player.blockPosition(), SoundEvents.GENERIC_EXPLODE.value(), SoundSource.PLAYERS, 0.8F, 0.85F);
+		return true;
+	}
+
+	private static List<Mob> targets(ServerPlayer player, Vec3 center, double r, double reachPadding) {
+		ServerLevel level = player.level();
+		// Everyone around (bosses are too real; your own pets and named mobs are spared).
+		List<Mob> mobs = new ArrayList<>(level.getEntitiesOfClass(Mob.class, new AABB(center, center).inflate(r, r * 0.6, r), m -> m.isAlive()
+				&& !(m instanceof EnderDragon) && !(m instanceof WitherBoss) && !m.hasCustomName()
+				&& !(m instanceof OwnableEntity o && player.getUUID().equals(o.getOwnerReference() != null ? o.getOwnerReference().getUUID() : null))
+				&& m.position().distanceTo(center) <= r + reachPadding));
+		mobs.sort(Comparator.comparingDouble(m -> m.position().distanceToSqr(center)));
+
+		return mobs;
 	}
 
 	private static void send(ServerLevel level, Vec3 at, ModNetwork.RealityFx fx) {
@@ -132,6 +153,22 @@ public final class RealityStrike {
 		for (Iterator<Wave> it = WAVES.iterator(); it.hasNext(); ) {
 			Wave w = it.next();
 			double front = ++w.tick * WAVE_SPEED;
+			if (w.loose) {
+				ServerPlayer caster = server.getPlayerList().getPlayer(w.caster);
+				if (caster == null || caster.level() != w.level || front > LOOSE_RADIUS + WAVE_SPEED) {
+					it.remove();
+					continue;
+				}
+				w.mobs.removeIf(mob -> {
+					double distance = mob.position().distanceTo(w.center);
+					if (!mob.isAlive() || mob.level() != w.level || distance > LOOSE_RADIUS) return true;
+					if (distance > front) return false;
+					mob.hurtServer(w.level, caster.damageSources().playerAttack(caster), LOOSE_DAMAGE);
+					return true;
+				});
+				if (w.mobs.isEmpty()) it.remove();
+				continue;
+			}
 			// Ground turns red as the wave passes.
 			int changed = 0;
 			while (!w.columns.isEmpty() && w.columns.getFirst().dist <= front) {

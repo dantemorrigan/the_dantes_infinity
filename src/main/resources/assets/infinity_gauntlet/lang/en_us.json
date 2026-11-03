@@ -126,7 +126,7 @@
   "extractor.infinity_gauntlet.victim_lost": "Your %s was pulled out of the gauntlet!",
   "tooltip.infinity_gauntlet.loose_power": "Lethal when held in either hand.",
   "tooltip.infinity_gauntlet.loose_space": "Right-click: teleport to a nearby surface.",
-  "tooltip.infinity_gauntlet.loose_reality": "Right-click: launch the targeted mob up and slam it down.",
+  "tooltip.infinity_gauntlet.loose_reality": "Right-click: send out a red wave that damages mobs within 4 blocks.",
   "tooltip.infinity_gauntlet.loose_mind": "Right-click: lift and hold a mob. Right-click again to throw it and deal impact damage.",
   "tooltip.infinity_gauntlet.loose_time": "Right-click: rewind your position and health. In the White Void, undo the Snap.",
   "tooltip.infinity_gauntlet.loose_soul": "Right-click: extract one soul. Cooldown: 20 seconds."
