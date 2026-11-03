@@ -529,7 +529,7 @@ public final class MindStone {
 			out = out.lengthSqr() < 1e-4 ? new Vec3(0, 1, 0) : out.normalize();
 			fb.setDeltaMovement(base.add(out.scale(spread * (0.5 + rnd.nextDouble()))).add(0, spread * 0.6, 0));
 			fb.dropItem = false;
-			fb.setHurtsEntities(1.5f, 20);
+			// Impact damage is applied above with the caster and PvP rules; debris only settles.
 			level.addFreshEntity(fb);
 		}
 	}
