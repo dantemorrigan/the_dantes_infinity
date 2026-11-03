@@ -28,6 +28,7 @@ public final class CosmosClient {
     private static Vec3 velocity = Vec3.ZERO, previous;
     private static float intensity;
     private static boolean lastBoost;
+    private static int lastFlash=-1000;
     private static net.minecraft.resources.ResourceKey<Level> lastDimension;
     private static KeyMapping key(String name, int code) {
         return KeyMappingHelper.registerKeyMapping(new KeyMapping("key.infinity_gauntlet."+name, InputConstants.Type.KEYSYM, code, ClientPower.CATEGORY));
@@ -121,7 +122,7 @@ public final class CosmosClient {
         if(locked) velocity=Vec3.ZERO;
         p.setDeltaMovement(velocity); p.fallDistance=0;
         intensity+=( (boost||warp>0?1:0)-intensity)*.16f;
-        if(boost && !lastBoost) flash();
+        if(boost && !lastBoost && ticks-lastFlash>120) { flash(); lastFlash=ticks; }
         lastBoost=boost;
         if(intensity>.15f || inCosmos() || atmosphere()>.2f) effects(mc,look);
         String speed=String.format(java.util.Locale.ROOT,"%.0f",velocity.length()*20);

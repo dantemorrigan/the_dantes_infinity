@@ -53,7 +53,8 @@ public final class SupersonicFlight {
                 }
             } else {
                 f.fastTicks=0;
-                if(speed<THRESHOLD*.7 && ++f.belowTicks>12) f.sonic=false;
+                // Hysteresis: the boom is one-shot per sustained run; re-arm only after a real slow-down (~2 s well below threshold).
+                if(speed<THRESHOLD*.5) { if(++f.belowTicks>40) f.sonic=false; } else f.belowTicks=0;
             }
             if(f.sonic && f.cooldown==0 && p.tickCount-f.lastFast<=8) {
                 pruneTrees(p,f.previous.add(0,.9,0),now.add(0,.9,0).add(f.velocity.normalize().scale(1.6)));
