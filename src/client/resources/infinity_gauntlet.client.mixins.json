@@ -9,6 +9,7 @@
 		"FogRendererMixin",
 		"HumanoidModelMixin",
 		"ItemInHandRendererMixin",
+		"ItemModelResolverMixin",
 		"KeyboardInputMixin",
 		"SkyRendererMixin"
 	],
