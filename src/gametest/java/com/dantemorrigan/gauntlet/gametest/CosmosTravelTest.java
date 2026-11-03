@@ -35,8 +35,10 @@ public class CosmosTravelTest implements FabricClientGameTest {
             java.util.function.Consumer<CosmosRoutes.Destination> warpAimed=t -> {
                 sp.getServer().runCommand(String.format(java.util.Locale.ROOT,"execute as @p at @p run tp @s ~ ~ ~ facing %.1f %.1f %.1f",t.x(),t.y(),t.z()));
                 ctx.waitTicks(10);
+                // Software rendering starves the server: wait for the real cooldown, then cast and wait for arrival.
+                for(int i=0;i<60 && sp.getServer().computeOnServer(server -> CosmosTravel.warpCooldown(server.getPlayerList().getPlayers().getFirst())>0);i++) ctx.waitTicks(20);
                 sp.getServer().runOnServer(server -> CosmosTravel.action(server.getPlayerList().getPlayers().getFirst(),2));
-                ctx.waitTicks(70);
+                ctx.waitFor(mc->mc.player.position().distanceToSqr(t.arrivalX(),t.arrivalY(),t.arrivalZ())<400,1200);
             };
             for(int i=0;i<CosmosRoutes.ALL.size();i++) {
                 if(i==CosmosRoutes.EARTH) continue;
