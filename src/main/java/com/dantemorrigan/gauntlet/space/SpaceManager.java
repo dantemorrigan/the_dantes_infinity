@@ -2,6 +2,7 @@ package com.dantemorrigan.gauntlet.space;
 
 import com.dantemorrigan.gauntlet.InfinityGauntlet;
 import com.dantemorrigan.gauntlet.net.ModNetwork;
+import com.mojang.serialization.Codec;
 import net.fabricmc.fabric.api.attachment.v1.AttachmentRegistry;
 import net.fabricmc.fabric.api.attachment.v1.AttachmentType;
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
@@ -19,6 +20,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.portal.TeleportTransition;
 import net.minecraft.world.phys.Vec3;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -35,6 +37,31 @@ public final class SpaceManager {
 			.persistent(SpaceRecord.CODEC)
 			.copyOnDeath()
 			.buildAndRegister(InfinityGauntlet.id("space_record"));
+
+	private static final AttachmentType<List<String>> REVERSED = AttachmentRegistry.<List<String>>builder()
+			.persistent(Codec.STRING.listOf()).buildAndRegister(InfinityGauntlet.id("reversed_planets"));
+
+	private static String eventKey(SpaceRecord record) {
+		return record.returnDimension().toString() + "/" + record.eventStartTime() + "/" + record.seed();
+	}
+
+	public static boolean sameEvent(SpaceRecord first, SpaceRecord second) {
+		return eventKey(first).equals(eventKey(second));
+	}
+
+	public static void markReversed(MinecraftServer server, SpaceRecord record) {
+		List<String> old = server.overworld().getAttached(REVERSED);
+		String key = eventKey(record);
+		if (old != null && old.contains(key)) return;
+		List<String> events = old == null ? new ArrayList<>() : new ArrayList<>(old);
+		events.add(key);
+		server.overworld().setAttached(REVERSED, events);
+	}
+
+	private static boolean reversed(MinecraftServer server, SpaceRecord record) {
+		List<String> events = server.overworld().getAttached(REVERSED);
+		return events != null && events.contains(eventKey(record));
+	}
 
 	public static void init() {
 		ServerTickEvents.END_SERVER_TICK.register(SpaceManager::tick);
@@ -53,6 +80,10 @@ public final class SpaceManager {
 			ServerPlayer player = handler.getPlayer();
 			SpaceRecord record = player.getAttached(RECORD);
 			if (record != null) {
+				if (reversed(server, record)) {
+					returnFromSpace(player);
+					return;
+				}
 				if (record.returnDimension().equals(Level.OVERWORLD))
 					com.dantemorrigan.gauntlet.celestial.CelestialApocalypse.stop(server);
 				if (!inSpace(player)) sendToSpace(player, record, ageOf(server, record));

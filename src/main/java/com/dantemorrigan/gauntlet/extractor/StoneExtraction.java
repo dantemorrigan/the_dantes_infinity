@@ -76,6 +76,11 @@ public final class StoneExtraction {
 
 	public static void init() {
 		ServerTickEvents.END_SERVER_TICK.register(StoneExtraction::serverTick);
+		net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> {
+			UUID owner = handler.getPlayer().getUUID();
+			SESSIONS.remove(owner);
+			LAST_NOTICE.remove(owner);
+		});
 		ServerLifecycleEvents.SERVER_STOPPED.register(s -> {SESSIONS.clear(); LAST_NOTICE.clear();});
 	}
 
@@ -248,6 +253,7 @@ public final class StoneExtraction {
 		SESSIONS.remove(p.getUUID());
 		ItemStack stone = GauntletState.takeStone(gauntlet, s.stone);
 		if (stone.isEmpty()) {
+			notice(p, Component.translatable("extractor.infinity_gauntlet.lost"), true);
 			setState(extractor, 0);
 			fx(p, FX_FAIL, target, s.stone, 0);
 			p.stopUsingItem();

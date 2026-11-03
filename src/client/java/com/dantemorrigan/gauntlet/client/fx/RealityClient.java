@@ -79,6 +79,10 @@ public final class RealityClient {
 	private static final Map<BlockPos, BlockState> HIDDEN = new HashMap<>();
 	/** Other entities currently casting (for the charge aura). */
 	private static final Set<Integer> CASTERS = new HashSet<>();
+	private record Inversion(Vec3 center, long expires) {}
+	private static final Map<Integer, Inversion> INVERSIONS = new HashMap<>();
+	private static ClientLevel inversionLevel;
+	private static int renderedCaster = -1;
 	private static int liveBudget;
 
 	/** A press shorter than this (ticks) is a tap → Reality strike. */
@@ -110,31 +114,64 @@ public final class RealityClient {
 
 	private static void state(int entityId, boolean on, Vec3 c) {
 		Minecraft mc = Minecraft.getInstance();
-		if (on) CASTERS.add(entityId);
-		else CASTERS.remove(entityId);
-		if (mc.player == null || entityId != mc.player.getId()) {
-			if (on) ClientPower.spawn(ModParticles.REALITY_CHARGE, c.add(0, 1, 0), entityId, 0, 0);
-			else ClientPower.spawn(ModParticles.REALITY_RESTORE, c.add(0, 0.06, 0), 0, 1.2, 0);
-			return;
+		if (mc.level == null || mc.player == null) return;
+		if (inversionLevel != mc.level) {
+			restore(true);
+			inversionLevel = mc.level;
 		}
 		if (on) {
-			restore(true);
-			active = true;
-			center = c;
-			age = 0;
-			releaseAge = -1;
-			level = mc.level;
-			yaw = prevYaw = mc.player.getYRot();
-			ClientPower.spawn(ModParticles.REALITY_CHARGE, FistPosition.of(mc.player, 1f), entityId, 0, 0);
-		} else if (active) {
-			active = false;
-			releaseAge = 0;
-			releaseFrom = foldProgress(0);
-			// Open fist: cracks close, a restoring ring rolls out.
-			ClientPower.spawn(ModParticles.REALITY_RESTORE, center.add(0, 0.06, 0), 0, 1.4, 0);
-			ClientPower.spawn(ModParticles.REALITY_FRACTURE, center.add(0, 0.05, 0), 0, 1.2, 0);
-			Cutscene.shake(0.3f, 10);
+			if (!INVERSIONS.containsKey(entityId)) {
+				ClientPower.spawn(ModParticles.REALITY_CHARGE, c.add(0, 1, 0), entityId, 0, 0);
+			}
+			INVERSIONS.put(entityId, new Inversion(c, mc.level.getGameTime() + 60));
+			CASTERS.add(entityId);
+		} else {
+			INVERSIONS.remove(entityId);
+			CASTERS.remove(entityId);
 		}
+	}
+
+	private static void chooseInversion(Minecraft mc) {
+		if (inversionLevel != mc.level) {
+			restore(true);
+			inversionLevel = mc.level;
+		}
+		INVERSIONS.entrySet().removeIf(entry -> {
+			if (entry.getValue().expires() > mc.level.getGameTime()) return false;
+			CASTERS.remove(entry.getKey());
+			return true;
+		});
+		int selected = -1;
+		double best = 64 * 64;
+		for (var entry : INVERSIONS.entrySet()) {
+			int id = entry.getKey();
+			if (id == mc.player.getId()) {
+				selected = id;
+				break;
+			}
+			double distance = mc.player.position().distanceToSqr(entry.getValue().center());
+			if (distance < best) {
+				selected = id;
+				best = distance;
+			}
+		}
+		if (selected == renderedCaster && active) return;
+		if (selected < 0) {
+			if (active) {
+				releaseFrom = foldProgress(0);
+				active = false;
+				releaseAge = 0;
+				ClientPower.spawn(ModParticles.REALITY_RESTORE, center.add(0, 0.06, 0), 0, 1.4, 0);
+			}
+			return;
+		}
+		restore(false);
+		renderedCaster = selected;
+		active = true;
+		center = INVERSIONS.get(selected).center();
+		level = mc.level;
+		Entity caster = mc.level.getEntity(selected);
+		yaw = prevYaw = caster == null ? 0 : caster.getYRot();
 	}
 
 	private static void fx(int kind, Vec3 pos, Vec3 vel) {
@@ -193,11 +230,13 @@ public final class RealityClient {
 			restore(true);
 			return;
 		}
+		chooseInversion(mc);
 		liveBudget = Math.max(0, liveBudget - 4);
 		prevYaw = yaw;
 		if (active) {
 			age++;
-			yaw += Mth.wrapDegrees(mc.player.getYRot() - yaw) * 0.15f; // the parting follows your hand (gaze) smoothly
+			Entity caster = mc.level.getEntity(renderedCaster);
+			if (caster != null) yaw += Mth.wrapDegrees(caster.getYRot() - yaw) * 0.15f;
 			if (age == T_CRACKS) cracks(mc);
 			if (age == T_FOLD) {
 				capture(mc);
@@ -330,7 +369,11 @@ public final class RealityClient {
 		active = false;
 		releaseAge = -1;
 		age = 0;
-		if (abort) CASTERS.clear();
+		renderedCaster = -1;
+		if (abort) {
+			CASTERS.clear();
+			INVERSIONS.clear();
+		}
 	}
 
 	// ------------------------------------------------------------------ the inversion

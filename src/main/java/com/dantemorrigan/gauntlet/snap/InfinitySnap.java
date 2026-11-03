@@ -87,6 +87,9 @@ public final class InfinitySnap {
 			.copyOnDeath()
 			.buildAndRegister(InfinityGauntlet.id("snap_record"));
 
+	private static final AttachmentType<List<Long>> REVERSED = AttachmentRegistry.<List<Long>>builder()
+			.persistent(Codec.LONG.listOf()).buildAndRegister(InfinityGauntlet.id("reversed_snaps"));
+
 	private record Cast(int started, ItemStack before) {}
 
 	private static final Map<UUID, Cast> CASTS = new HashMap<>();
@@ -123,7 +126,7 @@ public final class InfinitySnap {
 	/** Starts the snap (already validated: six stones, gauntlet intact, normal world). */
 	public static void cast(ServerPlayer player) {
 		ItemStack gauntlet = GauntletState.activeGauntlet(player);
-		if (gauntlet.isEmpty() || snapped(gauntlet) || CASTS.containsKey(player.getUUID())) return;
+		if (gauntlet.isEmpty() || snapped(gauntlet) || !CASTS.isEmpty()) return;
 		CASTS.put(player.getUUID(), new Cast(player.tickCount, gauntlet.copy()));
 		GauntletState.setInUse(gauntlet, EnumSet.allOf(Stone.class));
 		ModNetwork.GestureFx gesture = new ModNetwork.GestureFx(player.getId(), 1);
@@ -141,6 +144,10 @@ public final class InfinitySnap {
 				continue;
 			}
 			SnapRecord record = p.getAttached(RECORD);
+			if (record != null && p.isAlive() && reversed(server, record.event())) {
+				restore(p);
+				continue;
+			}
 			if (record != null && !inVoid(p) && p.isAlive() && p.tickCount > 20) sendToVoid(p); // relog / respawn / other exits
 			if (inVoid(p)) {
 				p.fallDistance = 0;
@@ -203,10 +210,22 @@ public final class InfinitySnap {
 	 * Time stone used on its own in the White Void: rewind everyone erased by the same snap.
 	 * Returns false when there is nothing to rewind.
 	 */
+	private static boolean reversed(MinecraftServer server, long event) {
+		List<Long> events = server.overworld().getAttached(REVERSED);
+		return events != null && events.contains(event);
+	}
+
 	public static boolean rewind(ServerPlayer user) {
 		SnapRecord record = user.getAttached(RECORD);
 		if (record == null || !inVoid(user)) return false;
 		if (REWINDS.containsKey(user.getUUID())) return true;
+		MinecraftServer server = user.level().getServer();
+		if (!reversed(server, record.event())) {
+			List<Long> old = server.overworld().getAttached(REVERSED);
+			List<Long> events = old == null ? new ArrayList<>() : new ArrayList<>(old);
+			events.add(record.event());
+			server.overworld().setAttached(REVERSED, events);
+		}
 		for (ServerPlayer p : user.level().getServer().getPlayerList().getPlayers()) {
 			SnapRecord r = p.getAttached(RECORD);
 			if (r == null || r.event() != record.event() || REWINDS.containsKey(p.getUUID())) continue;

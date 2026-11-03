@@ -132,10 +132,11 @@ public final class TimeAbility {
 
 		SpaceRecord record = player.getAttached(SpaceManager.RECORD);
 		if (record != null && SpaceManager.inSpace(player)) {
+			SpaceManager.markReversed(player.level().getServer(), record);
 			// Undo the destruction for everyone who lived through the same event.
 			for (ServerPlayer p : player.level().getServer().getPlayerList().getPlayers()) {
 				SpaceRecord r = p.getAttached(SpaceManager.RECORD);
-				if (r != null && r.eventStartTime() == record.eventStartTime() && SpaceManager.inSpace(p) && !ACTIVE.containsKey(p.getUUID())) {
+				if (r != null && SpaceManager.sameEvent(record, r) && SpaceManager.inSpace(p) && !ACTIVE.containsKey(p.getUUID())) {
 					ACTIVE.put(p.getUUID(), new Rewind(List.of(), true, cfg.timeWorldRewindTicks));
 					ServerPlayNetworking.send(p, new ModNetwork.TimeRewindFx(p.getId(), true, cfg.timeWorldRewindTicks));
 				}

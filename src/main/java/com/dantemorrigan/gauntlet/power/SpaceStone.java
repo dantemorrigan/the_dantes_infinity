@@ -7,6 +7,7 @@ import com.dantemorrigan.gauntlet.Stone;
 import com.dantemorrigan.gauntlet.net.ModNetwork;
 import com.dantemorrigan.gauntlet.space.SpaceManager;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
+import net.fabricmc.fabric.api.entity.event.v1.ServerEntityWorldChangeEvents;
 import net.fabricmc.fabric.api.networking.v1.PlayerLookup;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
@@ -81,9 +82,14 @@ public final class SpaceStone {
 
 	public static void init() {
 		ServerTickEvents.END_SERVER_TICK.register(SpaceStone::tick);
-		ServerPlayConnectionEvents.JOIN.register((h, s, server) -> {
-			for (Portal p : PORTALS) if (p.level == h.getPlayer().level()) ServerPlayNetworking.send(h.getPlayer(), p.packet());
-		});
+		ServerPlayConnectionEvents.JOIN.register((h, s, server) -> syncPortals(h.getPlayer()));
+		ServerEntityWorldChangeEvents.AFTER_PLAYER_CHANGE_WORLD.register((player, origin, destination) -> syncPortals(player));
+	}
+
+	private static void syncPortals(ServerPlayer player) {
+		for (Portal portal : PORTALS) {
+			if (portal.level == player.level()) ServerPlayNetworking.send(player, portal.packet());
+		}
 	}
 
 	private static ItemStack gauntletWithSpace(ServerPlayer player) {
