@@ -31,9 +31,9 @@ public final class AbilityWheelScreen extends Screen {
     private boolean finished;
     public AbilityWheelScreen() {super(Component.translatable("ability.infinity_gauntlet.wheel"));stone=AbilityInput.selected().stone==null?Stone.POWER:AbilityInput.selected().stone;}
     @Override public boolean isPauseScreen() {return false;}
-    private float scale() {return Math.max(.35f,Math.min(1.05f,Math.min((width-16)/360f,(height-64)/360f)));}
+    private float scale() {return Math.max(.35f,Math.min(1.05f,Math.min((width-16)/360f,(height-95)/360f)));}
     private double cx() {return width/2.0;}
-    private double cy() {return (height-55)/2.0;}
+    private double cy() {return (height-55)/2.0+9;}
     private boolean hit(double mx,double my,double x,double y,double r) {return Math.pow((mx-cx())/scale()-x,2)+Math.pow((my-cy())/scale()-y,2)<=r*r;}
     public double[] abilityPoint(Ability a) { // Used by visual tests and keyboard accessibility, same geometry as the renderer.
         var list=Ability.of(stone,CosmosClient.inCosmos());int i=list.indexOf(a);if(i<0)return new double[]{cx(),cy()};
@@ -65,8 +65,14 @@ public final class AbilityWheelScreen extends Screen {
         if(pending!=null && pending!=stone && System.nanoTime()-hoverSince>=140_000_000L) {stone=pending;hovered=null;}
     }
     private void finish() {
-        if(finished) return;finished=true;
+        if(finished) return;
         Ability a=keyboard!=null?keyboard:hovered;
+        if(submenu==0 && (a==Ability.PORTAL || a==Ability.DESTINATIONS)) {
+            submenu=a==Ability.PORTAL?1:2;target=-1;keyboard=null;hovered=null;pending=null;
+            return; // Keep destinations visible after releasing V; click or Enter confirms.
+        }
+        if(submenu!=0 && (target<0 || !destinationAllowed(target))) return;
+        finished=true;
         if(submenu!=0 && target>=0) {
             Ability chosen=submenu==1?Ability.PORTAL:Ability.WARP;
             if(destinationAllowed(target)) AbilityInput.choose(chosen,target);
@@ -118,7 +124,7 @@ public final class AbilityWheelScreen extends Screen {
     }
     @Override public void extractRenderState(GuiGraphicsExtractor g,int mx,int my,float delta) {
         pointer(mx,my);g.fill(0,0,width,height,0x9C090811);
-        text(g,Component.translatable("ability.infinity_gauntlet.wheel"),width/2,8,0xFFF4D68D);
+        text(g,Component.translatable("ability.infinity_gauntlet.wheel").withStyle(net.minecraft.ChatFormatting.BOLD),width/2,8,0xFFF4D68D);
         blit(g,"wheel_frame",(int)(cx()-128*scale()),(int)(cy()-128*scale()),256*scale(),256*scale(),256,256);
         if(submenu==0) {
             for(int i=0;i<6;i++) {
@@ -127,6 +133,7 @@ public final class AbilityWheelScreen extends Screen {
             }
             for(Ability a:Ability.of(stone,CosmosClient.inCosmos())) {
                 double[] p=abilityPoint(a);button(g,(p[0]-cx())/scale(),(p[1]-cy())/scale(),null,a,a==(keyboard!=null?keyboard:hovered),AbilityInput.selectable(a),stone,48);
+                if(stone==Stone.MIND) text(g,AbilityInput.title(a),(int)p[0],(int)(p[1]+27*scale()),AbilityInput.selectable(a)?color(stone):0xFF85818A);
             }
             button(g,-140,135,null,Ability.BEAM,(keyboard!=null?keyboard:hovered)==Ability.BEAM,AbilityInput.selectable(Ability.BEAM),Stone.MIND,48);
             button(g,0,0,GauntletState.activeGauntlet(Minecraft.getInstance().player),null,false,true,stone,68);
@@ -134,7 +141,8 @@ public final class AbilityWheelScreen extends Screen {
             int count=submenu==1?3:CosmosRoutes.ALL.size();
             for(int i=0;i<count;i++) {
                 double a=Math.toRadians(-90+360.0*i/count);double x=Math.cos(a)*115,y=Math.sin(a)*115;
-                button(g,x,y,null,submenu==1?Ability.PORTAL:Ability.WARP,i==target,destinationAllowed(i),Stone.SPACE,54);
+                button(g,x,y,null,null,i==target,destinationAllowed(i),Stone.SPACE,54);
+                blit(g,"icons_64/"+(submenu==1?"portal_"+new String[]{"nether","end","overworld"}[i]:"route_"+CosmosRoutes.ALL.get(i).id()),(float)(cx()+(x-16)*scale()),(float)(cy()+(y-16)*scale()),32*scale(),32*scale(),64,64);
                 Component label=submenu==1?Component.translatable("ability.infinity_gauntlet.dimension."+new String[]{"nether","end","overworld"}[i]):Component.translatable("cosmos.infinity_gauntlet."+CosmosRoutes.ALL.get(i).id());
                 text(g,label,(int)(cx()+x*scale()),(int)(cy()+(y+34)*scale()),destinationAllowed(i)?0xFFDEE8F9:0xFF85818A);
             }
@@ -145,9 +153,12 @@ public final class AbilityWheelScreen extends Screen {
         if(focus==null && submenu==0) focus=AbilityInput.last(stone);
         int y=height-48;
         blit(g,"tooltip_panel",8,y-10,width-16,55,320,80);
-        if(focus!=null && submenu==0) {
+        if(submenu==0 && hit(mx,my,0,0,34)) {
+            text(g,Component.translatable("container.infinity_gauntlet.gauntlet"),width/2,y,0xFFF4D68D);
+            text(g,Component.translatable("ability.infinity_gauntlet.open_inventory"),width/2,y+12,0xFFE1D9E8);
+        } else if(focus!=null && submenu==0) {
             text(g,AbilityInput.title(focus),width/2,y,color(focus.stone==null?Stone.MIND:focus.stone));
-            text(g,focus==Ability.DESTINATIONS?Component.translatable("ability.infinity_gauntlet.open_submenu"):AbilityInput.hint(focus),width/2,y+12,0xFFE1D9E8);
+            text(g,(focus==Ability.DESTINATIONS || focus==Ability.PORTAL)?Component.translatable("ability.infinity_gauntlet.open_submenu",AbilityInput.WHEEL.getTranslatedKeyMessage()):AbilityInput.hint(focus),width/2,y+12,0xFFE1D9E8);
         } else text(g,Component.translatable("ability.infinity_gauntlet.pick_destination"),width/2,y,0xFFDED7EA);
         text(g,Component.translatable("ability.infinity_gauntlet.wheel_help",AbilityInput.WHEEL.getTranslatedKeyMessage()),width/2,y+26,0xFF9BA7BB);
     }
@@ -160,12 +171,11 @@ public final class AbilityWheelScreen extends Screen {
         if(selected) blit(g,"selection_halo",px-2,py-2,s+4,s+4,64,64);
         if(stack!=null) item(g,stack,px+s*.2f,py+s*.2f,s*.6f);
         else if(ability!=null) icon(g,ability,px+s*.2f,py+s*.2f,s*.6f);
-        if(!enabled) {g.fill(px,py,(int)(px+s),(int)(py+s),0xA513101B);blit(g,"icons_64/locked",px+s*.62f,py+s*.62f,s*.32f,s*.32f,64,64);}
-        else if(ability!=null && AbilityInput.cooldown(ability)>0) {g.fill(px,py,(int)(px+s),(int)(py+s),0x9013101B);text(g,Component.literal(""+((AbilityInput.cooldown(ability)+19)/20)),(int)(px+s/2),(int)(py+s/2-4),0xFFFFDE82);}
+        if(!enabled) {blit(g,"icons_64/locked",px+s*.62f,py+s*.62f,s*.32f,s*.32f,64,64);}
+        else if(ability!=null && AbilityInput.cooldown(ability)>0) {text(g,Component.literal(""+((AbilityInput.cooldown(ability)+19)/20)),(int)(px+s/2),(int)(py+s/2-4),0xFFFFDE82);}
     }
     public static void icon(GuiGraphicsExtractor g,Ability a,float x,float y,float size) {
-        if(a==Ability.STRIKE || a==Ability.REALITY_STRIKE) {item(g,GauntletState.activeGauntlet(Minecraft.getInstance().player),x,y,size);return;}
-        String id=a==Ability.DROP?"back":a==Ability.FLIGHT&&CosmosClient.flying()?"flight_disable":a==Ability.GRAB&&AbilityInput.holding()>0?"mind_throw":a.id;
+        String id=a==Ability.WARP?"route_"+CosmosRoutes.ALL.get(Math.floorMod(AbilityInput.route(),CosmosRoutes.ALL.size())).id():a==Ability.PORTAL?"portal_"+new String[]{"nether","end","overworld"}[Math.floorMod(AbilityInput.portal(),3)]:a==Ability.FLIGHT&&CosmosClient.flying()?"flight_disable":a==Ability.GRAB&&AbilityInput.holding()>0?"mind_throw":a.id;
         blit(g,"icons_64/"+id,x,y,size,size,64,64);
     }
     private static void item(GuiGraphicsExtractor g,ItemStack stack,float x,float y,float size) {

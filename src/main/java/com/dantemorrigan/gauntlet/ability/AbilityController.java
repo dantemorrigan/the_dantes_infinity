@@ -100,10 +100,20 @@ public final class AbilityController {
         if(a.stone!=Stone.MIND) MindStone.drop(p);
         p.setAttached(SELECTED,a.id);sync(p);
     }
-    /** 0 start, 1 release, 2 cancel. No client timing, targets or world coordinates are accepted. */
+    /** 0 start, 1 release, 2 cancel, 3 contextual alternate. No client timing, targets or world coordinates are accepted. */
     public static void action(ServerPlayer p,int action) {
         if(action==2) {cancel(p);sync(p);return;}
         if(action==1) {release(p);sync(p);return;}
+        if(action==3) {
+            Ability current=selected(p);
+            if(current==Ability.PORTAL) {
+                String why=reason(p,current);
+                if(why.isEmpty() || why.equals("cooldown")) SpaceStone.action(p,1);
+                sync(p);return;
+            }
+            if(current!=Ability.GRAB || !reason(p,Ability.TEAR).isEmpty()) {sync(p);return;}
+            MindStone.action(p,1);sync(p);return;
+        }
         if(action!=0 || HELD.containsKey(p.getUUID()) || CHARGES.containsKey(p.getUUID())) return;
         long now=p.level().getServer().overworld().getGameTime();
         if(now-LAST_START.getOrDefault(p.getUUID(),-100L)<3) return;

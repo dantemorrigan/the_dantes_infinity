@@ -45,21 +45,42 @@ public class AbilityWheelTest implements FabricClientGameTest {
             open(ctx);ctx.getInput().releaseKey(GLFW.GLFW_KEY_R);ctx.getInput().pressKey(GLFW.GLFW_KEY_ESCAPE);close(ctx);
             server.runOnServer(s->{
                 var cow=s.overworld().getAllEntities().iterator();
-                while(cow.hasNext()){var e=cow.next();if(e.getType()==EntityType.COW && e instanceof net.minecraft.world.entity.LivingEntity c && c.getHealth()!=c.getMaxHealth())throw new AssertionError("Opening wheel released the attack");}
+                while(cow.hasNext()){var e=cow.next();if(e.getType()==EntityType.COW && e.entityTags().contains("wheel_test") && e instanceof net.minecraft.world.entity.LivingEntity c && c.getHealth()!=c.getMaxHealth())throw new AssertionError("Opening wheel released the attack");}
                 if(AbilityController.chargeTicks(s.getPlayerList().getPlayers().getFirst())!=0)throw new AssertionError("Charge survived cancellation");
             });
             ctx.getInput().holdKey(GLFW.GLFW_KEY_R);ctx.waitTicks(22);ctx.getInput().releaseKey(GLFW.GLFW_KEY_R);ctx.waitTicks(8);
-            if(server.computeOnServer(s->{for(var e:s.overworld().getAllEntities())if(e.getType()==EntityType.COW && e.isAlive())return true;return false;})) throw new AssertionError("R release did not execute the strike");
+            if(server.computeOnServer(s->{for(var e:s.overworld().getAllEntities())if(e.getType()==EntityType.COW && e.entityTags().contains("wheel_test") && e.isAlive())return true;return false;})) throw new AssertionError("R release did not execute the strike");
             server.runCommand("summon minecraft:cow 0.5 -60 4.5 {NoAI:1b,Tags:[\"wheel_test\"]}");ctx.waitTicks(5);
             choose(ctx,Ability.GRAB,-1);ctx.getInput().pressKey(GLFW.GLFW_KEY_R);ctx.waitFor(mc->AbilityInput.holding()==2,100);
             open(ctx);ctx.takeScreenshot("wheel_mind_safe_release");ctx.getInput().pressKey(GLFW.GLFW_KEY_ESCAPE);close(ctx);
             choose(ctx,Ability.DROP,-1);ctx.getInput().pressKey(GLFW.GLFW_KEY_R);ctx.waitTicks(12);
             server.runOnServer(s->{
                 var p=s.getPlayerList().getPlayers().getFirst();if(MindStone.holding(p))throw new AssertionError("Safe release retained the mob");
-                boolean alive=false;for(var e:s.overworld().getAllEntities())if(e.getType()==EntityType.COW && e.isAlive()){alive=true;if(e.isNoGravity())throw new AssertionError("Mob gravity not restored");}
+                boolean alive=false;for(var e:s.overworld().getAllEntities())if(e.getType()==EntityType.COW && e.entityTags().contains("wheel_test") && e.isAlive()){alive=true;if(e.isNoGravity())throw new AssertionError("Mob gravity not restored");}
                 if(!alive)throw new AssertionError("Release tore the mob apart");
             });
+            // Tear is an actual wheel selection while the mob remains suspended.
+            server.runCommand("kill @e[tag=wheel_test]");
+            server.runCommand("summon minecraft:cow 0.5 -60 4.5 {NoAI:1b,Tags:[\"wheel_test\"]}");ctx.waitTicks(8);
+            choose(ctx,Ability.GRAB,-1);ctx.getInput().pressKey(GLFW.GLFW_KEY_R);ctx.waitFor(mc->AbilityInput.holding()==2,100);
+            open(ctx);ctx.getInput().pressKey(GLFW.GLFW_KEY_RIGHT);ctx.takeScreenshot("wheel_mind_tear_selected");close(ctx);
+            if(!ctx.computeOnClient(mc->AbilityInput.selected()==Ability.TEAR))throw new AssertionError("Wheel did not select tear");
+            ctx.getInput().pressKey(GLFW.GLFW_KEY_R);ctx.waitTicks(GauntletConfig.get().mindRuptureTicks+12);
+            if(server.computeOnServer(s->{for(var e:s.overworld().getAllEntities())if(e.entityTags().contains("wheel_test")&&e.isAlive())return true;return false;}))throw new AssertionError("Selected tear did not kill held mob");
+            // The old modifier gesture has a discoverable equivalent on the unified cast key.
+            server.runCommand("summon minecraft:cow 0.5 -60 4.5 {NoAI:1b,Tags:[\"wheel_test\"]}");ctx.waitTicks(8);
+            choose(ctx,Ability.GRAB,-1);ctx.getInput().pressKey(GLFW.GLFW_KEY_R);ctx.waitFor(mc->AbilityInput.holding()==2,100);
+            ctx.getInput().holdKey(GLFW.GLFW_KEY_LEFT_SHIFT);ctx.getInput().pressKey(GLFW.GLFW_KEY_R);ctx.getInput().releaseKey(GLFW.GLFW_KEY_LEFT_SHIFT);ctx.waitTicks(GauntletConfig.get().mindRuptureTicks+12);
+            if(server.computeOnServer(s->{for(var e:s.overworld().getAllEntities())if(e.entityTags().contains("wheel_test")&&e.isAlive())return true;return false;}))throw new AssertionError("Shift+R did not tear held mob");
             choose(ctx,Ability.PORTAL,0);
+            // Releasing V over Portal keeps its destination menu open.
+            open(ctx);ctx.getInput().pressKey(GLFW.GLFW_KEY_RIGHT);ctx.getInput().pressKey(GLFW.GLFW_KEY_LEFT);
+            ctx.getInput().releaseKey(GLFW.GLFW_KEY_V);ctx.waitTicks(5);
+            if(!ctx.computeOnClient(mc->mc.screen instanceof AbilityWheelScreen))throw new AssertionError("Portal release skipped destination menu");
+            ctx.getInput().pressKey(GLFW.GLFW_KEY_RIGHT);ctx.getInput().pressKey(GLFW.GLFW_KEY_RIGHT);ctx.takeScreenshot("wheel_portal_dimensions");ctx.getInput().pressKey(GLFW.GLFW_KEY_ENTER);ctx.waitFor(mc->mc.screen==null,100);ctx.waitTicks(8);
+            server.runOnServer(s->{var p=s.getPlayerList().getPlayers().getFirst();if(SpaceStone.destination(GauntletState.activeGauntlet(p),p.level())!=1)throw new AssertionError("Wheel did not choose End destination");});
+            ctx.getInput().holdKey(GLFW.GLFW_KEY_LEFT_SHIFT);ctx.getInput().pressKey(GLFW.GLFW_KEY_R);ctx.getInput().releaseKey(GLFW.GLFW_KEY_LEFT_SHIFT);ctx.waitTicks(8);
+
             server.runOnServer(s->{var p=s.getPlayerList().getPlayers().getFirst();if(SpaceStone.destination(GauntletState.activeGauntlet(p),p.level())!=0)throw new AssertionError("Direct portal destination failed");});
             ctx.getInput().pressKey(GLFW.GLFW_KEY_R);ctx.waitTicks(16);ctx.takeScreenshot("wheel_portal_cast");ctx.getInput().pressKey(GLFW.GLFW_KEY_R);ctx.waitTicks(8);
             choose(ctx,Ability.FLIGHT,-1);ctx.getInput().pressKey(GLFW.GLFW_KEY_R);ctx.waitTicks(10);

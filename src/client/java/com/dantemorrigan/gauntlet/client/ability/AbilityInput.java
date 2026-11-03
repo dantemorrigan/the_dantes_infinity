@@ -60,6 +60,7 @@ public final class AbilityInput {
     public static int cooldown(Ability a) { var v=states.getAsJsonObject(a.id);return v==null?0:v.get("cooldown").getAsInt(); }
     public static Component title(Ability a) {
         if(a==Ability.GRAB && holding>0) return Component.translatable("ability.infinity_gauntlet.throw");
+        if(a==Ability.PORTAL) return Component.translatable("ability.infinity_gauntlet.portal_target",Component.translatable("ability.infinity_gauntlet.dimension."+new String[]{"nether","end","overworld"}[Math.floorMod(portal,3)]));
         if(a==Ability.FLIGHT) return Component.translatable(CosmosClient.inCosmos()?"ability.infinity_gauntlet.return_atmosphere":CosmosClient.flying()?"ability.infinity_gauntlet.flight_disable":a.key());
         return Component.translatable(a.key());
     }
@@ -67,6 +68,8 @@ public final class AbilityInput {
         String why=reason(a);
         if(!why.isEmpty()) return why.equals("cooldown")?Component.translatable("ability.infinity_gauntlet.cooldown",(cooldown(a)+19)/20):Component.translatable("ability.infinity_gauntlet.reason."+why);
         if(a==selected && a.hold && charge>0 && button) return Component.translatable("ability.infinity_gauntlet.charge",charge);
+        if(a==Ability.PORTAL) return Component.translatable("ability.infinity_gauntlet.portal_hint",CAST.getTranslatedKeyMessage(),CAST.getTranslatedKeyMessage());
+        if(a==Ability.GRAB && holding==2) return Component.translatable("ability.infinity_gauntlet.tear_hint",CAST.getTranslatedKeyMessage(),CAST.getTranslatedKeyMessage());
         return Component.translatable(a.hold?"ability.infinity_gauntlet.hold_key":"ability.infinity_gauntlet.press_key",CAST.getTranslatedKeyMessage());
     }
     public static void choose(Ability a,int destination) {
@@ -85,7 +88,7 @@ public final class AbilityInput {
         if(mc.player==null || mc.level==null) {reset();return;}
         if(lastLevel!=mc.level) {cancel();lastLevel=mc.level;}
         boolean open=false;while(WHEEL.consumeClick()) open=true;
-        if(open && mc.screen==null && equipped()) {cancel();mc.setScreen(new AbilityWheelScreen());}
+        if(open && mc.screen==null && equipped() && !Cutscene.inputLocked() && !TimeRewindClient.inputLocked()) {cancel();mc.setScreen(new AbilityWheelScreen());}
         if(!CAST.isDown()) releaseGate=false;
         if(!equipped() || !mc.player.isAlive() || mc.screen!=null || !mc.isWindowActive() || Cutscene.inputLocked() || TimeRewindClient.inputLocked()) {
             if(button) cancel();
@@ -94,7 +97,8 @@ public final class AbilityInput {
         if(!CAST.isDown()) releaseGate=false;
         boolean click=false;while(CAST.consumeClick()) click=true;
         if(click && !button && !releaseGate) {
-            ClientPlayNetworking.send(new ModNetwork.AbilityAction(0));button=true;ticks=0;
+            boolean alternate=mc.options.keyShift.isDown() && (selected==Ability.PORTAL || selected==Ability.GRAB && holding==2);
+            ClientPlayNetworking.send(new ModNetwork.AbilityAction(alternate?3:0));button=true;ticks=0;
         }
         if(button) {
             ticks++;

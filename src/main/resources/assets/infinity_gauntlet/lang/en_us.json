@@ -57,7 +57,7 @@
   "ability.infinity_gauntlet.flight_disable": "Disable flight",
   "ability.infinity_gauntlet.return_atmosphere": "Return to atmosphere",
   "ability.infinity_gauntlet.wheel": "GAUNTLET · ABILITIES",
-  "ability.infinity_gauntlet.open_submenu": "Click / Enter — choose destination",
+  "ability.infinity_gauntlet.open_submenu": "Release %s / click / Enter — choose destination",
   "ability.infinity_gauntlet.pick_destination": "Choose a destination; selection does not travel",
   "ability.infinity_gauntlet.wheel_help": "%s — choose · Esc — cancel · PgUp/PgDn — stone",
   "ability.infinity_gauntlet.hold_key": "Hold %s",
@@ -79,5 +79,9 @@
   "key.infinity_gauntlet.ability_cast": "Activate selected ability",
   "ability.infinity_gauntlet.dimension.nether": "Nether",
   "ability.infinity_gauntlet.dimension.end": "End",
-  "ability.infinity_gauntlet.dimension.overworld": "Overworld"
+  "ability.infinity_gauntlet.dimension.overworld": "Overworld",
+  "ability.infinity_gauntlet.open_inventory": "Click — manage stones",
+  "ability.infinity_gauntlet.portal_target": "Portal: %s",
+  "ability.infinity_gauntlet.portal_hint": "%s — open / close · Shift+%s — dimension",
+  "ability.infinity_gauntlet.tear_hint": "%s — throw · Shift+%s — tear apart"
 }
