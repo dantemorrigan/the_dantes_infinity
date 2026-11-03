@@ -1,0 +1,327 @@
+[
+  {
+    "id": "turf_fragment_00",
+    "model": "infinity_gauntlet:planet_destruction/turf_fragment_00",
+    "blueprint": "block_blueprints/turf_fragment_00.json",
+    "description": "Фрагмент поверхности с травой, землёй и каменной изнанкой",
+    "logical_blocks": 64,
+    "visible_cuboids": 67,
+    "model_units_per_logical_block": 2.0,
+    "native_blueprint_to_model_scale": 0.125,
+    "blueprint_center": [
+      0.5,
+      -1.0,
+      0.5
+    ]
+  },
+  {
+    "id": "turf_fragment_01",
+    "model": "infinity_gauntlet:planet_destruction/turf_fragment_01",
+    "blueprint": "block_blueprints/turf_fragment_01.json",
+    "description": "Фрагмент поверхности с травой, землёй и каменной изнанкой",
+    "logical_blocks": 119,
+    "visible_cuboids": 111,
+    "model_units_per_logical_block": 2.0,
+    "native_blueprint_to_model_scale": 0.125,
+    "blueprint_center": [
+      0.5,
+      -1.0,
+      0.5
+    ]
+  },
+  {
+    "id": "turf_fragment_02",
+    "model": "infinity_gauntlet:planet_destruction/turf_fragment_02",
+    "blueprint": "block_blueprints/turf_fragment_02.json",
+    "description": "Фрагмент поверхности с травой, землёй и каменной изнанкой",
+    "logical_blocks": 60,
+    "visible_cuboids": 69,
+    "model_units_per_logical_block": 2.0,
+    "native_blueprint_to_model_scale": 0.125,
+    "blueprint_center": [
+      0.5,
+      -1.0,
+      0.5
+    ]
+  },
+  {
+    "id": "turf_fragment_03",
+    "model": "infinity_gauntlet:planet_destruction/turf_fragment_03",
+    "blueprint": "block_blueprints/turf_fragment_03.json",
+    "description": "Фрагмент поверхности с травой, землёй и каменной изнанкой",
+    "logical_blocks": 113,
+    "visible_cuboids": 113,
+    "model_units_per_logical_block": 2.0,
+    "native_blueprint_to_model_scale": 0.125,
+    "blueprint_center": [
+      0.5,
+      -1.0,
+      0.5
+    ]
+  },
+  {
+    "id": "rock_fragment_00",
+    "model": "infinity_gauntlet:planet_destruction/rock_fragment_00",
+    "blueprint": "block_blueprints/rock_fragment_00.json",
+    "description": "Каменный обломок; оригинальные текстуры породы",
+    "logical_blocks": 33,
+    "visible_cuboids": 26,
+    "model_units_per_logical_block": 2.0,
+    "native_blueprint_to_model_scale": 0.125,
+    "blueprint_center": [
+      0.5,
+      0.5,
+      0.5
+    ]
+  },
+  {
+    "id": "rock_fragment_01",
+    "model": "infinity_gauntlet:planet_destruction/rock_fragment_01",
+    "blueprint": "block_blueprints/rock_fragment_01.json",
+    "description": "Каменный обломок; оригинальные текстуры породы",
+    "logical_blocks": 57,
+    "visible_cuboids": 38,
+    "model_units_per_logical_block": 2.0,
+    "native_blueprint_to_model_scale": 0.125,
+    "blueprint_center": [
+      0.5,
+      0.5,
+      0.5
+    ]
+  },
+  {
+    "id": "rock_fragment_02",
+    "model": "infinity_gauntlet:planet_destruction/rock_fragment_02",
+    "blueprint": "block_blueprints/rock_fragment_02.json",
+    "description": "Каменный обломок; оригинальные текстуры породы",
+    "logical_blocks": 81,
+    "visible_cuboids": 54,
+    "model_units_per_logical_block": 2.0,
+    "native_blueprint_to_model_scale": 0.125,
+    "blueprint_center": [
+      0.5,
+      0.5,
+      0.5
+    ]
+  },
+  {
+    "id": "ruined_house_wall",
+    "model": "infinity_gauntlet:planet_destruction/ruined_house_wall",
+    "blueprint": "block_blueprints/ruined_house_wall.json",
+    "description": "Разломанная деревянная стена на булыжном основании",
+    "logical_blocks": 27,
+    "visible_cuboids": 27,
+    "model_units_per_logical_block": 2.0,
+    "native_blueprint_to_model_scale": 0.125,
+    "blueprint_center": [
+      2.5,
+      1.5,
+      1.0
+    ]
+  },
+  {
+    "id": "ruined_house_floor",
+    "model": "infinity_gauntlet:planet_destruction/ruined_house_floor",
+    "blueprint": "block_blueprints/ruined_house_floor.json",
+    "description": "Обломок пола с уцелевшей стойкой",
+    "logical_blocks": 23,
+    "visible_cuboids": 23,
+    "model_units_per_logical_block": 2.0,
+    "native_blueprint_to_model_scale": 0.125,
+    "blueprint_center": [
+      3.0,
+      2.0,
+      2.0
+    ]
+  },
+  {
+    "id": "uprooted_trunk",
+    "model": "infinity_gauntlet:planet_destruction/uprooted_trunk",
+    "blueprint": "block_blueprints/uprooted_trunk.json",
+    "description": "Ствол с вырванным корневым комом",
+    "logical_blocks": 14,
+    "visible_cuboids": 14,
+    "model_units_per_logical_block": 2.0,
+    "native_blueprint_to_model_scale": 0.125,
+    "blueprint_center": [
+      0.5,
+      2.0,
+      0.5
+    ]
+  },
+  {
+    "id": "planet_intact",
+    "model": "infinity_gauntlet:planet_destruction/planet_intact",
+    "blueprint": "block_blueprints/planet_intact.json",
+    "description": "Целая блочная планета; синяя поверхность — декоративный бетон, не вода",
+    "logical_blocks": 2109,
+    "visible_cuboids": 710,
+    "model_units_per_logical_block": 1.45,
+    "native_blueprint_to_model_scale": 0.090625,
+    "blueprint_center": [
+      0.5,
+      0.5,
+      0.5
+    ]
+  },
+  {
+    "id": "planet_chunk_00",
+    "model": "infinity_gauntlet:planet_destruction/planet_chunk_00",
+    "blueprint": "block_blueprints/planet_chunk_00.json",
+    "description": "Одна из восьми частей планеты с открытым каменным срезом",
+    "logical_blocks": 196,
+    "visible_cuboids": 148,
+    "model_units_per_logical_block": 1.45,
+    "native_blueprint_to_model_scale": 0.090625,
+    "blueprint_center": [
+      -3.5,
+      -3.5,
+      -3.5
+    ],
+    "outward_direction": [
+      -1,
+      -1,
+      -1
+    ]
+  },
+  {
+    "id": "planet_chunk_01",
+    "model": "infinity_gauntlet:planet_destruction/planet_chunk_01",
+    "blueprint": "block_blueprints/planet_chunk_01.json",
+    "description": "Одна из восьми частей планеты с открытым каменным срезом",
+    "logical_blocks": 196,
+    "visible_cuboids": 146,
+    "model_units_per_logical_block": 1.45,
+    "native_blueprint_to_model_scale": 0.090625,
+    "blueprint_center": [
+      -3.5,
+      -3.5,
+      4.5
+    ],
+    "outward_direction": [
+      -1,
+      -1,
+      1
+    ]
+  },
+  {
+    "id": "planet_chunk_02",
+    "model": "infinity_gauntlet:planet_destruction/planet_chunk_02",
+    "blueprint": "block_blueprints/planet_chunk_02.json",
+    "description": "Одна из восьми частей планеты с открытым каменным срезом",
+    "logical_blocks": 196,
+    "visible_cuboids": 148,
+    "model_units_per_logical_block": 1.45,
+    "native_blueprint_to_model_scale": 0.090625,
+    "blueprint_center": [
+      -3.5,
+      4.5,
+      -3.5
+    ],
+    "outward_direction": [
+      -1,
+      1,
+      -1
+    ]
+  },
+  {
+    "id": "planet_chunk_03",
+    "model": "infinity_gauntlet:planet_destruction/planet_chunk_03",
+    "blueprint": "block_blueprints/planet_chunk_03.json",
+    "description": "Одна из восьми частей планеты с открытым каменным срезом",
+    "logical_blocks": 196,
+    "visible_cuboids": 146,
+    "model_units_per_logical_block": 1.45,
+    "native_blueprint_to_model_scale": 0.090625,
+    "blueprint_center": [
+      -3.5,
+      4.5,
+      4.5
+    ],
+    "outward_direction": [
+      -1,
+      1,
+      1
+    ]
+  },
+  {
+    "id": "planet_chunk_04",
+    "model": "infinity_gauntlet:planet_destruction/planet_chunk_04",
+    "blueprint": "block_blueprints/planet_chunk_04.json",
+    "description": "Одна из восьми частей планеты с открытым каменным срезом",
+    "logical_blocks": 196,
+    "visible_cuboids": 148,
+    "model_units_per_logical_block": 1.45,
+    "native_blueprint_to_model_scale": 0.090625,
+    "blueprint_center": [
+      4.5,
+      -3.5,
+      -3.5
+    ],
+    "outward_direction": [
+      1,
+      -1,
+      -1
+    ]
+  },
+  {
+    "id": "planet_chunk_05",
+    "model": "infinity_gauntlet:planet_destruction/planet_chunk_05",
+    "blueprint": "block_blueprints/planet_chunk_05.json",
+    "description": "Одна из восьми частей планеты с открытым каменным срезом",
+    "logical_blocks": 196,
+    "visible_cuboids": 147,
+    "model_units_per_logical_block": 1.45,
+    "native_blueprint_to_model_scale": 0.090625,
+    "blueprint_center": [
+      4.5,
+      -3.5,
+      4.5
+    ],
+    "outward_direction": [
+      1,
+      -1,
+      1
+    ]
+  },
+  {
+    "id": "planet_chunk_06",
+    "model": "infinity_gauntlet:planet_destruction/planet_chunk_06",
+    "blueprint": "block_blueprints/planet_chunk_06.json",
+    "description": "Одна из восьми частей планеты с открытым каменным срезом",
+    "logical_blocks": 196,
+    "visible_cuboids": 148,
+    "model_units_per_logical_block": 1.45,
+    "native_blueprint_to_model_scale": 0.090625,
+    "blueprint_center": [
+      4.5,
+      4.5,
+      -3.5
+    ],
+    "outward_direction": [
+      1,
+      1,
+      -1
+    ]
+  },
+  {
+    "id": "planet_chunk_07",
+    "model": "infinity_gauntlet:planet_destruction/planet_chunk_07",
+    "blueprint": "block_blueprints/planet_chunk_07.json",
+    "description": "Одна из восьми частей планеты с открытым каменным срезом",
+    "logical_blocks": 196,
+    "visible_cuboids": 147,
+    "model_units_per_logical_block": 1.45,
+    "native_blueprint_to_model_scale": 0.090625,
+    "blueprint_center": [
+      4.5,
+      4.5,
+      4.5
+    ],
+    "outward_direction": [
+      1,
+      1,
+      1
+    ]
+  }
+]

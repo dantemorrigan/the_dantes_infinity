@@ -1,0 +1,13 @@
+{
+	"schemaVersion": 1,
+	"id": "infinity_gauntlet_gametest",
+	"version": "1.0.0",
+	"name": "Infinity Gauntlet visual tests",
+	"environment": "*",
+	"entrypoints": {
+		"fabric-client-gametest": ["com.dantemorrigan.gauntlet.gametest.VisualTest"]
+	},
+	"depends": {
+		"infinity_gauntlet": "*"
+	}
+}

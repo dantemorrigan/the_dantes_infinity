@@ -1,0 +1,12 @@
+{
+  "model": {
+    "type": "minecraft:model",
+    "model": "infinity_gauntlet:planet_destruction/uprooted_trunk",
+    "tints": [
+      {
+        "type": "minecraft:constant",
+        "value": 9551193
+      }
+    ]
+  }
+}

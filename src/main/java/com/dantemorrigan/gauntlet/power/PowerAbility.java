@@ -1,0 +1,152 @@
+package com.dantemorrigan.gauntlet.power;
+
+import com.dantemorrigan.gauntlet.GauntletConfig;
+import com.dantemorrigan.gauntlet.GauntletState;
+import com.dantemorrigan.gauntlet.ModComponents;
+import com.dantemorrigan.gauntlet.Stone;
+import com.dantemorrigan.gauntlet.net.ModNetwork;
+import com.dantemorrigan.gauntlet.space.PlanetDestruction;
+import com.dantemorrigan.gauntlet.space.SpaceManager;
+import net.fabricmc.fabric.api.networking.v1.PlayerLookup;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
+import net.minecraft.core.Direction;
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.projectile.ProjectileUtil;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.ClipContext;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.EntityHitResult;
+import net.minecraft.world.phys.HitResult;
+import net.minecraft.world.phys.Vec3;
+
+import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
+
+/** Server side of the Power stone: charged strike and the Planet Destruction trigger. */
+public final class PowerAbility {
+	private static final Map<UUID, Long> ULTIMATE_COOLDOWN = new HashMap<>();
+
+	public static boolean canUse(ServerPlayer player, ItemStack gauntlet) {
+		return GauntletState.activeGauntlet(player) == gauntlet && GauntletState.inserted(gauntlet).contains(Stone.POWER);
+	}
+
+	public static boolean isUltimate(ItemStack gauntlet) {
+		return Boolean.TRUE.equals(gauntlet.get(ModComponents.ULTIMATE_MODE));
+	}
+
+	/** Toggle strike / ultimate. Requested by the client keybind. */
+	public static void toggleMode(ServerPlayer player) {
+		ItemStack gauntlet = GauntletState.activeGauntlet(player);
+		if (gauntlet.isEmpty() || !GauntletState.inserted(gauntlet).contains(Stone.POWER)) {
+			player.sendOverlayMessage(Component.literal("Нужна перчатка с Камнем Силы в левой руке"));
+			return;
+		}
+		boolean ultimate = !isUltimate(gauntlet);
+		gauntlet.set(ModComponents.ULTIMATE_MODE, ultimate);
+		player.sendOverlayMessage(Component.literal(ultimate ? "§5Камень Силы: УНИЧТОЖЕНИЕ ПЛАНЕТЫ" : "§dКамень Силы: силовой удар"));
+		player.level().playSound(null, player.blockPosition(), SoundEvents.BEACON_POWER_SELECT, SoundSource.PLAYERS, 0.6F, ultimate ? 0.6F : 1.4F);
+	}
+
+	/** Called when the player releases the charge. */
+	public static void release(ServerPlayer player, ItemStack gauntlet, int chargeTicks) {
+		GauntletConfig cfg = GauntletConfig.get();
+		GauntletState.setInUse(gauntlet, EnumSet.noneOf(Stone.class));
+		if (!canUse(player, gauntlet) || chargeTicks < cfg.strikeMinChargeTicks) return;
+		if (player.getCooldowns().isOnCooldown(gauntlet)) return;
+
+		HitResult hit = pick(player, cfg.strikeReach);
+		if (isUltimate(gauntlet)) {
+			tryUltimate(player, gauntlet, chargeTicks, hit);
+			return;
+		}
+		strike(player, gauntlet, Math.min(1f, chargeTicks / (float) cfg.strikeFullChargeTicks), hit);
+	}
+
+	private static void tryUltimate(ServerPlayer player, ItemStack gauntlet, int chargeTicks, HitResult hit) {
+		GauntletConfig cfg = GauntletConfig.get();
+		if (chargeTicks < cfg.ultimateChargeTicks) {
+			player.sendOverlayMessage(Component.literal("§5Недостаточно заряда (" + chargeTicks + "/" + cfg.ultimateChargeTicks + ")"));
+			return;
+		}
+		if (!(hit instanceof BlockHitResult block) || hit.getType() != HitResult.Type.BLOCK || block.getDirection() != Direction.UP) {
+			player.sendOverlayMessage(Component.literal("§5Ударь по земле под собой"));
+			return;
+		}
+		if (SpaceManager.inSpace(player)) {
+			player.sendOverlayMessage(Component.literal("§5Здесь нечего разрушать"));
+			return;
+		}
+		long now = player.level().getServer().overworld().getGameTime();
+		Long until = ULTIMATE_COOLDOWN.get(player.getUUID());
+		if (until != null && now < until && !player.isCreative()) {
+			player.sendOverlayMessage(Component.literal("§5Перезарядка: " + (until - now) / 20 + " с"));
+			return;
+		}
+		Vec3 impact = block.getLocation();
+		if (PlanetDestruction.start(player, impact)) {
+			ULTIMATE_COOLDOWN.put(player.getUUID(), now + cfg.ultimateCooldownTicks);
+			GauntletState.setInUse(gauntlet, EnumSet.of(Stone.POWER));
+			player.getCooldowns().addCooldown(gauntlet, cfg.strikeCooldownTicks * 3);
+			sendFx(player.level(), impact, new Vec3(0, 1, 0), 2.0f);
+		}
+	}
+
+	/** Normal power strike: damage + knockback around the impact, then visuals for everyone nearby. */
+	public static void strike(ServerPlayer player, ItemStack gauntlet, float charge, HitResult hit) {
+		GauntletConfig cfg = GauntletConfig.get();
+		ServerLevel level = player.level();
+		Vec3 impact = hit.getLocation();
+		Vec3 normal = hit instanceof BlockHitResult b && hit.getType() == HitResult.Type.BLOCK
+				? Vec3.atLowerCornerOf(b.getDirection().getUnitVec3i())
+				: player.getLookAngle().reverse();
+		float radius = cfg.strikeRadius * (0.5f + 0.5f * charge);
+		float damage = cfg.strikeDamage * (0.35f + 0.65f * charge);
+
+		Entity direct = hit instanceof EntityHitResult eh ? eh.getEntity() : null;
+		AABB area = new AABB(impact, impact).inflate(radius);
+		for (Entity e : level.getEntities(player, area, e -> e instanceof LivingEntity le && le.isAlive() && !e.isSpectator())) {
+			double dist = e.position().distanceTo(impact);
+			if (e != direct && dist > radius) continue;
+			float falloff = e == direct ? 1f : (float) Math.max(0.25, 1.0 - dist / radius);
+			e.hurtServer(level, player.damageSources().playerAttack(player), damage * falloff);
+			Vec3 push = e.position().subtract(impact).multiply(1, 0, 1);
+			if (push.lengthSqr() < 1.0e-4) push = player.getLookAngle().multiply(1, 0, 1);
+			push = push.normalize().scale(cfg.strikeKnockback * charge * falloff);
+			e.push(push.x, 0.35 + 0.3 * charge * falloff, push.z);
+			e.hurtMarked = true;
+		}
+		player.getCooldowns().addCooldown(gauntlet, cfg.strikeCooldownTicks);
+		level.playSound(null, impact.x, impact.y, impact.z, SoundEvents.GENERIC_EXPLODE.value(), SoundSource.PLAYERS, 0.8F + charge, 1.3F - 0.4F * charge);
+		level.playSound(null, impact.x, impact.y, impact.z, SoundEvents.MACE_SMASH_GROUND_HEAVY, SoundSource.PLAYERS, 1.0F, 0.8F);
+		sendFx(level, impact, normal, 0.6f + charge);
+	}
+
+	public static void sendFx(ServerLevel level, Vec3 pos, Vec3 normal, float strength) {
+		ModNetwork.PowerFx fx = new ModNetwork.PowerFx(pos, normal, strength);
+		for (ServerPlayer p : PlayerLookup.around(level, pos, 96)) ServerPlayNetworking.send(p, fx);
+	}
+
+	/** Block or entity in front of the player within reach; misses resolve to the max-reach point. */
+	public static HitResult pick(ServerPlayer player, double reach) {
+		Vec3 eye = player.getEyePosition();
+		Vec3 end = eye.add(player.getLookAngle().scale(reach));
+		BlockHitResult block = player.level().clip(new ClipContext(eye, end, ClipContext.Block.OUTLINE, ClipContext.Fluid.NONE, player));
+		double max = block.getType() == HitResult.Type.MISS ? reach : block.getLocation().distanceTo(eye);
+		Vec3 entityEnd = eye.add(player.getLookAngle().scale(max));
+		AABB box = player.getBoundingBox().expandTowards(player.getLookAngle().scale(max)).inflate(1.0);
+		EntityHitResult entity = ProjectileUtil.getEntityHitResult(player, eye, entityEnd, box,
+				e -> !e.isSpectator() && e.isPickable() && e instanceof LivingEntity, max * max);
+		return entity != null ? entity : block;
+	}
+
+	private PowerAbility() {}
+}

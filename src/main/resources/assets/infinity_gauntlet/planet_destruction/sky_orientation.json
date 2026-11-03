@@ -1,0 +1,50 @@
+{
+  "convention": "right-handed XYZ, +Y up; each face viewed from cube center; UV image origin top left",
+  "face_order": [
+    "positive_x",
+    "negative_x",
+    "positive_y",
+    "negative_y",
+    "positive_z",
+    "negative_z"
+  ],
+  "pixel_directions": {
+    "+X": [
+      1,
+      "-v",
+      "-u"
+    ],
+    "-X": [
+      -1,
+      "-v",
+      "u"
+    ],
+    "+Y": [
+      "u",
+      1,
+      "v"
+    ],
+    "-Y": [
+      "u",
+      -1,
+      "-v"
+    ],
+    "+Z": [
+      "u",
+      "-v",
+      1
+    ],
+    "-Z": [
+      "-u",
+      "-v",
+      -1
+    ]
+  },
+  "face_size": 512,
+  "texture_wrap": "clamp_to_edge",
+  "filter": "nearest",
+  "depth_write": false,
+  "remove_vanilla_sky": true,
+  "remove_vanilla_clouds": true,
+  "notes": "This is custom renderer configuration, not a vanilla resource format."
+}

@@ -1,7 +1,12 @@
 package com.dantemorrigan.gauntlet;
 
 import com.dantemorrigan.gauntlet.menu.ModMenus;
+import com.dantemorrigan.gauntlet.net.ModNetwork;
+import com.dantemorrigan.gauntlet.power.PowerAbility;
+import com.dantemorrigan.gauntlet.space.PlanetDestruction;
+import com.dantemorrigan.gauntlet.space.SpaceManager;
 import net.fabricmc.api.ModInitializer;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.resources.Identifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,11 +17,18 @@ public class InfinityGauntlet implements ModInitializer {
 
 	@Override
 	public void onInitialize() {
+		GauntletConfig.get();
+		ModComponents.init();
+		ModParticles.init();
 		ModItems.init();
 		ModCreativeTab.init();
 		ModMenus.init();
 		GauntletCommand.init();
 		GauntletEffects.init();
+		ModNetwork.init();
+		SpaceManager.init();
+		PlanetDestruction.init();
+		ServerPlayNetworking.registerGlobalReceiver(ModNetwork.ToggleMode.TYPE, (payload, context) -> PowerAbility.toggleMode(context.player()));
 		LOGGER.info("Infinity Gauntlet loaded");
 	}
 

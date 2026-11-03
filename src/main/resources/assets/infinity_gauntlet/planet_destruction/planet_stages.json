@@ -1,0 +1,335 @@
+{
+  "format": "custom scene authoring data, not auto-loaded by Minecraft",
+  "coordinate_space": "logical blueprint blocks centered on original planet origin",
+  "shared_model_units_per_logical_block": 1.45,
+  "renderer_model_scale_for_one_logical_block": 11.03448275862069,
+  "stages": [
+    {
+      "stage": "fractured",
+      "parts": [
+        {
+          "model": "infinity_gauntlet:planet_destruction/planet_chunk_00",
+          "translation_logical_blocks": [
+            -4.2,
+            -4.2,
+            -4.2
+          ],
+          "rotation_degrees": [
+            -1.4,
+            0,
+            -1.4
+          ]
+        },
+        {
+          "model": "infinity_gauntlet:planet_destruction/planet_chunk_01",
+          "translation_logical_blocks": [
+            -4.2,
+            -4.2,
+            5.2
+          ],
+          "rotation_degrees": [
+            1.4,
+            0,
+            -1.4
+          ]
+        },
+        {
+          "model": "infinity_gauntlet:planet_destruction/planet_chunk_02",
+          "translation_logical_blocks": [
+            -4.2,
+            5.2,
+            -4.2
+          ],
+          "rotation_degrees": [
+            -1.4,
+            0,
+            -1.4
+          ]
+        },
+        {
+          "model": "infinity_gauntlet:planet_destruction/planet_chunk_03",
+          "translation_logical_blocks": [
+            -4.2,
+            5.2,
+            5.2
+          ],
+          "rotation_degrees": [
+            1.4,
+            0,
+            -1.4
+          ]
+        },
+        {
+          "model": "infinity_gauntlet:planet_destruction/planet_chunk_04",
+          "translation_logical_blocks": [
+            5.2,
+            -4.2,
+            -4.2
+          ],
+          "rotation_degrees": [
+            -1.4,
+            0,
+            1.4
+          ]
+        },
+        {
+          "model": "infinity_gauntlet:planet_destruction/planet_chunk_05",
+          "translation_logical_blocks": [
+            5.2,
+            -4.2,
+            5.2
+          ],
+          "rotation_degrees": [
+            1.4,
+            0,
+            1.4
+          ]
+        },
+        {
+          "model": "infinity_gauntlet:planet_destruction/planet_chunk_06",
+          "translation_logical_blocks": [
+            5.2,
+            5.2,
+            -4.2
+          ],
+          "rotation_degrees": [
+            -1.4,
+            0,
+            1.4
+          ]
+        },
+        {
+          "model": "infinity_gauntlet:planet_destruction/planet_chunk_07",
+          "translation_logical_blocks": [
+            5.2,
+            5.2,
+            5.2
+          ],
+          "rotation_degrees": [
+            1.4,
+            0,
+            1.4
+          ]
+        }
+      ]
+    },
+    {
+      "stage": "breaking",
+      "parts": [
+        {
+          "model": "infinity_gauntlet:planet_destruction/planet_chunk_00",
+          "translation_logical_blocks": [
+            -6.7,
+            -6.7,
+            -6.7
+          ],
+          "rotation_degrees": [
+            -6.4,
+            0,
+            -6.4
+          ]
+        },
+        {
+          "model": "infinity_gauntlet:planet_destruction/planet_chunk_01",
+          "translation_logical_blocks": [
+            -6.7,
+            -6.7,
+            7.7
+          ],
+          "rotation_degrees": [
+            6.4,
+            0,
+            -6.4
+          ]
+        },
+        {
+          "model": "infinity_gauntlet:planet_destruction/planet_chunk_02",
+          "translation_logical_blocks": [
+            -6.7,
+            7.7,
+            -6.7
+          ],
+          "rotation_degrees": [
+            -6.4,
+            0,
+            -6.4
+          ]
+        },
+        {
+          "model": "infinity_gauntlet:planet_destruction/planet_chunk_03",
+          "translation_logical_blocks": [
+            -6.7,
+            7.7,
+            7.7
+          ],
+          "rotation_degrees": [
+            6.4,
+            0,
+            -6.4
+          ]
+        },
+        {
+          "model": "infinity_gauntlet:planet_destruction/planet_chunk_04",
+          "translation_logical_blocks": [
+            7.7,
+            -6.7,
+            -6.7
+          ],
+          "rotation_degrees": [
+            -6.4,
+            0,
+            6.4
+          ]
+        },
+        {
+          "model": "infinity_gauntlet:planet_destruction/planet_chunk_05",
+          "translation_logical_blocks": [
+            7.7,
+            -6.7,
+            7.7
+          ],
+          "rotation_degrees": [
+            6.4,
+            0,
+            6.4
+          ]
+        },
+        {
+          "model": "infinity_gauntlet:planet_destruction/planet_chunk_06",
+          "translation_logical_blocks": [
+            7.7,
+            7.7,
+            -6.7
+          ],
+          "rotation_degrees": [
+            -6.4,
+            0,
+            6.4
+          ]
+        },
+        {
+          "model": "infinity_gauntlet:planet_destruction/planet_chunk_07",
+          "translation_logical_blocks": [
+            7.7,
+            7.7,
+            7.7
+          ],
+          "rotation_degrees": [
+            6.4,
+            0,
+            6.4
+          ]
+        }
+      ]
+    },
+    {
+      "stage": "aftermath",
+      "parts": [
+        {
+          "model": "infinity_gauntlet:planet_destruction/planet_chunk_00",
+          "translation_logical_blocks": [
+            -10.5,
+            -10.5,
+            -10.5
+          ],
+          "rotation_degrees": [
+            -14.0,
+            0,
+            -14.0
+          ]
+        },
+        {
+          "model": "infinity_gauntlet:planet_destruction/planet_chunk_01",
+          "translation_logical_blocks": [
+            -10.5,
+            -10.5,
+            11.5
+          ],
+          "rotation_degrees": [
+            14.0,
+            0,
+            -14.0
+          ]
+        },
+        {
+          "model": "infinity_gauntlet:planet_destruction/planet_chunk_02",
+          "translation_logical_blocks": [
+            -10.5,
+            11.5,
+            -10.5
+          ],
+          "rotation_degrees": [
+            -14.0,
+            0,
+            -14.0
+          ]
+        },
+        {
+          "model": "infinity_gauntlet:planet_destruction/planet_chunk_03",
+          "translation_logical_blocks": [
+            -10.5,
+            11.5,
+            11.5
+          ],
+          "rotation_degrees": [
+            14.0,
+            0,
+            -14.0
+          ]
+        },
+        {
+          "model": "infinity_gauntlet:planet_destruction/planet_chunk_04",
+          "translation_logical_blocks": [
+            11.5,
+            -10.5,
+            -10.5
+          ],
+          "rotation_degrees": [
+            -14.0,
+            0,
+            14.0
+          ]
+        },
+        {
+          "model": "infinity_gauntlet:planet_destruction/planet_chunk_05",
+          "translation_logical_blocks": [
+            11.5,
+            -10.5,
+            11.5
+          ],
+          "rotation_degrees": [
+            14.0,
+            0,
+            14.0
+          ]
+        },
+        {
+          "model": "infinity_gauntlet:planet_destruction/planet_chunk_06",
+          "translation_logical_blocks": [
+            11.5,
+            11.5,
+            -10.5
+          ],
+          "rotation_degrees": [
+            -14.0,
+            0,
+            14.0
+          ]
+        },
+        {
+          "model": "infinity_gauntlet:planet_destruction/planet_chunk_07",
+          "translation_logical_blocks": [
+            11.5,
+            11.5,
+            11.5
+          ],
+          "rotation_degrees": [
+            14.0,
+            0,
+            14.0
+          ]
+        }
+      ]
+    }
+  ]
+}

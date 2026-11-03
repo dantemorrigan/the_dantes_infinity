@@ -1,0 +1,148 @@
+{
+  "format": "infinity_gauntlet:block_fragment_v1",
+  "minecraft_version": "26.1.2",
+  "description": "Ствол с вырванным корневым комом",
+  "units": "blocks",
+  "palette": [
+    "minecraft:dirt",
+    "minecraft:oak_log"
+  ],
+  "blocks": [
+    {
+      "pos": [
+        -1,
+        -1,
+        -1
+      ],
+      "state": 0,
+      "properties": {}
+    },
+    {
+      "pos": [
+        -1,
+        -1,
+        0
+      ],
+      "state": 0,
+      "properties": {}
+    },
+    {
+      "pos": [
+        -1,
+        -1,
+        1
+      ],
+      "state": 0,
+      "properties": {}
+    },
+    {
+      "pos": [
+        0,
+        -1,
+        -1
+      ],
+      "state": 0,
+      "properties": {}
+    },
+    {
+      "pos": [
+        0,
+        -1,
+        0
+      ],
+      "state": 0,
+      "properties": {}
+    },
+    {
+      "pos": [
+        0,
+        -1,
+        1
+      ],
+      "state": 0,
+      "properties": {}
+    },
+    {
+      "pos": [
+        0,
+        0,
+        0
+      ],
+      "state": 1,
+      "properties": {
+        "axis": "y"
+      }
+    },
+    {
+      "pos": [
+        0,
+        1,
+        0
+      ],
+      "state": 1,
+      "properties": {
+        "axis": "y"
+      }
+    },
+    {
+      "pos": [
+        0,
+        2,
+        0
+      ],
+      "state": 1,
+      "properties": {
+        "axis": "y"
+      }
+    },
+    {
+      "pos": [
+        0,
+        3,
+        0
+      ],
+      "state": 1,
+      "properties": {
+        "axis": "y"
+      }
+    },
+    {
+      "pos": [
+        0,
+        4,
+        0
+      ],
+      "state": 1,
+      "properties": {
+        "axis": "y"
+      }
+    },
+    {
+      "pos": [
+        1,
+        -1,
+        -1
+      ],
+      "state": 0,
+      "properties": {}
+    },
+    {
+      "pos": [
+        1,
+        -1,
+        0
+      ],
+      "state": 0,
+      "properties": {}
+    },
+    {
+      "pos": [
+        1,
+        -1,
+        1
+      ],
+      "state": 0,
+      "properties": {}
+    }
+  ]
+}

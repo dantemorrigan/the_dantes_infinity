@@ -79,3 +79,14 @@ publishing {
 		// retrieving dependencies.
 	}
 }
+
+// Client game tests (visual checks with screenshots): ./gradlew runClientGameTest
+fabricApi {
+	configureTests {
+		createSourceSet = true
+		modId = "infinity_gauntlet_gametest"
+		enableGameTests = false
+		enableClientGameTests = true
+		eula = true
+	}
+}

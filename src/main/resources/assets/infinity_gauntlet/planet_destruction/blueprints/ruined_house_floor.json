@@ -1,0 +1,225 @@
+{
+  "format": "infinity_gauntlet:block_fragment_v1",
+  "minecraft_version": "26.1.2",
+  "description": "Обломок пола с уцелевшей стойкой",
+  "units": "blocks",
+  "palette": [
+    "minecraft:oak_log",
+    "minecraft:oak_planks"
+  ],
+  "blocks": [
+    {
+      "pos": [
+        0,
+        0,
+        0
+      ],
+      "state": 1,
+      "properties": {}
+    },
+    {
+      "pos": [
+        0,
+        0,
+        1
+      ],
+      "state": 1,
+      "properties": {}
+    },
+    {
+      "pos": [
+        0,
+        0,
+        2
+      ],
+      "state": 1,
+      "properties": {}
+    },
+    {
+      "pos": [
+        0,
+        0,
+        3
+      ],
+      "state": 1,
+      "properties": {}
+    },
+    {
+      "pos": [
+        0,
+        1,
+        0
+      ],
+      "state": 0,
+      "properties": {
+        "axis": "y"
+      }
+    },
+    {
+      "pos": [
+        0,
+        2,
+        0
+      ],
+      "state": 0,
+      "properties": {
+        "axis": "y"
+      }
+    },
+    {
+      "pos": [
+        0,
+        3,
+        0
+      ],
+      "state": 0,
+      "properties": {
+        "axis": "y"
+      }
+    },
+    {
+      "pos": [
+        1,
+        0,
+        0
+      ],
+      "state": 1,
+      "properties": {}
+    },
+    {
+      "pos": [
+        1,
+        0,
+        1
+      ],
+      "state": 1,
+      "properties": {}
+    },
+    {
+      "pos": [
+        1,
+        0,
+        2
+      ],
+      "state": 1,
+      "properties": {}
+    },
+    {
+      "pos": [
+        1,
+        0,
+        3
+      ],
+      "state": 1,
+      "properties": {}
+    },
+    {
+      "pos": [
+        2,
+        0,
+        0
+      ],
+      "state": 1,
+      "properties": {}
+    },
+    {
+      "pos": [
+        2,
+        0,
+        1
+      ],
+      "state": 1,
+      "properties": {}
+    },
+    {
+      "pos": [
+        2,
+        0,
+        2
+      ],
+      "state": 1,
+      "properties": {}
+    },
+    {
+      "pos": [
+        2,
+        0,
+        3
+      ],
+      "state": 1,
+      "properties": {}
+    },
+    {
+      "pos": [
+        3,
+        0,
+        0
+      ],
+      "state": 1,
+      "properties": {}
+    },
+    {
+      "pos": [
+        3,
+        0,
+        1
+      ],
+      "state": 1,
+      "properties": {}
+    },
+    {
+      "pos": [
+        3,
+        0,
+        2
+      ],
+      "state": 1,
+      "properties": {}
+    },
+    {
+      "pos": [
+        3,
+        0,
+        3
+      ],
+      "state": 1,
+      "properties": {}
+    },
+    {
+      "pos": [
+        4,
+        0,
+        0
+      ],
+      "state": 1,
+      "properties": {}
+    },
+    {
+      "pos": [
+        4,
+        0,
+        1
+      ],
+      "state": 1,
+      "properties": {}
+    },
+    {
+      "pos": [
+        5,
+        0,
+        0
+      ],
+      "state": 1,
+      "properties": {}
+    },
+    {
+      "pos": [
+        5,
+        0,
+        1
+      ],
+      "state": 1,
+      "properties": {}
+    }
+  ]
+}

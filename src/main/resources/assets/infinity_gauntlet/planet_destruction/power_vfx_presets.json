@@ -1,0 +1,80 @@
+{
+  "schema": "authoring presets; not automatically loaded by Minecraft",
+  "texture_size": [
+    64,
+    64
+  ],
+  "ticks_per_second": 20,
+  "effects": {
+    "power_charge": {
+      "particle_id": "infinity_gauntlet:power_charge",
+      "frames": 4,
+      "ticks_per_frame": 4,
+      "lifetime_ticks": 16,
+      "loop": true,
+      "suggested_full_quad_width_blocks": 0.55,
+      "trigger": "charge",
+      "frame_selection": "min(3, floor(age / ticks_per_frame)) for one-shot; floor(age / ticks_per_frame) % 4 for loop",
+      "collision": false,
+      "gravity": 0,
+      "lighting": "full brightness for energy; normal world lighting for smoke",
+      "alpha": "fade out in final frame; use alpha blending"
+    },
+    "power_impact": {
+      "particle_id": "infinity_gauntlet:power_impact",
+      "frames": 4,
+      "ticks_per_frame": 1,
+      "lifetime_ticks": 4,
+      "loop": false,
+      "suggested_full_quad_width_blocks": 1.2,
+      "trigger": "impact",
+      "frame_selection": "min(3, floor(age / ticks_per_frame)) for one-shot; floor(age / ticks_per_frame) % 4 for loop",
+      "collision": false,
+      "gravity": 0,
+      "lighting": "full brightness for energy; normal world lighting for smoke",
+      "alpha": "fade out in final frame; use alpha blending"
+    },
+    "power_shockwave": {
+      "particle_id": "infinity_gauntlet:power_shockwave",
+      "frames": 4,
+      "ticks_per_frame": 2,
+      "lifetime_ticks": 8,
+      "loop": false,
+      "suggested_full_quad_width_blocks": 3.0,
+      "trigger": "impact",
+      "frame_selection": "min(3, floor(age / ticks_per_frame)) for one-shot; floor(age / ticks_per_frame) % 4 for loop",
+      "collision": false,
+      "gravity": 0,
+      "lighting": "full brightness for energy; normal world lighting for smoke",
+      "alpha": "fade out in final frame; use alpha blending"
+    },
+    "power_sparks_smoke": {
+      "particle_id": "infinity_gauntlet:power_sparks_smoke",
+      "frames": 4,
+      "ticks_per_frame": 3,
+      "lifetime_ticks": 12,
+      "loop": false,
+      "suggested_full_quad_width_blocks": 1.1,
+      "trigger": "impact",
+      "frame_selection": "min(3, floor(age / ticks_per_frame)) for one-shot; floor(age / ticks_per_frame) % 4 for loop",
+      "collision": false,
+      "gravity": 0,
+      "lighting": "full brightness for energy; normal world lighting for smoke",
+      "alpha": "fade out in final frame; use alpha blending"
+    }
+  },
+  "sequence": [
+    {
+      "tick": 0,
+      "effect": "power_impact"
+    },
+    {
+      "tick": 0,
+      "effect": "power_shockwave"
+    },
+    {
+      "tick": 1,
+      "effect": "power_sparks_smoke"
+    }
+  ]
+}

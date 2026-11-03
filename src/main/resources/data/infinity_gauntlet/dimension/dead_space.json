@@ -1,0 +1,13 @@
+{
+  "type": "infinity_gauntlet:dead_space",
+  "generator": {
+    "type": "minecraft:flat",
+    "settings": {
+      "layers": [],
+      "biome": "infinity_gauntlet:dead_space",
+      "lakes": false,
+      "features": false,
+      "structure_overrides": []
+    }
+  }
+}

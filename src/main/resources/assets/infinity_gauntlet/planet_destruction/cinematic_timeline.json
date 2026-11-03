@@ -1,0 +1,71 @@
+{
+  "format": "custom authoring timeline; implement in client renderer",
+  "ticks_per_second": 20,
+  "duration_ticks": 180,
+  "events": [
+    {
+      "tick": 0,
+      "event": "impact",
+      "effect": "power_impact",
+      "camera_shake": 0.25
+    },
+    {
+      "tick": 4,
+      "event": "ground_cracks",
+      "effect": "ground_fracture",
+      "radius_blocks": 3
+    },
+    {
+      "tick": 20,
+      "event": "ground_cracks",
+      "radius_blocks": 12
+    },
+    {
+      "tick": 35,
+      "event": "lift_debris",
+      "count": 24
+    },
+    {
+      "tick": 55,
+      "event": "planet_rift",
+      "effect": "planet_rift"
+    },
+    {
+      "tick": 65,
+      "event": "flash_to_white",
+      "effect": "detonation_flash"
+    },
+    {
+      "tick": 68,
+      "event": "server_transfer_to_void_dimension"
+    },
+    {
+      "tick": 75,
+      "event": "fade_from_white"
+    },
+    {
+      "tick": 80,
+      "event": "reveal_planet",
+      "stage": "fractured"
+    },
+    {
+      "tick": 110,
+      "event": "planet",
+      "stage": "breaking"
+    },
+    {
+      "tick": 150,
+      "event": "planet",
+      "stage": "aftermath"
+    },
+    {
+      "tick": 180,
+      "event": "idle_space"
+    }
+  ],
+  "notes": [
+    "Удар и трещины видны до переноса; дальняя планета появляется после вспышки.",
+    "Не удалять блоки ради визуального эффекта; отрыв отображать клиентскими мешами.",
+    "Перенос и остановку катсцены подтверждает сервер."
+  ]
+}

@@ -48,3 +48,18 @@ networking, key-mapping, rendering, particles, dimensions, data-attachment, item
 ./gradlew build         # jar -> build/libs
 ./gradlew genSources    # исходники Minecraft для чтения
 ```
+
+## Камень Силы / Уничтожение планеты (как устроено)
+- Частицы: `ModParticles` (8 типов) + клиентские провайдеры `client/fx` — кадр по возрасту, петля только у ауры,
+  плоские квады для волны/трещин (нормаль в параметрах), слой TRANSLUCENT, full-bright. Тайминги/размеры читаются
+  из `assets/.../planet_destruction/*_vfx_presets.json`.
+- Пользовательские форматы пака грузит `client/space/PackData`: blueprints, asset_catalog (центры), planet_stages,
+  cinematic_timeline, sky_orientation.
+- Сервер: `power/PowerAbility` (удар/ультимейт), `space/PlanetDestruction` (событие, участники, перенос),
+  `space/FragmentCapture` (снимок блоков без изменения мира), `space/SpaceManager` (измерение, вложение `space_record`).
+- Клиент: `client/cutscene/Cutscene` (таймлайн, дрожь, вспышка, блок ввода, отрыв блоков),
+  `client/space/SpaceScene` (кубмап, планета, энергия, обломки, полёт), `render/BlockMeshes` (кэш моделей блоков с биомным цветом).
+- Рендер в мире: `LevelRenderEvents.COLLECT_SUBMITS` → `submitBlockModel` / `ItemStackRenderState.submit` / `submitCustomGeometry`;
+  `order(-1000)` для неба. Туман в Мёртвом космосе отключён (`FogRendererMixin`), иначе всё дальше render distance чёрное.
+- Перчатка на руке: 3-е лицо — display `thirdperson_lefthand` модели `gauntlet_in_hand` (рассчитан под цепочку
+  ItemInHandLayer); 1-е лицо — `ItemInHandRendererMixin` рисует руку игрока, `AvatarRendererMixin` надевает на неё модель `gauntlet_worn`.

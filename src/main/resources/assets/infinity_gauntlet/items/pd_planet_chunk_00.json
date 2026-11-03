@@ -1,0 +1,12 @@
+{
+  "model": {
+    "type": "minecraft:model",
+    "model": "infinity_gauntlet:planet_destruction/planet_chunk_00",
+    "tints": [
+      {
+        "type": "minecraft:constant",
+        "value": 9551193
+      }
+    ]
+  }
+}

@@ -2,7 +2,14 @@
 	"required": true,
 	"package": "com.dantemorrigan.gauntlet.client.mixin",
 	"compatibilityLevel": "JAVA_25",
-	"client": [],
+	"client": [
+		"AvatarRendererMixin",
+		"CameraMixin",
+		"ClientInputAccessor",
+		"FogRendererMixin",
+		"ItemInHandRendererMixin",
+		"KeyboardInputMixin"
+	],
 	"injectors": {
 		"defaultRequire": 1
 	}
