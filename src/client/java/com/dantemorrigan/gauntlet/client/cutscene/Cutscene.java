@@ -178,6 +178,7 @@ public final class Cutscene {
 	// ---- Lifecycle ----
 
 	public static void start(int id, Vec3 at, int elapsed, int transfer) {
+		com.dantemorrigan.gauntlet.client.celestial.CelestialClient.planetDestroyed();
 		stop();
 		Minecraft mc = Minecraft.getInstance();
 		active = true;

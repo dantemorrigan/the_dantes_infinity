@@ -53,6 +53,8 @@ public final class SpaceManager {
 			ServerPlayer player = handler.getPlayer();
 			SpaceRecord record = player.getAttached(RECORD);
 			if (record != null) {
+				if (record.returnDimension().equals(Level.OVERWORLD))
+					com.dantemorrigan.gauntlet.celestial.CelestialApocalypse.stop(server);
 				if (!inSpace(player)) sendToSpace(player, record, ageOf(server, record));
 				else ServerPlayNetworking.send(player, new ModNetwork.SpaceState(record, ageOf(server, record)));
 			} else if (inSpace(player)) {
@@ -80,6 +82,8 @@ public final class SpaceManager {
 			return false;
 		}
 		player.setAttached(RECORD, record);
+		if (player.level().dimension().equals(Level.OVERWORLD))
+			com.dantemorrigan.gauntlet.celestial.CelestialApocalypse.stop(player.level().getServer());
 		player.fallDistance = 0;
 		player.setNoGravity(true);
 		player.addTag(NO_GRAVITY_TAG);

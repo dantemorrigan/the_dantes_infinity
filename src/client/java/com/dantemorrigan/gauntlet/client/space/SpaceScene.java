@@ -22,21 +22,14 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.SubmitNodeCollector;
-import net.minecraft.client.renderer.item.ItemStackRenderState;
 import net.minecraft.client.renderer.rendertype.RenderTypes;
-import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
-import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.Identifier;
-import net.minecraft.util.ARGB;
 import net.minecraft.util.LightCoordsUtil;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
-import net.minecraft.world.item.ItemDisplayContext;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.biome.Biomes;
 import net.minecraft.world.level.block.state.BlockState;
@@ -47,17 +40,15 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Dead Space scene on the client: cube-map sky, the far planet breaking into eight parts with a full-bright
- * energy layer in the seams, slowly tumbling debris (real captured blocks + prepared blueprints) and inertial
+ * Dead Space scene on the client: cube-map sky, a large irregularly fractured planet with secondary explosions, slowly tumbling debris (real captured blocks + prepared blueprints) and inertial
  * zero-g movement. Geometry is cached per scene; nothing here is an entity.
  */
 public final class SpaceScene {
 	/** Planet placement relative to the scene center, and world blocks per logical blueprint block. */
-	private static final Vec3 PLANET_OFFSET = new Vec3(0, 28, -230);
-	private static final float BLOCKS_PER_LOGICAL = 6f;
+	private static final Vec3 PLANET_OFFSET = new Vec3(0, 35, -420);
+	private static final float BLOCKS_PER_LOGICAL = 9.5f;
 	private static final String[] FACES = {"positive_x", "negative_x", "positive_y", "negative_y", "positive_z", "negative_z"};
 	private static final String[] FACE_KEYS = {"+X", "-X", "+Y", "-Y", "+Z", "-Z"};
-	private static final Identifier ENERGY = InfinityGauntlet.id("textures/environment/dead_space/energy_plane.png");
 
 	private static SpaceRecord record;
 	private static int ageAtReceive;
@@ -65,7 +56,7 @@ public final class SpaceScene {
 	private static Vec3 velocity = Vec3.ZERO;
 
 	private static List<Debris> debris;
-	private static List<ItemStackRenderState> planetParts;
+	private static ShatteredPlanet planet;
 	private static int particleBudget;
 
 	private record Debris(BlockMeshes.Mesh mesh, Vec3 base, Vec3 drift, Vector3f axis, float spin, float phase, float scale) {}
@@ -84,19 +75,20 @@ public final class SpaceScene {
 	}
 
 	public static void enter(SpaceRecord r, int eventAge) {
+		com.dantemorrigan.gauntlet.client.celestial.CelestialClient.planetDestroyed();
 		record = r;
 		ageAtReceive = eventAge;
 		ticksSince = 0;
 		velocity = Vec3.ZERO;
 		debris = null; // rebuilt lazily (needs the new level's registries)
-		planetParts = null;
+		planet = null;
 		PackData.invalidate();
 	}
 
 	public static void leave() {
 		record = null;
 		debris = null;
-		planetParts = null;
+		planet = null;
 		velocity = Vec3.ZERO;
 	}
 
@@ -190,23 +182,19 @@ public final class SpaceScene {
 		String[] prepared = {"turf_fragment_00", "rock_fragment_00", "turf_fragment_01", "rock_fragment_01", "ruined_house_wall",
 				"turf_fragment_02", "rock_fragment_02", "uprooted_trunk", "turf_fragment_03", "ruined_house_floor",
 				"rock_fragment_00", "turf_fragment_01", "rock_fragment_02", "turf_fragment_00", "rock_fragment_01"};
-		for (String id : prepared) {
+		java.util.Map<String, BlockMeshes.Mesh> meshes = new java.util.HashMap<>();
+		for (int piece = 0; piece < prepared.length * 4; piece++) {
+			String id = prepared[piece % prepared.length];
+			int shell = piece / prepared.length;
 			double theta = rnd.nextDouble() * Math.PI * 2;
 			double phi = Math.acos(2 * rnd.nextDouble() - 1);
-			double r = 14 + rnd.nextDouble() * 34;
+			double r = 20 + shell * 65 + rnd.nextDouble() * 45;
 			Vec3 dir = new Vec3(Math.sin(phi) * Math.cos(theta), Math.cos(phi) * 0.6, Math.sin(phi) * Math.sin(theta));
-			debris.add(new Debris(blueprintMesh(id, sourceBiome), SpaceManager.CENTER.add(dir.scale(r)), randomDrift(rnd, 0.008),
-					randomAxis(rnd), 0.1f + rnd.nextFloat() * 0.5f, rnd.nextFloat() * 360, 0.8f + rnd.nextFloat() * 1.4f));
+			debris.add(new Debris(meshes.computeIfAbsent(id, key -> blueprintMesh(key, sourceBiome)), SpaceManager.CENTER.add(dir.scale(r)), randomDrift(rnd, 0.008),
+					randomAxis(rnd), 0.1f + rnd.nextFloat() * 0.5f, rnd.nextFloat() * 360, (0.65f + rnd.nextFloat() * 1.2f) * (1 + shell * .5f)));
 		}
 
-		planetParts = new ArrayList<>();
-		for (int i = 0; i < 8; i++) {
-			ItemStack stack = new ItemStack(Items.PAPER);
-			stack.set(DataComponents.ITEM_MODEL, InfinityGauntlet.id("pd_planet_chunk_0" + i));
-			ItemStackRenderState rs = new ItemStackRenderState();
-			Minecraft.getInstance().getItemModelResolver().updateForTopItem(rs, stack, ItemDisplayContext.NONE, level, null, 0);
-			planetParts.add(rs);
-		}
+		planet = new ShatteredPlanet(record != null ? record.seed() : 1234);
 	}
 
 	private static BlockMeshes.Mesh fragmentMesh(SpaceRecord.Fragment f, Holder<Biome> biome) {
@@ -243,7 +231,7 @@ public final class SpaceScene {
 	private static void render(LevelRenderContext ctx) {
 		Minecraft mc = Minecraft.getInstance();
 		if (!active() || mc.level == null) return;
-		if (debris == null || planetParts == null) build(mc.level);
+		if (debris == null || planet == null) build(mc.level);
 		float partial = mc.getDeltaTracker().getGameTimeDeltaPartialTick(false);
 		Vec3 cam = mc.gameRenderer.getMainCamera().position();
 		PoseStack pose = ctx.poseStack();
@@ -251,16 +239,18 @@ public final class SpaceScene {
 		float age = age(partial);
 		float depthFar = mc.options.getEffectiveRenderDistance() * 16 * 4f;
 
-		renderSky(pose, collector, Math.min(depthFar * 0.8f, 900f));
+		// Every cube corner fits inside the far plane; the background never writes world depth.
+		renderSky(pose, collector, Math.min(depthFar * 0.5f, 900f));
 
 		// Planet: scale the whole layout down if the view distance is short so it stays inside the far plane.
-		float fit = (float) Math.min(1.0, depthFar * 0.6 / (PLANET_OFFSET.length() + 80));
+		float fit = (float) Math.min(1.0, depthFar * 0.82 / (PLANET_OFFSET.length() + 350));
 		Vec3 planetCenter = SpaceManager.CENTER.add(PLANET_OFFSET.scale(fit));
 		renderPlanet(pose, collector, cam, planetCenter, age, BLOCKS_PER_LOGICAL * fit);
+		planet.renderAmbient(pose, collector, cam, SpaceManager.CENTER, age, depthFar * .9f);
 
 		for (Debris d : debris) {
 			Vec3 p = debrisPos(d, age);
-			if (p.distanceToSqr(cam) > 160 * 160) continue;
+			if (p.distanceToSqr(cam) > Math.pow(Math.min(420, depthFar * .9), 2)) continue;
 			pose.pushPose();
 			pose.translate(p.x - cam.x, p.y - cam.y, p.z - cam.z);
 			pose.mulPose(Axis.of(d.axis).rotationDegrees(d.phase + age * d.spin));
@@ -281,7 +271,7 @@ public final class SpaceScene {
 			float[][] uv = {{inset, inset}, {1 - inset, inset}, {1 - inset, 1 - inset}, {inset, 1 - inset}};
 			pose.pushPose();
 			pose.scale(radius, radius, radius);
-			collector.order(-1000).submitCustomGeometry(pose, RenderTypes.text(tex), (p, buffer) -> {
+			collector.order(-1000).submitCustomGeometry(pose, RenderTypes.textSeeThrough(tex), (p, buffer) -> {
 				for (int i = 0; i < 4; i++) quadVertex(buffer, p, corners[i], uv[i]);
 				for (int i = 3; i >= 0; i--) quadVertex(buffer, p, corners[i], uv[i]); // both windings
 			});
@@ -312,79 +302,8 @@ public final class SpaceScene {
 		return a;
 	}
 
-	private static void renderPlanet(PoseStack pose, SubmitNodeCollector collector, Vec3 cam, Vec3 center, float age, float k) {
-		List<PackData.Stage> stages = PackData.stages();
-		if (stages.size() < 3 || planetParts == null) return;
-		float reveal = PackData.timelineTick("reveal_planet", 80);
-		if (age < reveal - 2) return;
-		float breaking = 110, aftermath = 150;
-		for (var e : PackData.timeline()) {
-			if (e.event().equals("planet") && e.data().has("stage")) {
-				String st = e.data().get("stage").getAsString();
-				if (st.equals("breaking")) breaking = e.tick();
-				if (st.equals("aftermath")) aftermath = e.tick();
-			}
-		}
-		int from, to;
-		float t;
-		if (age < breaking) { from = 0; to = 1; t = (age - reveal) / (breaking - reveal); }
-		else if (age < aftermath) { from = 1; to = 2; t = (age - breaking) / (aftermath - breaking); }
-		else { from = 2; to = 2; t = 0; }
-		t = smooth(Mth.clamp(t, 0, 1));
-		float extra = Math.max(0, Math.min(age - aftermath, 24000)); // slow drift after the last stage
-		float modelScale = PackData.modelScalePerLogicalBlock() * k;
-		float maxSep = 0;
-		for (int i = 0; i < Math.min(8, stages.get(0).parts().size()); i++) {
-			PackData.PlanetPart a = stages.get(from).parts().get(i), b = stages.get(to).parts().get(i);
-			float tx = Mth.lerp(t, a.tx(), b.tx()), ty = Mth.lerp(t, a.ty(), b.ty()), tz = Mth.lerp(t, a.tz(), b.tz());
-			Vector3f out = new Vector3f(tx, ty, tz);
-			if (out.lengthSquared() > 1e-4f) out.normalize().mul(extra * 0.0025f);
-			tx += out.x; ty += out.y; tz += out.z;
-			maxSep = Math.max(maxSep, Math.abs(tx));
-			float spin = extra * 0.01f;
-			pose.pushPose();
-			pose.translate(center.x - cam.x + tx * k, center.y - cam.y + ty * k, center.z - cam.z + tz * k);
-			pose.mulPose(Axis.XP.rotationDegrees(Mth.lerp(t, a.rx(), b.rx()) + Math.signum(a.rx()) * spin));
-			pose.mulPose(Axis.YP.rotationDegrees(Mth.lerp(t, a.ry(), b.ry()) + spin * 0.5f));
-			pose.mulPose(Axis.ZP.rotationDegrees(Mth.lerp(t, a.rz(), b.rz()) + Math.signum(a.rz()) * spin));
-			pose.scale(modelScale, modelScale, modelScale);
-			planetParts.get(i).submit(pose, collector, LightCoordsUtil.FULL_BRIGHT, OverlayTexture.NO_OVERLAY, 0);
-			pose.popPose();
-		}
-		renderEnergy(pose, collector, cam, center, age, reveal, (maxSep + 6) * k);
-	}
-
-	/** Separate full-bright layer: three planes through the planet center, visible in the gaps between parts. */
-	private static void renderEnergy(PoseStack pose, SubmitNodeCollector collector, Vec3 cam, Vec3 center, float age, float reveal, float size) {
-		float since = age - reveal;
-		float intensity = since < 0 ? 0 : since < 10 ? since / 10f : Math.max(0.15f, (float) Math.exp(-(since - 10) / 90.0));
-		intensity *= 0.85f + 0.15f * Mth.sin(age * 0.15f);
-		if (intensity <= 0.01f) return;
-		int color = ARGB.colorFromFloat(Math.min(1f, intensity), 1f, 1f, 1f);
-		pose.pushPose();
-		pose.translate(center.x - cam.x, center.y - cam.y, center.z - cam.z);
-		pose.scale(size, size, size);
-		collector.submitCustomGeometry(pose, RenderTypes.eyes(ENERGY), (p, buffer) -> {
-			float[][][] planes = {
-					{{-1, -1, 0}, {1, -1, 0}, {1, 1, 0}, {-1, 1, 0}},
-					{{0, -1, -1}, {0, -1, 1}, {0, 1, 1}, {0, 1, -1}},
-					{{-1, 0, -1}, {1, 0, -1}, {1, 0, 1}, {-1, 0, 1}}};
-			float[][] uv = {{0, 0}, {1, 0}, {1, 1}, {0, 1}};
-			for (float[][] q : planes) {
-				for (int i = 0; i < 4; i++) energyVertex(buffer, p, q[i], uv[i], color);
-				for (int i = 3; i >= 0; i--) energyVertex(buffer, p, q[i], uv[i], color);
-			}
-		});
-		pose.popPose();
-	}
-
-	private static void energyVertex(VertexConsumer buffer, PoseStack.Pose p, float[] v, float[] uv, int color) {
-		buffer.addVertex(p, v[0], v[1], v[2]).setColor(color).setUv(uv[0], uv[1]).setOverlay(OverlayTexture.NO_OVERLAY)
-				.setLight(LightCoordsUtil.FULL_BRIGHT).setNormal(p, 0, 1, 0);
-	}
-
-	private static float smooth(float x) {
-		return x * x * (3 - 2 * x);
+	private static void renderPlanet(PoseStack pose, SubmitNodeCollector collector, Vec3 cam, Vec3 center, float age, float scale) {
+		if (planet != null) planet.render(pose, collector, cam, center, age, scale);
 	}
 
 	private SpaceScene() {}

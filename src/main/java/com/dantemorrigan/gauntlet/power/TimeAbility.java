@@ -122,6 +122,16 @@ public final class TimeAbility {
 		player.level().playSound(null, player.blockPosition(), SoundEvents.BEACON_DEACTIVATE, SoundSource.PLAYERS, 1.2F, 1.6F);
 	}
 
+	public static void cancelLevel(ServerLevel level) {
+		for (ServerPlayer player : level.players()) {
+			HISTORY.remove(player.getUUID());
+			if (ACTIVE.remove(player.getUUID()) != null) {
+				clearGlow(player);
+				ServerPlayNetworking.send(player, new ModNetwork.TimeRewindFx(player.getId(), false, 0));
+			}
+		}
+	}
+
 	private static void tick(MinecraftServer server) {
 		long time = server.overworld().getGameTime();
 		for (ServerPlayer p : server.getPlayerList().getPlayers()) {

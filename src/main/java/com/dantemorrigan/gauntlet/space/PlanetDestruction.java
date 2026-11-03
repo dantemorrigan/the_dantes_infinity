@@ -102,6 +102,12 @@ public final class PlanetDestruction {
 		}
 		event.participants.add(activator.getUUID());
 		EVENTS.put(event.id, event);
+		// A destroyed planet cannot continue its meteor event or maintain spatial portals.
+		if (level.dimension().equals(net.minecraft.world.level.Level.OVERWORLD))
+			com.dantemorrigan.gauntlet.celestial.CelestialApocalypse.stop(server);
+		com.dantemorrigan.gauntlet.power.SpaceStone.cancelLevel(level);
+		com.dantemorrigan.gauntlet.power.TimeAbility.cancelLevel(level);
+		for (ServerPlayer p : level.players()) com.dantemorrigan.gauntlet.power.InfinityBeam.cancel(p);
 		for (UUID id : event.participants) {
 			PLAYER_EVENT.put(id, event.id);
 			ServerPlayer p = server.getPlayerList().getPlayer(id);

@@ -124,6 +124,7 @@ public final class CelestialSky {
 
 	/** Called at the end of renderSunMoonAndStars with the vanilla angles (radians). */
 	public static void drawBody(PoseStack pose, float sunAngle, float moonAngle, MoonPhase moonPhase, float rainBrightness, float partial) {
+		if (Minecraft.getInstance().level == null || !Minecraft.getInstance().level.dimension().equals(net.minecraft.world.level.Level.OVERWORLD)) return;
 		if (CelestialClient.phase() == 0) return;
 		String body = CelestialClient.body();
 		boolean sun = body.equals("sun");

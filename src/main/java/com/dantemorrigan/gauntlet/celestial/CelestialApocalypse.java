@@ -152,6 +152,8 @@ public final class CelestialApocalypse {
 
 	/** Start the event (also used by the debug command). The event clock starts at the end of the lock. */
 	public static boolean start(ServerPlayer player, String body) {
+		if (!player.level().dimension().equals(Level.OVERWORLD)
+				|| com.dantemorrigan.gauntlet.space.PlanetDestruction.isBusy(player)) return false;
 		MinecraftServer server = player.level().getServer();
 		ServerLevel overworld = server.overworld();
 		if (overworld.getAttached(EVENT) != null) return false;
@@ -172,6 +174,9 @@ public final class CelestialApocalypse {
 		server.overworld().removeAttached(EVENT);
 		METEORS.clear();
 		endingSince = -1;
+		AIM.clear();
+		rainDeadlineNanos = 0;
+		spawnAccumulator = 0;
 		broadcast(server);
 	}
 

@@ -93,7 +93,7 @@ public final class CelestialClient {
 		HudElementRegistry.addLast(InfinityGauntlet.id("meteor_timer"), (g, d) -> {
 			Minecraft mc = Minecraft.getInstance();
 			int ms = remainingMs();
-			com.dantemorrigan.gauntlet.client.StatusHud.persistent("meteor", phase == 2
+			com.dantemorrigan.gauntlet.client.StatusHud.persistent("meteor", phase == 2 && mc.level != null && mc.level.dimension().equals(Level.OVERWORLD)
 					? Component.literal("§cМетеоритный дождь: " + ms / 60000 + ":" + String.format("%02d", (ms / 1000) % 60)) : null);
 		});
 	}
@@ -107,7 +107,19 @@ public final class CelestialClient {
 		CelestialSky.reset();
 	}
 
+	/** Destruction ends weather instantly, without the normal red-sky afterglow. Keep body destruction flags. */
+	public static void planetDestroyed() {
+		phase = 0;
+		afterglow = 0;
+		METEORS.clear();
+		distantAccumulator = 0;
+		rainRemainingMs = 0;
+		endingTicks = -1;
+		com.dantemorrigan.gauntlet.client.StatusHud.persistent("meteor", null);
+	}
+
 	private static void sync(ModNetwork.CelestialSync s) {
+		if (s.phase() == 0) METEORS.clear();
 		if (phase != 0 && s.phase() == 0) afterglow = 100; // fade the red sky out over 5 s
 		if (s.phase() == 3 && phase != 3) endingTicks = 0;
 		if (s.phase() != 0 && (phase == 0 || !s.body().equals(body))) CelestialSky.reset();
@@ -145,6 +157,8 @@ public final class CelestialClient {
 
 	/** 0..1 strength of the red sky for a viewer at {@code pos}. */
 	public static float redFactor(Vec3 pos, float partial) {
+		Minecraft mc = Minecraft.getInstance();
+		if (mc.level == null || !mc.level.dimension().equals(Level.OVERWORLD)) return 0;
 		float time;
 		if (phase == 0) time = afterglow > 0 ? afterglow / 100f : 0;
 		else if (phase == 1) time = Mth.clamp((eventTime(partial) - CelestialApocalypse.T_PULL) / 40f, 0, 1);
@@ -162,6 +176,11 @@ public final class CelestialClient {
 	private static void tick(Minecraft mc) {
 		clientTicks++;
 		if (mc.level == null || mc.player == null) return;
+		if (!mc.level.dimension().equals(Level.OVERWORLD)) {
+			METEORS.clear();
+			afterglow = 0;
+			return;
+		}
 		localTicks++;
 		if (endingTicks >= 0) endingTicks++;
 		if (afterglow > 0) afterglow--;

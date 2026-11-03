@@ -156,6 +156,22 @@ public final class SpaceStone {
 		return p;
 	}
 
+	/** Cancel portals anchored to the destroyed world's geometry. */
+	public static void cancelLevel(ServerLevel level) {
+		for (Portal portal : new ArrayList<>(PORTALS)) if (portal.level == level
+				|| portal.dest >= 0 && DIMS.get(portal.dest).equals(level.dimension())) {
+			PORTALS.remove(portal);
+			for (ServerPlayer p : portal.level.players()) ServerPlayNetworking.send(p, new ModNetwork.PortalClose(portal.id));
+			if (portal.owner != null) {
+				ServerPlayer owner = level.getServer().getPlayerList().getPlayer(portal.owner);
+				if (owner != null) {
+					ItemStack gauntlet = GauntletState.activeGauntlet(owner);
+					if (!gauntlet.isEmpty()) GauntletState.setInUse(gauntlet, EnumSet.noneOf(Stone.class));
+				}
+			}
+		}
+	}
+
 	private static void tick(MinecraftServer server) {
 		TRAVEL_GRACE.replaceAll((k, v) -> v - 1);
 		TRAVEL_GRACE.values().removeIf(v -> v <= 0);
