@@ -81,6 +81,10 @@ public final class RealityClient {
 	private static final Set<Integer> CASTERS = new HashSet<>();
 	private static int liveBudget;
 
+	/** A press shorter than this (ticks) is a tap → Reality strike. */
+	private static final int TAP_TICKS = 5;
+	private static int downTicks;
+
 	public static void init() {
 		ClientTickEvents.END_CLIENT_TICK.register(RealityClient::tick);
 		ClientPlayNetworking.registerGlobalReceiver(ModNetwork.RealityState.TYPE, (s, ctx) -> state(s.entityId(), s.active(), s.center()));
@@ -149,6 +153,16 @@ public final class RealityClient {
 				}
 			}
 			case 2 -> ClientPower.spawn(ModParticles.REALITY_REWRITE, pos, 1.0, 0, 0); // butterflies gather back into the mob
+			case 3 -> { // strike: mob -> butterflies that scatter upward and dissolve
+				int n = 6 + (int) Math.min(10, vel.x * vel.y * 4);
+				ClientPower.spawn(ModParticles.REALITY_REWRITE, pos, 0.9, 0, 0);
+				for (int i = 0; i < n; i++) {
+					Vec3 p = pos.add(rnd.nextGaussian() * vel.x * 0.4, rnd.nextGaussian() * vel.y * 0.3, rnd.nextGaussian() * vel.x * 0.4);
+					ClientPower.spawn(ModParticles.REALITY_BUTTERFLY, p, rnd.nextGaussian() * 0.03, 0.05 + rnd.nextDouble() * 0.05, rnd.nextGaussian() * 0.03);
+				}
+				for (int i = 0; i < 6; i++) ClientPower.spawn(ModParticles.REALITY_GLASS, pos, rnd.nextGaussian() * 0.15, rnd.nextDouble() * 0.2, rnd.nextGaussian() * 0.15);
+			}
+			case 4 -> strikeFx(mc, pos, (float) vel.x);
 			default -> {}
 		}
 	}
@@ -156,10 +170,20 @@ public final class RealityClient {
 	// ------------------------------------------------------------------ tick
 
 	private static void tick(Minecraft mc) {
+		// Short tap = strike the ground; held past TAP_TICKS = close the fist (Inversion).
 		boolean down = KEY.isDown() && mc.player != null && mc.screen == null;
-		if (down != keyDown) {
-			keyDown = down;
-			if (mc.player != null) ClientPlayNetworking.send(new ModNetwork.RealityHold(down));
+		if (down) {
+			if (++downTicks == TAP_TICKS && mc.player != null) {
+				keyDown = true;
+				ClientPlayNetworking.send(new ModNetwork.RealityHold(true));
+			}
+		} else if (downTicks > 0) {
+			if (mc.player != null) {
+				if (keyDown) ClientPlayNetworking.send(new ModNetwork.RealityHold(false));
+				else ClientPlayNetworking.send(new ModNetwork.RealityStrike());
+			}
+			keyDown = false;
+			downTicks = 0;
 		}
 		if (mc.level == null || mc.player == null) {
 			if (!HIDDEN.isEmpty() || active) restore(true);
@@ -184,6 +208,26 @@ public final class RealityClient {
 			releaseAge++;
 			if (releaseAge >= RELEASE_TICKS) restore(false);
 		}
+	}
+
+	/** The fist hits the ground: red fracture + ring under the caster, cubic shards and sparks thrown out. */
+	private static void strikeFx(Minecraft mc, Vec3 c, float radius) {
+		RandomSource rnd = mc.level.getRandom();
+		Vec3 ground = surface(mc.level, c.x, c.z);
+		ClientPower.spawn(ModParticles.REALITY_FRACTURE, ground.add(0, 0.05, 0), 0, 1.8, 0);
+		ClientPower.spawn(ModParticles.REALITY_RESTORE, ground.add(0, 0.07, 0), 0, 1.6, 0);
+		ClientPower.spawn(ModParticles.REALITY_REWRITE, c.add(0, 0.6, 0), 1.6, 0, 0);
+		for (int i = 0; i < 40; i++) {
+			double a = rnd.nextDouble() * Math.PI * 2, s = 0.25 + rnd.nextDouble() * 0.45;
+			ClientPower.spawn(ModParticles.REALITY_GLASS, ground.add(0, 0.4, 0), Math.cos(a) * s, 0.12 + rnd.nextDouble() * 0.3, Math.sin(a) * s);
+		}
+		for (int i = 0; i < 6; i++) {
+			double a = rnd.nextDouble() * Math.PI * 2, d = 2 + rnd.nextDouble() * (radius - 2);
+			Vec3 p = surface(mc.level, c.x + Math.cos(a) * d, c.z + Math.sin(a) * d);
+			ClientPower.spawn(ModParticles.REALITY_FRACTURE, p.add(0, 0.05, 0), 0, 0.7 + rnd.nextDouble() * 0.5, 0);
+		}
+		for (int i = 0; i < 8; i++) ClientPower.spawn(ModParticles.REALITY_AETHER, ground.add(rnd.nextGaussian() * 2, 0.3, rnd.nextGaussian() * 2), 0, 0, 0);
+		Cutscene.shake(0.7f, 14);
 	}
 
 	private static void cracks(Minecraft mc) {

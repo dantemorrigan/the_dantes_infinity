@@ -33,7 +33,9 @@ public class InfinityGauntlet implements ModInitializer {
 		PlanetDestruction.init();
 		TimeAbility.init();
 		com.dantemorrigan.gauntlet.power.RealityStone.init();
+		com.dantemorrigan.gauntlet.power.RealityStrike.init();
 		ServerPlayNetworking.registerGlobalReceiver(ModNetwork.RealityHold.TYPE, (payload, context) -> com.dantemorrigan.gauntlet.power.RealityStone.hold(context.player(), payload.closed()));
+		ServerPlayNetworking.registerGlobalReceiver(ModNetwork.RealityStrike.TYPE, (payload, context) -> com.dantemorrigan.gauntlet.power.RealityStrike.strike(context.player()));
 		com.dantemorrigan.gauntlet.power.SpaceStone.init();
 		ServerPlayNetworking.registerGlobalReceiver(ModNetwork.SpaceAction.TYPE, (payload, context) -> com.dantemorrigan.gauntlet.power.SpaceStone.action(context.player(), payload.action()));
 		com.dantemorrigan.gauntlet.celestial.CelestialApocalypse.init();

@@ -69,6 +69,9 @@ public final class GauntletConfig {
 	/** Longest hold before the fist opens by itself (ticks). */
 	public int realityMaxHoldTicks = 600;
 	public int realityCooldownTicks = 40;
+	/** Reality strike (short tap): radius of the red-stone-and-fire ground and of the butterfly dissolve. */
+	public int realityStrikeRadius = 10;
+	public int realityStrikeCooldownTicks = 60;
 
 	// ---- Space stone (server) ----
 	public int portalLifetimeSeconds = 30;

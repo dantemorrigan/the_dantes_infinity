@@ -12,7 +12,7 @@ public class MotionParticle extends FxParticle {
 	public enum Kind { BUTTERFLY, PETAL, GLASS, AETHER }
 
 	private final Kind kind;
-	private final double ax, ay, az;     // anchor (butterflies)
+	private double ax, ay, az;           // anchor (butterflies; drifts with the spawn velocity)
 	private final float phase, spinSpeed;
 
 	public MotionParticle(ClientLevel level, double x, double y, double z, double vx, double vy, double vz,
@@ -35,7 +35,11 @@ public class MotionParticle extends FxParticle {
 		float t = this.age + this.phase * 10;
 		switch (this.kind) {
 			case BUTTERFLY -> {
-				// Lazy figure-eights around the anchor, slowly climbing.
+				// Lazy figure-eights around the anchor, slowly climbing; a spawn velocity carries the anchor away
+				// (strike: butterflies scatter upward and dissolve).
+				this.ax += this.xd;
+				this.ay += this.yd;
+				this.az += this.zd;
 				double r = 0.6 + 0.4 * Math.sin(t * 0.05);
 				double tx = this.ax + Math.cos(t * 0.11 + this.phase) * r;
 				double tz = this.az + Math.sin(t * 0.07 + this.phase) * r * 1.3;

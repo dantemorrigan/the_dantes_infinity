@@ -329,9 +329,6 @@ public final class SpaceScene {
 		float age = age(partial);
 		float depthFar = mc.options.getEffectiveRenderDistance() * 16 * 4f;
 
-		// Every cube corner fits inside the far plane; the background never writes world depth.
-		renderSky(pose, collector, Math.min(depthFar * 0.5f, 900f));
-
 		// Planet: scale the whole layout down if the view distance is short so it stays inside the far plane.
 		float fit = (float) Math.min(1.0, depthFar * 0.82 / (PLANET_OFFSET.length() + 350));
 		Vec3 planetCenter = SpaceManager.CENTER.add(PLANET_OFFSET.scale(fit));
@@ -350,28 +347,27 @@ public final class SpaceScene {
 		}
 	}
 
-	/** Six 512px faces at a large radius around the camera, oriented per sky_orientation.json; drawn first. */
-	private static void renderSky(PoseStack pose, SubmitNodeCollector collector, float radius) {
+	/**
+	 * Six 512px faces drawn INSIDE the vanilla sky pass (dimension skybox "end", see SkyRendererMixin): behind every
+	 * world object by construction. Previously a see-through world submit, which could paint black space over debris.
+	 */
+	public static void drawSkyPass() {
 		JsonObject dirs = PackData.sky().has("pixel_directions") ? PackData.sky().getAsJsonObject("pixel_directions") : null;
 		float inset = 0.5f / 512f; // clamp-to-edge equivalent: never sample across the face border
+		float r = 100f;
+		PoseStack pose = new PoseStack();
 		for (int f = 0; f < 6; f++) {
 			JsonArray spec = dirs != null && dirs.has(FACE_KEYS[f]) ? dirs.getAsJsonArray(FACE_KEYS[f]) : defaultFace(f);
 			Identifier tex = InfinityGauntlet.id("textures/environment/dead_space/faces/" + FACES[f] + ".png");
-			Vector3f[] corners = {dir(spec, -1, -1), dir(spec, 1, -1), dir(spec, 1, 1), dir(spec, -1, 1)};
+			Vector3f[] c = {dir(spec, -1, -1), dir(spec, 1, -1), dir(spec, 1, 1), dir(spec, -1, 1)};
 			float[][] uv = {{inset, inset}, {1 - inset, inset}, {1 - inset, 1 - inset}, {inset, 1 - inset}};
-			pose.pushPose();
-			pose.scale(radius, radius, radius);
-			collector.order(-1000).submitCustomGeometry(pose, RenderTypes.textSeeThrough(tex), (p, buffer) -> {
-				for (int i = 0; i < 4; i++) quadVertex(buffer, p, corners[i], uv[i]);
-				for (int i = 3; i >= 0; i--) quadVertex(buffer, p, corners[i], uv[i]); // both windings
+			com.dantemorrigan.gauntlet.client.celestial.CelestialSky.draw(pose, tex, buf -> {
+				for (int i = 0; i < 4; i++) buf.addVertex(c[i].x * r, c[i].y * r, c[i].z * r).setUv(uv[i][0], uv[i][1]).setColor(0xFFFFFFFF);
+				for (int i = 3; i >= 0; i--) buf.addVertex(c[i].x * r, c[i].y * r, c[i].z * r).setUv(uv[i][0], uv[i][1]).setColor(0xFFFFFFFF);
 			});
-			pose.popPose();
 		}
 	}
 
-	private static void quadVertex(VertexConsumer buffer, PoseStack.Pose p, Vector3f v, float[] uv) {
-		buffer.addVertex(p, v.x, v.y, v.z).setColor(0xFFFFFFFF).setUv(uv[0], uv[1]).setLight(LightCoordsUtil.FULL_BRIGHT);
-	}
 
 	/** Direction for image coords u (right) and v (down) in -1..1, from strings like "1", "-v", "u". */
 	private static Vector3f dir(JsonArray spec, float u, float v) {

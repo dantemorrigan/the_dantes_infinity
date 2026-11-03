@@ -182,12 +182,12 @@ public final class CelestialSky {
 		for (int i = 3; i >= 0; i--) buf.addVertex(m, p[i].x, p[i].y, p[i].z).setUv(uv[i][0], uv[i][1]).setColor(color);
 	}
 
-	private interface Builder {
+	public interface Builder {
 		void build(BufferBuilder buffer);
 	}
 
 	/** Immediate draw with the current sky model-view (the pose is multiplied in). */
-	private static void draw(PoseStack pose, Identifier texture, Builder builder) {
+	public static void draw(PoseStack pose, Identifier texture, Builder builder) {
 		BufferBuilder buffer = Tesselator.getInstance().begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX_COLOR);
 		builder.build(buffer);
 		MeshData mesh = buffer.build();

@@ -185,6 +185,13 @@ public final class ModNetwork {
 		@Override public Type<RealityHold> type() { return TYPE; }
 	}
 
+	/** C2S: short tap of the Reality key — strike the ground with the Reality stone. */
+	public record RealityStrike() implements CustomPacketPayload {
+		public static final Type<RealityStrike> TYPE = newType("reality_strike");
+		public static final StreamCodec<ByteBuf, RealityStrike> CODEC = StreamCodec.unit(new RealityStrike());
+		@Override public Type<RealityStrike> type() { return TYPE; }
+	}
+
 	/** S2C: Reality Inversion started/ended for an entity, around center. */
 	public record RealityState(int entityId, boolean active, Vec3 center) implements CustomPacketPayload {
 		public static final Type<RealityState> TYPE = newType("reality_state");
@@ -203,6 +210,7 @@ public final class ModNetwork {
 
 	public static void init() {
 		PayloadTypeRegistry.serverboundPlay().register(RealityHold.TYPE, RealityHold.CODEC);
+		PayloadTypeRegistry.serverboundPlay().register(RealityStrike.TYPE, RealityStrike.CODEC);
 		PayloadTypeRegistry.clientboundPlay().register(RealityState.TYPE, RealityState.CODEC);
 		PayloadTypeRegistry.clientboundPlay().register(RealityFx.TYPE, RealityFx.CODEC);
 		PayloadTypeRegistry.clientboundPlay().register(Status.TYPE, Status.CODEC);

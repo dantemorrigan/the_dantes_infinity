@@ -13,7 +13,8 @@
 			"com.dantemorrigan.gauntlet.gametest.InfinityBeamTest",
 			"com.dantemorrigan.gauntlet.gametest.PlanetDestructionRegressionTest",
 			"com.dantemorrigan.gauntlet.gametest.SpaceCollisionTest",
-			"com.dantemorrigan.gauntlet.gametest.RealityStoneTest"
+			"com.dantemorrigan.gauntlet.gametest.RealityStoneTest",
+			"com.dantemorrigan.gauntlet.gametest.RealityStrikeTest"
 		]
 	},
 	"depends": {
