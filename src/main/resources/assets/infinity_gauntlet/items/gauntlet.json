@@ -91,6 +91,93 @@
 						}
 					]
 				}
+			},
+			{
+				"when": [
+					"firstperson_lefthand",
+					"thirdperson_lefthand"
+				],
+				"model": {
+					"type": "minecraft:composite",
+					"models": [
+						{
+							"type": "minecraft:model",
+							"model": "infinity_gauntlet:item/gauntlet_in_hand"
+						},
+						{
+							"type": "minecraft:condition",
+							"property": "minecraft:custom_model_data",
+							"index": 0,
+							"on_true": {
+								"type": "minecraft:model",
+								"model": "infinity_gauntlet:item/gauntlet_in_hand_power_glow"
+							},
+							"on_false": {
+								"type": "minecraft:empty"
+							}
+						},
+						{
+							"type": "minecraft:condition",
+							"property": "minecraft:custom_model_data",
+							"index": 1,
+							"on_true": {
+								"type": "minecraft:model",
+								"model": "infinity_gauntlet:item/gauntlet_in_hand_space_glow"
+							},
+							"on_false": {
+								"type": "minecraft:empty"
+							}
+						},
+						{
+							"type": "minecraft:condition",
+							"property": "minecraft:custom_model_data",
+							"index": 2,
+							"on_true": {
+								"type": "minecraft:model",
+								"model": "infinity_gauntlet:item/gauntlet_in_hand_reality_glow"
+							},
+							"on_false": {
+								"type": "minecraft:empty"
+							}
+						},
+						{
+							"type": "minecraft:condition",
+							"property": "minecraft:custom_model_data",
+							"index": 3,
+							"on_true": {
+								"type": "minecraft:model",
+								"model": "infinity_gauntlet:item/gauntlet_in_hand_soul_glow"
+							},
+							"on_false": {
+								"type": "minecraft:empty"
+							}
+						},
+						{
+							"type": "minecraft:condition",
+							"property": "minecraft:custom_model_data",
+							"index": 4,
+							"on_true": {
+								"type": "minecraft:model",
+								"model": "infinity_gauntlet:item/gauntlet_in_hand_mind_glow"
+							},
+							"on_false": {
+								"type": "minecraft:empty"
+							}
+						},
+						{
+							"type": "minecraft:condition",
+							"property": "minecraft:custom_model_data",
+							"index": 5,
+							"on_true": {
+								"type": "minecraft:model",
+								"model": "infinity_gauntlet:item/gauntlet_in_hand_time_glow"
+							},
+							"on_false": {
+								"type": "minecraft:empty"
+							}
+						}
+					]
+				}
 			}
 		],
 		"fallback": {
