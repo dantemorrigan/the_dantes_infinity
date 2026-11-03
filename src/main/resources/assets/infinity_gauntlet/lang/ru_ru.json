@@ -5,5 +5,6 @@
 	"item.infinity_gauntlet.reality_stone": "Камень Реальности",
 	"item.infinity_gauntlet.mind_stone": "Камень Разума",
 	"item.infinity_gauntlet.time_stone": "Камень Времени",
-	"item.infinity_gauntlet.soul_stone": "Камень Души"
+	"item.infinity_gauntlet.soul_stone": "Камень Души",
+	"itemGroup.infinity_gauntlet": "Перчатка Бесконечности"
 }
