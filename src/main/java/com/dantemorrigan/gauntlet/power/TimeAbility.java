@@ -93,6 +93,10 @@ public final class TimeAbility {
 			player.fallDistance = 0;
 			player.setHealth(Math.min(snapshot.health(), player.getMaxHealth()));
 			looseRewindRing(player.level(), snapshot.pos());
+			ModNetwork.TimeRewindFx fx = new ModNetwork.TimeRewindFx(player.getId(), false, 12);
+			for (ServerPlayer viewer : PlayerLookup.around(player.level(), player.position(), 64)) {
+				ServerPlayNetworking.send(viewer, fx);
+			}
 			player.level().playSound(null, player.blockPosition(), SoundEvents.BEACON_DEACTIVATE, SoundSource.PLAYERS, 0.8F, 1.6F);
 			HISTORY.remove(player.getUUID());
 			return true;
