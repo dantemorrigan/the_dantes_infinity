@@ -164,24 +164,43 @@ public final class AbilityWheelScreen extends Screen {
         }
         Ability focus=keyboard!=null?keyboard:hovered;
         if(focus==null && submenu==0) focus=AbilityInput.last(stone);
-        int y=height-48;
-        blit(g,"tooltip_panel",8,y-10,width-16,55,320,80);
-        if(submenu==0 && hit(mx,my,0,0,34)) {
-            text(g,Component.translatable("container.infinity_gauntlet.gauntlet"),width/2,y,0xFFF4D68D);
-            text(g,Component.translatable("ability.infinity_gauntlet.open_inventory"),width/2,y+12,0xFFE1D9E8);
-        } else if(focus!=null && submenu==0) {
-            text(g,AbilityInput.title(focus),width/2,y,color(focus.stone==null?Stone.MIND:focus.stone));
-            text(g,(focus==Ability.DESTINATIONS || focus==Ability.PORTAL)?Component.translatable("ability.infinity_gauntlet.open_submenu",AbilityInput.WHEEL.getTranslatedKeyMessage()):AbilityInput.hint(focus),width/2,y+12,0xFFE1D9E8);
-        } else text(g,Component.translatable("ability.infinity_gauntlet.pick_destination"),width/2,y,0xFFDED7EA);
-        if (submenu == 0) {
+        int panelTop = height - 58;
+        blit(g, "tooltip_panel", 8, panelTop, width - 16, 55, 320, 80);
+        int firstLine = panelTop + 8;
+        if (submenu == 0 && hit(mx,my,0,0,34)) {
+            tooltipLine(g, Component.translatable("container.infinity_gauntlet.gauntlet"), firstLine, 0xFFF4D68D);
+            tooltipLine(g, Component.translatable("ability.infinity_gauntlet.open_inventory"), firstLine + 10, 0xFFE1D9E8);
+        } else if (focus != null && submenu == 0) {
+            tooltipLine(g, AbilityInput.title(focus), firstLine, color(focus.stone == null ? Stone.MIND : focus.stone));
+            Component hint = focus == Ability.DESTINATIONS || focus == Ability.PORTAL
+                ? Component.translatable("ability.infinity_gauntlet.open_submenu", AbilityInput.WHEEL.getTranslatedKeyMessage())
+                : AbilityInput.hint(focus);
+            tooltipLine(g, hint, firstLine + 10, 0xFFE1D9E8);
             int slot = AbilityFavorites.find(focus);
             Component binding = slot < 0
                 ? Component.translatable("ability.infinity_gauntlet.favorites_bind")
                 : Component.translatable("ability.infinity_gauntlet.favorites_bound", slot + 1);
-            text(g, binding, width / 2, y + 24, 0xFFF4D68D);
+            tooltipLine(g, binding, firstLine + 20, 0xFFF4D68D);
+        } else {
+            tooltipLine(g, Component.translatable("ability.infinity_gauntlet.pick_destination"), firstLine, 0xFFDED7EA);
         }
-        text(g,Component.translatable("ability.infinity_gauntlet.wheel_help",AbilityInput.WHEEL.getTranslatedKeyMessage()),width/2,y+(submenu==0?36:26),0xFF9BA7BB);
+        tooltipLine(g, Component.translatable("ability.infinity_gauntlet.wheel_help",
+            AbilityInput.WHEEL.getTranslatedKeyMessage()), firstLine + 30, 0xFF9BA7BB);
     }
+
+    private void tooltipLine(GuiGraphicsExtractor graphics, Component label, int y, int color) {
+        var font = Minecraft.getInstance().font;
+        int textWidth = font.width(label);
+        int inset = Math.max(16, width / 16);
+        int availableWidth = Math.max(1, width - inset * 2);
+        float fit = Math.min(1f, (float) availableWidth / Math.max(1, textWidth));
+        graphics.pose().pushMatrix();
+        graphics.pose().translate(width / 2f, y);
+        graphics.pose().scale(fit, fit);
+        graphics.text(font, label, -textWidth / 2, 0, color, true);
+        graphics.pose().popMatrix();
+    }
+
     private static void text(GuiGraphicsExtractor g,Component text,int center,int y,int color) {
         var font=Minecraft.getInstance().font;g.text(font,text,center-font.width(text)/2,y,color,true);
     }
