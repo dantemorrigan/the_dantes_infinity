@@ -53,7 +53,7 @@ public class UruDetailLayer<S extends HumanoidRenderState, M extends HumanoidMod
 		}
 	}
 
-	private static void part(PoseStack pose, SubmitNodeCollector collector, int light, ModelPart part, String name) {
+	static void part(PoseStack pose, SubmitNodeCollector collector, int light, ModelPart part, String name) {
 		if (!part.visible) return;
 		pose.pushPose();
 		part.translateAndRotate(pose);

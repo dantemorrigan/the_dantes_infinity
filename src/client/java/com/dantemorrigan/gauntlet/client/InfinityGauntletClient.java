@@ -44,12 +44,7 @@ public class InfinityGauntletClient implements ClientModInitializer {
 		net.fabricmc.fabric.api.client.rendering.v1.LivingEntityRenderLayerRegistrationCallback.EVENT.register((type, renderer, helper, context) -> {
 			if (renderer.getModel() instanceof net.minecraft.client.model.HumanoidModel<?>) registerUru(helper, renderer);
 		});
-		net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.registerGlobalReceiver(com.dantemorrigan.gauntlet.net.ModNetwork.UruGuardFx.TYPE, (fx, ctx) -> {
-			var mc = net.minecraft.client.Minecraft.getInstance();
-			if (mc.level == null) return;
-			var e = mc.level.getEntity(fx.entityId());
-			if (e != null) mc.particleEngine.createParticle(com.dantemorrigan.gauntlet.ModParticles.URU_GUARD, e.getX(), e.getY() + e.getBbHeight() * 0.62, e.getZ(), fx.entityId(), 0, 0);
-		});
+		com.dantemorrigan.gauntlet.client.render.UruClient.init();
 		net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry.register(com.dantemorrigan.gauntlet.ModEntities.GAUNTLET_DOLL, com.dantemorrigan.gauntlet.client.render.GauntletDollRenderer::new);
 	}
 }

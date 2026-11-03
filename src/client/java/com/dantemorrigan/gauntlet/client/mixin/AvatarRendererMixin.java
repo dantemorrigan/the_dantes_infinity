@@ -31,6 +31,10 @@ public abstract class AvatarRendererMixin {
 			Identifier skinTexture, ModelPart arm, boolean hasSleeve, CallbackInfo ci) {
 		if (WornGauntlet.firstPersonStack != null) {
 			WornGauntlet.submitOnArm(arm, poseStack, submitNodeCollector, lightCoords, WornGauntlet.firstPersonStack);
+		} else {
+			// The bare hand in first person: show the Uru sleeve if the chestplate is worn.
+			com.dantemorrigan.gauntlet.client.render.UruClient.firstPersonArm(
+					(net.minecraft.client.model.player.PlayerModel) ((AvatarRenderer<?>) (Object) this).getModel(), arm, poseStack, submitNodeCollector, lightCoords);
 		}
 	}
 }

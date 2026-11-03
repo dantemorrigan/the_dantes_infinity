@@ -25,6 +25,8 @@ public class UruArmorTest implements FabricClientGameTest {
 			// Looks first (no stones yet: a full gauntlet awakening fills the air with particles).
 			server.runCommand("execute as @p at @p run gauntlet uru");
 			ctx.getInput().lookAt(0, 12);
+			ctx.waitTicks(10);
+			ctx.takeScreenshot("uru_00_first_person_arm");
 			server.runCommand("execute as @p at @p run gauntlet doll uru");
 			ctx.waitTicks(5);
 			server.runCommand("data merge entity @e[type=infinity_gauntlet:gauntlet_doll,limit=1] {NoAI:1b,Rotation:[180f,0f]}");
