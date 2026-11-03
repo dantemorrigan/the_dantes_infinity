@@ -52,19 +52,22 @@ public final class CosmosRoutes {
     }
     /**
      * Index of the body under the crosshair, or -1. A body counts if the look ray passes through its disk or within
-     * {@code assistDegrees} of its edge; the nearest such body wins, so a planet in front of the Sun is picked first.
+     * {@code assistDegrees} of its edge. Exact hits beat assisted ones; among equals the nearest wins (a planet in front of the Sun).
      */
     public static int aim(double ex, double ey, double ez, double lx, double ly, double lz, double assistDegrees) {
         double ll = Math.sqrt(lx * lx + ly * ly + lz * lz); if (ll < 1e-6) return -1;
         lx /= ll; ly /= ll; lz /= ll;
-        int best = -1; double bestDistance = Double.MAX_VALUE, assist = Math.toRadians(assistDegrees);
+        int best = -1; double bestMiss = Double.MAX_VALUE, bestDistance = Double.MAX_VALUE, assist = Math.toRadians(assistDegrees), exact = Math.toRadians(.5);
         for (int i = 0; i < ALL.size(); i++) {
             var d = ALL.get(i);
             double dx = d.x() - ex, dy = d.y() - ey, dz = d.z() - ez, dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
             if (dist < 1) continue;
             double cos = Math.max(-1, Math.min(1, (dx * lx + dy * ly + dz * lz) / dist));
             double angle = Math.acos(cos), radius = dist <= d.radius() ? Math.PI : Math.asin(d.radius() / dist);
-            if (angle <= radius + assist && dist < bestDistance) { best = i; bestDistance = dist; }
+            double miss = Math.max(0, angle - radius);
+            if (miss > assist) continue;
+            if (miss < exact) miss = 0; // a ray through (or within 0.5 deg of) the disk is an exact hit
+            if (miss < bestMiss || miss == bestMiss && dist < bestDistance) { best = i; bestMiss = miss; bestDistance = dist; }
         }
         return best;
     }
