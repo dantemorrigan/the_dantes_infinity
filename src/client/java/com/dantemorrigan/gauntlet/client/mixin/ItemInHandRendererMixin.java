@@ -1,8 +1,10 @@
 package com.dantemorrigan.gauntlet.client.mixin;
 
 import com.dantemorrigan.gauntlet.ModItems;
+import com.dantemorrigan.gauntlet.client.render.GauntletGestureClient;
 import com.dantemorrigan.gauntlet.client.render.WornGauntlet;
 import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.math.Axis;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.client.renderer.ItemInHandRenderer;
 import net.minecraft.client.renderer.SubmitNodeCollector;
@@ -26,12 +28,25 @@ public abstract class ItemInHandRendererMixin {
 			ItemStack itemStack, float inverseArmHeight, PoseStack poseStack, SubmitNodeCollector submitNodeCollector, int lightCoords, CallbackInfo ci) {
 		if (hand != InteractionHand.OFF_HAND || !itemStack.is(ModItems.GAUNTLET) || player.isScoping() || player.isInvisible()) return;
 		HumanoidArm arm = player.getMainArm().getOpposite();
+		GauntletGestureClient.Pose gesture = GauntletGestureClient.pose(player.getId());
 		poseStack.pushPose();
+		if (gesture != null) {
+			// Bring the hand up toward the middle of the view, forearm angled in from the lower corner.
+			float invert = arm == HumanoidArm.RIGHT ? 1 : -1, lift = gesture.lift();
+			poseStack.translate(-invert * 0.30f * lift, 0.22f * lift, -0.10f * lift);
+			poseStack.mulPose(Axis.ZP.rotationDegrees(-invert * 18f * lift));
+			poseStack.mulPose(Axis.XP.rotationDegrees(gesture.tilt() * lift));
+			inverseArmHeight *= 1 - lift;
+			attack *= 1 - lift;
+		}
 		WornGauntlet.firstPersonStack = itemStack;
+		WornGauntlet.firstPersonGesture = gesture;
+		WornGauntlet.firstPersonArm = arm;
 		try {
 			this.renderPlayerArm(poseStack, submitNodeCollector, lightCoords, inverseArmHeight, attack, arm);
 		} finally {
 			WornGauntlet.firstPersonStack = null;
+			WornGauntlet.firstPersonGesture = null;
 			poseStack.popPose();
 		}
 		ci.cancel();

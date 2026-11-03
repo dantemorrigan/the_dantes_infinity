@@ -50,6 +50,7 @@ public class InfinityGauntlet implements ModInitializer {
 		com.dantemorrigan.gauntlet.power.SoulStone.init();
 		ServerPlayNetworking.registerGlobalReceiver(ModNetwork.SoulAction.TYPE, (payload, context) -> com.dantemorrigan.gauntlet.power.SoulStone.action(context.player(), payload.action()));
         com.dantemorrigan.gauntlet.ability.AbilityController.init();
+		ServerPlayNetworking.registerGlobalReceiver(ModNetwork.GestureStart.TYPE, (payload, context) -> GauntletGesture.start(context.player()));
 		LOGGER.info("Infinity Gauntlet loaded");
 	}
 

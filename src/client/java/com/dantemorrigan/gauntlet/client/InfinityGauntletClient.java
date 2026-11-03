@@ -30,6 +30,7 @@ public class InfinityGauntletClient implements ClientModInitializer {
 		com.dantemorrigan.gauntlet.client.fx.InfinityBeamClient.init();
 		StatusHud.init();
 		WornGauntlet.init();
+		com.dantemorrigan.gauntlet.client.render.GauntletGestureClient.init();
 	}
 }
 

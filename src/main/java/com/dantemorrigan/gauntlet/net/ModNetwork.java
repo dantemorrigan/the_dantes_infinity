@@ -224,6 +224,20 @@ public final class ModNetwork {
 		@Override public Type<SpaceFx> type() { return TYPE; }
 	}
 
+	/** C2S: the player plays the "admire the gauntlet" hand gesture (fist, open palm, turn, fist). */
+	public record GestureStart() implements CustomPacketPayload {
+		public static final Type<GestureStart> TYPE = newType("gesture_start");
+		public static final StreamCodec<ByteBuf, GestureStart> CODEC = StreamCodec.unit(new GestureStart());
+		@Override public Type<GestureStart> type() { return TYPE; }
+	}
+
+	/** S2C: entityId starts the gauntlet gesture (sent to the players that see it). */
+	public record GestureFx(int entityId) implements CustomPacketPayload {
+		public static final Type<GestureFx> TYPE = newType("gesture_fx");
+		public static final StreamCodec<ByteBuf, GestureFx> CODEC = StreamCodec.composite(ByteBufCodecs.VAR_INT, GestureFx::entityId, GestureFx::new);
+		@Override public Type<GestureFx> type() { return TYPE; }
+	}
+
 	/** C2S: H pressed/released. Server validates six stones and owns the full cast. */
 	public record BeamAction(boolean start) implements CustomPacketPayload {
 		public static final Type<BeamAction> TYPE = newType("beam_action");
@@ -348,6 +362,8 @@ public final class ModNetwork {
 		PayloadTypeRegistry.serverboundPlay().register(TimeShiftRequest.TYPE, TimeShiftRequest.CODEC);
 		PayloadTypeRegistry.clientboundPlay().register(TimeShiftFx.TYPE, TimeShiftFx.CODEC);
 		PayloadTypeRegistry.serverboundPlay().register(ToggleMode.TYPE, ToggleMode.CODEC);
+		PayloadTypeRegistry.serverboundPlay().register(GestureStart.TYPE, GestureStart.CODEC);
+		PayloadTypeRegistry.clientboundPlay().register(GestureFx.TYPE, GestureFx.CODEC);
 		PayloadTypeRegistry.clientboundPlay().register(PowerFx.TYPE, PowerFx.CODEC);
 		PayloadTypeRegistry.clientboundPlay().register(EffectDemo.TYPE, EffectDemo.CODEC);
 		PayloadTypeRegistry.clientboundPlay().register(CutsceneStart.TYPE, CutsceneStart.CODEC);

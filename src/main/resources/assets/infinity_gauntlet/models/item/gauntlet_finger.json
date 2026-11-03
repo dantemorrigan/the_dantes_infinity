@@ -1,0 +1,20 @@
+{
+	"textures": {
+		"gauntlet": "infinity_gauntlet:item/gauntlet_model",
+		"particle": "#gauntlet"
+	},
+	"elements": [
+		{
+			"from": [7.5, 8, 7.5],
+			"to": [8.5, 9, 8.5],
+			"faces": {
+				"north": {"uv": [3.9, 0.1, 4.4, 1.4], "texture": "#gauntlet"},
+				"south": {"uv": [3.9, 0.1, 4.4, 1.4], "texture": "#gauntlet"},
+				"east": {"uv": [3.9, 0.1, 4.4, 1.4], "texture": "#gauntlet"},
+				"west": {"uv": [3.9, 0.1, 4.4, 1.4], "texture": "#gauntlet"},
+				"up": {"uv": [3.9, 0.1, 4.4, 0.5], "texture": "#gauntlet"},
+				"down": {"uv": [3.9, 1.0, 4.4, 1.4], "texture": "#gauntlet"}
+			}
+		}
+	]
+}
