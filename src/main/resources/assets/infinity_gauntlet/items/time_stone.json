@@ -5,7 +5,8 @@
 		"component": "infinity_gauntlet:snapped",
 		"on_true": {
 			"type": "minecraft:model",
-			"model": "infinity_gauntlet:item/time_stone_damaged"
+			"model": "infinity_gauntlet:item/time_stone_damaged",
+			"tints": [{"type": "minecraft:custom_model_data", "index": 0, "default": 16777215}]
 		},
 		"on_false": {
 			"type": "minecraft:model",

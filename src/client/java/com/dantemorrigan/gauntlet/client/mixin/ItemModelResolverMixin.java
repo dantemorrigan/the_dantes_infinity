@@ -19,9 +19,11 @@ import java.util.List;
 public abstract class ItemModelResolverMixin {
     @ModifyVariable(method = "updateForTopItem", at = @At("HEAD"), argsOnly = true)
     private ItemStack infinityGauntlet$pulseDamagedTimeStone(ItemStack stack) {
-        if (!stack.is(ModItems.GAUNTLET) || !InfinitySnap.snapped(stack)) return stack;
+        if ((!stack.is(ModItems.TIME_STONE) && !stack.is(ModItems.GAUNTLET)) || !InfinitySnap.snapped(stack)) return stack;
         CustomModelData data = stack.get(DataComponents.CUSTOM_MODEL_DATA);
-        if (data == null || !Boolean.TRUE.equals(data.getBoolean(Stone.TIME.ordinal()))) return stack;
+        if (stack.is(ModItems.GAUNTLET)
+                && (data == null || !Boolean.TRUE.equals(data.getBoolean(Stone.TIME.ordinal())))) return stack;
+        if (data == null) data = new CustomModelData(List.of(), List.of(), List.of(), List.of());
 
         double pulse = (1 - Math.cos((Util.getMillis() % 2200L) * (2 * Math.PI / 2200))) / 2;
         int dim = 150 + (int) (pulse * 105);
