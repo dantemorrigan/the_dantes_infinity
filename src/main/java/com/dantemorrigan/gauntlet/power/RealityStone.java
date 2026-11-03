@@ -42,6 +42,7 @@ import java.util.UUID;
  */
 public final class RealityStone {
 	public static final String TAG = "infinity_gauntlet_reality";
+	private static final String ORIGINAL_FLAGS = TAG + "_flags_";
 
 	private static final class Session {
 		final Vec3 center;
@@ -113,10 +114,14 @@ public final class RealityStone {
 
 	private static void restoreMob(Mob mob) {
 		mob.removeTag(TAG);
-		mob.setInvisible(false);
-		mob.setNoAi(false);
-		mob.setInvulnerable(false);
-		mob.setNoGravity(false);
+		int flags = 0;
+		for (int mask = 0; mask < 16; mask++) {
+			if (mob.removeTag(ORIGINAL_FLAGS + mask)) flags = mask;
+		}
+		mob.setInvisible((flags & 1) != 0);
+		mob.setNoAi((flags & 2) != 0);
+		mob.setInvulnerable((flags & 4) != 0);
+		mob.setNoGravity((flags & 8) != 0);
 	}
 
 	private static void broadcast(ServerLevel level, int caster, boolean active, Vec3 center) {
@@ -152,7 +157,11 @@ public final class RealityStone {
 			// Mobs -> butterflies (bosses are too real to rewrite).
 			if (s.tick % 5 == 0) {
 				for (Mob mob : s.level.getEntitiesOfClass(Mob.class, box, m -> m.isAlive() && !m.entityTags().contains(TAG)
+						&& !MindStone.holdsEntity(m) && !SoulStone.isExtracting(m)
 						&& !(m instanceof EnderDragon) && !(m instanceof WitherBoss) && m.position().distanceTo(s.center) <= r)) {
+					int flags = (mob.isInvisible() ? 1 : 0) | (mob.isNoAi() ? 2 : 0)
+							| (mob.isInvulnerable() ? 4 : 0) | (mob.isNoGravity() ? 8 : 0);
+					mob.addTag(ORIGINAL_FLAGS + flags);
 					mob.addTag(TAG);
 					mob.setInvisible(true);
 					mob.setNoAi(true);

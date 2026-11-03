@@ -113,6 +113,7 @@ public final class MindStone {
 			HOLDS.clear();
 			FLIGHTS.clear();
 			THROWN.clear();
+			COOLDOWN.clear();
 		});
 	}
 
@@ -174,7 +175,7 @@ public final class MindStone {
 		Vec3 end = eye.add(look.scale(reach));
 		AABB box = player.getBoundingBox().expandTowards(look.scale(reach)).inflate(1.5);
 		EntityHitResult hit = ProjectileUtil.getEntityHitResult(player, eye, end, box,
-				e -> e instanceof LivingEntity l && l.isAlive() && !e.isSpectator() && (!(e instanceof Player) || allowPlayers && CoopRules.canAffect(player, e)) && !isBoss(e), reach * reach);
+				e -> e instanceof LivingEntity l && l.isAlive() && !e.isSpectator() && (!(e instanceof Player) || allowPlayers && CoopRules.canAffect(player, e)) && !e.entityTags().contains(RealityStone.TAG) && !isBoss(e), reach * reach);
 		return hit != null ? (LivingEntity) hit.getEntity() : null;
 	}
 

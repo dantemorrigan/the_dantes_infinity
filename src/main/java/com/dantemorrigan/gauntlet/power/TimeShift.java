@@ -36,11 +36,18 @@ public final class TimeShift {
 	private static int duration, tick;
 	private static long applied;
 	private static UUID caster;
+	private static boolean shiftingToNight;
+	private static final Map<UUID, ServerPlayer> VIEWERS = new HashMap<>();
 	private static net.minecraft.core.BlockPos pivot = net.minecraft.core.BlockPos.ZERO;
 	private static final Map<UUID, Long> COOLDOWN = new HashMap<>();
 
 	public static void init() {
 		ServerTickEvents.END_SERVER_TICK.register(TimeShift::tick);
+		net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents.SERVER_STOPPED.register(server -> {
+			active = false;
+			VIEWERS.clear();
+			COOLDOWN.clear();
+		});
 	}
 
 	public static void request(ServerPlayer player) {
@@ -83,15 +90,27 @@ public final class TimeShift {
 		COOLDOWN.put(player.getUUID(), now + cfg.timeShiftCooldownTicks);
 		GauntletState.setInUse(gauntlet, EnumSet.of(Stone.TIME));
 		ModNetwork.TimeShiftFx fx = new ModNetwork.TimeShiftFx(duration, toNight);
-		for (ServerPlayer p : server.overworld().players()) ServerPlayNetworking.send(p, fx);
+		shiftingToNight = toNight;
+		VIEWERS.clear();
+		for (ServerPlayer p : server.overworld().players()) {
+			VIEWERS.put(p.getUUID(), p);
+			ServerPlayNetworking.send(p, fx);
+		}
 		server.overworld().playSound(null, player.blockPosition(), SoundEvents.BEACON_ACTIVATE, SoundSource.PLAYERS, 2.0F, 0.5F);
 	}
 
 	private static void tick(MinecraftServer server) {
 		if (!active) return;
+		VIEWERS.values().removeIf(p -> p.level() != server.overworld()
+				|| server.getPlayerList().getPlayer(p.getUUID()) != p);
+		for (ServerPlayer viewer : server.overworld().players()) {
+			if (VIEWERS.putIfAbsent(viewer.getUUID(), viewer) == null)
+				ServerPlayNetworking.send(viewer, new ModNetwork.TimeShiftFx(duration - tick, shiftingToNight));
+		}
 		var clock = server.registryAccess().get(net.minecraft.world.clock.WorldClocks.OVERWORLD);
 		if (clock.isEmpty()) {
 			active = false;
+			VIEWERS.clear();
 			return;
 		}
 		tick++;
@@ -105,6 +124,7 @@ public final class TimeShift {
 				SoundSource.AMBIENT, 0.4F, 0.5F + eased);
 		if (tick >= duration) {
 			active = false;
+			VIEWERS.clear();
 			ServerPlayer p = caster == null ? null : server.getPlayerList().getPlayer(caster);
 			if (p != null) {
 				ItemStack g = GauntletState.activeGauntlet(p);

@@ -92,6 +92,8 @@ public final class SoulStone {
 			for (Extraction e : ACTIVE) unfreeze(e);
 			ACTIVE.clear();
 			BUFFS.clear();
+			POINT_CD.clear();
+			MASS_CD.clear();
 		});
 	}
 
@@ -154,7 +156,7 @@ public final class SoulStone {
 	}
 
 	private static boolean busy(LivingEntity e) {
-		return MindStone.holdsEntity(e) || isExtracting(e);
+		return e.entityTags().contains(RealityStone.TAG) || MindStone.holdsEntity(e) || isExtracting(e);
 	}
 
 	public static boolean extractingWithGauntlet(ServerPlayer player) {

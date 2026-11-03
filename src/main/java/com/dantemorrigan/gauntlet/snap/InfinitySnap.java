@@ -126,7 +126,7 @@ public final class InfinitySnap {
 			ItemStack stack = p.getItemInHand(hand);
 			return !inVoid(p) || stack.is(ModItems.TIME_STONE) || stack.is(ModItems.GAUNTLET) ? InteractionResult.PASS : InteractionResult.FAIL;
 		});
-		ServerLivingEntityEvents.ALLOW_DAMAGE.register((e, source, amount) -> !(e instanceof ServerPlayer p && (inVoid(p) || REWINDS.containsKey(p.getUUID()))));
+		ServerLivingEntityEvents.ALLOW_DAMAGE.register((e, source, amount) -> !(e instanceof ServerPlayer p && (inVoid(p) || p.hasAttached(RECORD) || REWINDS.containsKey(p.getUUID()))));
 	}
 
 	public static boolean inVoid(Player player) {

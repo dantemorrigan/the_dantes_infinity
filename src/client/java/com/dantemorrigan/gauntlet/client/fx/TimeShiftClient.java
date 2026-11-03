@@ -39,7 +39,8 @@ public final class TimeShiftClient {
 		while (SHIFT.consumeClick()) {
 			if (mc.player != null) ClientPlayNetworking.send(new ModNetwork.TimeShiftRequest());
 		}
-		if (ticks > 0) ticks--;
+		if (mc.level == null || !mc.level.dimension().equals(net.minecraft.world.level.Level.OVERWORLD)) ticks = 0;
+		else if (ticks > 0) ticks--;
 	}
 
 	private static void overlay(GuiGraphicsExtractor g, float partial) {

@@ -73,7 +73,8 @@ public final class AbilityController {
         ItemStack g=GauntletState.activeGauntlet(p);
         if(g.isEmpty()) return "gauntlet";
         if(com.dantemorrigan.gauntlet.snap.InfinitySnap.inVoid(p)) return "dimension";
-        if(com.dantemorrigan.gauntlet.snap.InfinitySnap.casting(p)) return "busy";
+        if(com.dantemorrigan.gauntlet.snap.InfinitySnap.casting(p)
+                || p.hasAttached(com.dantemorrigan.gauntlet.snap.InfinitySnap.RECORD)) return "busy";
         var stones=GauntletState.inserted(g);
         if(a.stone!=null && !stones.contains(a.stone) || (a==Ability.BEAM || a==Ability.SNAP) && stones.size()!=6) return "stone";
         if(a==Ability.REWIND && TimeAbility.canRestorePlanet(p) && !TimeAbility.isRewinding(p)) return "";
