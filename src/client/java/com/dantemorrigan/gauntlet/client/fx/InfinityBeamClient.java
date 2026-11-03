@@ -74,7 +74,6 @@ public final class InfinityBeamClient {
                     com.dantemorrigan.gauntlet.client.StatusHud.persistent("beam", net.minecraft.network.chat.Component.literal(
                             charging ? "§eЛуч Бесконечности: заряд " + Math.min(100, (int)(progress * 100)) + "%"
                                     : "§dЛуч Бесконечности: " + String.format(java.util.Locale.ROOT, "%.1f", Math.max(0, (v.state.duration() - age + v.state.charge()) / 20f)) + " с"));
-                    if (!charging) Cutscene.shake(.12f, 2);
                 } else com.dantemorrigan.gauntlet.client.StatusHud.persistent("beam", null);
             }
         });
