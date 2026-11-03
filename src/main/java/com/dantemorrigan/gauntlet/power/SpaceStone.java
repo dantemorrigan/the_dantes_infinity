@@ -268,7 +268,7 @@ public final class SpaceStone {
 	// ------------------------------------------------------------------ teleport where you look
 
 	public static boolean blinkLoose(ServerPlayer player) {
-		return blink(player, ItemStack.EMPTY, 8);
+		return blink(player, ItemStack.EMPTY, GauntletConfig.get().blinkRange);
 	}
 
 	private static boolean blink(ServerPlayer player, ItemStack g, double range) {
