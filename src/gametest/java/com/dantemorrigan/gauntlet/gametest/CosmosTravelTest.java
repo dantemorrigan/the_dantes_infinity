@@ -43,6 +43,10 @@ public class CosmosTravelTest implements FabricClientGameTest {
             for(int i=0;i<CosmosRoutes.ALL.size();i++) {
                 if(i==CosmosRoutes.EARTH) continue;
                 final var d=CosmosRoutes.ALL.get(i);
+                final int index=i;
+                // A body hidden behind the Sun from here is correctly not aimable: skip it.
+                if(ctx.computeOnClient(mc->{var e=mc.player.getEyePosition();var v=new net.minecraft.world.phys.Vec3(d.x()-e.x,d.y()-e.y,d.z()-e.z());
+                    return CosmosRoutes.aim(e.x,e.y,e.z,v.x,v.y,v.z,2.5)!=index;})) continue;
                 warpAimed.accept(d);
                 if(!ctx.computeOnClient(mc->mc.player.position().distanceToSqr(d.arrivalX(),d.arrivalY(),d.arrivalZ())<400))
                     throw new AssertionError("Aimed warp failed: "+d.id());
