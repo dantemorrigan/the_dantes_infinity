@@ -4,6 +4,7 @@ import com.dantemorrigan.gauntlet.InfinityGauntlet;
 import com.dantemorrigan.gauntlet.client.ability.AbilityFavorites;
 import com.dantemorrigan.gauntlet.client.ability.AbilityFavoritesScreen;
 import com.dantemorrigan.gauntlet.client.ability.AbilityInput;
+import com.dantemorrigan.gauntlet.client.ability.AbilityWheelScreen;
 import com.dantemorrigan.gauntlet.net.ModNetwork;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
@@ -22,7 +23,6 @@ import java.util.Map;
 /** Compact, wrapping top-left panel, independent of health/armor rows and vanilla notifications. */
 public final class StatusHud {
     private static final Map<String, Component> LINES = new LinkedHashMap<>();
-    private static final int[] COLORS = {0xFFA23BFF, 0xFF168CFF, 0xFFEF293E, 0xFFFFE157, 0xFF32E268, 0xFFFF981F};
     private static Component notice;
     private static int remaining;
 
@@ -51,37 +51,52 @@ public final class StatusHud {
     }
     private static void render(GuiGraphicsExtractor g) {
         Minecraft mc = Minecraft.getInstance();
-        if (mc.player == null || mc.options.hideGui || mc.screen instanceof AbilityFavoritesScreen || mc.screen instanceof com.dantemorrigan.gauntlet.client.ability.AbilityWheelScreen || (notice == null && LINES.isEmpty() && !com.dantemorrigan.gauntlet.client.ability.AbilityInput.equipped())) return;
-        int maxWidth = Math.max(60, Math.min(270, g.guiWidth() - 40));
+        if (mc.player == null || mc.options.hideGui || mc.screen instanceof AbilityFavoritesScreen
+                || mc.screen instanceof AbilityWheelScreen) return;
+        boolean equipped = AbilityInput.equipped();
+        if (!equipped && notice == null && LINES.isEmpty()) return;
+
+        int maxWidth = Math.max(44, Math.min(166, g.guiWidth() - 36));
+        int favoritesHeight = equipped ? 39 : 0;
+        int lineHeight = 10;
         List<FormattedCharSequence> rows = new ArrayList<>();
-        boolean ability=com.dantemorrigan.gauntlet.client.ability.AbilityInput.equipped();
-        int cardRows=0;
-        if(ability) {
-            var selected=com.dantemorrigan.gauntlet.client.ability.AbilityInput.selected();
-            rows.addAll(mc.font.split(bold(com.dantemorrigan.gauntlet.client.ability.AbilityInput.title(selected)),maxWidth-28));
-            rows.addAll(mc.font.split(com.dantemorrigan.gauntlet.client.ability.AbilityInput.hint(selected),maxWidth-28));
-            cardRows=rows.size();
+        if (equipped) {
+            var selected = AbilityInput.selected();
+            rows.addAll(mc.font.split(bold(AbilityInput.title(selected)), maxWidth - 22));
+            rows.addAll(mc.font.split(AbilityInput.hint(selected), maxWidth - 22));
         }
+        int cardRows = rows.size();
         for (Component line : LINES.values()) rows.addAll(mc.font.split(bold(line), maxWidth));
         if (notice != null) rows.addAll(mc.font.split(bold(notice), maxWidth));
-        // Bound the panel on small windows; long messages wrap inside its background.
-        int limit = Math.max(1, (g.guiHeight() - 125 - (ability ? 38 : 0)) / 12);
-        if (rows.size() > limit) rows = new ArrayList<>(rows.subList(0, limit));
-        int width = ability ? AbilityFavorites.WIDTH : 120;
-        for (int i=0;i<rows.size();i++) width = Math.max(width, mc.font.width(rows.get(i))+(i<cardRows?28:0));
+
+        int limit = Math.max(2, (g.guiHeight() - 112 - favoritesHeight) / lineHeight);
+        if (rows.size() > limit) rows = rows.subList(0, limit);
+        int width = equipped ? Math.min(maxWidth, AbilityFavorites.WIDTH) : 0;
+        for (int row = 0; row < rows.size(); row++) {
+            width = Math.max(width, mc.font.width(rows.get(row)) + (row < cardRows ? 22 : 0));
+        }
         width = Math.min(width, maxWidth);
-        int x = 12, y = 52, height = 23 + rows.size() * 12 + (ability ? 38 : 0);
-        g.fill(x, y, x + width + 18, y + height, 0xD014101F);
+
+        int x = 12, y = 52, padding = 6;
+        int height = padding * 2 + rows.size() * lineHeight + favoritesHeight;
+        g.fill(x, y, x + width + padding * 2, y + height, 0xD014101F);
         g.fill(x, y, x + 2, y + height, 0xFFE8B75F);
-        for (int i = 0; i < 6; i++) g.fill(x + 9 + i * 7, y + 8, x + 13 + i * 7, y + 11, COLORS[i]);
-        g.fill(x + 9, y + 17, x + width + 9, y + 18, 0x504F4263);
-        if(ability) com.dantemorrigan.gauntlet.client.ability.AbilityWheelScreen.icon(g,com.dantemorrigan.gauntlet.client.ability.AbilityInput.selected(),x+9,y+24,20);
-        for (int i = 0; i < rows.size(); i++) g.text(mc.font, rows.get(i), x + 9 + (i<cardRows?28:0), y + 23 + i * 12, 0xFFF4EFFA, true);
-        if (ability) {
-            int barY = y + 23 + rows.size() * 12;
-            g.text(mc.font, Component.translatable("ability.infinity_gauntlet.favorites_shortcut",
-                AbilityInput.FAVORITES.getTranslatedKeyMessage()), x + 9, barY, 0xFFF4D68D, true);
-            AbilityFavorites.render(g, x + 9, barY + 11, -1);
+        if (equipped) AbilityWheelScreen.icon(g, AbilityInput.selected(), x + padding, y + padding, 16);
+        for (int row = 0; row < rows.size(); row++) {
+            g.text(mc.font, rows.get(row), x + padding + (row < cardRows ? 22 : 0),
+                y + padding + row * lineHeight, 0xFFF4EFFA, true);
+        }
+        if (equipped) {
+            int barY = y + padding + rows.size() * lineHeight + 3;
+            Component shortcut = Component.translatable("ability.infinity_gauntlet.favorites_shortcut",
+                AbilityInput.FAVORITES.getTranslatedKeyMessage());
+            float scale = Math.min(1f, (float) width / Math.max(AbilityFavorites.WIDTH, mc.font.width(shortcut)));
+            g.pose().pushMatrix();
+            g.pose().translate(x + padding, barY);
+            g.pose().scale(scale, scale);
+            g.text(mc.font, shortcut, 0, 0, 0xFFF4D68D, true);
+            AbilityFavorites.render(g, 0, 11, -1);
+            g.pose().popMatrix();
         }
     }
     private StatusHud() {}
