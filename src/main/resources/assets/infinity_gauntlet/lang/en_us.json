@@ -83,5 +83,9 @@
   "ability.infinity_gauntlet.open_inventory": "Click — manage stones",
   "ability.infinity_gauntlet.portal_target": "Portal: %s",
   "ability.infinity_gauntlet.portal_hint": "%s — open / close · Shift+%s — dimension",
-  "ability.infinity_gauntlet.tear_hint": "%s — throw · Shift+%s — tear apart"
+  "ability.infinity_gauntlet.tear_hint": "%s — throw · Shift+%s — tear apart",
+  "ability.infinity_gauntlet.short.grab": "Grab",
+  "ability.infinity_gauntlet.short.throw": "Throw",
+  "ability.infinity_gauntlet.short.tear": "Tear",
+  "ability.infinity_gauntlet.short.drop": "Drop"
 }

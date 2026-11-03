@@ -83,5 +83,9 @@
   "ability.infinity_gauntlet.open_inventory": "ЛКМ — установка камней",
   "ability.infinity_gauntlet.portal_target": "Портал: %s",
   "ability.infinity_gauntlet.portal_hint": "%s — открыть / закрыть · Shift+%s — измерение",
-  "ability.infinity_gauntlet.tear_hint": "%s — бросить · Shift+%s — разорвать"
+  "ability.infinity_gauntlet.tear_hint": "%s — бросить · Shift+%s — разорвать",
+  "ability.infinity_gauntlet.short.grab": "Захват",
+  "ability.infinity_gauntlet.short.throw": "Бросок",
+  "ability.infinity_gauntlet.short.tear": "Разрыв",
+  "ability.infinity_gauntlet.short.drop": "Сброс"
 }

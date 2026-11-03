@@ -133,7 +133,13 @@ public final class AbilityWheelScreen extends Screen {
             }
             for(Ability a:Ability.of(stone,CosmosClient.inCosmos())) {
                 double[] p=abilityPoint(a);button(g,(p[0]-cx())/scale(),(p[1]-cy())/scale(),null,a,a==(keyboard!=null?keyboard:hovered),AbilityInput.selectable(a),stone,48);
-                if(stone==Stone.MIND) text(g,AbilityInput.title(a),(int)p[0],(int)(p[1]+27*scale()),AbilityInput.selectable(a)?color(stone):0xFF85818A);
+                if(stone==Stone.MIND) {
+                    float labelScale=Math.min(1f,scale()*1.65f);
+                    String key=a==Ability.GRAB&&AbilityInput.holding()>0?"throw":a==Ability.GRAB?"grab":a==Ability.TEAR?"tear":"drop";
+                    g.pose().pushMatrix();g.pose().scale(labelScale,labelScale);
+                    text(g,Component.translatable("ability.infinity_gauntlet.short."+key),(int)(p[0]/labelScale),(int)((cy()+180*scale())/labelScale),AbilityInput.selectable(a)?color(stone):0xFF85818A);
+                    g.pose().popMatrix();
+                }
             }
             button(g,-140,135,null,Ability.BEAM,(keyboard!=null?keyboard:hovered)==Ability.BEAM,AbilityInput.selectable(Ability.BEAM),Stone.MIND,48);
             button(g,0,0,GauntletState.activeGauntlet(Minecraft.getInstance().player),null,false,true,stone,68);
