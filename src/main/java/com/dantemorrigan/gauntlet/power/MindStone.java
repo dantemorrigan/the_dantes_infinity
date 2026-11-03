@@ -476,4 +476,8 @@ public final class MindStone {
 	}
 
 	private MindStone() {}
+    public static int cooldown(ServerPlayer p) { return (int)Math.max(0, COOLDOWN.getOrDefault(p.getUUID(),0L)-p.level().getGameTime()); }
+
+    public static boolean holdingMob(ServerPlayer p) { Hold h=HOLDS.get(p.getUUID()); return h!=null && h.mob!=null && h.tear<0; }
+
 }

@@ -53,7 +53,7 @@ import java.util.Set;
  */
 public final class MindClient {
 	public static final KeyMapping GRAB = KeyMappingHelper.registerKeyMapping(
-			new KeyMapping("key.infinity_gauntlet.mind", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_Z, ClientPower.CATEGORY));
+			new KeyMapping("key.infinity_gauntlet.mind", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_UNKNOWN, ClientPower.CATEGORY));
 	private static final int LIFT_TICKS = 14;
 
 	private static final class Held {

@@ -37,9 +37,9 @@ import java.util.Map;
  */
 public final class SpaceStoneClient {
 	public static final KeyMapping PORTAL = KeyMappingHelper.registerKeyMapping(
-			new KeyMapping("key.infinity_gauntlet.space_portal", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_B, ClientPower.CATEGORY));
+			new KeyMapping("key.infinity_gauntlet.space_portal", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_UNKNOWN, ClientPower.CATEGORY));
 	public static final KeyMapping BLINK = KeyMappingHelper.registerKeyMapping(
-			new KeyMapping("key.infinity_gauntlet.space_blink", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_N, ClientPower.CATEGORY));
+			new KeyMapping("key.infinity_gauntlet.space_blink", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_UNKNOWN, ClientPower.CATEGORY));
 
 	private static final int OPEN = 8, CLOSE = 8;
 

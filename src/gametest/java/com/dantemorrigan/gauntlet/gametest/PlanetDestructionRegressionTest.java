@@ -12,6 +12,7 @@ import net.minecraft.world.phys.Vec3;
 /** Rain + red sky -> planet destruction -> clean space -> Time rewind. */
 public class PlanetDestructionRegressionTest implements FabricClientGameTest {
     @Override public void runTest(ClientGameTestContext ctx) {
+        LegacyBindings.enable(ctx);
         try(TestSingleplayerContext sp=ctx.worldBuilder().create()) {
             sp.getClientLevel().waitForChunksRender();
             sp.getServer().runCommand("execute as @p run gamemode creative");

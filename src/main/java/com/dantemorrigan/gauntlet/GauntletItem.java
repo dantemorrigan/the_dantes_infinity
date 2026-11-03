@@ -39,6 +39,7 @@ public class GauntletItem extends Item {
 			}
 			return InteractionResult.SUCCESS;
 		}
+		if (!GauntletConfig.get().legacyRightClickPower) return InteractionResult.PASS;
 		if (!GauntletState.inserted(gauntlet).contains(Stone.POWER) || player.getCooldowns().isOnCooldown(gauntlet)) {
 			return InteractionResult.PASS;
 		}

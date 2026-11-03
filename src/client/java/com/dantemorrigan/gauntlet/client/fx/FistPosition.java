@@ -32,7 +32,7 @@ public final class FistPosition {
 
 	/** Position while the entity is charging a gauntlet, or null to end the aura. */
 	public static Vec3 ifCharging(Entity entity) {
-		return entity instanceof LivingEntity le && GauntletItem.chargeTicks(le) > 0 && le.isAlive() ? of(entity, 1f) : null;
+		return entity instanceof LivingEntity le && (GauntletItem.chargeTicks(le) > 0 || entity==net.minecraft.client.Minecraft.getInstance().player && com.dantemorrigan.gauntlet.client.ability.AbilityInput.powerCharge()>0) && le.isAlive() ? of(entity, 1f) : null;
 	}
 
 	private FistPosition() {}

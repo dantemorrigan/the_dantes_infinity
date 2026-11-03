@@ -28,6 +28,7 @@ public class InfinityBeamTest implements FabricClientGameTest {
         sp.getServer().runCommand("execute as @p at @p run " + cmd);
     }
     @Override public void runTest(ClientGameTestContext ctx) {
+        LegacyBindings.enable(ctx);
         try (TestSingleplayerContext sp = ctx.worldBuilder().create()) {
             sp.getClientLevel().waitForChunksRender();
             MinecraftServer server = ctx.computeOnClient(mc -> mc.getSingleplayerServer());

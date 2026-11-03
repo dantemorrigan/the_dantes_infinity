@@ -48,23 +48,32 @@ public final class StatusHud {
     }
     private static void render(GuiGraphicsExtractor g) {
         Minecraft mc = Minecraft.getInstance();
-        if (mc.player == null || mc.options.hideGui || (notice == null && LINES.isEmpty())) return;
+        if (mc.player == null || mc.options.hideGui || (notice == null && LINES.isEmpty() && !com.dantemorrigan.gauntlet.client.ability.AbilityInput.equipped())) return;
         int maxWidth = Math.max(60, Math.min(270, g.guiWidth() - 40));
         List<FormattedCharSequence> rows = new ArrayList<>();
+        boolean ability=com.dantemorrigan.gauntlet.client.ability.AbilityInput.equipped();
+        int cardRows=0;
+        if(ability) {
+            var selected=com.dantemorrigan.gauntlet.client.ability.AbilityInput.selected();
+            rows.addAll(mc.font.split(bold(com.dantemorrigan.gauntlet.client.ability.AbilityInput.title(selected)),maxWidth-28));
+            rows.addAll(mc.font.split(com.dantemorrigan.gauntlet.client.ability.AbilityInput.hint(selected),maxWidth-28));
+            cardRows=rows.size();
+        }
         for (Component line : LINES.values()) rows.addAll(mc.font.split(bold(line), maxWidth));
         if (notice != null) rows.addAll(mc.font.split(bold(notice), maxWidth));
         // Bound the panel on small windows; long messages wrap inside its background.
         int limit = Math.max(1, (g.guiHeight() - 125) / 12);
         if (rows.size() > limit) rows = new ArrayList<>(rows.subList(0, limit));
         int width = 120;
-        for (var row : rows) width = Math.max(width, mc.font.width(row));
+        for (int i=0;i<rows.size();i++) width = Math.max(width, mc.font.width(rows.get(i))+(i<cardRows?28:0));
         width = Math.min(width, maxWidth);
         int x = 12, y = 52, height = 23 + rows.size() * 12;
         g.fill(x, y, x + width + 18, y + height, 0xD014101F);
         g.fill(x, y, x + 2, y + height, 0xFFE8B75F);
         for (int i = 0; i < 6; i++) g.fill(x + 9 + i * 7, y + 8, x + 13 + i * 7, y + 11, COLORS[i]);
         g.fill(x + 9, y + 17, x + width + 9, y + 18, 0x504F4263);
-        for (int i = 0; i < rows.size(); i++) g.text(mc.font, rows.get(i), x + 9, y + 23 + i * 12, 0xFFF4EFFA, true);
+        if(ability) com.dantemorrigan.gauntlet.client.ability.AbilityWheelScreen.icon(g,com.dantemorrigan.gauntlet.client.ability.AbilityInput.selected(),x+9,y+24,20);
+        for (int i = 0; i < rows.size(); i++) g.text(mc.font, rows.get(i), x + 9 + (i<cardRows?28:0), y + 23 + i * 12, 0xFFF4EFFA, true);
     }
     private StatusHud() {}
 }

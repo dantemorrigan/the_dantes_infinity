@@ -14,6 +14,7 @@ public class InfinityGauntletClient implements ClientModInitializer {
 	@Override
 	public void onInitializeClient() {
 		MenuScreens.register(ModMenus.GAUNTLET, GauntletScreen::new);
+        com.dantemorrigan.gauntlet.client.ability.AbilityInput.init();
 		ModParticleProviders.init();
 		ClientPower.init();
 		com.dantemorrigan.gauntlet.client.fx.RealityClient.init();

@@ -329,5 +329,13 @@ public final class SpaceStone {
 	}
 
 	private SpaceStone() {}
+    public static int cooldown(ServerPlayer p, boolean blink) { return (int)Math.max(0,(blink?BLINK_COOLDOWN:COOLDOWN).getOrDefault(p.getUUID(),0L)-p.level().getGameTime()); }
+    public static boolean selectDestination(ServerPlayer p,int index) {
+        if(index<0 || index>=DESTINATIONS.length || DIMS.get(index).equals(p.level().dimension())) return false;
+        var g=GauntletState.activeGauntlet(p);
+        if(g.isEmpty() || !GauntletState.inserted(g).contains(Stone.SPACE)) return false;
+        g.set(ModComponents.PORTAL_DESTINATION,index);return true;
+    }
+
 }
 

@@ -8,6 +8,7 @@ import org.lwjgl.glfw.GLFW;
 /** Real key input: reject missing stone, ascend, warp through the catalogue, return, revoke flight. */
 public class CosmosTravelTest implements FabricClientGameTest {
     @Override public void runTest(ClientGameTestContext ctx) {
+        LegacyBindings.enable(ctx);
         try(var sp=ctx.worldBuilder().create()) {
             sp.getClientLevel().waitForChunksRender();
             sp.getServer().runCommand("gamemode survival @p"); ctx.waitTicks(5);

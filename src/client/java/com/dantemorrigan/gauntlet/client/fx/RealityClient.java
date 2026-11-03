@@ -57,7 +57,7 @@ import java.util.Set;
  */
 public final class RealityClient {
 	public static final KeyMapping KEY = KeyMappingHelper.registerKeyMapping(
-			new KeyMapping("key.infinity_gauntlet.reality", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_G, ClientPower.CATEGORY));
+			new KeyMapping("key.infinity_gauntlet.reality", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_UNKNOWN, ClientPower.CATEGORY));
 
 	private static final int T_CRACKS = 12, T_FOLD = 20, FOLD_TICKS = 20, RELEASE_TICKS = 14;
 	private static final float INNER = 2.5f; // the caster's own patch stays solid

@@ -36,7 +36,7 @@ import java.util.Map;
  */
 public final class TimeRewindClient {
 	public static final KeyMapping REWIND = KeyMappingHelper.registerKeyMapping(
-			new KeyMapping("key.infinity_gauntlet.time_rewind", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_R, ClientPower.CATEGORY));
+			new KeyMapping("key.infinity_gauntlet.time_rewind", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_UNKNOWN, ClientPower.CATEGORY));
 
 	private static final int GREEN = 0x28C850;
 	/** entity id -> ticks left of rewind particles. */

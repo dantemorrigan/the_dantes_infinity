@@ -10,6 +10,7 @@ import org.lwjgl.glfw.GLFW;
 /** Real movement, actual blocks and server impacts: trees, wall, ground and indestructible bedrock. */
 public class SupersonicFlightTest implements FabricClientGameTest {
     @Override public void runTest(ClientGameTestContext ctx) {
+        LegacyBindings.enable(ctx);
         try(var sp=ctx.worldBuilder().create()) {
             sp.getClientLevel().waitForChunksRender();
             sp.getServer().runCommand("gamemode survival @p");

@@ -10,6 +10,7 @@ import net.minecraft.world.phys.Vec3;
 public class SpaceCollisionTest implements FabricClientGameTest {
 	@Override
 	public void runTest(ClientGameTestContext ctx) {
+        LegacyBindings.enable(ctx);
 		try (TestSingleplayerContext sp = ctx.worldBuilder().create()) {
 			sp.getClientLevel().waitForChunksRender();
 			sp.getServer().runCommand("execute as @p at @p run gauntlet space enter");

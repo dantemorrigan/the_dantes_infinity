@@ -21,6 +21,7 @@ public class RealityStrikeTest implements FabricClientGameTest {
 
 	@Override
 	public void runTest(ClientGameTestContext ctx) {
+        LegacyBindings.enable(ctx);
 		try (TestSingleplayerContext sp = ctx.worldBuilder().create()) {
 			SP = sp;
 			sp.getClientLevel().waitForChunksRender();

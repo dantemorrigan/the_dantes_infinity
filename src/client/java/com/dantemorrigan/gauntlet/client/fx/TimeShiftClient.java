@@ -19,7 +19,7 @@ import org.lwjgl.glfw.GLFW;
 /** Time stone day/night switch: key, time-tint with a spinning clock ring while the sky races. */
 public final class TimeShiftClient {
 	public static final KeyMapping SHIFT = KeyMappingHelper.registerKeyMapping(
-			new KeyMapping("key.infinity_gauntlet.time_shift", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_Y, ClientPower.CATEGORY));
+			new KeyMapping("key.infinity_gauntlet.time_shift", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_UNKNOWN, ClientPower.CATEGORY));
 
 	private static int ticks, total;
 	private static boolean toNight;

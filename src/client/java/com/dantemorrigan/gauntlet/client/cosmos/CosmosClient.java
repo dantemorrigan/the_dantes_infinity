@@ -17,9 +17,9 @@ import org.lwjgl.glfw.GLFW;
 
 /** Local prediction uses ordinary player movement packets; destinations and warp completion belong to the server. */
 public final class CosmosClient {
-    public static final KeyMapping FLIGHT = key("cosmos_flight", GLFW.GLFW_KEY_J);
-    public static final KeyMapping NEXT = key("cosmos_next", GLFW.GLFW_KEY_K);
-    public static final KeyMapping WARP = key("cosmos_warp", GLFW.GLFW_KEY_U);
+    public static final KeyMapping FLIGHT = key("cosmos_flight", GLFW.GLFW_KEY_UNKNOWN);
+    public static final KeyMapping NEXT = key("cosmos_next", GLFW.GLFW_KEY_UNKNOWN);
+    public static final KeyMapping WARP = key("cosmos_warp", GLFW.GLFW_KEY_UNKNOWN);
     private static boolean enabled;
     private static int selected, warp, cooldown, ticks, impactPause;
     private static int sonicBooms, impactBursts;
@@ -65,6 +65,7 @@ public final class CosmosClient {
         lastBoost=false; lastDimension=null; impactPause=0;sonicBooms=0;impactBursts=0;
         StatusHud.persistent("cosmos",null); StatusHud.persistent("cosmos_keys",null);
     }
+    public static boolean flying() { return enabled; }
     public static boolean inCosmos() {
         var l=Minecraft.getInstance().level; return l!=null && l.dimension().equals(CosmosTravel.DIMENSION);
     }
@@ -99,7 +100,8 @@ public final class CosmosClient {
             velocity=Vec3.ZERO; lastDimension=mc.level.dimension();
         }
         previous=p.position();
-        boolean locked=impactPause>0 || mc.screen!=null || com.dantemorrigan.gauntlet.client.cutscene.Cutscene.inputLocked()
+        boolean wheel=mc.screen instanceof com.dantemorrigan.gauntlet.client.ability.AbilityWheelScreen;
+        boolean locked=impactPause>0 || mc.screen!=null && !wheel || com.dantemorrigan.gauntlet.client.cutscene.Cutscene.inputLocked()
             || TimeRewindClient.inputLocked() || RealityClient.inputLocked();
         var input=p.input;
         Vec3 look=p.getViewVector(1);
@@ -109,10 +111,11 @@ public final class CosmosClient {
         Vec3 thrust=look.scale(move.y).add(left.scale(move.x));
         if(input.keyPresses.jump()) thrust=thrust.add(0,1,0);
         if(input.keyPresses.shift()) thrust=thrust.add(0,-1,0);
-        if(locked || warp>0) thrust=Vec3.ZERO;
+        if(locked || wheel || warp>0) thrust=Vec3.ZERO;
         if(thrust.lengthSqr()>1) thrust=thrust.normalize();
-        boolean boost=!locked && warp==0 && mc.options.keySprint.isDown() && thrust.lengthSqr()>.01;
+        boolean boost=!locked && !wheel && warp==0 && mc.options.keySprint.isDown() && thrust.lengthSqr()>.01;
         double cap=boost?CosmosRoutes.BOOST_SPEED:CosmosRoutes.CRUISE_SPEED;
+        if(wheel) cap=Math.max(cap,velocity.length());
         velocity=velocity.scale(thrust.lengthSqr()<.01?.8:.94).add(thrust.scale(boost?.23:.10));
         if(velocity.length()>cap) velocity=velocity.normalize().scale(cap);
         if(locked) velocity=Vec3.ZERO;

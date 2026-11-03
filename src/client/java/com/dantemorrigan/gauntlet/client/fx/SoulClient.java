@@ -33,7 +33,7 @@ import java.util.Map;
  */
 public final class SoulClient {
 	public static final KeyMapping EXTRACT = KeyMappingHelper.registerKeyMapping(
-			new KeyMapping("key.infinity_gauntlet.soul", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_O, ClientPower.CATEGORY));
+			new KeyMapping("key.infinity_gauntlet.soul", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_UNKNOWN, ClientPower.CATEGORY));
 
 	private static final class Soul {
 		int ownerId, targetId, delay, extract, flight, age;

@@ -298,7 +298,29 @@ public final class ModNetwork {
         @Override public Type<FlightFx> type() { return TYPE; }
     }
 
+    public record AbilitySelect(String id,int destination) implements CustomPacketPayload {
+        public static final Type<AbilitySelect> TYPE=newType("ability_select");
+        public static final StreamCodec<ByteBuf,AbilitySelect> CODEC=StreamCodec.composite(ByteBufCodecs.STRING_UTF8,AbilitySelect::id,ByteBufCodecs.VAR_INT,AbilitySelect::destination,AbilitySelect::new);
+        @Override public Type<AbilitySelect> type() { return TYPE; }
+    }
+    public record AbilityAction(int action) implements CustomPacketPayload {
+        public static final Type<AbilityAction> TYPE=newType("ability_action");
+        public static final StreamCodec<ByteBuf,AbilityAction> CODEC=StreamCodec.composite(ByteBufCodecs.VAR_INT,AbilityAction::action,AbilityAction::new);
+        @Override public Type<AbilityAction> type() { return TYPE; }
+    }
+    public record AbilityState(String selected,String states,int holding,int charge,int route,int portal) implements CustomPacketPayload {
+        public static final Type<AbilityState> TYPE=newType("ability_state");
+        public static final StreamCodec<ByteBuf,AbilityState> CODEC=StreamCodec.composite(
+            ByteBufCodecs.STRING_UTF8,AbilityState::selected,ByteBufCodecs.STRING_UTF8,AbilityState::states,
+            ByteBufCodecs.VAR_INT,AbilityState::holding,ByteBufCodecs.VAR_INT,AbilityState::charge,
+            ByteBufCodecs.VAR_INT,AbilityState::route,ByteBufCodecs.VAR_INT,AbilityState::portal,AbilityState::new);
+        @Override public Type<AbilityState> type() { return TYPE; }
+    }
+
 	public static void init() {
+        PayloadTypeRegistry.serverboundPlay().register(AbilitySelect.TYPE,AbilitySelect.CODEC);
+        PayloadTypeRegistry.serverboundPlay().register(AbilityAction.TYPE,AbilityAction.CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(AbilityState.TYPE,AbilityState.CODEC);
         PayloadTypeRegistry.clientboundPlay().register(FlightFx.TYPE,FlightFx.CODEC);
         PayloadTypeRegistry.serverboundPlay().register(CosmosAction.TYPE,CosmosAction.CODEC);
         PayloadTypeRegistry.clientboundPlay().register(CosmosState.TYPE,CosmosState.CODEC);

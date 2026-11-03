@@ -18,6 +18,7 @@ public class VisualTest implements FabricClientGameTest {
 
 	@Override
 	public void runTest(ClientGameTestContext ctx) {
+        LegacyBindings.enable(ctx);
 		net.fabricmc.fabric.api.client.gametest.v1.world.TestWorldSave save;
 		try (TestSingleplayerContext sp = ctx.worldBuilder().create()) {
 			SP = sp;

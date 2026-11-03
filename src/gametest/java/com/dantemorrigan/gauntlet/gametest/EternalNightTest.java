@@ -13,6 +13,7 @@ public class EternalNightTest implements FabricClientGameTest {
 
 	@Override
 	public void runTest(ClientGameTestContext ctx) {
+        LegacyBindings.enable(ctx);
 		try (TestSingleplayerContext sp = ctx.worldBuilder().create()) {
 			sp.getClientLevel().waitForChunksRender();
 			sp.getServer().runCommand("weather clear");

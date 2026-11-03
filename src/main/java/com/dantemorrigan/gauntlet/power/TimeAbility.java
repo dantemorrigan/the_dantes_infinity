@@ -187,4 +187,6 @@ public final class TimeAbility {
 	}
 
 	private TimeAbility() {}
+    public static int cooldown(ServerPlayer p) { return (int)Math.max(0, COOLDOWN.getOrDefault(p.getUUID(),0L)-p.level().getGameTime()); }
+
 }

@@ -222,4 +222,13 @@ public final class CosmosTravel {
         }
     }
     private CosmosTravel() {}
+    public static int warpCooldown(ServerPlayer p) { Navigation n=NAV.get(p.getUUID()); return n==null?0:Math.max(n.cooldown,n.warp); }
+    public static int route(ServerPlayer p) { Navigation n=NAV.get(p.getUUID()); return n==null?0:n.selected; }
+    public static boolean selectDestination(ServerPlayer p,int index) {
+        if(index<0 || index>=CosmosRoutes.ALL.size() || !inCosmos(p) || !p.hasAttached(FLIGHT) || !equipped(p)) return false;
+        Navigation n=NAV.computeIfAbsent(p.getUUID(),id->new Navigation());
+        if(n.warp>0) return false;
+        n.selected=index;sync(p,n);return true;
+    }
+
 }

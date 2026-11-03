@@ -253,4 +253,6 @@ public final class SoulStone {
 	}
 
 	private SoulStone() {}
+    public static int cooldown(ServerPlayer p, boolean mass) { return (int)Math.max(0, (mass?MASS_CD:POINT_CD).getOrDefault(p.getUUID(),0L)-p.level().getGameTime()); }
+
 }

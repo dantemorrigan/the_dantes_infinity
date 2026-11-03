@@ -174,4 +174,8 @@ public final class InfinityBeam {
         }
     }
     private InfinityBeam() {}
+    public static int cooldown(ServerPlayer p) { return (int)Math.max(0, COOLDOWNS.getOrDefault(p.getUUID(),0L)-p.level().getServer().overworld().getGameTime()); }
+
+    public static int chargeAge(ServerPlayer p) { Cast c=ACTIVE.get(p.getUUID());return c==null?0:c.age; }
+
 }

@@ -26,7 +26,7 @@ import java.util.Map;
 public final class ClientPower {
 	public static final KeyMapping.Category CATEGORY = KeyMapping.Category.register(InfinityGauntlet.id("gauntlet"));
 	public static final KeyMapping TOGGLE_MODE = KeyMappingHelper.registerKeyMapping(
-			new KeyMapping("key.infinity_gauntlet.power_mode", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_V, CATEGORY));
+			new KeyMapping("key.infinity_gauntlet.power_mode", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_UNKNOWN, CATEGORY));
 
 	/** One looping aura per charging entity. */
 	private static final Map<Integer, Particle> AURAS = new HashMap<>();
@@ -50,7 +50,7 @@ public final class ClientPower {
 			if (!it.next().getValue().isAlive()) it.remove();
 		}
 		for (Player p : level.players()) {
-			if (GauntletItem.chargeTicks(p) > 0 && !AURAS.containsKey(p.getId())) {
+			if ((GauntletItem.chargeTicks(p) > 0 || p==mc.player && com.dantemorrigan.gauntlet.client.ability.AbilityInput.powerCharge()>0) && !AURAS.containsKey(p.getId())) {
 				Vec3 fist = FistPosition.of(p, 1f);
 				Particle aura = spawn(ModParticles.POWER_CHARGE, fist, p.getId(), 0, 0);
 				if (aura != null) AURAS.put(p.getId(), aura);

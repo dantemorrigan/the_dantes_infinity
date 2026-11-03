@@ -168,4 +168,10 @@ public final class PowerAbility {
 	}
 
 	private PowerAbility() {}
+    public static int cooldown(ServerPlayer p, boolean planet) {
+        var g=GauntletState.activeGauntlet(p);
+        int item=(int)Math.ceil(p.getCooldowns().getCooldownPercent(g,0f)*GauntletConfig.get().strikeCooldownTicks);
+        return planet?Math.max(item,(int)Math.max(0,ULTIMATE_COOLDOWN.getOrDefault(p.getUUID(),0L)-p.level().getServer().overworld().getGameTime())):item;
+    }
+
 }

@@ -31,7 +31,7 @@ public class GauntletMenu extends AbstractContainerMenu {
 
 	/** Client side. */
 	public GauntletMenu(int id, Inventory inventory) {
-		this(id, inventory, new SimpleContainer(STONE_SLOTS), ItemStack.EMPTY, inventory.getSelectedSlot());
+		this(id, inventory, new SimpleContainer(STONE_SLOTS), ItemStack.EMPTY, inventory.player.getMainHandItem().is(com.dantemorrigan.gauntlet.ModItems.GAUNTLET) ? inventory.getSelectedSlot() : 40);
 	}
 
 	/** Server side: stones are read from and saved back into the gauntlet stack. */
@@ -63,7 +63,7 @@ public class GauntletMenu extends AbstractContainerMenu {
 
 	@Override
 	public boolean stillValid(Player player) {
-		return gauntlet.isEmpty() || player.getInventory().getItem(lockedSlot) == gauntlet;
+		return gauntlet.isEmpty() || (lockedSlot==40 ? player.getOffhandItem() : player.getInventory().getItem(lockedSlot)) == gauntlet;
 	}
 
 	@Override

@@ -26,7 +26,7 @@ import java.util.*;
 /** All rendering is cosmetic; only the server chooses endpoints, damage and excavated blocks. */
 public final class InfinityBeamClient {
     public static final KeyMapping BEAM = KeyMappingHelper.registerKeyMapping(new KeyMapping(
-            "key.infinity_gauntlet.infinity_beam", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_H, ClientPower.CATEGORY));
+            "key.infinity_gauntlet.infinity_beam", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_UNKNOWN, ClientPower.CATEGORY));
     private static final Map<Integer, Visual> BEAMS = new HashMap<>();
     private static final List<Puff> PUFFS = new ArrayList<>();
     private static final int[] COLORS = {0xA23BFF, 0x168CFF, 0xEF293E, 0xFFE157, 0x32E268, 0xFF981F};

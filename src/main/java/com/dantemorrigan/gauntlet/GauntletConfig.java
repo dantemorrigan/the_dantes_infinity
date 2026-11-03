@@ -15,6 +15,9 @@ import java.nio.file.Path;
  * rewritten on load so new options appear. Server fields are read on the server, client fields on the client.
  */
 public final class GauntletConfig {
+    // Wheel input options (read on the client); legacy worn-gauntlet RMB is opt-in.
+    public boolean abilityWheelToggle = false;
+    public boolean legacyRightClickPower = false;
 	// ---- Power strike (server) ----
 	/** Damage at full charge to the directly hit target. */
 	public float strikeDamage = 18f;

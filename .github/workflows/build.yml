@@ -29,16 +29,16 @@ jobs:
         run: java -cp build/classes/java/main src/geometryTest/java/CosmosRoutesCheck.java
       - name: validate cosmos textures
         run: python3 scripts/check_cosmos_assets.py
-      - name: cosmos client regression
+      - name: ability wheel client regression
         timeout-minutes: 12
         env:
           LIBGL_ALWAYS_SOFTWARE: 'true'
-        run: xvfb-run -a ./gradlew runClientGameTest -PcosmosTest
+        run: xvfb-run -a ./gradlew runClientGameTest -PonlyTest=AbilityWheelTest
       - name: cosmos screenshots and logs
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: Cosmos-regression
+          name: Ability-wheel-regression
           path: |
             build/run/clientGameTest/screenshots/
             build/run/clientGameTest/logs/
