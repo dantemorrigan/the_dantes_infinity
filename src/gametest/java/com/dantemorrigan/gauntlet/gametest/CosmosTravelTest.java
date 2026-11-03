@@ -36,6 +36,16 @@ public class CosmosTravelTest implements FabricClientGameTest {
                 final var d=CosmosRoutes.ALL.get(i);
                 if(!ctx.computeOnClient(mc->mc.player.position().distanceToSqr(d.arrivalX(),d.arrivalY(),d.arrivalZ())<400))
                     throw new AssertionError("Warp failed: "+d.id());
+                if(d.field()) {
+                    sp.getServer().runOnServer(server -> {
+                        var space=server.getLevel(CosmosTravel.DIMENSION);
+                        int solid=0;
+                        for(int x=-100;x<=100;x+=4) for(int y=-40;y<=40;y+=4) for(int z=-100;z<=100;z+=4)
+                            if(!space.getBlockState(new net.minecraft.core.BlockPos((int)d.x()+x,(int)d.y()+y,(int)d.z()+z)).isAir()) solid++;
+                        if(solid<20) throw new AssertionError("Asteroid field has no physical blocks: "+d.id()+" / "+solid);
+                    });
+                    sp.getClientLevel().waitForChunksRender();
+                }
                 ctx.takeScreenshot("cosmos_"+d.id());ctx.waitTicks(100);
             }
             ctx.getInput().pressKey(GLFW.GLFW_KEY_K);ctx.waitTicks(8);
