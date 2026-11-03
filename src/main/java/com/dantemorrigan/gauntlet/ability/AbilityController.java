@@ -75,7 +75,7 @@ public final class AbilityController {
         if((a==Ability.DAY_NIGHT || a==Ability.CELESTIAL) && !p.level().dimension().equals(Level.OVERWORLD)) return "dimension";
         if((a==Ability.WARP || a==Ability.DESTINATIONS) && !CosmosTravel.inCosmos(p)) return "cosmos";
         if((a==Ability.PORTAL || a==Ability.BLINK) && CosmosTravel.inCosmos(p)) return "dimension";
-        if(a==Ability.FLIGHT && CosmosTravel.inCosmos(p) && p.position().distanceTo(new net.minecraft.world.phys.Vec3(0,com.dantemorrigan.gauntlet.cosmos.CosmosRoutes.EARTH_CENTER_Y,0))>2200) return "earth";
+        if(a==Ability.FLIGHT && CosmosTravel.inCosmos(p) && com.dantemorrigan.gauntlet.cosmos.CosmosRoutes.earthDistance(p.getX(),p.getY(),p.getZ())>com.dantemorrigan.gauntlet.cosmos.CosmosRoutes.RETURN_RANGE) return "earth";
         if(a==Ability.TEAR && !MindStone.holdingMob(p)) return "mob";
         if(a==Ability.DROP && !MindStone.holding(p)) return "hold";
         if(cooldown(p,a)>0) return "cooldown";

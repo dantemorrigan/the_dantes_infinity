@@ -87,7 +87,7 @@ public final class CosmosClient {
         if(mc.player==null || mc.level==null) { clear(); return; }
         if(mc.screen==null) {
             while(FLIGHT.consumeClick()) ClientPlayNetworking.send(new ModNetwork.CosmosAction(0));
-            while(NEXT.consumeClick()) if(inCosmos()) ClientPlayNetworking.send(new ModNetwork.CosmosAction(1));
+            while(NEXT.consumeClick()) {}
             while(WARP.consumeClick()) if(inCosmos()) ClientPlayNetworking.send(new ModNetwork.CosmosAction(2));
         }
         if(!enabled) return;
@@ -127,12 +127,16 @@ public final class CosmosClient {
         if(intensity>.15f || inCosmos() || atmosphere()>.2f) effects(mc,look);
         String speed=String.format(java.util.Locale.ROOT,"%.0f",velocity.length()*20);
         if(inCosmos()) {
-            var d=CosmosRoutes.ALL.get(selected);
-            int distance=(int)p.position().distanceTo(new Vec3(d.arrivalX(),d.arrivalY(),d.arrivalZ()));
-            StatusHud.persistent("cosmos",Component.translatable("cosmos.infinity_gauntlet.navigation",Component.translatable("cosmos.infinity_gauntlet."+d.id()),distance,speed));
+            Vec3 eye=p.getEyePosition();
+            int target=warp>0?selected:CosmosRoutes.aim(eye.x,eye.y,eye.z,look.x,look.y,look.z,2.5);
+            if(target>=0) {
+                var d=CosmosRoutes.ALL.get(target);
+                int distance=(int)Math.max(0,eye.distanceTo(new Vec3(d.x(),d.y(),d.z()))-d.radius());
+                StatusHud.persistent("cosmos",Component.translatable("cosmos.infinity_gauntlet.target",Component.translatable("cosmos.infinity_gauntlet."+d.id()),distance,speed));
+            } else StatusHud.persistent("cosmos",Component.translatable("cosmos.infinity_gauntlet.aim",speed));
             StatusHud.persistent("cosmos_keys",warp>0?Component.translatable("cosmos.infinity_gauntlet.warp",String.format(java.util.Locale.ROOT,"%.1f",warp/20f)):
                 cooldown>0?Component.translatable("cosmos.infinity_gauntlet.cooldown",(cooldown+19)/20):
-                Component.translatable("cosmos.infinity_gauntlet.controls",NEXT.getTranslatedKeyMessage(),WARP.getTranslatedKeyMessage(),FLIGHT.getTranslatedKeyMessage()));
+                Component.translatable("cosmos.infinity_gauntlet.controls",WARP.getTranslatedKeyMessage(),FLIGHT.getTranslatedKeyMessage()));
         } else {
             StatusHud.persistent("cosmos",mc.level.dimension().equals(Level.OVERWORLD)?Component.translatable("cosmos.infinity_gauntlet.ascent",(int)p.getY(),(int)CosmosRoutes.EXIT_HEIGHT,speed):null);
             StatusHud.persistent("cosmos_keys",Component.translatable("cosmos.infinity_gauntlet.flight_controls",FLIGHT.getTranslatedKeyMessage()));

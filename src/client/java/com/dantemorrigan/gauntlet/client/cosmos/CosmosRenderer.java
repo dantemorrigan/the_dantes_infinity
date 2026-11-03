@@ -3,7 +3,6 @@ package com.dantemorrigan.gauntlet.client.cosmos;
 import com.dantemorrigan.gauntlet.InfinityGauntlet;
 import com.dantemorrigan.gauntlet.cosmos.CosmosRoutes;
 import com.dantemorrigan.gauntlet.client.celestial.CelestialSky;
-import com.dantemorrigan.gauntlet.client.space.PlanetGeometry;
 import com.mojang.blaze3d.vertex.*;
 import com.mojang.math.Axis;
 import net.fabricmc.fabric.api.client.rendering.v1.level.*;
@@ -69,76 +68,121 @@ public final class CosmosRenderer {
             });
         }
     }
-    private static final float[][] ATMOS={{.35f,.60f,1f},{0,0,0},{1f,.45f,.25f},{.65f,.85f,1f}};
+    /** Atmosphere colour + strength per body; the Sun gets a stronger corona. */
+    private static final Map<String,float[]> GLOW=Map.of("earth",new float[]{.35f,.6f,1f,.34f},"venus",new float[]{1f,.85f,.5f,.5f},
+        "mars",new float[]{1f,.6f,.4f,.12f},"jupiter",new float[]{.9f,.8f,.65f,.10f},"saturn",new float[]{.9f,.85f,.6f,.10f},
+        "uranus",new float[]{.5f,.85f,.9f,.3f},"neptune",new float[]{.3f,.5f,1f,.3f},"sun",new float[]{1f,.8f,.4f,.55f});
+    private static final Vec3 OVERWORLD_SUN=new Vec3(-.35,.65,.65).normalize();
+    private static boolean warmed;
+    private record Body(String id,Vec3 delta,double radius,double distance,double angular,int index) {}
     private static void render(LevelRenderContext ctx) {
         var mc=Minecraft.getInstance();
         boolean orbit=CosmosClient.inCosmos(); float atmosphere=CosmosClient.atmosphere();
         if(mc.player==null || (!orbit && atmosphere<.65)) return;
-        Vec3 cam=mc.gameRenderer.getMainCamera().position();
+        if(!warmed) { warmed=true; CosmosPlanets.warmup(); }
+        Vec3 cam=mc.gameRenderer.getMainCamera().position(), look=mc.player.getViewVector(1);
         float far=mc.options.getEffectiveRenderDistance()*64f;
-        // Far to near submission preserves the visual order of distant worlds.
-        List<Integer> order=new ArrayList<>(List.of(0,1,2,3));
-        order.sort(Comparator.comparingDouble((Integer i)->{
-            var d=CosmosRoutes.ALL.get(i); return -cam.distanceToSqr(d.x(),d.y(),d.z());
-        }));
-        for(int index:order) {
-            if(!orbit && index!=0) continue;
-            var d=CosmosRoutes.ALL.get(index);
-            Vec3 center=orbit?new Vec3(d.x(),d.y(),d.z()):new Vec3(cam.x,-1080,cam.z);
-            double radius=orbit?d.radius():1560;
-            Vec3 delta=center.subtract(cam);
-            double fit=Math.min(1,far*.68/(delta.length()+radius));
-            float scale=(float)(radius*fit);
-            int alpha=orbit?255:(int)(255*Math.min(1,(atmosphere-.65)/.35));
-            // Camera in the planet's unit-sphere space, for the rim glow.
-            final float cx=(float)(-delta.x*fit/scale), cy=(float)(-delta.y*fit/scale), cz=(float)(-delta.z*fit/scale);
+        List<Body> bodies=new ArrayList<>();
+        if(orbit) for(int i=0;i<CosmosRoutes.ALL.size();i++) {
+            var d=CosmosRoutes.ALL.get(i); Vec3 delta=new Vec3(d.x(),d.y(),d.z()).subtract(cam); double dist=delta.length();
+            if(dist<=d.radius()+1) continue;
+            double angular=Math.asin(Math.min(1,d.radius()/dist));
+            if(Math.acos(Math.max(-1,Math.min(1,delta.dot(look)/dist)))-angular>1.3) continue; // outside the view cone
+            bodies.add(new Body(d.id(),delta,d.radius(),dist,angular,i));
+        } else {
+            Vec3 delta=new Vec3(0,-1080-cam.y,0); bodies.add(new Body("earth",delta,1560,delta.length(),Math.asin(Math.min(1,1560/delta.length())),-1));
+        }
+        // Far to near. A body hidden behind a nearer one (its centre inside the nearer disk) is skipped, because the
+        // compressed depth below preserves order but not exact occlusion.
+        bodies.sort(Comparator.comparingDouble((Body x)->-x.distance()));
+        List<Body> visible=new ArrayList<>();
+        for(Body j:bodies) {
+            boolean hidden=false;
+            for(Body i:bodies) if(i!=j && i.distance()<j.distance() && Math.acos(Math.max(-1,Math.min(1,i.delta().dot(j.delta())/(i.distance()*j.distance()))))<i.angular()) {hidden=true;break;}
+            if(!hidden) visible.add(j);
+        }
+        Vec3 sun=orbit?new Vec3(CosmosRoutes.ALL.get(0).x(),CosmosRoutes.ALL.get(0).y(),CosmosRoutes.ALL.get(0).z()):null;
+        for(Body b:visible) {
+            Identifier texture=CosmosPlanets.texture(b.id()); if(texture==null) continue;
+            boolean isSun=b.id().equals("sun");
+            // Distance used for depth only: angular size and direction stay true, order is preserved.
+            double shown=isSun?far*.68:orbit?far*(.2+.2*Math.min(1,b.distance()/130000)):far*.3;
+            double k=shown/b.distance(); float scale=(float)(b.radius()*k);
+            int index=Math.max(0,b.index()); int alpha=orbit?255:(int)(255*Math.min(1,(atmosphere-.65)/.35));
+            float tilt=orbit?CosmosPlanets.TILT[index]:23.4f, yaw=orbit?index*67f:0;
+            Vec3 toSun=orbit?(isSun?Vec3.ZERO:sun.subtract(new Vec3(b.delta().x+cam.x,b.delta().y+cam.y,b.delta().z+cam.z)).normalize()):OVERWORLD_SUN;
+            var q=new org.joml.Quaternionf().rotationZ((float)Math.toRadians(tilt)).rotateY((float)Math.toRadians(yaw)).conjugate();
+            Vector3f light=q.transform(new Vector3f((float)toSun.x,(float)toSun.y,(float)toSun.z));
+            Vector3f camLocal=q.transform(new Vector3f((float)(-b.delta().x/b.radius()),(float)(-b.delta().y/b.radius()),(float)(-b.delta().z/b.radius())));
+            double ratio=b.radius()/b.distance(); int level=ratio>.3?2:ratio>.07?1:0;
+            var mesh=CosmosPlanets.mesh(level);
             var pose=ctx.poseStack(); pose.pushPose();
-            pose.translate(delta.x*fit,delta.y*fit,delta.z*fit);
+            pose.translate(b.delta().x*k,b.delta().y*k,b.delta().z*k);
             pose.scale(scale,scale,scale);
-            final int planet=index, a=alpha;
-            var type=RenderTypes.entityTranslucentEmissive(CosmosPlanets.texture(index));
-            ctx.submitNodeCollector().submitCustomGeometry(pose,type,(p,out)->surface(p,out,planet,a));
-            if(ATMOS[index][0]>0) {
+            pose.mulPose(Axis.ZP.rotationDegrees(tilt)); pose.mulPose(Axis.YP.rotationDegrees(yaw));
+            ctx.submitNodeCollector().submitCustomGeometry(pose,RenderTypes.entityTranslucentEmissive(texture),(p,out)->surface(p,out,mesh,light,alpha,isSun));
+            float[] glow=GLOW.get(b.id());
+            if(glow!=null && ratio>.0015) {
                 var white=RenderTypes.entityTranslucentEmissive(Identifier.withDefaultNamespace("textures/block/white_concrete.png"));
-                ctx.submitNodeCollector().submitCustomGeometry(pose,white,(p,out)->glow(p,out,planet,a,cx,cy,cz));
+                var gm=CosmosPlanets.mesh(Math.min(level,1));
+                ctx.submitNodeCollector().submitCustomGeometry(pose,white,(p,out)->glow(p,out,gm,light,alpha,camLocal,glow,isSun));
+            }
+            if(b.id().equals("saturn")) {
+                Identifier ring=CosmosPlanets.texture("saturn_ring");
+                if(ring!=null) ctx.submitNodeCollector().submitCustomGeometry(pose,RenderTypes.entityTranslucentEmissive(ring),(p,out)->ring(p,out,alpha));
             }
             pose.popPose();
         }
     }
-    private static void surface(PoseStack.Pose p,VertexConsumer out,int planet,int alpha) {
-        final int la=CosmosPlanets.LAT, lo=CosmosPlanets.LON; float[] v=new float[3];
-        for(int i=0;i<la;i++) for(int j=0;j<lo;j++) {
-            int[][] q={{i,j},{i,j+1},{i+1,j+1},{i+1,j}};
-            for(int w=0;w<2;w++) for(int k=0;k<4;k++) {
-                int[] c=q[w==0?k:3-k];
-                CosmosPlanets.vertex(planet,c[0],c[1],la,lo,v);
-                int g=(int)(255*CosmosPlanets.light(v[0],v[1],v[2]));
-                int r=g, b=Math.min(255,g+(int)((255-g)*.06f));
-                float u=c[1]/(float)lo, t=1f-c[0]/(float)la;
-                out.addVertex(p,v[0],v[1],v[2]).setColor(alpha<<24|r<<16|g<<8|b).setUv(u,t)
-                    .setOverlay(OverlayTexture.NO_OVERLAY).setLight(LightCoordsUtil.FULL_BRIGHT).setNormal(p,v[0],v[1],v[2]);
+    private static void vertex(PoseStack.Pose p,VertexConsumer out,float x,float y,float z,float u,float v,int argb,float nx,float ny,float nz) {
+        out.addVertex(p,x,y,z).setColor(argb).setUv(u,v).setOverlay(OverlayTexture.NO_OVERLAY).setLight(LightCoordsUtil.FULL_BRIGHT).setNormal(p,nx,ny,nz);
+    }
+    private static float shade(float nx,float ny,float nz,Vector3f l) {
+        double d=nx*l.x+ny*l.y+nz*l.z, t=Math.max(0,Math.min(1,(d+.12)/.47));
+        return (float)(.08+.92*t*t*(3-2*t));
+    }
+    /** Front faces only: quads are counter-clockwise seen from outside. */
+    private static void surface(PoseStack.Pose p,VertexConsumer out,CosmosPlanets.Mesh m,Vector3f light,int alpha,boolean sun) {
+        int cols=m.lon()+1; int[] color=new int[(m.lat()+1)*cols];
+        for(int n=0;n<color.length;n++) {
+            int g=sun?255:(int)(255*shade(m.pos()[n*3],m.pos()[n*3+1],m.pos()[n*3+2],light));
+            color[n]=alpha<<24|g<<16|g<<8|Math.min(255,g+(int)((255-g)*.06f));
+        }
+        for(int i=0;i<m.lat();i++) for(int j=0;j<m.lon();j++) {
+            int a=i*cols+j, b=a+1, c=a+cols+1, d=a+cols;
+            for(int n:new int[]{a,b,c,d}) vertex(p,out,m.pos()[n*3],m.pos()[n*3+1],m.pos()[n*3+2],m.uv()[n*2],m.uv()[n*2+1],color[n],m.pos()[n*3],m.pos()[n*3+1],m.pos()[n*3+2]);
+        }
+    }
+    /** Thin translucent shells: soft atmospheric rim that fades toward the middle of the disc. */
+    private static void glow(PoseStack.Pose p,VertexConsumer out,CosmosPlanets.Mesh m,Vector3f light,int alpha,Vector3f cam,float[] glow,boolean sun) {
+        float[] sizes=sun?new float[]{1.015f,1.05f,1.12f,1.25f}:new float[]{1.012f,1.03f,1.06f};
+        float[] strength=sun?new float[]{.55f,.35f,.2f,.1f}:new float[]{1f,.6f,.3f};
+        int cols=m.lon()+1; int cr=(int)(glow[0]*255),cg=(int)(glow[1]*255),cb=(int)(glow[2]*255);
+        for(int s=0;s<sizes.length;s++) {
+            int[] color=new int[(m.lat()+1)*cols];
+            for(int n=0;n<color.length;n++) {
+                float nx=m.pos()[n*3],ny=m.pos()[n*3+1],nz=m.pos()[n*3+2];
+                float vx=cam.x-nx*sizes[s],vy=cam.y-ny*sizes[s],vz=cam.z-nz*sizes[s], vl=(float)Math.sqrt(vx*vx+vy*vy+vz*vz);
+                float facing=Math.max(0,(nx*vx+ny*vy+nz*vz)/Math.max(1e-4f,vl));
+                float rim=(float)Math.pow(1-facing,sun?1.2:2.2), day=sun?1:.25f+.75f*shade(nx,ny,nz,light);
+                color[n]=((int)(alpha*glow[3]*strength[s]*rim*day))<<24|cr<<16|cg<<8|cb;
+            }
+            for(int i=0;i<m.lat();i++) for(int j=0;j<m.lon();j++) {
+                int a=i*cols+j, b=a+1, c=a+cols+1, d=a+cols;
+                for(int n:new int[]{a,b,c,d}) vertex(p,out,m.pos()[n*3]*sizes[s],m.pos()[n*3+1]*sizes[s],m.pos()[n*3+2]*sizes[s],.5f,.5f,color[n],m.pos()[n*3],m.pos()[n*3+1],m.pos()[n*3+2]);
             }
         }
     }
-    /** Thin translucent shells: soft atmospheric rim that fades toward the planet's centre disc. */
-    private static void glow(PoseStack.Pose p,VertexConsumer out,int planet,int alpha,float cx,float cy,float cz) {
-        final int la=40, lo=80; float[] v=new float[3]; float[] col=ATMOS[planet];
-        float[] sizes={1.012f,1.03f,1.06f}, strength={.34f,.20f,.10f};
-        for(int s=0;s<sizes.length;s++) {
-            for(int i=0;i<la;i++) for(int j=0;j<lo;j++) {
-                int[][] q={{i,j},{i,j+1},{i+1,j+1},{i+1,j}};
-                for(int w=0;w<2;w++) for(int k=0;k<4;k++) {
-                    int[] c=q[w==0?k:3-k];
-                    CosmosPlanets.vertex(planet,c[0],c[1],la,lo,v);
-                    float x=v[0]*sizes[s],y=v[1]*sizes[s],z=v[2]*sizes[s];
-                    float vx=cx-x,vy=cy-y,vz=cz-z, vl=(float)Math.sqrt(vx*vx+vy*vy+vz*vz);
-                    float facing=Math.max(0,(v[0]*vx+v[1]*vy+v[2]*vz)/Math.max(1e-4f,vl));
-                    float rim=(float)Math.pow(1-facing,2.2);
-                    float day=.25f+.75f*CosmosPlanets.light(v[0],v[1],v[2]);
-                    int a=(int)(alpha*strength[s]*rim*day);
-                    out.addVertex(p,x,y,z).setColor(a<<24|(int)(col[0]*255)<<16|(int)(col[1]*255)<<8|(int)(col[2]*255)).setUv(.5f,.5f)
-                        .setOverlay(OverlayTexture.NO_OVERLAY).setLight(LightCoordsUtil.FULL_BRIGHT).setNormal(p,v[0],v[1],v[2]);
-                }
+    /** Saturn's flat ring (unit = planet radii), visible from both sides. */
+    private static void ring(PoseStack.Pose p,VertexConsumer out,int alpha) {
+        final int seg=96; final float r0=1.24f,r1=2.33f; int col=alpha<<24|0xE6E6E6;
+        for(int i=0;i<seg;i++) {
+            double a0=2*Math.PI*i/seg,a1=2*Math.PI*(i+1)/seg;
+            float[][] q={{(float)Math.cos(a0)*r0,(float)Math.sin(a0)*r0,0},{(float)Math.cos(a0)*r1,(float)Math.sin(a0)*r1,1},
+                {(float)Math.cos(a1)*r1,(float)Math.sin(a1)*r1,1},{(float)Math.cos(a1)*r0,(float)Math.sin(a1)*r0,0}};
+            for(int w=0;w<2;w++) for(int k=0;k<4;k++) {
+                float[] v=q[w==0?k:3-k];
+                vertex(p,out,v[0],0,v[1],v[2],.5f,col,0,w==0?1:-1,0);
             }
         }
     }

@@ -5,7 +5,7 @@ import java.util.HashSet;
 public class CosmosRoutesCheck {
     public static void main(String[] args) {
         var names=new HashSet<String>();
-        if(CosmosRoutes.ALL.size()!=6) throw new AssertionError("Expected four worlds and two belts");
+        if(CosmosRoutes.ALL.size()!=10) throw new AssertionError("Expected the Sun and nine bodies");
         for(var d:CosmosRoutes.ALL) {
             if(!names.add(d.id())) throw new AssertionError("Duplicate destination");
             double dx=d.arrivalX()-d.x(),dy=d.arrivalY()-d.y(),dz=d.arrivalZ()-d.z();

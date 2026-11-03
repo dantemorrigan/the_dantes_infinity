@@ -180,7 +180,7 @@ public final class AbilityWheelScreen extends Screen {
         if(ability!=null && AbilityInput.cooldown(ability)>0) {text(g,Component.literal(""+((AbilityInput.cooldown(ability)+19)/20)),(int)(px+s/2),(int)(py+s/2-4),0xFFFFDE82);}
     }
     public static void icon(GuiGraphicsExtractor g,Ability a,float x,float y,float size) {
-        String id=a==Ability.WARP?"route_"+CosmosRoutes.ALL.get(Math.floorMod(AbilityInput.route(),CosmosRoutes.ALL.size())).id():a==Ability.PORTAL?"portal_"+new String[]{"nether","end","overworld"}[Math.floorMod(AbilityInput.portal(),3)]:a==Ability.FLIGHT&&CosmosClient.flying()?"flight_disable":a==Ability.GRAB&&AbilityInput.holding()>0?"mind_throw":a.id;
+        String id=a==Ability.WARP?"route_earth":a==Ability.PORTAL?"portal_"+new String[]{"nether","end","overworld"}[Math.floorMod(AbilityInput.portal(),3)]:a==Ability.FLIGHT&&CosmosClient.flying()?"flight_disable":a==Ability.GRAB&&AbilityInput.holding()>0?"mind_throw":a.id;
         blit(g,"icons_64/"+id,x,y,size,size,64,64);
     }
     private static void item(GuiGraphicsExtractor g,ItemStack stack,float x,float y,float size) {

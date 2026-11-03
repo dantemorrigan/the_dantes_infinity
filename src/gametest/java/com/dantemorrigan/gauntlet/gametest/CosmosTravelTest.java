@@ -31,26 +31,22 @@ public class CosmosTravelTest implements FabricClientGameTest {
             if(ctx.computeOnClient(mc->mc.player.getDeltaMovement().length())<1.6) throw new AssertionError("Boost did not accelerate");
             ctx.takeScreenshot("cosmos_boost");
             ctx.getInput().releaseKey(o->o.keyUp); ctx.getInput().releaseKey(o->o.keySprint); ctx.waitTicks(30);
-            for(int i=1;i<6;i++) {
-                ctx.getInput().pressKey(GLFW.GLFW_KEY_K);ctx.waitTicks(8);
-                ctx.getInput().pressKey(GLFW.GLFW_KEY_U);ctx.waitTicks(70);
+            // Point the crosshair at a body (server-side look) and cast the aimed warp exactly like the wheel's R does.
+            java.util.function.Consumer<CosmosRoutes.Destination> warpAimed=t -> {
+                sp.getServer().runCommand(String.format(java.util.Locale.ROOT,"execute as @p at @p run tp @s ~ ~ ~ facing %.1f %.1f %.1f",t.x(),t.y(),t.z()));
+                ctx.waitTicks(10);
+                sp.getServer().runOnServer(server -> CosmosTravel.action(server.getPlayerList().getPlayers().getFirst(),2));
+                ctx.waitTicks(70);
+            };
+            for(int i=0;i<CosmosRoutes.ALL.size();i++) {
+                if(i==CosmosRoutes.EARTH) continue;
                 final var d=CosmosRoutes.ALL.get(i);
+                warpAimed.accept(d);
                 if(!ctx.computeOnClient(mc->mc.player.position().distanceToSqr(d.arrivalX(),d.arrivalY(),d.arrivalZ())<400))
-                    throw new AssertionError("Warp failed: "+d.id());
-                if(d.field()) {
-                    sp.getServer().runOnServer(server -> {
-                        var space=server.getLevel(CosmosTravel.DIMENSION);
-                        int solid=0;
-                        for(int x=-100;x<=100;x+=4) for(int y=-40;y<=40;y+=4) for(int z=-100;z<=100;z+=4)
-                            if(!space.getBlockState(new net.minecraft.core.BlockPos((int)d.x()+x,(int)d.y()+y,(int)d.z()+z)).isAir()) solid++;
-                        if(solid<20) throw new AssertionError("Asteroid field has no physical blocks: "+d.id()+" / "+solid);
-                    });
-                    sp.getClientLevel().waitForChunksRender();
-                }
-                ctx.takeScreenshot("cosmos_"+d.id());ctx.waitTicks(100);
+                    throw new AssertionError("Aimed warp failed: "+d.id());
+                ctx.waitTicks(40); ctx.takeScreenshot("cosmos_"+d.id());ctx.waitTicks(80);
             }
-            ctx.getInput().pressKey(GLFW.GLFW_KEY_K);ctx.waitTicks(8);
-            ctx.getInput().pressKey(GLFW.GLFW_KEY_U);ctx.waitTicks(70);
+            warpAimed.accept(CosmosRoutes.ALL.get(CosmosRoutes.EARTH));
             ctx.getInput().pressKey(GLFW.GLFW_KEY_J);
             ctx.waitFor(mc->mc.level.dimension().equals(net.minecraft.world.level.Level.OVERWORLD),200);
             ctx.waitTicks(10);
