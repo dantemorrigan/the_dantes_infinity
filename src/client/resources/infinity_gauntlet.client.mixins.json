@@ -11,7 +11,8 @@
 		"ItemInHandRendererMixin",
 		"ItemModelResolverMixin",
 		"KeyboardInputMixin",
-		"SkyRendererMixin"
+		"SkyRendererMixin",
+		"RealityBlockUpdateMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1

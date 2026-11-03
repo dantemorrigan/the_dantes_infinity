@@ -366,6 +366,11 @@ public final class RealityClient {
 		InfinityGauntlet.LOGGER.debug("Reality inversion took {} blocks", ENTRIES.size());
 	}
 
+	/** Keep a server block update that arrives while this block is hidden for the illusion. */
+	public static void invalidateHiddenBlock(BlockPos pos) {
+		if (HIDDEN.remove(pos) != null) ENTRIES.removeIf(entry -> entry.pos().equals(pos));
+	}
+
 	/** Put every real block back (immediately). */
 	private static void restore(boolean abort) {
 		Minecraft mc = Minecraft.getInstance();
