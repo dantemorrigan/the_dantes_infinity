@@ -40,7 +40,7 @@ public class AbilityWheelTest implements FabricClientGameTest {
             if(!ctx.computeOnClient(mc->AbilityInput.selected()==Ability.STRIKE)) throw new AssertionError("Power strike not selected");
             server.runCommand("execute as @p run tp @s 0 -60 0 0 0");
             server.runCommand("summon minecraft:cow 0.5 -60 4.5 {NoAI:1b,Tags:[\"wheel_test\"]}");ctx.waitTicks(8);
-            ctx.getInput().lookAt(0,0);ctx.getInput().holdKey(GLFW.GLFW_KEY_R);ctx.waitTicks(25);
+            ctx.getInput().lookAt(0,8);ctx.getInput().holdKey(GLFW.GLFW_KEY_R);ctx.waitTicks(25);
             if(!server.computeOnServer(s->AbilityController.chargeTicks(s.getPlayerList().getPlayers().getFirst())>10)) throw new AssertionError("R did not charge");
             open(ctx);ctx.getInput().releaseKey(GLFW.GLFW_KEY_R);ctx.getInput().pressKey(GLFW.GLFW_KEY_ESCAPE);close(ctx);
             server.runOnServer(s->{

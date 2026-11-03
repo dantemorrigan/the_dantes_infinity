@@ -48,7 +48,7 @@ public final class StatusHud {
     }
     private static void render(GuiGraphicsExtractor g) {
         Minecraft mc = Minecraft.getInstance();
-        if (mc.player == null || mc.options.hideGui || (notice == null && LINES.isEmpty() && !com.dantemorrigan.gauntlet.client.ability.AbilityInput.equipped())) return;
+        if (mc.player == null || mc.options.hideGui || mc.screen instanceof com.dantemorrigan.gauntlet.client.ability.AbilityWheelScreen || (notice == null && LINES.isEmpty() && !com.dantemorrigan.gauntlet.client.ability.AbilityInput.equipped())) return;
         int maxWidth = Math.max(60, Math.min(270, g.guiWidth() - 40));
         List<FormattedCharSequence> rows = new ArrayList<>();
         boolean ability=com.dantemorrigan.gauntlet.client.ability.AbilityInput.equipped();
