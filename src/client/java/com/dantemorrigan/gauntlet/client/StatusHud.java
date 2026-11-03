@@ -40,7 +40,7 @@ public final class StatusHud {
     private static void clear() { LINES.clear(); notice = null; remaining = 0; }
     public static void init() {
         ClientPlayNetworking.registerGlobalReceiver(ModNetwork.Status.TYPE, (packet, ctx) -> {
-            show(Component.literal(packet.text()));
+            show(packet.text());
         });
         ClientPlayConnectionEvents.DISCONNECT.register((handler, mc) -> clear());
         ClientTickEvents.END_CLIENT_TICK.register(mc -> {

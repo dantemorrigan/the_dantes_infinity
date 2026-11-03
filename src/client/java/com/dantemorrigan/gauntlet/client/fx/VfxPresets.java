@@ -55,6 +55,7 @@ public final class VfxPresets {
 			Map.entry("soul_siphon", new Spec(4, 2, 36, true, 1.3f, true, Orientation.CAMERA)),
 			Map.entry("soul_mass_wave", new Spec(4, 3, 12, false, 8f, true, Orientation.FLAT)),
 			Map.entry("soul_absorption", new Spec(4, 3, 12, false, 1.2f, true, Orientation.CAMERA)),
+			Map.entry("meteor_reticle", new Spec(4, 3, 9, true, 1.0f, true, Orientation.FLAT)),
 			Map.entry("extractor_tether", new Spec(4, 1, 6, true, 1.4f, true, Orientation.CAMERA)),
 			Map.entry("extractor_gather", new Spec(2, 1, 14, false, 1.1f, true, Orientation.CAMERA)),
 			Map.entry("extractor_success", new Spec(2, 1, 10, false, 0.45f, true, Orientation.CAMERA)),

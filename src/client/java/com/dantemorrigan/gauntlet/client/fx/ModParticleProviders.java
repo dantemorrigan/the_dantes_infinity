@@ -75,6 +75,13 @@ public final class ModParticleProviders {
 			return new FxParticle(level, x, y, z, sprites, VfxPresets.get("soul_mass_wave"), len, n.div(len), -1, null, 0.45f);
 		});
 		billboard(ModParticles.SOUL_ABSORPTION, "soul_absorption");
+		// Meteor Stream ring: a looping flat sprite that lives a few ticks and is re-spawned while the zone exists.
+		ParticleProviderRegistry.getInstance().register(ModParticles.METEOR_RETICLE, sprites -> (t, level, x, y, z, xa, ya, za, random) -> {
+			Vector3f n = new Vector3f((float) xa, (float) ya, (float) za);
+			float len = n.length();
+			if (len < 1.0e-4f) { n.set(0, 1, 0); len = 1; }
+			return new FxParticle(level, x, y, z, sprites, VfxPresets.get("meteor_reticle"), len, n.div(len), -1, null, 0.9f).lifetime(8);
+		});
 		// Infinity Extractor
 		aligned(ModParticles.EXTRACTOR_TETHER, "extractor_tether", 5);
 		billboard(ModParticles.EXTRACTOR_GATHER, "extractor_gather");

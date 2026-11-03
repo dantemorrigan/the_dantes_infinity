@@ -130,5 +130,17 @@
   "tooltip.infinity_gauntlet.loose_mind": "Right-click: lift and hold a mob. Right-click again to throw it and deal impact damage.",
   "tooltip.infinity_gauntlet.loose_time": "Right-click: rewind your position and health. In the White Void, undo the Snap.",
   "tooltip.infinity_gauntlet.loose_soul": "Right-click: extract one soul. Cooldown: 20 seconds.",
-  "ability.infinity_gauntlet.reason.disabled": "Ability disabled by the server"
+  "ability.infinity_gauntlet.reason.disabled": "Ability disabled by the server",
+  "ability.infinity_gauntlet.meteor_stream": "Meteor Stream",
+  "ability.infinity_gauntlet.reason.sky": "The sky is busy: a celestial event is under way",
+  "meteor.infinity_gauntlet.sun": "the Sun",
+  "meteor.infinity_gauntlet.moon": "the Moon",
+  "meteor.infinity_gauntlet.aim_body": "Aim the gauntlet at the Sun or the Moon",
+  "meteor.infinity_gauntlet.locking": "Locking on %s: %s%%",
+  "meteor.infinity_gauntlet.aim_ground": "Locked on %s. Aim the circle at the ground and release to fire",
+  "meteor.infinity_gauntlet.lock_lost": "Lock-on lost",
+  "meteor.infinity_gauntlet.no_ground": "Aim the circle at the ground (not too close)",
+  "meteor.infinity_gauntlet.protected": "That area is protected",
+  "meteor.infinity_gauntlet.too_many": "Too many meteor streams are running right now",
+  "meteor.infinity_gauntlet.fired": "The meteor stream has begun (%s s)"
 }

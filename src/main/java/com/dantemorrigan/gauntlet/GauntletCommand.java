@@ -51,6 +51,7 @@ public final class GauntletCommand {
 									return 0;
 								})))
 						.then(Commands.literal("doll").executes(ctx -> doll(ctx.getSource())))
+						.then(Commands.literal("meteor").executes(ctx -> meteor(ctx.getSource())))
 						.then(Commands.literal("state").executes(ctx -> state(ctx.getSource())))
 						.then(Commands.literal("reload_config").executes(ctx -> {
 							GauntletConfig.reload();
@@ -133,6 +134,26 @@ public final class GauntletCommand {
 			return 0;
 		}
 		source.sendSuccess(() -> Component.literal("Кукла Стива с полной перчаткой призвана. Попробуй на ней Извлекатор Бесконечности."), false);
+		return 1;
+	}
+
+	/** Starts a Meteor Stream on the ground ~40 blocks ahead without the aiming steps (the server rules still apply). */
+	private static int meteor(CommandSourceStack source) throws CommandSyntaxException {
+		ServerPlayer player = source.getPlayerOrException();
+		net.minecraft.world.phys.Vec3 look = player.getLookAngle();
+		net.minecraft.core.BlockPos column = net.minecraft.core.BlockPos.containing(player.getX() + look.x * 40, player.getY(), player.getZ() + look.z * 40);
+		net.minecraft.server.level.ServerLevel level = player.level();
+		if (!level.hasChunkAt(column)) {
+			source.sendFailure(Component.literal("Чанк не загружен"));
+			return 0;
+		}
+		net.minecraft.world.phys.Vec3 center = net.minecraft.world.phys.Vec3.atBottomCenterOf(
+				level.getHeightmapPos(net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, column));
+		String body = com.dantemorrigan.gauntlet.celestial.CelestialApocalypse.bodyDirection(level, "sun").y > 0.1 ? "sun" : "moon";
+		if (!com.dantemorrigan.gauntlet.meteor.MeteorStream.startAt(player, body, center)) {
+			source.sendFailure(Component.literal("Поток метеоритов не удалось начать (только Верхний мир, правила сервера, лимит потоков)"));
+			return 0;
+		}
 		return 1;
 	}
 

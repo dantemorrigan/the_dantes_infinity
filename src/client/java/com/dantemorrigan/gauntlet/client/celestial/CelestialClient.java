@@ -155,8 +155,15 @@ public final class CelestialClient {
 		return (int) Math.max(0, rainRemainingMs - (System.nanoTime() - rainSyncNanos) / 1_000_000L);
 	}
 
-	/** 0..1 strength of the red sky for a viewer at {@code pos}. */
+	/** 0..1 strength of the red sky for a viewer at {@code pos}: the Celestial Apocalypse or a Meteor Stream, whichever is stronger. */
 	public static float redFactor(Vec3 pos, float partial) {
+		float stream = com.dantemorrigan.gauntlet.client.fx.MeteorStreamClient.redFactor(pos);
+		Minecraft mc = Minecraft.getInstance();
+		if (stream > 0 && (mc.level == null || !mc.level.dimension().equals(Level.OVERWORLD))) stream = 0;
+		return Math.max(eventRed(pos, partial), stream);
+	}
+
+	private static float eventRed(Vec3 pos, float partial) {
 		Minecraft mc = Minecraft.getInstance();
 		if (mc.level == null || !mc.level.dimension().equals(Level.OVERWORLD)) return 0;
 		float time;

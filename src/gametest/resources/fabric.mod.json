@@ -19,7 +19,8 @@
       "com.dantemorrigan.gauntlet.gametest.SupersonicFlightTest",
       "com.dantemorrigan.gauntlet.gametest.AbilityWheelTest",
       "com.dantemorrigan.gauntlet.gametest.SnapTest",
-      "com.dantemorrigan.gauntlet.gametest.ExtractorTest"
+      "com.dantemorrigan.gauntlet.gametest.ExtractorTest",
+      "com.dantemorrigan.gauntlet.gametest.MeteorStreamTest"
     ]
   },
   "depends": {

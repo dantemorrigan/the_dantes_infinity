@@ -33,6 +33,7 @@ public class InfinityGauntletClient implements ClientModInitializer {
 		com.dantemorrigan.gauntlet.client.render.GauntletGestureClient.init();
 		com.dantemorrigan.gauntlet.client.fx.SnapClient.init();
 		com.dantemorrigan.gauntlet.client.fx.ExtractorClient.init();
+		com.dantemorrigan.gauntlet.client.fx.MeteorStreamClient.init();
 		net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry.register(com.dantemorrigan.gauntlet.ModEntities.GAUNTLET_DOLL, com.dantemorrigan.gauntlet.client.render.GauntletDollRenderer::new);
 	}
 }

@@ -261,6 +261,20 @@ public final class ModNetwork {
 		@Override public Type<ExtractorFx> type() { return TYPE; }
 	}
 
+	/**
+	 * S2C: Meteor Stream (Power stone). kind: 0 = aim marker (sent to the caster only; valid = the ground point is usable),
+	 * 1 = a stream starts or is re-announced to players near it (ticks = time left), 2 = a stream ended (center identifies it),
+	 * 3 = the aim marker is off.
+	 */
+	public record MeteorStreamFx(int kind, int ownerId, boolean solar, Vec3 center, float radius, int ticks, boolean valid) implements CustomPacketPayload {
+		public static final Type<MeteorStreamFx> TYPE = newType("meteor_stream_fx");
+		public static final StreamCodec<ByteBuf, MeteorStreamFx> CODEC = StreamCodec.composite(
+				ByteBufCodecs.VAR_INT, MeteorStreamFx::kind, ByteBufCodecs.VAR_INT, MeteorStreamFx::ownerId, ByteBufCodecs.BOOL, MeteorStreamFx::solar,
+				Vec3.STREAM_CODEC, MeteorStreamFx::center, ByteBufCodecs.FLOAT, MeteorStreamFx::radius, ByteBufCodecs.VAR_INT, MeteorStreamFx::ticks,
+				ByteBufCodecs.BOOL, MeteorStreamFx::valid, MeteorStreamFx::new);
+		@Override public Type<MeteorStreamFx> type() { return TYPE; }
+	}
+
 	/** C2S: H pressed/released. Server validates six stones and owns the full cast. */
 	public record BeamAction(boolean start) implements CustomPacketPayload {
 		public static final Type<BeamAction> TYPE = newType("beam_action");
@@ -276,9 +290,11 @@ public final class ModNetwork {
 		@Override public Type<BeamFx> type() { return TYPE; }
 	}
 
-	public record Status(String text) implements CustomPacketPayload {
+	/** A HUD notice. It travels as a component so translations are resolved by the CLIENT (dedicated servers have no mod lang files). */
+	public record Status(net.minecraft.network.chat.Component text) implements CustomPacketPayload {
 		public static final Type<Status> TYPE = newType("status");
-		public static final StreamCodec<ByteBuf, Status> CODEC = StreamCodec.composite(ByteBufCodecs.STRING_UTF8, Status::text, Status::new);
+		public static final StreamCodec<RegistryFriendlyByteBuf, Status> CODEC = StreamCodec.composite(
+				net.minecraft.network.chat.ComponentSerialization.STREAM_CODEC, Status::text, Status::new);
 		@Override public Type<Status> type() { return TYPE; }
 	}
 
@@ -389,6 +405,7 @@ public final class ModNetwork {
 		PayloadTypeRegistry.clientboundPlay().register(GestureFx.TYPE, GestureFx.CODEC);
 		PayloadTypeRegistry.clientboundPlay().register(SnapFx.TYPE, SnapFx.CODEC);
 		PayloadTypeRegistry.clientboundPlay().register(ExtractorFx.TYPE, ExtractorFx.CODEC);
+		PayloadTypeRegistry.clientboundPlay().register(MeteorStreamFx.TYPE, MeteorStreamFx.CODEC);
 		PayloadTypeRegistry.clientboundPlay().register(PowerFx.TYPE, PowerFx.CODEC);
 		PayloadTypeRegistry.clientboundPlay().register(EffectDemo.TYPE, EffectDemo.CODEC);
 		PayloadTypeRegistry.clientboundPlay().register(CutsceneStart.TYPE, CutsceneStart.CODEC);

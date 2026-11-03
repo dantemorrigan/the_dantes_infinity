@@ -130,5 +130,17 @@
   "tooltip.infinity_gauntlet.loose_mind": "ПКМ: поднимает и удерживает моба. Повторный ПКМ: бросок с уроном при столкновении.",
   "tooltip.infinity_gauntlet.loose_time": "ПКМ: отматывает твою позицию и здоровье. В Белой пустоте отменяет щелчок.",
   "tooltip.infinity_gauntlet.loose_soul": "ПКМ: извлекает одну душу. Перезарядка — 20 секунд.",
-  "ability.infinity_gauntlet.reason.disabled": "Способность отключена настройками сервера"
+  "ability.infinity_gauntlet.reason.disabled": "Способность отключена настройками сервера",
+  "ability.infinity_gauntlet.meteor_stream": "Поток метеоритов",
+  "ability.infinity_gauntlet.reason.sky": "Небо сейчас занято: идёт небесное событие",
+  "meteor.infinity_gauntlet.sun": "Солнце",
+  "meteor.infinity_gauntlet.moon": "Луна",
+  "meteor.infinity_gauntlet.aim_body": "Наведи перчатку на Солнце или Луну",
+  "meteor.infinity_gauntlet.locking": "Захват: %s %s%%",
+  "meteor.infinity_gauntlet.aim_ground": "Захвачено: %s. Наведи круг на землю и отпусти кнопку — огонь",
+  "meteor.infinity_gauntlet.lock_lost": "Захват сорван",
+  "meteor.infinity_gauntlet.no_ground": "Наведи круг на землю (не слишком близко)",
+  "meteor.infinity_gauntlet.protected": "Эта зона защищена",
+  "meteor.infinity_gauntlet.too_many": "Сейчас уже идёт слишком много потоков метеоритов",
+  "meteor.infinity_gauntlet.fired": "Поток метеоритов начался (%s с)"
 }

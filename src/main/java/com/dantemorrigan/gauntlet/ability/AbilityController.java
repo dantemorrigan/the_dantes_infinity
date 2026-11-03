@@ -58,6 +58,7 @@ public final class AbilityController {
             case SOUL -> SoulStone.cooldown(p,false);
             case SOUL_MASS -> SoulStone.cooldown(p,true);
             case BEAM -> InfinityBeam.cooldown(p);
+            case METEOR_STREAM -> com.dantemorrigan.gauntlet.meteor.MeteorStream.cooldown(p);
             default -> 0;
         };
     }
@@ -67,6 +68,7 @@ public final class AbilityController {
         if (a == Ability.PLANET && !config.allowPlanetDestruction
                 || a == Ability.CELESTIAL && !config.allowCelestialDestruction
                 || a == Ability.SNAP && !config.allowInfinitySnap
+                || a == Ability.METEOR_STREAM && !config.allowMeteorStream
                 || a == Ability.DAY_NIGHT && !config.allowTimeShift) return "disabled";
         if(p.containerMenu!=p.inventoryMenu) return "busy";
         if(com.dantemorrigan.gauntlet.snap.InfinitySnap.snapped(GauntletState.wornGauntlet(p))) return "broken";
@@ -80,7 +82,8 @@ public final class AbilityController {
         if(PlanetDestruction.isBusy(p) || TimeAbility.isRewinding(p)) return "busy";
         if(SpaceManager.inSpace(p) && a!=Ability.REWIND) return "dimension";
         if(a==Ability.BEAM && GauntletEffects.state(p).phase!=GauntletEffects.Phase.AWAKENED) return "awakening";
-        if((a==Ability.DAY_NIGHT || a==Ability.CELESTIAL) && !p.level().dimension().equals(Level.OVERWORLD)) return "dimension";
+        if((a==Ability.DAY_NIGHT || a==Ability.CELESTIAL || a==Ability.METEOR_STREAM) && !p.level().dimension().equals(Level.OVERWORLD)) return "dimension";
+        if(a==Ability.METEOR_STREAM && CelestialApocalypse.eventActive(p.level().getServer()) && !com.dantemorrigan.gauntlet.meteor.MeteorStream.aiming(p)) return "sky";
         if((a==Ability.WARP || a==Ability.DESTINATIONS) && !CosmosTravel.inCosmos(p)) return "cosmos";
         if((a==Ability.PORTAL || a==Ability.BLINK) && CosmosTravel.inCosmos(p)) return "dimension";
         if(a==Ability.FLIGHT && CosmosTravel.inCosmos(p) && com.dantemorrigan.gauntlet.cosmos.CosmosRoutes.earthDistance(p.getX(),p.getY(),p.getZ())>com.dantemorrigan.gauntlet.cosmos.CosmosRoutes.RETURN_RANGE) return "earth";
@@ -152,6 +155,7 @@ public final class AbilityController {
             case SOUL_MASS -> SoulStone.action(p,1);
             case SNAP -> com.dantemorrigan.gauntlet.snap.InfinitySnap.cast(p);
             case BEAM -> {InfinityBeam.request(p,true);if(InfinityBeam.active(p)) HELD.put(p.getUUID(),a);}
+            case METEOR_STREAM -> {com.dantemorrigan.gauntlet.meteor.MeteorStream.begin(p);if(com.dantemorrigan.gauntlet.meteor.MeteorStream.aiming(p)) HELD.put(p.getUUID(),a);}
             default -> {}
         }
         sync(p);
@@ -167,12 +171,13 @@ public final class AbilityController {
         Ability a=HELD.remove(p.getUUID());
         if(a==Ability.BEAM) InfinityBeam.cancel(p);
         if(a==Ability.INVERSION) RealityStone.stop(p);
+        if(a==Ability.METEOR_STREAM) com.dantemorrigan.gauntlet.meteor.MeteorStream.release(p);
     }
     public static void cancel(ServerPlayer p) {
         Charge c=CHARGES.remove(p.getUUID());
         if(c!=null) GauntletState.setInUse(c.gauntlet(),EnumSet.noneOf(Stone.class));
         HELD.remove(p.getUUID());CelestialApocalypse.resetAim(p);
-        InfinityBeam.cancel(p);RealityStone.stop(p);
+        InfinityBeam.cancel(p);RealityStone.stop(p);com.dantemorrigan.gauntlet.meteor.MeteorStream.cancel(p);
         if(p.isUsingItem() && p.getUseItem().is(ModItems.GAUNTLET)) p.stopUsingItem();
     }
     private static void tick(MinecraftServer server) {

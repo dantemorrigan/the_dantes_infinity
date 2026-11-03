@@ -67,6 +67,9 @@ public final class ModParticles {
 	/** xa = owner entity id: flies from its spawn point into the extractor's chamber. */
 	public static final SimpleParticleType EXTRACTOR_MOTE = register("extractor_mote");
 
+	/** Meteor Stream: the artillery ring lying on the ground. (xa,ya,za) = surface normal, its length = diameter in blocks. */
+	public static final SimpleParticleType METEOR_RETICLE = register("meteor_reticle");
+
 	private static SimpleParticleType register(String name) {
 		return Registry.register(BuiltInRegistries.PARTICLE_TYPE, InfinityGauntlet.id(name), FabricParticleTypes.simple(true));
 	}

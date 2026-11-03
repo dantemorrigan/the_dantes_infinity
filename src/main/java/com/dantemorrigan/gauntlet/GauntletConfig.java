@@ -24,6 +24,7 @@ public final class GauntletConfig {
 	public boolean allowPlanetDestruction = true;
 	public boolean allowCelestialDestruction = true;
 	public boolean allowInfinitySnap = true;
+	public boolean allowMeteorStream = true;
 	public boolean allowTimeShift = true;
 	public boolean mindPlayerGrab = true;
 	public boolean soulPlayerDrain = true;
@@ -74,6 +75,26 @@ public final class GauntletConfig {
 	public int redSkyFalloff = 64;
 	/** Meteors don't target ground closer than this to a player. */
 	public int meteorPlayerSafeRadius = 6;
+
+	// ---- Meteor Stream (Power stone, server) ----
+	/** Ticks the gauntlet must stay on the sun/moon to lock on. */
+	public int streamLockTicks = 30;
+	/** How far (blocks) the ground target can be from the caster. */
+	public int streamMaxRange = 160;
+	/** The target must be at least this far from the caster. */
+	public int streamMinRange = 12;
+	/** Radius (blocks) of the bombarded circle. */
+	public int streamRadius = 24;
+	/** Length of the stream in seconds (game time). */
+	public int streamSeconds = 60;
+	public float streamMeteorsPerSecond = 5f;
+	/** Meteors in flight at once, for all streams together. */
+	public int streamMaxActiveMeteors = 90;
+	/** Streams running at once on the server. */
+	public int streamMaxConcurrent = 3;
+	public int streamCooldownSeconds = 150;
+	public float streamCraterPowerMin = 1.6f;
+	public float streamCraterPowerMax = 3.0f;
 
 	// ---- Reality stone: Reality Inversion ----
 	/** Radius of the inverted area (blocks). */

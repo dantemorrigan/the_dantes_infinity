@@ -146,6 +146,11 @@ public final class CelestialApocalypse {
 		return false;
 	}
 
+	/** True while a Celestial Apocalypse is running on this server. */
+	public static boolean eventActive(MinecraftServer server) {
+		return server.overworld().getAttached(EVENT) != null;
+	}
+
 	public static void resetAim(ServerPlayer player) {
 		AIM.remove(player.getUUID());
 	}
