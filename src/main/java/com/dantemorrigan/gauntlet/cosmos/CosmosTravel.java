@@ -16,7 +16,6 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.*;
 import net.minecraft.tags.DamageTypeTags;
-import net.minecraft.world.effect.*;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.portal.TeleportTransition;
@@ -36,6 +35,8 @@ public final class CosmosTravel {
     private static final AttachmentType<Boolean> FIELDS_READY = AttachmentRegistry.<Boolean>builder().persistent(Codec.BOOL)
         .buildAndRegister(InfinityGauntlet.id("cosmos_fields_ready"));
     private static final Map<UUID, Navigation> NAV = new HashMap<>();
+    /** Protect only the first descent after switching flight off, without changing gravity. */
+    private static final Map<UUID, Integer> LANDING_GRACE = new HashMap<>();
     private static final ArrayDeque<RockBlock> BUILD = new ArrayDeque<>();
     private record RockBlock(BlockPos pos, boolean ice) {}
     private static class Navigation { int selected, warp, cooldown; long lastAction = -100; }
@@ -74,10 +75,17 @@ public final class CosmosTravel {
                 stop(p,inCosmos(p));
             }
         });
-        ServerPlayConnectionEvents.DISCONNECT.register((h,s) -> NAV.remove(h.getPlayer().getUUID()));
-        ServerLifecycleEvents.SERVER_STOPPED.register(s -> { NAV.clear(); BUILD.clear(); });
-        ServerLivingEntityEvents.ALLOW_DAMAGE.register((e,s,a) -> !(e instanceof ServerPlayer p && p.hasAttached(FLIGHT)
-            && s.is(DamageTypeTags.IS_FALL)));
+        ServerPlayConnectionEvents.DISCONNECT.register((h,s) -> {
+            NAV.remove(h.getPlayer().getUUID());
+            LANDING_GRACE.remove(h.getPlayer().getUUID());
+        });
+        ServerLifecycleEvents.SERVER_STOPPED.register(s -> { NAV.clear(); LANDING_GRACE.clear(); BUILD.clear(); });
+        ServerLivingEntityEvents.ALLOW_DAMAGE.register((e,s,a) -> {
+            if (!(e instanceof ServerPlayer p) || !s.is(DamageTypeTags.IS_FALL)) return true;
+            if (p.hasAttached(FLIGHT)) return false;
+            Integer until = LANDING_GRACE.remove(p.getUUID());
+            return until == null || p.tickCount > until;
+        });
     }
     public static void action(ServerPlayer p, int action) {
         if (action < 0 || action > 2 || !p.isAlive() || p.isSpectator() || p.hasAttached(SpaceManager.RECORD)) return;
@@ -125,13 +133,17 @@ public final class CosmosTravel {
         a.flying = a.mayfly && (p.isSpectator() || f != null && f.flying());
         if (f != null) a.setFlyingSpeed(f.speed());
         p.onUpdateAbilities(); p.fallDistance = 0;
-        p.addEffect(new MobEffectInstance(MobEffects.SLOW_FALLING, 300, 0, false, false));
+        if (p.isAlive() && !p.onGround()) LANDING_GRACE.put(p.getUUID(), p.tickCount + 300);
+        else LANDING_GRACE.remove(p.getUUID());
         ServerPlayNetworking.send(p, new ModNetwork.CosmosState(false, 0, 0, 0));
     }
     private static void rescue(ServerPlayer p) { stop(p, true); }
     private static void tick(MinecraftServer server) {
         ServerLevel space = server.getLevel(DIMENSION);
         for (ServerPlayer p : server.getPlayerList().getPlayers()) {
+            Integer landingUntil = LANDING_GRACE.get(p.getUUID());
+            if (landingUntil != null && (p.onGround() || !p.isAlive() || p.tickCount > landingUntil))
+                LANDING_GRACE.remove(p.getUUID());
             if (!p.hasAttached(FLIGHT)) { NAV.remove(p.getUUID()); continue; }
             if (!p.isAlive()) { stop(p, false); continue; }
             if (!equipped(p) || p.hasAttached(SpaceManager.RECORD) || !flightDim(p)) {

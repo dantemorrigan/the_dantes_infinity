@@ -53,7 +53,20 @@ public class CosmosTravelTest implements FabricClientGameTest {
             ctx.getInput().pressKey(GLFW.GLFW_KEY_J);
             ctx.waitFor(mc->mc.level.dimension().equals(net.minecraft.world.level.Level.OVERWORLD),200);
             ctx.waitTicks(10);
-            if(ctx.computeOnClient(mc->mc.player.getAbilities().mayfly)) throw new AssertionError("Flight leaked after return");
+            // Re-entry intentionally retains manual flight in the current main.
+            if(!ctx.computeOnClient(mc->mc.player.getAbilities().flying)) throw new AssertionError("Re-entry lost flight");
+            ctx.getInput().pressKey(GLFW.GLFW_KEY_J); ctx.waitTicks(8);
+            if(ctx.computeOnClient(mc->mc.player.hasEffect(net.minecraft.world.effect.MobEffects.SLOW_FALLING)))
+                throw new AssertionError("Flight exit changed falling physics");
+            if(ctx.computeOnClient(mc->mc.player.getAbilities().mayfly || mc.player.isNoGravity()))
+                throw new AssertionError("Flight state leaked after disabling");
+            ctx.waitTicks(20);
+            if(ctx.computeOnClient(mc->mc.player.getDeltaMovement().y)>-.5)
+                throw new AssertionError("Normal gravity did not resume");
+            ctx.waitFor(mc->mc.player.onGround(),300);
+            // A fresh ordinary jump must finish promptly, rather than float with the old 15-second effect.
+            ctx.getInput().pressKey(GLFW.GLFW_KEY_SPACE); ctx.waitTicks(3);
+            ctx.waitFor(mc->mc.player.onGround(),30);
             ctx.getInput().pressKey(GLFW.GLFW_KEY_J);ctx.waitTicks(10);
             sp.getServer().runCommand("execute as @p run item replace entity @s weapon.offhand with minecraft:air");
             ctx.waitFor(mc->!mc.player.getAbilities().mayfly,100);
