@@ -1,6 +1,7 @@
 package com.dantemorrigan.gauntlet.client.mixin;
 
 import com.dantemorrigan.gauntlet.space.SpaceManager;
+import com.dantemorrigan.gauntlet.snap.InfinitySnap;
 import com.dantemorrigan.gauntlet.client.celestial.CelestialClientAccess;
 import net.minecraft.client.Camera;
 import net.minecraft.client.DeltaTracker;
@@ -18,6 +19,11 @@ public abstract class FogRendererMixin {
 	@Inject(method = "setupFog", at = @At("RETURN"))
 	private void infinityGauntlet$noFogInSpace(Camera camera, int renderDistanceInChunks, DeltaTracker deltaTracker, float darkenWorldAmount,
 			ClientLevel level, CallbackInfoReturnable<FogData> cir) {
+		if (level != null && level.dimension().equals(InfinitySnap.WHITE_VOID)) {
+			// With no skybox, the fog color is also the world background.
+			cir.getReturnValue().color.set(1f, 1f, 1f, 1f);
+			return;
+		}
 		float red = level != null ? com.dantemorrigan.gauntlet.client.celestial.CelestialClient.redFactor(camera.position(), deltaTracker.getGameTimeDeltaPartialTick(false)) : 0;
 		if (red > 0) {
 			float day = CelestialClientAccess.daylight(deltaTracker.getGameTimeDeltaPartialTick(false));
