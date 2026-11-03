@@ -1,3 +1,9 @@
 {
-	"item.infinity_gauntlet.gauntlet": "Infinity Gauntlet"
+	"item.infinity_gauntlet.gauntlet": "Infinity Gauntlet",
+	"item.infinity_gauntlet.power_stone": "Power Stone",
+	"item.infinity_gauntlet.space_stone": "Space Stone",
+	"item.infinity_gauntlet.reality_stone": "Reality Stone",
+	"item.infinity_gauntlet.mind_stone": "Mind Stone",
+	"item.infinity_gauntlet.time_stone": "Time Stone",
+	"item.infinity_gauntlet.soul_stone": "Soul Stone"
 }
