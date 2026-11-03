@@ -1,0 +1,161 @@
+{
+  "format": "infinity_gauntlet:reality_vfx_v1",
+  "target": "Minecraft Java 26.1.2 / Fabric",
+  "namespace": "infinity_gauntlet",
+  "frames_per_effect": 4,
+  "fps_basis": 20,
+  "effects": {
+    "reality_charge": {
+      "frames": 4,
+      "ticks_per_frame": 3,
+      "lifetime_ticks": 12,
+      "loop": false,
+      "width_blocks": 0.8,
+      "full_bright": true,
+      "orientation": "camera",
+      "resolution": [
+        64,
+        64
+      ],
+      "frame_textures": [
+        "infinity_gauntlet:textures/particle/reality_charge_0.png",
+        "infinity_gauntlet:textures/particle/reality_charge_1.png",
+        "infinity_gauntlet:textures/particle/reality_charge_2.png",
+        "infinity_gauntlet:textures/particle/reality_charge_3.png"
+      ]
+    },
+    "reality_fracture": {
+      "frames": 4,
+      "ticks_per_frame": 5,
+      "lifetime_ticks": 20,
+      "loop": false,
+      "width_blocks": 5.0,
+      "full_bright": true,
+      "orientation": "camera",
+      "resolution": [
+        128,
+        128
+      ],
+      "frame_textures": [
+        "infinity_gauntlet:textures/particle/reality_fracture_0.png",
+        "infinity_gauntlet:textures/particle/reality_fracture_1.png",
+        "infinity_gauntlet:textures/particle/reality_fracture_2.png",
+        "infinity_gauntlet:textures/particle/reality_fracture_3.png"
+      ]
+    },
+    "reality_rewrite": {
+      "frames": 4,
+      "ticks_per_frame": 2,
+      "lifetime_ticks": 8,
+      "loop": false,
+      "width_blocks": 2.5,
+      "full_bright": true,
+      "orientation": "camera",
+      "resolution": [
+        128,
+        128
+      ],
+      "frame_textures": [
+        "infinity_gauntlet:textures/particle/reality_rewrite_0.png",
+        "infinity_gauntlet:textures/particle/reality_rewrite_1.png",
+        "infinity_gauntlet:textures/particle/reality_rewrite_2.png",
+        "infinity_gauntlet:textures/particle/reality_rewrite_3.png"
+      ]
+    },
+    "reality_restore": {
+      "frames": 4,
+      "ticks_per_frame": 3,
+      "lifetime_ticks": 12,
+      "loop": false,
+      "width_blocks": 8.0,
+      "full_bright": true,
+      "orientation": "camera",
+      "resolution": [
+        128,
+        128
+      ],
+      "frame_textures": [
+        "infinity_gauntlet:textures/particle/reality_restore_0.png",
+        "infinity_gauntlet:textures/particle/reality_restore_1.png",
+        "infinity_gauntlet:textures/particle/reality_restore_2.png",
+        "infinity_gauntlet:textures/particle/reality_restore_3.png"
+      ]
+    },
+    "reality_butterfly": {
+      "frames": 4,
+      "ticks_per_frame": 2,
+      "lifetime_ticks": 80,
+      "loop": true,
+      "width_blocks": 0.35,
+      "full_bright": true,
+      "orientation": "camera",
+      "resolution": [
+        32,
+        32
+      ],
+      "frame_textures": [
+        "infinity_gauntlet:textures/particle/reality_butterfly_0.png",
+        "infinity_gauntlet:textures/particle/reality_butterfly_1.png",
+        "infinity_gauntlet:textures/particle/reality_butterfly_2.png",
+        "infinity_gauntlet:textures/particle/reality_butterfly_3.png"
+      ]
+    },
+    "reality_petal": {
+      "frames": 4,
+      "ticks_per_frame": 3,
+      "lifetime_ticks": 60,
+      "loop": true,
+      "width_blocks": 0.18,
+      "full_bright": true,
+      "orientation": "camera",
+      "resolution": [
+        32,
+        32
+      ],
+      "frame_textures": [
+        "infinity_gauntlet:textures/particle/reality_petal_0.png",
+        "infinity_gauntlet:textures/particle/reality_petal_1.png",
+        "infinity_gauntlet:textures/particle/reality_petal_2.png",
+        "infinity_gauntlet:textures/particle/reality_petal_3.png"
+      ]
+    },
+    "reality_glass": {
+      "frames": 4,
+      "ticks_per_frame": 3,
+      "lifetime_ticks": 36,
+      "loop": true,
+      "width_blocks": 0.4,
+      "full_bright": true,
+      "orientation": "camera",
+      "resolution": [
+        32,
+        32
+      ],
+      "frame_textures": [
+        "infinity_gauntlet:textures/particle/reality_glass_0.png",
+        "infinity_gauntlet:textures/particle/reality_glass_1.png",
+        "infinity_gauntlet:textures/particle/reality_glass_2.png",
+        "infinity_gauntlet:textures/particle/reality_glass_3.png"
+      ]
+    },
+    "reality_aether": {
+      "frames": 4,
+      "ticks_per_frame": 3,
+      "lifetime_ticks": 48,
+      "loop": true,
+      "width_blocks": 0.55,
+      "full_bright": true,
+      "orientation": "camera",
+      "resolution": [
+        64,
+        64
+      ],
+      "frame_textures": [
+        "infinity_gauntlet:textures/particle/reality_aether_0.png",
+        "infinity_gauntlet:textures/particle/reality_aether_1.png",
+        "infinity_gauntlet:textures/particle/reality_aether_2.png",
+        "infinity_gauntlet:textures/particle/reality_aether_3.png"
+      ]
+    }
+  }
+}

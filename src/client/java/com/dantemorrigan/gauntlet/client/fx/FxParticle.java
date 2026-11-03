@@ -26,6 +26,17 @@ public class FxParticle extends SingleQuadParticle {
 	/** If set, the sprite's +X/-Y diagonal is turned along this world direction every frame (meteor trail). */
 	private org.joml.Vector3f alignTo;
 	private boolean fadeOverLife;
+	/** A looping sprite that still ends after the preset lifetime (fading out in its last quarter). */
+	private boolean finiteLoop;
+
+	public FxParticle finiteLoop() {
+		this.finiteLoop = true;
+		this.lifetime = Math.max(1, this.spec.lifetime());
+		return this;
+	}
+
+	/** Movement hook for subclasses (called once per tick after the frame update). */
+	protected void motion() {}
 
 	public FxParticle alignTo(org.joml.Vector3f velocity) {
 		this.alignTo = velocity;
@@ -75,18 +86,25 @@ public class FxParticle extends SingleQuadParticle {
 			this.remove();
 			return;
 		}
-		if (this.spec.loop()) this.age++;
+		if (this.spec.loop() && this.age++ >= this.lifetime && this.finiteLoop) {
+			this.remove();
+			return;
+		}
 		int last = this.spec.frames() - 1;
 		int frame = this.spec.loop()
 				? (this.age / this.spec.ticksPerFrame()) % this.spec.frames()
 				: Math.min(last, this.age / this.spec.ticksPerFrame());
 		this.setSprite(this.sprites.get(frame, last));
-		if (this.fadeOverLife) {
+		if (this.finiteLoop) {
+			float t = this.age / (float) this.lifetime;
+			this.alpha = this.baseAlpha * (t > 0.75f ? Math.max(0f, (1f - t) / 0.25f) : 1f);
+		} else if (this.fadeOverLife) {
 			this.alpha = this.baseAlpha * Math.max(0f, 1f - this.age / (float) this.lifetime);
 		} else if (!this.spec.loop() && frame == last) {
 			float t = (this.age - last * this.spec.ticksPerFrame()) / (float) Math.max(1, this.lifetime - last * this.spec.ticksPerFrame());
 			this.alpha = this.baseAlpha * Math.max(0f, 1f - t);
 		}
+		this.motion();
 	}
 
 	@Override

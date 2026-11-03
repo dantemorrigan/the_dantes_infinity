@@ -21,6 +21,22 @@ public final class ModParticleProviders {
 		billboard(ModParticles.VOID_DISSOLVE, "void_dissolve");
 		billboard(ModParticles.CELESTIAL_METEOR_IMPACT, "celestial_meteor_impact");
 		billboard(ModParticles.SPACE_TELEPORT_FLASH, "space_teleport_flash");
+		// Reality stone
+		ParticleProviderRegistry.getInstance().register(ModParticles.REALITY_CHARGE, sprites -> (t, level, x, y, z, xa, ya, za, random) ->
+				new FxParticle(level, x, y, z, sprites, VfxPresets.get("reality_charge"), 1f, null, (int) xa,
+						com.dantemorrigan.gauntlet.client.fx.RealityClient::fistWhileCharging, 1f));
+		ParticleProviderRegistry.getInstance().register(ModParticles.REALITY_FRACTURE, sprites -> (t, level, x, y, z, xa, ya, za, random) -> {
+			// (xa,ya,za): if non-zero, a surface normal (flat on the terrain); its length = size. Otherwise upright.
+			Vector3f n = new Vector3f((float) xa, (float) ya, (float) za);
+			float len = n.length();
+			return new FxParticle(level, x, y, z, sprites, VfxPresets.get("reality_fracture"), len > 1e-4f ? len : 1f, len > 1e-4f ? n.div(len) : null, -1, null, 1f);
+		});
+		billboard(ModParticles.REALITY_REWRITE, "reality_rewrite");
+		flat(ModParticles.REALITY_RESTORE, "reality_restore"); // ring pulse lies on the ground
+		motion(ModParticles.REALITY_BUTTERFLY, "reality_butterfly", MotionParticle.Kind.BUTTERFLY);
+		motion(ModParticles.REALITY_PETAL, "reality_petal", MotionParticle.Kind.PETAL);
+		motion(ModParticles.REALITY_GLASS, "reality_glass", MotionParticle.Kind.GLASS);
+		motion(ModParticles.REALITY_AETHER, "reality_aether", MotionParticle.Kind.AETHER);
 		billboard(ModParticles.SPACE_ENERGY_WISPS, "space_energy_wisps");
 		ParticleProviderRegistry.getInstance().register(ModParticles.CELESTIAL_METEOR_TRAIL, sprites -> (t, level, x, y, z, xa, ya, za, random) -> {
 			Vector3f v = new Vector3f((float) xa, (float) ya, (float) za);
@@ -28,6 +44,11 @@ public final class ModParticleProviders {
 			if (speed < 1.0e-4f) v.set(0, -1, 0);
 			return new FxParticle(level, x, y, z, sprites, VfxPresets.get("celestial_meteor_trail"), 1f, null, -1, null, 1f).alignTo(v.normalize());
 		});
+	}
+
+	private static void motion(SimpleParticleType type, String name, MotionParticle.Kind kind) {
+		ParticleProviderRegistry.getInstance().register(type, sprites -> (t, level, x, y, z, xa, ya, za, random) ->
+				new MotionParticle(level, x, y, z, xa, ya, za, sprites, VfxPresets.get(name), 1f, kind));
 	}
 
 	/** xa = size multiplier (0 → 1). */

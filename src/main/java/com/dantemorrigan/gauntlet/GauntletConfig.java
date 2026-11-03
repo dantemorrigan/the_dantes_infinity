@@ -61,6 +61,15 @@ public final class GauntletConfig {
 	/** Meteors don't target ground closer than this to a player. */
 	public int meteorPlayerSafeRadius = 6;
 
+	// ---- Reality stone: Reality Inversion ----
+	/** Radius of the inverted area (blocks). */
+	public int realityRadius = 16;
+	/** Max blocks the client folds/twists (closest first). */
+	public int realityMaxBlocks = 2600;
+	/** Longest hold before the fist opens by itself (ticks). */
+	public int realityMaxHoldTicks = 600;
+	public int realityCooldownTicks = 40;
+
 	// ---- Space stone (server) ----
 	public int portalLifetimeSeconds = 30;
 	public int portalCooldownTicks = 60;

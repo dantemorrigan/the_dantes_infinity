@@ -178,7 +178,33 @@ public final class ModNetwork {
 		@Override public Type<Status> type() { return TYPE; }
 	}
 
+	/** C2S: Reality stone fist closed (true) / opened (false). */
+	public record RealityHold(boolean closed) implements CustomPacketPayload {
+		public static final Type<RealityHold> TYPE = newType("reality_hold");
+		public static final StreamCodec<ByteBuf, RealityHold> CODEC = StreamCodec.composite(ByteBufCodecs.BOOL, RealityHold::closed, RealityHold::new);
+		@Override public Type<RealityHold> type() { return TYPE; }
+	}
+
+	/** S2C: Reality Inversion started/ended for an entity, around center. */
+	public record RealityState(int entityId, boolean active, Vec3 center) implements CustomPacketPayload {
+		public static final Type<RealityState> TYPE = newType("reality_state");
+		public static final StreamCodec<ByteBuf, RealityState> CODEC = StreamCodec.composite(
+				ByteBufCodecs.VAR_INT, RealityState::entityId, ByteBufCodecs.BOOL, RealityState::active, Vec3.STREAM_CODEC, RealityState::center, RealityState::new);
+		@Override public Type<RealityState> type() { return TYPE; }
+	}
+
+	/** S2C: kind 0 = mob became butterflies, 1 = projectile became petals, 2 = butterflies became a mob again. */
+	public record RealityFx(int kind, Vec3 pos, Vec3 vel) implements CustomPacketPayload {
+		public static final Type<RealityFx> TYPE = newType("reality_fx");
+		public static final StreamCodec<ByteBuf, RealityFx> CODEC = StreamCodec.composite(
+				ByteBufCodecs.VAR_INT, RealityFx::kind, Vec3.STREAM_CODEC, RealityFx::pos, Vec3.STREAM_CODEC, RealityFx::vel, RealityFx::new);
+		@Override public Type<RealityFx> type() { return TYPE; }
+	}
+
 	public static void init() {
+		PayloadTypeRegistry.serverboundPlay().register(RealityHold.TYPE, RealityHold.CODEC);
+		PayloadTypeRegistry.clientboundPlay().register(RealityState.TYPE, RealityState.CODEC);
+		PayloadTypeRegistry.clientboundPlay().register(RealityFx.TYPE, RealityFx.CODEC);
 		PayloadTypeRegistry.clientboundPlay().register(Status.TYPE, Status.CODEC);
 		PayloadTypeRegistry.serverboundPlay().register(BeamAction.TYPE, BeamAction.CODEC);
 		PayloadTypeRegistry.clientboundPlay().register(BeamFx.TYPE, BeamFx.CODEC);

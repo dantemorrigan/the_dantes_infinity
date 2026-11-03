@@ -1,0 +1,67 @@
+{
+  "format": "infinity_gauntlet:reality_timeline_v1",
+  "ticks_per_second": 20,
+  "events": [
+    {
+      "tick": 0,
+      "effect": "reality_charge",
+      "attach": "gauntlet_fist",
+      "note": "Map charge progress to frames 0..3; hold frame 3 while charged."
+    },
+    {
+      "tick": 12,
+      "effect": "reality_fracture",
+      "placement": "terrain_surfaces_and_world_billboards",
+      "duration_ticks": 20
+    },
+    {
+      "tick": 20,
+      "effect": "reality_rewrite",
+      "placement": "affected_entity_and_block_centers",
+      "duration_ticks": 8
+    },
+    {
+      "tick": 20,
+      "effect": "reality_butterfly",
+      "placement": "transformed_mob_position",
+      "duration_ticks": 80
+    },
+    {
+      "tick": 20,
+      "effect": "reality_petal",
+      "placement": "intercepted_projectile_position",
+      "duration_ticks": 60
+    },
+    {
+      "tick": 20,
+      "effect": "reality_glass",
+      "placement": "distortion_boundary",
+      "duration_ticks": 36
+    },
+    {
+      "tick": 20,
+      "effect": "reality_aether",
+      "placement": "distorted_scene",
+      "duration_ticks": 48
+    }
+  ],
+  "release": [
+    {
+      "effect": "reality_fracture",
+      "reverse": true
+    },
+    {
+      "effect": "reality_restore",
+      "duration_ticks": 12
+    }
+  ],
+  "budgets": {
+    "max_live_particles": 192,
+    "max_spawn_per_tick": 20,
+    "suggested_effect_radius_blocks": 32
+  },
+  "notes": [
+    "Visual specification only; the server owns ability state and restoration.",
+    "Use current BlockState models for folded terrain; do not replace terrain with painted textures."
+  ]
+}

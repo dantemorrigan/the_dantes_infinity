@@ -34,7 +34,15 @@ public final class VfxPresets {
 			Map.entry("celestial_meteor_trail", new Spec(4, 2, 12, false, 2.2f, true, Orientation.CAMERA)),
 			Map.entry("celestial_meteor_impact", new Spec(4, 2, 8, false, 4f, true, Orientation.CAMERA)),
 			Map.entry("space_teleport_flash", new Spec(4, 1, 4, false, 1.2f, true, Orientation.CAMERA)),
-			Map.entry("space_energy_wisps", new Spec(4, 2, 8, false, 0.5f, true, Orientation.CAMERA)));
+			Map.entry("space_energy_wisps", new Spec(4, 2, 8, false, 0.5f, true, Orientation.CAMERA)),
+			Map.entry("reality_charge", new Spec(4, 3, 12, false, 0.8f, true, Orientation.CAMERA)),
+			Map.entry("reality_fracture", new Spec(4, 5, 20, false, 5.0f, true, Orientation.CAMERA)),
+			Map.entry("reality_rewrite", new Spec(4, 2, 8, false, 2.5f, true, Orientation.CAMERA)),
+			Map.entry("reality_restore", new Spec(4, 3, 12, false, 8.0f, true, Orientation.CAMERA)),
+			Map.entry("reality_butterfly", new Spec(4, 2, 80, true, 0.35f, true, Orientation.CAMERA)),
+			Map.entry("reality_petal", new Spec(4, 3, 60, true, 0.18f, true, Orientation.CAMERA)),
+			Map.entry("reality_glass", new Spec(4, 3, 36, true, 0.4f, true, Orientation.CAMERA)),
+			Map.entry("reality_aether", new Spec(4, 3, 48, true, 0.55f, true, Orientation.CAMERA)));
 
 	private static Map<String, Spec> loaded;
 
@@ -49,7 +57,7 @@ public final class VfxPresets {
 
 	private static void load() {
 		Map<String, Spec> map = new HashMap<>(DEFAULTS);
-		for (String file : new String[]{"power_vfx_presets.json", "destruction_vfx_presets.json", "../celestial_apocalypse/meteor_vfx_presets.json", "../space_stone/particle_presets.json"}) {
+		for (String file : new String[]{"power_vfx_presets.json", "destruction_vfx_presets.json", "../celestial_apocalypse/meteor_vfx_presets.json", "../space_stone/particle_presets.json", "../reality_stone/particle_presets.json"}) {
 			JsonObject root = readJson(InfinityGauntlet.id(file.startsWith("../") ? file.substring(3) : "planet_destruction/" + file));
 			if (root == null) continue;
 			JsonObject effects = root.has("effects") ? root.getAsJsonObject("effects") : root;

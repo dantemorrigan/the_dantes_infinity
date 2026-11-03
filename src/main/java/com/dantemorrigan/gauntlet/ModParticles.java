@@ -28,6 +28,15 @@ public final class ModParticles {
 	public static final SimpleParticleType CELESTIAL_METEOR_TRAIL = register("celestial_meteor_trail");
 	/** xa = size multiplier. Upright flash at the ground impact. */
 	public static final SimpleParticleType CELESTIAL_METEOR_IMPACT = register("celestial_meteor_impact");
+	// Reality stone (pack: Reality_Stone_VFX_Basic). xa = size multiplier unless noted.
+	public static final SimpleParticleType REALITY_CHARGE = register("reality_charge"); // xa = owner id (follows the fist)
+	public static final SimpleParticleType REALITY_FRACTURE = register("reality_fracture");
+	public static final SimpleParticleType REALITY_REWRITE = register("reality_rewrite");
+	public static final SimpleParticleType REALITY_RESTORE = register("reality_restore");
+	public static final SimpleParticleType REALITY_BUTTERFLY = register("reality_butterfly"); // flutters around its spawn point
+	public static final SimpleParticleType REALITY_PETAL = register("reality_petal");         // (xa,ya,za) = initial velocity
+	public static final SimpleParticleType REALITY_GLASS = register("reality_glass");         // (xa,ya,za) = initial velocity
+	public static final SimpleParticleType REALITY_AETHER = register("reality_aether");       // slow drifting ribbons
 	/** Space stone: short blue flash (xa = size). */
 	public static final SimpleParticleType SPACE_TELEPORT_FLASH = register("space_teleport_flash");
 	/** Space stone: blue energy wisps (xa = size). */
