@@ -6,5 +6,6 @@
 	"item.infinity_gauntlet.mind_stone": "Mind Stone",
 	"item.infinity_gauntlet.time_stone": "Time Stone",
 	"item.infinity_gauntlet.soul_stone": "Soul Stone",
-	"itemGroup.infinity_gauntlet": "Infinity Gauntlet"
+	"itemGroup.infinity_gauntlet": "Infinity Gauntlet",
+	"container.infinity_gauntlet.gauntlet": "Infinity Gauntlet"
 }

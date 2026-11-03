@@ -1,5 +1,6 @@
 package com.dantemorrigan.gauntlet;
 
+import com.dantemorrigan.gauntlet.menu.ModMenus;
 import net.fabricmc.api.ModInitializer;
 import net.minecraft.resources.Identifier;
 import org.slf4j.Logger;
@@ -13,6 +14,7 @@ public class InfinityGauntlet implements ModInitializer {
 	public void onInitialize() {
 		ModItems.init();
 		ModCreativeTab.init();
+		ModMenus.init();
 		LOGGER.info("Infinity Gauntlet loaded");
 	}
 

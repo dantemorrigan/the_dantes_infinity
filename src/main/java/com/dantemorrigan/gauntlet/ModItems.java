@@ -2,13 +2,17 @@ package com.dantemorrigan.gauntlet;
 
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Rarity;
+import net.minecraft.world.item.component.ItemContainerContents;
+
+import java.util.function.Function;
 
 public final class ModItems {
-	public static final Item GAUNTLET = register("gauntlet", epic());
+	public static final Item GAUNTLET = register("gauntlet", GauntletItem::new, epic().component(DataComponents.CONTAINER, ItemContainerContents.EMPTY));
 
 	public static final Item POWER_STONE = register("power_stone", epic());
 	public static final Item SPACE_STONE = register("space_stone", epic());
@@ -22,8 +26,12 @@ public final class ModItems {
 	}
 
 	private static Item register(String name, Item.Properties properties) {
+		return register(name, Item::new, properties);
+	}
+
+	private static Item register(String name, Function<Item.Properties, Item> factory, Item.Properties properties) {
 		ResourceKey<Item> key = ResourceKey.create(Registries.ITEM, InfinityGauntlet.id(name));
-		return Registry.register(BuiltInRegistries.ITEM, key, new Item(properties.setId(key)));
+		return Registry.register(BuiltInRegistries.ITEM, key, factory.apply(properties.setId(key)));
 	}
 
 	public static void init() {
