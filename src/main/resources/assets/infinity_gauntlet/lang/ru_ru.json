@@ -130,5 +130,8 @@
   "tooltip.infinity_gauntlet.loose_mind": "ПКМ: поднимает и удерживает моба. Повторный ПКМ: бросок с уроном при столкновении.",
   "tooltip.infinity_gauntlet.loose_time": "ПКМ: отматывает твою позицию и здоровье. В Белой пустоте отменяет щелчок.",
   "tooltip.infinity_gauntlet.loose_soul": "ПКМ: извлекает одну душу. Перезарядка — 20 секунд.",
-  "ability.infinity_gauntlet.reason.disabled": "Способность отключена настройками сервера"
+  "ability.infinity_gauntlet.reason.disabled": "Способность отключена настройками сервера",
+  "ability.infinity_gauntlet.reason.portal_unsafe": "Путь через портал закрыт: нет безопасной точки прибытия",
+  "ability.infinity_gauntlet.mind_escape": "Камень Разума удерживает тебя. Присядь, чтобы вырваться.",
+  "ability.infinity_gauntlet.soul_escape": "Камень Души вытягивает здоровье. Присядь или уйди за укрытие."
 }

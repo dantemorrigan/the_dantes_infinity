@@ -118,7 +118,11 @@ public final class SoulStone {
 			LivingEntity target = MindStone.lookTarget(player, cfg.soulRange, cfg.soulPlayerDrain);
 			if (target == null || busy(target) || !player.hasLineOfSight(target)) return;
 			POINT_CD.put(player.getUUID(), now + cfg.soulPointCooldownTicks);
-			if (target instanceof ServerPlayer) ACTIVE.add(new Extraction(player.getUUID(), target, 0, POINT_EXTRACT, 0));
+			if (target instanceof ServerPlayer victim) {
+				if (victim.isShiftKeyDown()) return;
+				ACTIVE.add(new Extraction(player.getUUID(), target, 0, POINT_EXTRACT, 0));
+				ModStatus.send(victim, Component.translatable("ability.infinity_gauntlet.soul_escape"));
+			}
 			else start(player, target, 0, POINT_EXTRACT, POINT_FLIGHT);
 			level.playSound(null, target.blockPosition(), SoundEvents.SOUL_ESCAPE.value(), SoundSource.PLAYERS, 2.0F, 0.6F);
 		}
@@ -151,6 +155,10 @@ public final class SoulStone {
 
 	private static boolean busy(LivingEntity e) {
 		return MindStone.holdsEntity(e) || isExtracting(e);
+	}
+
+	public static boolean extractingWithGauntlet(ServerPlayer player) {
+		return ACTIVE.stream().anyMatch(extraction -> extraction.owner.equals(player.getUUID()));
 	}
 
 	public static boolean isExtracting(LivingEntity e) {

@@ -85,7 +85,8 @@ public final class PlanetDestruction {
 
 	/** Start the event. Validation (stone, mode, charge, cooldown) is done by the caller. */
 	public static boolean start(ServerPlayer activator, Vec3 impact) {
-		if (!GauntletConfig.get().allowPlanetDestruction) return false;
+		if (!GauntletConfig.get().allowPlanetDestruction || !EVENTS.isEmpty()
+				|| activator.hasAttached(com.dantemorrigan.gauntlet.snap.InfinitySnap.RECORD)) return false;
 		if (isBusy(activator)) {
 			com.dantemorrigan.gauntlet.net.ModStatus.send(activator, Component.literal("Событие уже идёт"));
 			return false;
@@ -99,7 +100,7 @@ public final class PlanetDestruction {
 
 		List<ServerPlayer> candidates = cfg.transferWholeDimension ? level.players() : level.getPlayers(p -> p.distanceToSqr(impact) <= cfg.participantRadius * cfg.participantRadius);
 		for (ServerPlayer p : candidates) {
-			if (p == activator || !isBusy(p) && !p.isSpectator() && p.isAlive()) event.participants.add(p.getUUID());
+			if (p == activator || !isBusy(p) && !p.hasAttached(com.dantemorrigan.gauntlet.snap.InfinitySnap.RECORD) && !p.isSpectator() && p.isAlive()) event.participants.add(p.getUUID());
 		}
 		event.participants.add(activator.getUUID());
 		EVENTS.put(event.id, event);

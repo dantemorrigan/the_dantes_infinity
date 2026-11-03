@@ -130,5 +130,8 @@
   "tooltip.infinity_gauntlet.loose_mind": "Right-click: lift and hold a mob. Right-click again to throw it and deal impact damage.",
   "tooltip.infinity_gauntlet.loose_time": "Right-click: rewind your position and health. In the White Void, undo the Snap.",
   "tooltip.infinity_gauntlet.loose_soul": "Right-click: extract one soul. Cooldown: 20 seconds.",
-  "ability.infinity_gauntlet.reason.disabled": "Ability disabled by the server"
+  "ability.infinity_gauntlet.reason.disabled": "Ability disabled by the server",
+  "ability.infinity_gauntlet.reason.portal_unsafe": "Portal blocked: no safe arrival point",
+  "ability.infinity_gauntlet.mind_escape": "The Mind Stone is holding you. Sneak to break free.",
+  "ability.infinity_gauntlet.soul_escape": "The Soul Stone is draining you. Sneak or get behind cover."
 }

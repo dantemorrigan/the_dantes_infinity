@@ -244,7 +244,10 @@ public final class MindStone {
 
 	private static void grabMob(ServerPlayer player, LivingEntity mob) {
 		if (holdsEntity(mob) || SoulStone.isExtracting(mob)) return;
-		if (mob instanceof ServerPlayer victim && victim.isShiftKeyDown()) return;
+		if (mob instanceof ServerPlayer victim) {
+			if (victim.isShiftKeyDown()) return;
+			ModStatus.send(victim, Component.translatable("ability.infinity_gauntlet.mind_escape"));
+		}
 		THROWN.removeIf(t -> t.mob() == mob);
 		Hold hold = new Hold();
 		hold.mob = mob;

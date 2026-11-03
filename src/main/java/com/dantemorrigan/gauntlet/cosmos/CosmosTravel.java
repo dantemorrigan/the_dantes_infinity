@@ -32,6 +32,9 @@ public final class CosmosTravel {
     }
     public static final AttachmentType<Flight> FLIGHT = AttachmentRegistry.<Flight>builder().persistent(Flight.CODEC)
         .buildAndRegister(InfinityGauntlet.id("cosmos_flight"));
+    private static final AttachmentType<Flight> SUSPENDED_FLIGHT = AttachmentRegistry.<Flight>builder()
+        .persistent(Flight.CODEC).copyOnDeath()
+        .buildAndRegister(InfinityGauntlet.id("suspended_cosmos_flight"));
     private static final Map<UUID, Navigation> NAV = new HashMap<>();
     /** Protect only the first descent after switching flight off, without changing gravity. */
     private static final Map<UUID, LandingGrace> LANDING_GRACE = new HashMap<>();
@@ -142,6 +145,25 @@ public final class CosmosTravel {
         else LANDING_GRACE.remove(p.getUUID());
         ServerPlayNetworking.send(p, new ModNetwork.CosmosState(false, 0, 0, 0));
     }
+    public static void suspendForEvent(ServerPlayer player) {
+        Flight flight = player.getAttached(FLIGHT);
+        if (flight == null) return;
+        player.setAttached(SUSPENDED_FLIGHT, flight);
+        stop(player, false);
+    }
+
+    public static void resumeAfterEvent(ServerPlayer player) {
+        Flight flight = player.removeAttached(SUSPENDED_FLIGHT);
+        if (flight != null && equipped(player) && flightDim(player)) {
+            player.setAttached(FLIGHT, flight);
+            enable(player);
+            sync(player, NAV.computeIfAbsent(player.getUUID(), id -> new Navigation()));
+        } else if (inCosmos(player)) {
+            if (flight != null) player.setAttached(FLIGHT, flight);
+            rescue(player);
+        }
+    }
+
     private static void rescue(ServerPlayer p) { stop(p, true); }
     private static void tick(MinecraftServer server) {
         ServerLevel space = server.getLevel(DIMENSION);

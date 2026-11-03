@@ -112,6 +112,7 @@ public final class SpaceManager {
 			InfinityGauntlet.LOGGER.error("Dead Space dimension is missing (datapack not loaded?)");
 			return false;
 		}
+		com.dantemorrigan.gauntlet.cosmos.CosmosTravel.suspendForEvent(player);
 		player.setAttached(RECORD, record);
 		if (player.level().dimension().equals(Level.OVERWORLD))
 			com.dantemorrigan.gauntlet.celestial.CelestialApocalypse.stop(player.level().getServer());
@@ -139,6 +140,7 @@ public final class SpaceManager {
 		player.fallDistance = 0;
 		player.setDeltaMovement(Vec3.ZERO);
 		player.teleport(new TeleportTransition(target, pos, Vec3.ZERO, player.getYRot(), player.getXRot(), TeleportTransition.DO_NOTHING));
+		com.dantemorrigan.gauntlet.cosmos.CosmosTravel.resumeAfterEvent(player);
 		ServerPlayNetworking.send(player, new ModNetwork.SpaceLeave());
 		return record != null;
 	}

@@ -1,6 +1,8 @@
 package com.dantemorrigan.gauntlet.snap;
 
 import com.dantemorrigan.gauntlet.GauntletConfig;
+import com.dantemorrigan.gauntlet.cosmos.CosmosTravel;
+import com.dantemorrigan.gauntlet.space.PlanetDestruction;
 import com.dantemorrigan.gauntlet.GauntletState;
 import com.dantemorrigan.gauntlet.InfinityGauntlet;
 import com.dantemorrigan.gauntlet.ModComponents;
@@ -91,13 +93,28 @@ public final class InfinitySnap {
 	private static final AttachmentType<List<Long>> REVERSED = AttachmentRegistry.<List<Long>>builder()
 			.persistent(Codec.LONG.listOf()).buildAndRegister(InfinityGauntlet.id("reversed_snaps"));
 
-	private record Cast(int started, ItemStack before) {}
+	private static final class Cast {
+		final ServerPlayer owner;
+		final ItemStack stack;
+		final ItemStack before;
+		final long started;
+		long event = -1;
+
+		Cast(ServerPlayer owner, ItemStack stack, long started) {
+			this.owner = owner;
+			this.stack = stack;
+			this.before = stack.copy();
+			this.started = started;
+		}
+	}
 
 	private static final Map<UUID, Cast> CASTS = new HashMap<>();
 	private static final Map<UUID, Integer> REWINDS = new HashMap<>();
 
 	public static void init() {
 		ServerTickEvents.END_SERVER_TICK.register(InfinitySnap::tick);
+		net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents.DISCONNECT.register((handler, server) ->
+				REWINDS.remove(handler.getPlayer().getUUID()));
 		ServerLifecycleEvents.SERVER_STOPPED.register(s -> {CASTS.clear();REWINDS.clear();});
 		// In the White Void you can only walk: no building, breaking, fighting or using things,
 		// except the gauntlet (to take the Time stone out) and the Time stone itself.
@@ -129,16 +146,17 @@ public final class InfinitySnap {
 		if (!GauntletConfig.get().allowInfinitySnap) return;
 		ItemStack gauntlet = GauntletState.activeGauntlet(player);
 		if (gauntlet.isEmpty() || snapped(gauntlet) || !CASTS.isEmpty()) return;
-		CASTS.put(player.getUUID(), new Cast(player.tickCount, gauntlet.copy()));
+		MinecraftServer server = player.level().getServer();
+		if (server.getLevel(WHITE_VOID) == null || !affected(player)) return;
+		CASTS.put(player.getUUID(), new Cast(player, gauntlet, server.overworld().getGameTime()));
 		GauntletState.setInUse(gauntlet, EnumSet.allOf(Stone.class));
 		ModNetwork.GestureFx gesture = new ModNetwork.GestureFx(player.getId(), 1);
 		for (ServerPlayer p : player.level().players()) ServerPlayNetworking.send(p, gesture);
 	}
 
 	private static void tick(MinecraftServer server) {
+		for (Cast cast : new ArrayList<>(CASTS.values())) castTick(server, cast);
 		for (ServerPlayer p : new ArrayList<>(server.getPlayerList().getPlayers())) {
-			Cast cast = CASTS.get(p.getUUID());
-			if (cast != null) castTick(server, p, cast);
 			Integer rewind = REWINDS.get(p.getUUID());
 			if (rewind != null) {
 				if (rewind <= 1) {REWINDS.remove(p.getUUID());restore(p);}
@@ -146,6 +164,7 @@ public final class InfinitySnap {
 				continue;
 			}
 			SnapRecord record = p.getAttached(RECORD);
+			if (record != null && CASTS.values().stream().anyMatch(cast -> cast.event == record.event())) continue;
 			if (record != null && p.isAlive() && reversed(server, record.event())) {
 				restore(p);
 				continue;
@@ -156,32 +175,47 @@ public final class InfinitySnap {
 				if (p.getY() < 0.5 || p.getY() > 200) teleport(p, p.level(), ROOM, p.getYRot(), p.getXRot());
 			}
 		}
-		CASTS.keySet().removeIf(id -> server.getPlayerList().getPlayer(id) == null);
 	}
 
-	private static void castTick(MinecraftServer server, ServerPlayer p, Cast cast) {
-		int age = p.tickCount - cast.started();
-		if (age == SNAP_TICK) {
-			p.level().playSound(null, p.getX(), p.getY(), p.getZ(), SOUND, SoundSource.PLAYERS, 4.0f, 1.0f);
-			burn(GauntletState.wornGauntlet(p));
+	private static void castTick(MinecraftServer server, Cast cast) {
+		ServerPlayer owner = cast.owner;
+		long now = server.overworld().getGameTime();
+		long age = now - cast.started;
+		if (cast.event < 0) {
+			ItemStack worn = GauntletState.activeGauntlet(owner);
+			if (server.getPlayerList().getPlayer(owner.getUUID()) != owner || !affected(owner)
+					|| !GauntletConfig.get().allowInfinitySnap || worn != cast.stack
+					|| !java.util.Objects.equals(worn.get(DataComponents.CONTAINER), cast.before.get(DataComponents.CONTAINER))) {
+				CASTS.remove(owner.getUUID());
+				GauntletState.setInUse(cast.stack, EnumSet.noneOf(Stone.class));
+				return;
+			}
+			if (age < SNAP_TICK) return;
+			cast.event = now;
+			owner.level().playSound(null, owner.getX(), owner.getY(), owner.getZ(), SOUND, SoundSource.PLAYERS, 4.0f, 1.0f);
+			burn(cast.stack);
 			ModNetwork.SnapFx fade = new ModNetwork.SnapFx(0, ERASE_TICK - SNAP_TICK);
-			for (ServerPlayer viewer : server.getPlayerList().getPlayers()) if (affected(viewer)) ServerPlayNetworking.send(viewer, fade);
+			for (ServerPlayer viewer : server.getPlayerList().getPlayers()) {
+				if (!affected(viewer)) continue;
+				viewer.setAttached(RECORD, new SnapRecord(cast.event, viewer.level().dimension(), viewer.position(),
+						viewer.getYRot(), viewer.getXRot(), viewer == owner ? Optional.of(cast.before) : Optional.empty()));
+				CosmosTravel.suspendForEvent(viewer);
+				ServerPlayNetworking.send(viewer, fade);
+			}
 		}
 		if (age < ERASE_TICK) return;
-		CASTS.remove(p.getUUID());
-		long event = server.overworld().getGameTime();
-		for (ServerPlayer viewer : server.getPlayerList().getPlayers()) {
-			if (!affected(viewer)) continue;
-			viewer.setAttached(RECORD, new SnapRecord(event, viewer.level().dimension(), viewer.position(), viewer.getYRot(), viewer.getXRot(),
-					viewer == p ? Optional.of(cast.before()) : Optional.empty()));
-			sendToVoid(viewer);
+		CASTS.remove(owner.getUUID());
+		for (ServerPlayer viewer : new ArrayList<>(server.getPlayerList().getPlayers())) {
+			SnapRecord record = viewer.getAttached(RECORD);
+			if (record != null && record.event() == cast.event && viewer.isAlive()) sendToVoid(viewer);
 		}
-		ModStatus.send(p, Component.translatable("snap.infinity_gauntlet.erased"));
+		if (server.getPlayerList().getPlayer(owner.getUUID()) == owner)
+			ModStatus.send(owner, Component.translatable("snap.infinity_gauntlet.erased"));
 	}
 
 	/** Players outside Dead Space and not already erased. */
 	private static boolean affected(ServerPlayer p) {
-		return p.isAlive() && !p.isSpectator() && !inVoid(p) && !p.hasAttached(RECORD) && !SpaceManager.inSpace(p) && !p.hasAttached(SpaceManager.RECORD);
+		return p.isAlive() && !p.isSpectator() && !inVoid(p) && !p.hasAttached(RECORD) && !SpaceManager.inSpace(p) && !PlanetDestruction.isBusy(p);
 	}
 
 	/** The gauntlet and every stone inside burn out. */
@@ -203,6 +237,7 @@ public final class InfinitySnap {
 		}
 		if (p.isUsingItem()) p.stopUsingItem();
 		p.closeContainer();
+		CosmosTravel.suspendForEvent(p);
 		Vec3 offset = new Vec3((p.getRandom().nextDouble() - 0.5) * 4, 0, (p.getRandom().nextDouble() - 0.5) * 4);
 		teleport(p, room, ROOM.add(offset), p.getYRot(), 0);
 		ServerPlayNetworking.send(p, new ModNetwork.SnapFx(1, 40));
@@ -266,6 +301,7 @@ public final class InfinitySnap {
 		p.fallDistance = 0;
 		p.setDeltaMovement(Vec3.ZERO);
 		teleport(p, target, pos, record.yRot(), record.xRot());
+		CosmosTravel.resumeAfterEvent(p);
 		target.playSound(null, p.blockPosition(), SoundEvents.BEACON_ACTIVATE, SoundSource.PLAYERS, 1.5f, 1.4f);
 		ServerPlayNetworking.send(p, new ModNetwork.SnapFx(3, 30));
 	}

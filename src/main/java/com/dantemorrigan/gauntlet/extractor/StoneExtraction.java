@@ -1,5 +1,13 @@
 package com.dantemorrigan.gauntlet.extractor;
 
+import com.dantemorrigan.gauntlet.power.SoulStone;
+import com.dantemorrigan.gauntlet.power.TimeAbility;
+import com.dantemorrigan.gauntlet.power.MindStone;
+import com.dantemorrigan.gauntlet.power.RealityStone;
+import com.dantemorrigan.gauntlet.cosmos.CosmosTravel;
+import com.dantemorrigan.gauntlet.ability.AbilityController;
+import com.dantemorrigan.gauntlet.snap.InfinitySnap;
+import com.dantemorrigan.gauntlet.power.InfinityBeam;
 import com.dantemorrigan.gauntlet.CoopRules;
 import com.dantemorrigan.gauntlet.GauntletConfig;
 import com.dantemorrigan.gauntlet.GauntletState;
@@ -61,14 +69,19 @@ public final class StoneExtraction {
 	private static final class Session {
 		final UUID target;
 		final Stone stone;
+		final ItemStack extractor, targetGauntlet;
+		final ServerLevel level;
 		int cycles;
 		int channelTicks;
 		boolean channeling;
 		long touched;
 
-		Session(UUID target, Stone stone, long now) {
+		Session(UUID target, Stone stone, ItemStack extractor, ItemStack targetGauntlet, ServerLevel level, long now) {
 			this.target = target;
 			this.stone = stone;
+			this.extractor = extractor;
+			this.targetGauntlet = targetGauntlet;
+			this.level = level;
 			this.touched = now;
 		}
 	}
@@ -153,7 +166,6 @@ public final class StoneExtraction {
 		}
 		ItemStack gauntlet = GauntletState.activeGauntlet(target);
 		Set<Stone> present = GauntletState.inserted(gauntlet);
-		Set<Stone> used = GauntletState.inUse(gauntlet);
 		if (present.isEmpty()) {
 			notice(p, Component.translatable("extractor.infinity_gauntlet.empty_gauntlet"), false);
 			return false;
@@ -167,18 +179,19 @@ public final class StoneExtraction {
 				return false;
 			}
 		} else {
-			for (Stone s : Stone.values()) if (present.contains(s) && !used.contains(s)) {stone = s; break;}
+			for (Stone s : Stone.values()) if (present.contains(s) && !stoneInUse(target, gauntlet, s)) {stone = s; break;}
 			if (stone == null) stone = present.iterator().next(); // all of them are in use: report the blocked one
 		}
-		if (used.contains(stone)) {
+		if (stoneInUse(target, gauntlet, stone)) {
 			fx(p, FX_BLOCKED, target, stone, 0);
 			notice(p, Component.translatable("extractor.infinity_gauntlet.in_use", stoneName(stone)), false);
 			return false;
 		}
 		long now = p.level().getGameTime();
 		Session s = running;
-		if (s == null || !s.target.equals(target.getUUID()) || s.stone != stone || now - s.touched > KEEP_TICKS) {
-			s = new Session(target.getUUID(), stone, now);
+		if (s == null || !s.target.equals(target.getUUID()) || s.stone != stone || s.extractor != extractor || s.targetGauntlet != gauntlet
+				|| s.level != p.level() || now - s.touched > KEEP_TICKS) {
+			s = new Session(target.getUUID(), stone, extractor, gauntlet, p.level(), now);
 			SESSIONS.put(p.getUUID(), s);
 		}
 		s.channeling = true;
@@ -203,11 +216,12 @@ public final class StoneExtraction {
 			return;
 		}
 		ItemStack gauntlet = GauntletState.activeGauntlet(target);
-		if (gauntlet.isEmpty() || !GauntletState.inserted(gauntlet).contains(s.stone)) {
+		if (gauntlet.isEmpty() || gauntlet != s.targetGauntlet || extractor != s.extractor
+				|| level != s.level || !GauntletState.inserted(gauntlet).contains(s.stone)) {
 			abort(p, extractor, s, target, true);
 			return;
 		}
-		if (GauntletState.inUse(gauntlet).contains(s.stone)) {
+		if (stoneInUse(target, gauntlet, s.stone)) {
 			fx(p, FX_BLOCKED, target, s.stone, s.cycles);
 			notice(p, Component.translatable("extractor.infinity_gauntlet.in_use", stoneName(s.stone)), false);
 			abort(p, extractor, s, target, false);
@@ -303,6 +317,20 @@ public final class StoneExtraction {
 		notice(p, Component.translatable("extractor.infinity_gauntlet.returned", inside.getHoverName()), true);
 	}
 
+	private static boolean stoneInUse(LivingEntity target, ItemStack gauntlet, Stone stone) {
+		if (GauntletState.inUse(gauntlet).contains(stone)) return true;
+		if (!(target instanceof ServerPlayer player)) return false;
+		if (InfinityBeam.active(player) || InfinitySnap.casting(player)) return true;
+		return switch (stone) {
+			case POWER -> AbilityController.chargeTicks(player) > 0;
+			case SPACE -> player.hasAttached(CosmosTravel.FLIGHT);
+			case REALITY -> RealityStone.active(player);
+			case MIND -> MindStone.holding(player);
+			case TIME -> TimeAbility.isRewinding(player);
+			case SOUL -> SoulStone.extractingWithGauntlet(player);
+		};
+	}
+
 	private static boolean canExtract(ServerPlayer owner, LivingEntity target) {
 		return !(target instanceof ServerPlayer) || GauntletConfig.get().extractorPlayerTheft && CoopRules.canAffect(owner, target);
 	}
@@ -333,7 +361,7 @@ public final class StoneExtraction {
 				if (!stack.is(ModItems.INFINITY_EXTRACTOR)) continue;
 				int want;
 				if (!chamber(stack).isEmpty()) want = 4;
-				else if (s != null && stack == p.getMainHandItem()) want = s.channeling ? Math.max(1, s.cycles + 1) : idleState(s);
+				else if (s != null && stack == s.extractor && stack == p.getMainHandItem()) want = s.channeling ? Math.max(1, s.cycles + 1) : idleState(s);
 				else want = 0;
 				setState(stack, want);
 			}
