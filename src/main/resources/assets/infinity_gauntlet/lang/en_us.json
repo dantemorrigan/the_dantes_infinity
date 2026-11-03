@@ -123,5 +123,11 @@
   "extractor.infinity_gauntlet.mode_stone": "Extractor: pulling %s",
   "extractor.infinity_gauntlet.victim": "Someone is pulling your %s (%s/%s)",
   "extractor.infinity_gauntlet.victim_cycle": "%s: %s/%s pulled",
-  "extractor.infinity_gauntlet.victim_lost": "Your %s was pulled out of the gauntlet!"
+  "extractor.infinity_gauntlet.victim_lost": "Your %s was pulled out of the gauntlet!",
+  "tooltip.infinity_gauntlet.loose_power": "Lethal when held in either hand.",
+  "tooltip.infinity_gauntlet.loose_space": "Right-click: teleport to a nearby surface.",
+  "tooltip.infinity_gauntlet.loose_reality": "Right-click: levitate the targeted mob briefly.",
+  "tooltip.infinity_gauntlet.loose_mind": "Right-click: pull the targeted mob toward you.",
+  "tooltip.infinity_gauntlet.loose_time": "Right-click: rewind your position. In the White Void, undo the Snap.",
+  "tooltip.infinity_gauntlet.loose_soul": "Right-click: drain health from the targeted mob."
 }

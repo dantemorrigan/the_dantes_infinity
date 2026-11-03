@@ -76,6 +76,25 @@ public final class TimeAbility {
 		return SpaceManager.inSpace(player) && player.hasAttached(SpaceManager.RECORD);
 	}
 
+	public static boolean rewindLoose(ServerPlayer player) {
+		if (isRewinding(player) || PlanetDestruction.isBusy(player) || SpaceManager.inSpace(player)) return false;
+		Deque<Snapshot> history = HISTORY.get(player.getUUID());
+		if (history == null) return false;
+		int samples = 0;
+		for (Snapshot snapshot : history) {
+			if (!snapshot.dim().equals(player.level().dimension())) break;
+			if (++samples < 40 / SAMPLE_EVERY) continue;
+			Vec3 offset = snapshot.pos().subtract(player.position());
+			if (!player.level().noCollision(player, player.getBoundingBox().move(offset))) return false;
+			player.teleport(new TeleportTransition(player.level(), snapshot.pos(), Vec3.ZERO,
+					snapshot.yRot(), snapshot.xRot(), TeleportTransition.DO_NOTHING));
+			player.fallDistance = 0;
+			HISTORY.remove(player.getUUID());
+			return true;
+		}
+		return false;
+	}
+
 	public static void request(ServerPlayer player) {
 		GauntletConfig cfg = GauntletConfig.get();
 		ItemStack gauntlet = GauntletState.activeGauntlet(player);

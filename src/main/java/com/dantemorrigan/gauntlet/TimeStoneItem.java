@@ -8,7 +8,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.Level;
 
-/** The Time stone on its own: in the White Void, right-click rewinds the universe to before the Infinity Snap. */
+/** Rewinds the player outside the White Void, and undoes the Snap inside it. */
 public class TimeStoneItem extends Item {
 	public TimeStoneItem(Properties properties) {
 		super(properties);
@@ -16,8 +16,11 @@ public class TimeStoneItem extends Item {
 
 	@Override
 	public InteractionResult use(Level level, Player player, InteractionHand hand) {
-		if (!InfinitySnap.inVoid(player)) return InteractionResult.PASS;
-		if (player instanceof ServerPlayer sp) return InfinitySnap.rewind(sp) ? InteractionResult.SUCCESS : InteractionResult.FAIL;
+		if (player instanceof ServerPlayer sp) {
+			if (InfinitySnap.inVoid(player)) return InfinitySnap.rewind(sp) ? InteractionResult.SUCCESS : InteractionResult.FAIL;
+			if (!com.dantemorrigan.gauntlet.power.TimeAbility.rewindLoose(sp)) return InteractionResult.FAIL;
+			player.getCooldowns().addCooldown(player.getItemInHand(hand), 100);
+		}
 		return InteractionResult.SUCCESS;
 	}
 }

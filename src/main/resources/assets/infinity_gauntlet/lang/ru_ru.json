@@ -123,5 +123,11 @@
   "extractor.infinity_gauntlet.mode_stone": "Извлекатор: тянем %s",
   "extractor.infinity_gauntlet.victim": "У тебя тянут: %s (%s/%s)",
   "extractor.infinity_gauntlet.victim_cycle": "%s: вытянуто %s/%s",
-  "extractor.infinity_gauntlet.victim_lost": "%s вытянули из перчатки!"
+  "extractor.infinity_gauntlet.victim_lost": "%s вытянули из перчатки!",
+  "tooltip.infinity_gauntlet.loose_power": "Смертелен в любой руке.",
+  "tooltip.infinity_gauntlet.loose_space": "ПКМ: телепорт на ближайшую поверхность под прицелом.",
+  "tooltip.infinity_gauntlet.loose_reality": "ПКМ: ненадолго поднимает моба в воздух.",
+  "tooltip.infinity_gauntlet.loose_mind": "ПКМ: притягивает моба под прицелом.",
+  "tooltip.infinity_gauntlet.loose_time": "ПКМ: отматывает твою позицию. В Белой пустоте отменяет щелчок.",
+  "tooltip.infinity_gauntlet.loose_soul": "ПКМ: вытягивает здоровье из моба под прицелом."
 }

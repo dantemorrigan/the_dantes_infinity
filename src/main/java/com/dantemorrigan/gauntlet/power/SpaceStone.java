@@ -114,7 +114,7 @@ public final class SpaceStone {
 				com.dantemorrigan.gauntlet.net.ModStatus.send(player, Component.literal("§9Портал: " + name(next)));
 				player.level().playSound(null, player.blockPosition(), SoundEvents.AMETHYST_BLOCK_CHIME, SoundSource.PLAYERS, 1f, 0.8f + next * 0.2f);
 			}
-			case 2 -> blink(player, g);
+			case 2 -> blink(player, g, GauntletConfig.get().blinkRange);
 			default -> {}
 		}
 	}
@@ -267,21 +267,25 @@ public final class SpaceStone {
 
 	// ------------------------------------------------------------------ teleport where you look
 
-	private static void blink(ServerPlayer player, ItemStack g) {
+	public static boolean blinkLoose(ServerPlayer player) {
+		return blink(player, ItemStack.EMPTY, 8);
+	}
+
+	private static boolean blink(ServerPlayer player, ItemStack g, double range) {
 		GauntletConfig cfg = GauntletConfig.get();
 		long now = player.level().getGameTime();
-		if (now < BLINK_COOLDOWN.getOrDefault(player.getUUID(), 0L) && !player.isCreative()) return;
+		if (now < BLINK_COOLDOWN.getOrDefault(player.getUUID(), 0L) && !player.isCreative()) return false;
 		Vec3 eye = player.getEyePosition();
-		Vec3 end = eye.add(player.getLookAngle().scale(cfg.blinkRange));
+		Vec3 end = eye.add(player.getLookAngle().scale(range));
 		BlockHitResult hit = player.level().clip(new ClipContext(eye, end, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, player));
 		if (hit.getType() != HitResult.Type.BLOCK) {
-			com.dantemorrigan.gauntlet.net.ModStatus.send(player, Component.literal("§9Слишком далеко (до " + cfg.blinkRange + " блоков)"));
-			return;
+			com.dantemorrigan.gauntlet.net.ModStatus.send(player, Component.literal("§9Слишком далеко (до " + range + " блоков)"));
+			return false;
 		}
 		Vec3 target = standingSpot(player.level(), hit);
 		if (target == null) {
 			com.dantemorrigan.gauntlet.net.ModStatus.send(player, Component.literal("§9Там негде встать"));
-			return;
+			return false;
 		}
 		BLINK_COOLDOWN.put(player.getUUID(), now + cfg.blinkCooldownTicks);
 		Vec3 from = player.position();
@@ -290,8 +294,11 @@ public final class SpaceStone {
 		player.level().playSound(null, BlockPos.containing(from), SoundEvents.PLAYER_TELEPORT, SoundSource.PLAYERS, 0.8f, 1.4f);
 		player.level().playSound(null, BlockPos.containing(target), SoundEvents.PLAYER_TELEPORT, SoundSource.PLAYERS, 1f, 1.2f);
 		sendFx(player.level(), from, target);
-		GauntletState.setInUse(g, EnumSet.of(Stone.SPACE));
-		CLEAR_GLOW.put(player.getUUID(), now + 20);
+		if (!g.isEmpty()) {
+			GauntletState.setInUse(g, EnumSet.of(Stone.SPACE));
+			CLEAR_GLOW.put(player.getUUID(), now + 20);
+		}
+		return true;
 	}
 
 	private static final Map<UUID, Long> CLEAR_GLOW = new HashMap<>();
