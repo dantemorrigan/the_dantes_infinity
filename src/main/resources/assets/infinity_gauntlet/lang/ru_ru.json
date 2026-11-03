@@ -152,5 +152,9 @@
   "item.infinity_gauntlet.uru_boots": "Сапоги из Уру",
   "death.attack.infinityGauntlet": "%1$s не выдержал удара Перчатки Бесконечности",
   "death.attack.infinityGauntlet.player": "%1$s не выдержал удара Перчатки Бесконечности игрока %2$s",
-  "death.attack.infinityGauntlet.item": "%1$s не выдержал удара Перчатки Бесконечности игрока %2$s (%3$s)"
+  "death.attack.infinityGauntlet.item": "%1$s не выдержал удара Перчатки Бесконечности игрока %2$s (%3$s)",
+  "block.infinity_gauntlet.uru_ore": "Руда Уру",
+  "block.infinity_gauntlet.deepslate_uru_ore": "Глубинная руда Уру",
+  "item.infinity_gauntlet.raw_uru": "Необработанный Уру",
+  "item.infinity_gauntlet.uru_ingot": "Слиток Уру"
 }

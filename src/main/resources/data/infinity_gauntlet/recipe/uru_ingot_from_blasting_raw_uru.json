@@ -1,0 +1,11 @@
+{
+  "type": "minecraft:blasting",
+  "category": "misc",
+  "cookingtime": 100,
+  "experience": 1.0,
+  "group": "uru_ingot",
+  "ingredient": "infinity_gauntlet:raw_uru",
+  "result": {
+    "id": "infinity_gauntlet:uru_ingot"
+  }
+}

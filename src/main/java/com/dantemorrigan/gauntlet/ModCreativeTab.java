@@ -19,6 +19,10 @@ public final class ModCreativeTab {
 				output.accept(ModItems.MIND_STONE);
 				output.accept(ModItems.TIME_STONE);
 				output.accept(ModItems.SOUL_STONE);
+				output.accept(ModBlocks.URU_ORE);
+				output.accept(ModBlocks.DEEPSLATE_URU_ORE);
+				output.accept(ModItems.RAW_URU);
+				output.accept(ModItems.URU_INGOT);
 				output.accept(ModItems.URU_HELMET);
 				output.accept(ModItems.URU_CHESTPLATE);
 				output.accept(ModItems.URU_LEGGINGS);

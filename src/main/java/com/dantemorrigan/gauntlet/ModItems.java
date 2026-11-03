@@ -32,6 +32,10 @@ public final class ModItems {
 				java.util.List.of(net.minecraft.network.chat.Component.translatable("tooltip.infinity_gauntlet.loose_" + name))));
 	}
 
+	/** Raw uru from the ore, smelted into uru ingots like iron. */
+	public static final Item RAW_URU = register("raw_uru", new Item.Properties().rarity(Rarity.UNCOMMON).fireResistant());
+	public static final Item URU_INGOT = register("uru_ingot", new Item.Properties().rarity(Rarity.RARE).fireResistant());
+
 	// Armor of Uru: the only protection that holds against a full Infinity Gauntlet (see uru/UruArmor).
 	public static final Item URU_HELMET = register("uru_helmet", uru(net.minecraft.world.item.equipment.ArmorType.HELMET));
 	public static final Item URU_CHESTPLATE = register("uru_chestplate", uru(net.minecraft.world.item.equipment.ArmorType.CHESTPLATE));

@@ -21,7 +21,8 @@
       "com.dantemorrigan.gauntlet.gametest.SnapTest",
       "com.dantemorrigan.gauntlet.gametest.ExtractorTest",
       "com.dantemorrigan.gauntlet.gametest.MeteorStreamTest",
-      "com.dantemorrigan.gauntlet.gametest.UruArmorTest"
+      "com.dantemorrigan.gauntlet.gametest.UruArmorTest",
+      "com.dantemorrigan.gauntlet.gametest.UruOreTest"
     ]
   },
   "depends": {

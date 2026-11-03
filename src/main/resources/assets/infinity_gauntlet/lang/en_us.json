@@ -152,5 +152,9 @@
   "item.infinity_gauntlet.uru_boots": "Uru Boots",
   "death.attack.infinityGauntlet": "%1$s could not withstand the Infinity Gauntlet",
   "death.attack.infinityGauntlet.player": "%1$s could not withstand the Infinity Gauntlet of %2$s",
-  "death.attack.infinityGauntlet.item": "%1$s could not withstand the Infinity Gauntlet of %2$s using %3$s"
+  "death.attack.infinityGauntlet.item": "%1$s could not withstand the Infinity Gauntlet of %2$s using %3$s",
+  "block.infinity_gauntlet.uru_ore": "Uru Ore",
+  "block.infinity_gauntlet.deepslate_uru_ore": "Deepslate Uru Ore",
+  "item.infinity_gauntlet.raw_uru": "Raw Uru",
+  "item.infinity_gauntlet.uru_ingot": "Uru Ingot"
 }
