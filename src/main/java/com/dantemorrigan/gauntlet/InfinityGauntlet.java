@@ -11,6 +11,7 @@ public class InfinityGauntlet implements ModInitializer {
 
 	@Override
 	public void onInitialize() {
+		ModItems.init();
 		LOGGER.info("Infinity Gauntlet loaded");
 	}
 
