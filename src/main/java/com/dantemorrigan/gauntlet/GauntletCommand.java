@@ -41,7 +41,15 @@ public final class GauntletCommand {
 								.then(Commands.argument("stones", StringArgumentType.greedyString())
 										.executes(ctx -> use(ctx.getSource(), StringArgumentType.getString(ctx, "stones")))))
 						.then(Commands.literal("give_power").executes(ctx -> givePower(ctx.getSource())))
-						.then(Commands.literal("give_time").executes(ctx -> giveTime(ctx.getSource())))
+						.then(Commands.literal("give_time").executes(ctx -> giveStone(ctx.getSource(), Stone.TIME)))
+						.then(Commands.literal("give_stone").then(Commands.argument("stone", StringArgumentType.word())
+								.suggests((ctx, b) -> SharedSuggestionProvider.suggest(java.util.Arrays.stream(Stone.values()).map(st -> st.id).toList(), b))
+								.executes(ctx -> {
+									String id = StringArgumentType.getString(ctx, "stone");
+									for (Stone st : Stone.values()) if (st.id.equals(id)) return giveStone(ctx.getSource(), st);
+									ctx.getSource().sendFailure(Component.literal("Неизвестный камень: " + id));
+									return 0;
+								})))
 						.then(Commands.literal("state").executes(ctx -> state(ctx.getSource())))
 						.then(Commands.literal("reload_config").executes(ctx -> {
 							GauntletConfig.reload();
@@ -96,8 +104,8 @@ public final class GauntletCommand {
 		return 1;
 	}
 
-	/** Insert the Time stone into the worn gauntlet (rewind: key R). */
-	private static int giveTime(CommandSourceStack source) throws CommandSyntaxException {
+	/** Insert a stone into the worn gauntlet. */
+	private static int giveStone(CommandSourceStack source, Stone stone) throws CommandSyntaxException {
 		ServerPlayer player = source.getPlayerOrException();
 		ItemStack gauntlet = GauntletState.activeGauntlet(player);
 		if (gauntlet.isEmpty()) {
@@ -106,10 +114,10 @@ public final class GauntletCommand {
 		}
 		net.minecraft.core.NonNullList<ItemStack> items = net.minecraft.core.NonNullList.withSize(Stone.values().length, ItemStack.EMPTY);
 		gauntlet.getOrDefault(DataComponents.CONTAINER, ItemContainerContents.EMPTY).copyInto(items);
-		items.set(Stone.TIME.ordinal(), new ItemStack(ModItems.TIME_STONE));
+		items.set(stone.ordinal(), new ItemStack(stone.item()));
 		gauntlet.set(DataComponents.CONTAINER, ItemContainerContents.fromItems(items));
 		GauntletState.refresh(gauntlet);
-		source.sendSuccess(() -> Component.literal("Камень Времени вставлен. R — отмотать время."), false);
+		source.sendSuccess(() -> Component.literal("Камень вставлен: " + stone.id), false);
 		return 1;
 	}
 

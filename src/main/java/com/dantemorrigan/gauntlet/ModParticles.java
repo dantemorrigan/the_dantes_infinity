@@ -28,6 +28,10 @@ public final class ModParticles {
 	public static final SimpleParticleType CELESTIAL_METEOR_TRAIL = register("celestial_meteor_trail");
 	/** xa = size multiplier. Upright flash at the ground impact. */
 	public static final SimpleParticleType CELESTIAL_METEOR_IMPACT = register("celestial_meteor_impact");
+	/** Space stone: short blue flash (xa = size). */
+	public static final SimpleParticleType SPACE_TELEPORT_FLASH = register("space_teleport_flash");
+	/** Space stone: blue energy wisps (xa = size). */
+	public static final SimpleParticleType SPACE_ENERGY_WISPS = register("space_energy_wisps");
 
 	private static SimpleParticleType register(String name) {
 		return Registry.register(BuiltInRegistries.PARTICLE_TYPE, InfinityGauntlet.id(name), FabricParticleTypes.simple(true));

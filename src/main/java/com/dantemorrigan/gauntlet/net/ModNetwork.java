@@ -128,7 +128,40 @@ public final class ModNetwork {
 		@Override public Type<MeteorImpact> type() { return TYPE; }
 	}
 
+	/** C2S: Space stone action. 0 = open/close portal, 1 = next destination, 2 = teleport where looking. */
+	public record SpaceAction(int action) implements CustomPacketPayload {
+		public static final Type<SpaceAction> TYPE = newType("space_action");
+		public static final StreamCodec<ByteBuf, SpaceAction> CODEC = StreamCodec.composite(ByteBufCodecs.VAR_INT, SpaceAction::action, SpaceAction::new);
+		@Override public Type<SpaceAction> type() { return TYPE; }
+	}
+
+	/** S2C: a portal is open at pos (center), facing yaw; dest = destination id; ticksLeft until it closes. */
+	public record PortalOpen(int id, Vec3 pos, float yaw, String dest, int age, int ticksLeft) implements CustomPacketPayload {
+		public static final Type<PortalOpen> TYPE = newType("portal_open");
+		public static final StreamCodec<ByteBuf, PortalOpen> CODEC = StreamCodec.composite(
+				ByteBufCodecs.VAR_INT, PortalOpen::id, Vec3.STREAM_CODEC, PortalOpen::pos, ByteBufCodecs.FLOAT, PortalOpen::yaw,
+				ByteBufCodecs.STRING_UTF8, PortalOpen::dest, ByteBufCodecs.VAR_INT, PortalOpen::age, ByteBufCodecs.VAR_INT, PortalOpen::ticksLeft, PortalOpen::new);
+		@Override public Type<PortalOpen> type() { return TYPE; }
+	}
+
+	public record PortalClose(int id) implements CustomPacketPayload {
+		public static final Type<PortalClose> TYPE = newType("portal_close");
+		public static final StreamCodec<ByteBuf, PortalClose> CODEC = StreamCodec.composite(ByteBufCodecs.VAR_INT, PortalClose::id, PortalClose::new);
+		@Override public Type<PortalClose> type() { return TYPE; }
+	}
+
+	/** S2C: teleport visuals (flash at both ends + wisp trail). */
+	public record SpaceFx(Vec3 from, Vec3 to) implements CustomPacketPayload {
+		public static final Type<SpaceFx> TYPE = newType("space_fx");
+		public static final StreamCodec<ByteBuf, SpaceFx> CODEC = StreamCodec.composite(Vec3.STREAM_CODEC, SpaceFx::from, Vec3.STREAM_CODEC, SpaceFx::to, SpaceFx::new);
+		@Override public Type<SpaceFx> type() { return TYPE; }
+	}
+
 	public static void init() {
+		PayloadTypeRegistry.serverboundPlay().register(SpaceAction.TYPE, SpaceAction.CODEC);
+		PayloadTypeRegistry.clientboundPlay().register(PortalOpen.TYPE, PortalOpen.CODEC);
+		PayloadTypeRegistry.clientboundPlay().register(PortalClose.TYPE, PortalClose.CODEC);
+		PayloadTypeRegistry.clientboundPlay().register(SpaceFx.TYPE, SpaceFx.CODEC);
 		PayloadTypeRegistry.clientboundPlay().register(CelestialSync.TYPE, CelestialSync.CODEC);
 		PayloadTypeRegistry.clientboundPlay().register(MeteorSpawn.TYPE, MeteorSpawn.CODEC);
 		PayloadTypeRegistry.clientboundPlay().register(MeteorImpact.TYPE, MeteorImpact.CODEC);

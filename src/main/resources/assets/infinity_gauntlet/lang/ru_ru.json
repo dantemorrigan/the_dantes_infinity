@@ -10,5 +10,7 @@
 	"container.infinity_gauntlet.gauntlet": "Перчатка Бесконечности",
 	"key.infinity_gauntlet.power_mode": "Камень Силы: удар / Уничтожение планеты",
 	"key.category.infinity_gauntlet.gauntlet": "Перчатка Бесконечности",
-	"key.infinity_gauntlet.time_rewind": "Камень Времени: отмотать время"
+	"key.infinity_gauntlet.time_rewind": "Камень Времени: отмотать время",
+	"key.infinity_gauntlet.space_portal": "Камень Пространства: портал (Shift — измерение)",
+	"key.infinity_gauntlet.space_blink": "Камень Пространства: телепорт по взгляду"
 }

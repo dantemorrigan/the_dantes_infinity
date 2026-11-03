@@ -17,6 +17,11 @@ public final class ModComponents {
 			InfinityGauntlet.id("power_mode"),
 			DataComponentType.<Integer>builder().persistent(Codec.INT).networkSynchronized(ByteBufCodecs.VAR_INT).build());
 
+	/** Space stone portal destination index (see SpaceStone.DESTINATIONS). */
+	public static final DataComponentType<Integer> PORTAL_DESTINATION = Registry.register(BuiltInRegistries.DATA_COMPONENT_TYPE,
+			InfinityGauntlet.id("portal_destination"),
+			DataComponentType.<Integer>builder().persistent(Codec.INT).networkSynchronized(ByteBufCodecs.VAR_INT).build());
+
 	public static void init() {}
 
 	private ModComponents() {}

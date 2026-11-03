@@ -8,7 +8,8 @@
 		"fabric-client-gametest": [
 			"com.dantemorrigan.gauntlet.gametest.VisualTest",
 			"com.dantemorrigan.gauntlet.gametest.CelestialTest",
-			"com.dantemorrigan.gauntlet.gametest.EternalNightTest"
+			"com.dantemorrigan.gauntlet.gametest.EternalNightTest",
+			"com.dantemorrigan.gauntlet.gametest.SpaceStoneTest"
 		]
 	},
 	"depends": {

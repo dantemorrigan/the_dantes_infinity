@@ -20,6 +20,8 @@ public final class ModParticleProviders {
 		billboard(ModParticles.DETONATION_FLASH, "detonation_flash");
 		billboard(ModParticles.VOID_DISSOLVE, "void_dissolve");
 		billboard(ModParticles.CELESTIAL_METEOR_IMPACT, "celestial_meteor_impact");
+		billboard(ModParticles.SPACE_TELEPORT_FLASH, "space_teleport_flash");
+		billboard(ModParticles.SPACE_ENERGY_WISPS, "space_energy_wisps");
 		ParticleProviderRegistry.getInstance().register(ModParticles.CELESTIAL_METEOR_TRAIL, sprites -> (t, level, x, y, z, xa, ya, za, random) -> {
 			Vector3f v = new Vector3f((float) xa, (float) ya, (float) za);
 			float speed = v.length();

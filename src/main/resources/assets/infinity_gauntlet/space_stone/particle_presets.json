@@ -1,0 +1,25 @@
+{
+  "format": "custom authoring recommendations",
+  "space_teleport_flash": {
+    "frames": 4,
+    "ticks_per_frame": 1,
+    "lifetime_ticks": 4,
+    "loop": false,
+    "width_blocks": 1.2,
+    "full_bright": true,
+    "collision": false,
+    "gravity": 0
+  },
+  "space_energy_wisps": {
+    "frames": 4,
+    "ticks_per_frame": 2,
+    "lifetime_ticks": 8,
+    "loop": false,
+    "width_blocks": 0.5,
+    "full_bright": true,
+    "collision": false,
+    "gravity": 0,
+    "usage": "spawn loosely around gauntlet while charging or along a short teleport trail; do not loop the same particle forever"
+  },
+  "registration": "Register ParticleType and client providers. Select frames by age; JSON texture arrays alone do not supply behaviour."
+}

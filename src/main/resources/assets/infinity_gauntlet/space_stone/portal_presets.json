@@ -1,0 +1,89 @@
+{
+  "format": "custom renderer settings, not automatically loaded by Minecraft",
+  "minecraft_version": "26.1.2",
+  "destinations": [
+    {
+      "id": "nether",
+      "dimension": "minecraft:the_nether",
+      "fallback": "infinity_gauntlet:textures/space/portal_nether.png"
+    },
+    {
+      "id": "end",
+      "dimension": "minecraft:the_end",
+      "fallback": "infinity_gauntlet:textures/space/portal_end.png"
+    },
+    {
+      "id": "overworld",
+      "dimension": "minecraft:overworld",
+      "fallback": "infinity_gauntlet:textures/space/portal_overworld.png"
+    }
+  ],
+  "shared_rim_color": "cobalt blue with cyan highlights for every dimension",
+  "opening": {
+    "textures": [
+      "infinity_gauntlet:textures/space/portal_opening_0.png",
+      "infinity_gauntlet:textures/space/portal_opening_1.png",
+      "infinity_gauntlet:textures/space/portal_opening_2.png",
+      "infinity_gauntlet:textures/space/portal_opening_3.png"
+    ],
+    "ticks_per_frame": 2,
+    "loop": false
+  },
+  "idle": {
+    "textures": [
+      "infinity_gauntlet:textures/space/portal_idle_0.png",
+      "infinity_gauntlet:textures/space/portal_idle_1.png",
+      "infinity_gauntlet:textures/space/portal_idle_2.png",
+      "infinity_gauntlet:textures/space/portal_idle_3.png"
+    ],
+    "ticks_per_frame": 3,
+    "loop": true,
+    "aperture_masks": [
+      "infinity_gauntlet:textures/space/aperture_masks/portal_idle_0.png",
+      "infinity_gauntlet:textures/space/aperture_masks/portal_idle_1.png",
+      "infinity_gauntlet:textures/space/aperture_masks/portal_idle_2.png",
+      "infinity_gauntlet:textures/space/aperture_masks/portal_idle_3.png"
+    ]
+  },
+  "closing": "opening frames in reverse over8ticks",
+  "geometry": "upright planar quad, keep aspect ratio1:1; adjust world-space quad size so aperture fits requested window/player height",
+  "world_quad_width_blocks": 4,
+  "collision_and_travel": "not included; implement on server if this is a traversable portal",
+  "rim_render": {
+    "full_bright": true,
+    "alpha_blend": true,
+    "depth_test": true,
+    "depth_write": false,
+    "texture_filter": "nearest"
+  },
+  "live_aperture": {
+    "mask_value": 255,
+    "render_target_size": 256,
+    "target_update_fps": 15,
+    "max_recursion": 0,
+    "note": "The corresponding per-frame mask is white ONLY in the hole. Render target view there; the rest of the quad stays transparent except the rim. Use same UV registration."
+  },
+  "fallback_note": "The3complete portal images contain illustrated still scenes. They do not show real coordinates or current terrain.",
+  "mask_extraction": [
+    {
+      "frame": 0,
+      "method": "central transparent component of actual ring alpha",
+      "mask_pixels": 1362
+    },
+    {
+      "frame": 1,
+      "method": "central transparent component of actual ring alpha",
+      "mask_pixels": 1344
+    },
+    {
+      "frame": 2,
+      "method": "central transparent component of actual ring alpha",
+      "mask_pixels": 1385
+    },
+    {
+      "frame": 3,
+      "method": "central transparent component of actual ring alpha",
+      "mask_pixels": 1436
+    }
+  ]
+}

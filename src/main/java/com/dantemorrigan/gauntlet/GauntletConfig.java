@@ -61,6 +61,13 @@ public final class GauntletConfig {
 	/** Meteors don't target ground closer than this to a player. */
 	public int meteorPlayerSafeRadius = 6;
 
+	// ---- Space stone (server) ----
+	public int portalLifetimeSeconds = 30;
+	public int portalCooldownTicks = 60;
+	/** Max distance of the look-teleport. */
+	public int blinkRange = 96;
+	public int blinkCooldownTicks = 20;
+
 	// ---- Time stone rewind (server) ----
 	/** How far back the personal rewind goes (seconds of recorded history). */
 	public int timeRewindSeconds = 5;
