@@ -70,6 +70,9 @@ public final class ModParticles {
 	/** Meteor Stream: the artillery ring lying on the ground. (xa,ya,za) = surface normal, its length = diameter in blocks. */
 	public static final SimpleParticleType METEOR_RETICLE = register("meteor_reticle");
 
+	/** Uru: rune ring opening from the chest when the armor absorbs a full-gauntlet hit. xa = wearer entity id (follows it). */
+	public static final SimpleParticleType URU_GUARD = register("uru_guard");
+
 	private static SimpleParticleType register(String name) {
 		return Registry.register(BuiltInRegistries.PARTICLE_TYPE, InfinityGauntlet.id(name), FabricParticleTypes.simple(true));
 	}

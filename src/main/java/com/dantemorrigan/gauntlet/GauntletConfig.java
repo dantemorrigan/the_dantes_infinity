@@ -76,6 +76,16 @@ public final class GauntletConfig {
 	/** Meteors don't target ground closer than this to a player. */
 	public int meteorPlayerSafeRadius = 6;
 
+	// ---- Armor of Uru vs. a full gauntlet (server) ----
+	/** Attacks of a six-stone gauntlet on players ignore ordinary armor and are multiplied by this. */
+	public float fullGauntletDamageMultiplier = 1.5f;
+	/** Share of such a hit that a complete Uru set lets through (at least 1 HP per hit). */
+	public float uruDamageFactor = 0.25f;
+	/** "Kill outright" effects of a full gauntlet count as this much incoming damage against Uru. */
+	public float uruLethalIncoming = 40f;
+	/** Max durability each piece loses per absorbed hit. */
+	public int uruMaxWearPerHit = 12;
+
 	// ---- Meteor Stream (Power stone, server) ----
 	/** Ticks the gauntlet must stay on the sun/moon to lock on. */
 	public int streamLockTicks = 30;

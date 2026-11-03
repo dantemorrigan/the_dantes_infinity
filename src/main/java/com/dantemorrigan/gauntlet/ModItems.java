@@ -32,6 +32,16 @@ public final class ModItems {
 				java.util.List.of(net.minecraft.network.chat.Component.translatable("tooltip.infinity_gauntlet.loose_" + name))));
 	}
 
+	// Armor of Uru: the only protection that holds against a full Infinity Gauntlet (see uru/UruArmor).
+	public static final Item URU_HELMET = register("uru_helmet", uru(net.minecraft.world.item.equipment.ArmorType.HELMET));
+	public static final Item URU_CHESTPLATE = register("uru_chestplate", uru(net.minecraft.world.item.equipment.ArmorType.CHESTPLATE));
+	public static final Item URU_LEGGINGS = register("uru_leggings", uru(net.minecraft.world.item.equipment.ArmorType.LEGGINGS));
+	public static final Item URU_BOOTS = register("uru_boots", uru(net.minecraft.world.item.equipment.ArmorType.BOOTS));
+
+	private static Item.Properties uru(net.minecraft.world.item.equipment.ArmorType type) {
+		return new Item.Properties().humanoidArmor(com.dantemorrigan.gauntlet.uru.UruArmor.MATERIAL, type).rarity(Rarity.EPIC).fireResistant();
+	}
+
 	private static Item.Properties epic() {
 		return new Item.Properties().stacksTo(1).rarity(Rarity.EPIC).fireResistant();
 	}

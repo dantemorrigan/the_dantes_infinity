@@ -82,6 +82,10 @@ public final class ModParticleProviders {
 			if (len < 1.0e-4f) { n.set(0, 1, 0); len = 1; }
 			return new FxParticle(level, x, y, z, sprites, VfxPresets.get("meteor_reticle"), len, n.div(len), -1, null, 0.9f).lifetime(8);
 		});
+		// Uru: rune ring on the chest of the wearer (xa = entity id, it follows them).
+		ParticleProviderRegistry.getInstance().register(ModParticles.URU_GUARD, sprites -> (t, level, x, y, z, xa, ya, za, random) ->
+				new FxParticle(level, x, y, z, sprites, VfxPresets.get("uru_guard"), 1f, null, (int) xa,
+						e -> e.isAlive() ? e.position().add(0, e.getBbHeight() * 0.62, 0) : null, 1f));
 		// Infinity Extractor
 		aligned(ModParticles.EXTRACTOR_TETHER, "extractor_tether", 5);
 		billboard(ModParticles.EXTRACTOR_GATHER, "extractor_gather");

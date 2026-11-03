@@ -145,5 +145,12 @@
   "meteor.infinity_gauntlet.fired": "The meteor stream has begun (%s s)",
   "ability.infinity_gauntlet.reason.portal_unsafe": "Portal blocked: no safe arrival point",
   "ability.infinity_gauntlet.mind_escape": "The Mind Stone is holding you. Sneak to break free.",
-  "ability.infinity_gauntlet.soul_escape": "The Soul Stone is draining you. Sneak or get behind cover."
+  "ability.infinity_gauntlet.soul_escape": "The Soul Stone is draining you. Sneak or get behind cover.",
+  "item.infinity_gauntlet.uru_helmet": "Uru Helmet",
+  "item.infinity_gauntlet.uru_chestplate": "Uru Chestplate",
+  "item.infinity_gauntlet.uru_leggings": "Uru Leggings",
+  "item.infinity_gauntlet.uru_boots": "Uru Boots",
+  "death.attack.infinityGauntlet": "%1$s could not withstand the Infinity Gauntlet",
+  "death.attack.infinityGauntlet.player": "%1$s could not withstand the Infinity Gauntlet of %2$s",
+  "death.attack.infinityGauntlet.item": "%1$s could not withstand the Infinity Gauntlet of %2$s using %3$s"
 }

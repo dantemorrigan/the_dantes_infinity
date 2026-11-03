@@ -50,7 +50,9 @@ public final class GauntletCommand {
 									ctx.getSource().sendFailure(Component.literal("Неизвестный камень: " + id));
 									return 0;
 								})))
-						.then(Commands.literal("doll").executes(ctx -> doll(ctx.getSource())))
+						.then(Commands.literal("doll").executes(ctx -> doll(ctx.getSource(), false))
+								.then(Commands.literal("uru").executes(ctx -> doll(ctx.getSource(), true))))
+						.then(Commands.literal("uru").executes(ctx -> uru(ctx.getSource())))
 						.then(Commands.literal("meteor").executes(ctx -> meteor(ctx.getSource())))
 						.then(Commands.literal("state").executes(ctx -> state(ctx.getSource())))
 						.then(Commands.literal("reload_config").executes(ctx -> {
@@ -124,12 +126,36 @@ public final class GauntletCommand {
 	}
 
 	/** Spawns a Steve doll in a full gauntlet a few blocks in front of the player (target for the Infinity Extractor). */
-	private static int doll(CommandSourceStack source) throws CommandSyntaxException {
+	/** Puts a full set of Uru on the player (old armor goes to the inventory). */
+	private static int uru(CommandSourceStack source) throws CommandSyntaxException {
+		ServerPlayer player = source.getPlayerOrException();
+		net.minecraft.world.entity.EquipmentSlot[] slots = {net.minecraft.world.entity.EquipmentSlot.HEAD, net.minecraft.world.entity.EquipmentSlot.CHEST,
+				net.minecraft.world.entity.EquipmentSlot.LEGS, net.minecraft.world.entity.EquipmentSlot.FEET};
+		net.minecraft.world.item.Item[] items = {ModItems.URU_HELMET, ModItems.URU_CHESTPLATE, ModItems.URU_LEGGINGS, ModItems.URU_BOOTS};
+		for (int i = 0; i < 4; i++) {
+			ItemStack old = player.getItemBySlot(slots[i]);
+			if (!old.isEmpty() && !player.getInventory().add(old.copy())) player.drop(old.copy(), false);
+			player.setItemSlot(slots[i], new ItemStack(items[i]));
+		}
+		source.sendSuccess(() -> Component.literal("Комплект брони из Уру надет."), false);
+		return 1;
+	}
+
+	private static int doll(CommandSourceStack source, boolean uru) throws CommandSyntaxException {
 		ServerPlayer player = source.getPlayerOrException();
 		net.minecraft.server.level.ServerLevel level = player.level();
 		net.minecraft.world.phys.Vec3 look = player.getLookAngle();
 		net.minecraft.core.BlockPos pos = net.minecraft.core.BlockPos.containing(player.getX() + look.x * 4, player.getY(), player.getZ() + look.z * 4);
-		if (ModEntities.GAUNTLET_DOLL.spawn(level, pos, net.minecraft.world.entity.EntitySpawnReason.COMMAND) == null) {
+		var spawned = ModEntities.GAUNTLET_DOLL.spawn(level, pos, net.minecraft.world.entity.EntitySpawnReason.COMMAND);
+		if (spawned != null && uru) {
+			spawned.setItemSlot(net.minecraft.world.entity.EquipmentSlot.HEAD, new ItemStack(ModItems.URU_HELMET));
+			spawned.setItemSlot(net.minecraft.world.entity.EquipmentSlot.CHEST, new ItemStack(ModItems.URU_CHESTPLATE));
+			spawned.setItemSlot(net.minecraft.world.entity.EquipmentSlot.LEGS, new ItemStack(ModItems.URU_LEGGINGS));
+			spawned.setItemSlot(net.minecraft.world.entity.EquipmentSlot.FEET, new ItemStack(ModItems.URU_BOOTS));
+			for (var slot : new net.minecraft.world.entity.EquipmentSlot[]{net.minecraft.world.entity.EquipmentSlot.HEAD, net.minecraft.world.entity.EquipmentSlot.CHEST,
+					net.minecraft.world.entity.EquipmentSlot.LEGS, net.minecraft.world.entity.EquipmentSlot.FEET}) spawned.setDropChance(slot, 0f);
+		}
+		if (spawned == null) {
 			source.sendFailure(Component.literal("Не удалось призвать куклу"));
 			return 0;
 		}

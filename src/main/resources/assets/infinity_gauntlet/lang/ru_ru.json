@@ -145,5 +145,12 @@
   "meteor.infinity_gauntlet.fired": "Поток метеоритов начался (%s с)",
   "ability.infinity_gauntlet.reason.portal_unsafe": "Путь через портал закрыт: нет безопасной точки прибытия",
   "ability.infinity_gauntlet.mind_escape": "Камень Разума удерживает тебя. Присядь, чтобы вырваться.",
-  "ability.infinity_gauntlet.soul_escape": "Камень Души вытягивает здоровье. Присядь или уйди за укрытие."
+  "ability.infinity_gauntlet.soul_escape": "Камень Души вытягивает здоровье. Присядь или уйди за укрытие.",
+  "item.infinity_gauntlet.uru_helmet": "Шлем из Уру",
+  "item.infinity_gauntlet.uru_chestplate": "Кираса из Уру",
+  "item.infinity_gauntlet.uru_leggings": "Поножи из Уру",
+  "item.infinity_gauntlet.uru_boots": "Сапоги из Уру",
+  "death.attack.infinityGauntlet": "%1$s не выдержал удара Перчатки Бесконечности",
+  "death.attack.infinityGauntlet.player": "%1$s не выдержал удара Перчатки Бесконечности игрока %2$s",
+  "death.attack.infinityGauntlet.item": "%1$s не выдержал удара Перчатки Бесконечности игрока %2$s (%3$s)"
 }

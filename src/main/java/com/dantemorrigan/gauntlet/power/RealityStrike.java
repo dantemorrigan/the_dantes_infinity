@@ -194,7 +194,7 @@ public final class RealityStrike {
 					double distance = mob.position().distanceTo(w.center);
 					if (!mob.isAlive() || mob.level() != w.level || distance > LOOSE_RADIUS) return true;
 					if (distance > front) return false;
-					mob.hurtServer(w.level, caster.damageSources().playerAttack(caster), LOOSE_DAMAGE);
+					com.dantemorrigan.gauntlet.uru.GauntletDamage.hurt(w.level, mob, caster, caster.damageSources().playerAttack(caster), LOOSE_DAMAGE);
 					return true;
 				});
 				if (w.mobs.isEmpty() && w.columns.isEmpty()) it.remove();

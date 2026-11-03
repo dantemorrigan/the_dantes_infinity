@@ -1,0 +1,144 @@
+{
+ "textures": {
+  "d": "infinity_gauntlet:item/uru_detail",
+  "particle": "infinity_gauntlet:item/uru_detail"
+ },
+ "elements": [
+  {
+   "from": [
+    4.7,
+    -1.5,
+    4.7
+   ],
+   "to": [
+    11.3,
+    -0.6,
+    11.3
+   ],
+   "faces": {
+    "north": {
+     "uv": [
+      4,
+      0,
+      8,
+      4
+     ],
+     "texture": "#d"
+    },
+    "south": {
+     "uv": [
+      4,
+      0,
+      8,
+      4
+     ],
+     "texture": "#d"
+    },
+    "east": {
+     "uv": [
+      4,
+      0,
+      8,
+      4
+     ],
+     "texture": "#d"
+    },
+    "west": {
+     "uv": [
+      4,
+      0,
+      8,
+      4
+     ],
+     "texture": "#d"
+    },
+    "up": {
+     "uv": [
+      4,
+      0,
+      8,
+      4
+     ],
+     "texture": "#d"
+    },
+    "down": {
+     "uv": [
+      4,
+      0,
+      8,
+      4
+     ],
+     "texture": "#d"
+    }
+   }
+  },
+  {
+   "from": [
+    4.9,
+    -4.9,
+    11.05
+   ],
+   "to": [
+    11.1,
+    -2.6,
+    11.8
+   ],
+   "faces": {
+    "north": {
+     "uv": [
+      8,
+      0,
+      12,
+      4
+     ],
+     "texture": "#d"
+    },
+    "south": {
+     "uv": [
+      8,
+      0,
+      12,
+      4
+     ],
+     "texture": "#d"
+    },
+    "east": {
+     "uv": [
+      8,
+      0,
+      12,
+      4
+     ],
+     "texture": "#d"
+    },
+    "west": {
+     "uv": [
+      8,
+      0,
+      12,
+      4
+     ],
+     "texture": "#d"
+    },
+    "up": {
+     "uv": [
+      8,
+      0,
+      12,
+      4
+     ],
+     "texture": "#d"
+    },
+    "down": {
+     "uv": [
+      8,
+      0,
+      12,
+      4
+     ],
+     "texture": "#d"
+    }
+   }
+  }
+ ]
+}

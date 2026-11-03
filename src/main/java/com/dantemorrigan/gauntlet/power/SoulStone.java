@@ -208,7 +208,7 @@ public final class SoulStone {
 				if (e.tick >= e.delay + e.extract) {
 					unfreeze(e);
 					ServerLevel level = e.level;
-					t.hurtServer(level, level.damageSources().playerAttack(owner), Float.MAX_VALUE);
+					com.dantemorrigan.gauntlet.uru.GauntletDamage.hurt(level, t, owner, level.damageSources().playerAttack(owner), Float.MAX_VALUE);
 					e.killed = !t.isAlive();
 					if (!e.killed) it.remove();
 				}
@@ -256,7 +256,7 @@ public final class SoulStone {
 		if (tick < POINT_EXTRACT) return false;
 		float before = victim.getHealth();
 		float damage = Math.min(4f, before - 1f);
-		if (damage > 0 && victim.hurtServer(owner.level(), owner.damageSources().playerAttack(owner), damage)) {
+		if (damage > 0 && com.dantemorrigan.gauntlet.uru.GauntletDamage.hurt(owner.level(), victim, owner, owner.damageSources().playerAttack(owner), damage)) {
 			owner.heal(Math.max(0, before - victim.getHealth()));
 		}
 		return true;

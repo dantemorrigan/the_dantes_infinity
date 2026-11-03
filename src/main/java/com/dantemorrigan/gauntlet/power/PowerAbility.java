@@ -138,7 +138,7 @@ public final class PowerAbility {
 			double dist = e.position().distanceTo(impact);
 			if (e != direct && dist > radius) continue;
 			float falloff = e == direct ? 1f : (float) Math.max(0.25, 1.0 - dist / radius);
-			e.hurtServer(level, player.damageSources().playerAttack(player), damage * falloff);
+			com.dantemorrigan.gauntlet.uru.GauntletDamage.hurt(level, e, player, player.damageSources().playerAttack(player), damage * falloff);
 			Vec3 push = e.position().subtract(impact).multiply(1, 0, 1);
 			if (push.lengthSqr() < 1.0e-4) push = player.getLookAngle().multiply(1, 0, 1);
 			push = push.normalize().scale(cfg.strikeKnockback * charge * falloff);

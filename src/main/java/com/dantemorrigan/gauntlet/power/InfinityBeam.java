@@ -163,7 +163,7 @@ public final class InfinityBeam {
                 c.damage.put(target.getUUID(), spent + Math.min(amount, before));
             } else if ((c.age - c.charge) % 4 == 0) {
                 float pulse = Math.min(cap - spent, amount * 4);
-                if (target.hurtServer(c.level, c.owner.damageSources().playerAttack(c.owner), pulse)) {
+                if (com.dantemorrigan.gauntlet.uru.GauntletDamage.hurt(c.level, target, c.owner, c.owner.damageSources().playerAttack(c.owner), pulse)) {
                     c.damage.put(target.getUUID(), spent + pulse);
                 }
             }

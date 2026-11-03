@@ -275,6 +275,13 @@ public final class ModNetwork {
 		@Override public Type<MeteorStreamFx> type() { return TYPE; }
 	}
 
+	/** S2C: the Uru runes of entityId absorbed a full-gauntlet hit (rune ring flash on the chest). */
+	public record UruGuardFx(int entityId) implements CustomPacketPayload {
+		public static final Type<UruGuardFx> TYPE = newType("uru_guard_fx");
+		public static final StreamCodec<ByteBuf, UruGuardFx> CODEC = StreamCodec.composite(ByteBufCodecs.VAR_INT, UruGuardFx::entityId, UruGuardFx::new);
+		@Override public Type<UruGuardFx> type() { return TYPE; }
+	}
+
 	/** C2S: H pressed/released. Server validates six stones and owns the full cast. */
 	public record BeamAction(boolean start) implements CustomPacketPayload {
 		public static final Type<BeamAction> TYPE = newType("beam_action");
@@ -407,6 +414,7 @@ public final class ModNetwork {
 		PayloadTypeRegistry.clientboundPlay().register(SnapFx.TYPE, SnapFx.CODEC);
 		PayloadTypeRegistry.clientboundPlay().register(ExtractorFx.TYPE, ExtractorFx.CODEC);
 		PayloadTypeRegistry.clientboundPlay().register(MeteorStreamFx.TYPE, MeteorStreamFx.CODEC);
+		PayloadTypeRegistry.clientboundPlay().register(UruGuardFx.TYPE, UruGuardFx.CODEC);
 		PayloadTypeRegistry.clientboundPlay().register(PowerFx.TYPE, PowerFx.CODEC);
 		PayloadTypeRegistry.clientboundPlay().register(EffectDemo.TYPE, EffectDemo.CODEC);
 		PayloadTypeRegistry.clientboundPlay().register(CutsceneStart.TYPE, CutsceneStart.CODEC);

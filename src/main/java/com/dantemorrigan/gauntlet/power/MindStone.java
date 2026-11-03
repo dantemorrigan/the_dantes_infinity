@@ -390,10 +390,10 @@ public final class MindStone {
 			double speed = mob.getDeltaMovement().length();
 			for (Entity other : level.getEntities(mob, mob.getBoundingBox().inflate(0.4), x -> x instanceof LivingEntity && x != owner && CoopRules.canAffect(owner, x) && !t.hit().contains(x.getId()))) {
 				t.hit().add(other.getId());
-				other.hurtServer(level, owner != null ? level.damageSources().playerAttack(owner) : level.damageSources().magic(), GauntletConfig.get().mindMobThrowDamage * 0.6f);
+				com.dantemorrigan.gauntlet.uru.GauntletDamage.hurt(level, other, owner, owner != null ? level.damageSources().playerAttack(owner) : level.damageSources().magic(), GauntletConfig.get().mindMobThrowDamage * 0.6f);
 				other.push(mob.getDeltaMovement().scale(0.8));
 				if (t.loose()) {
-					mob.hurtServer(level, owner != null ? level.damageSources().playerAttack(owner) : level.damageSources().magic(),
+					com.dantemorrigan.gauntlet.uru.GauntletDamage.hurt(level, mob, owner, owner != null ? level.damageSources().playerAttack(owner) : level.damageSources().magic(),
 							GauntletConfig.get().mindMobThrowDamage * 0.6f);
 					break;
 				}
@@ -404,7 +404,7 @@ public final class MindStone {
 			}
 			if (tick > 2 && (mob.horizontalCollision || mob.onGround() || mob.verticalCollision)) {
 				float dmg = (float) (GauntletConfig.get().mindMobThrowDamage * Math.min(1.5, 0.4 + speed));
-				mob.hurtServer(level, owner != null ? level.damageSources().playerAttack(owner) : level.damageSources().magic(), dmg);
+				com.dantemorrigan.gauntlet.uru.GauntletDamage.hurt(level, mob, owner, owner != null ? level.damageSources().playerAttack(owner) : level.damageSources().magic(), dmg);
 				Vec3 at = mob.position().add(0, mob.getBbHeight() / 2, 0);
 				send(level, at, new ModNetwork.MindFx(7, owner != null ? owner.getId() : -1, mob.getId(), at, Vec3.ZERO, List.of(), List.of()));
 				level.playSound(null, mob.blockPosition(), SoundEvents.GENERIC_BIG_FALL, SoundSource.HOSTILE, 1.5F, 0.7F);
@@ -462,7 +462,7 @@ public final class MindStone {
 		level.playSound(null, mob.blockPosition(), SoundEvents.GENERIC_EXPLODE.value(), SoundSource.HOSTILE, 1.0F, 1.5F);
 		level.playSound(null, mob.blockPosition(), SoundEvents.SLIME_SQUISH, SoundSource.HOSTILE, 2.0F, 0.5F);
 		int xp = mob instanceof Mob m && m.shouldDropExperience() ? mob.getExperienceReward(level, p) : 0;
-		mob.hurtServer(level, level.damageSources().playerAttack(p), Float.MAX_VALUE);
+		com.dantemorrigan.gauntlet.uru.GauntletDamage.hurt(level, mob, p, level.damageSources().playerAttack(p), Float.MAX_VALUE);
 		if (!mob.isAlive()) {
 			if (xp > 0) net.minecraft.world.entity.ExperienceOrb.award(level, at, xp);
 			mob.discard(); // torn apart: no corpse, the pieces are drawn by the clients
@@ -503,7 +503,7 @@ public final class MindStone {
 			double d = e.position().distanceTo(at);
 			if (d > r) continue;
 			float k = (float) (1 - d / r * 0.6);
-			e.hurtServer(level, owner != null ? level.damageSources().playerAttack(owner) : level.damageSources().magic(), dmg * k);
+			com.dantemorrigan.gauntlet.uru.GauntletDamage.hurt(level, e, owner, owner != null ? level.damageSources().playerAttack(owner) : level.damageSources().magic(), dmg * k);
 			Vec3 push = e.position().subtract(at).normalize().scale(0.9 * k).add(f.vel.scale(0.25)).add(0, 0.35, 0);
 			e.push(push);
 			e.hurtMarked = true;
