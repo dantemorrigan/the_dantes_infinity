@@ -45,7 +45,7 @@ public final class SnapClient {
 		switch (phase) {
 			case 0 -> {fadeIn = 0.001f; fadeInStep = 1f / ticks; com.dantemorrigan.gauntlet.client.cutscene.Cutscene.shake(0.35f, ticks);}
 			case 1 -> {fadeIn = 0; fadeOut = 1; fadeOutStep = 1f / ticks;}
-			case 2 -> green = ticks;
+			case 2 -> {fadeIn = fadeOut = 0; green = ticks;}
 			case 3 -> {green = 0; fadeOut = 1; fadeOutStep = 1f / ticks;}
 			default -> {}
 		}

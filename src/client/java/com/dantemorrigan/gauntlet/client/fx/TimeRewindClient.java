@@ -7,6 +7,7 @@ import com.dantemorrigan.gauntlet.Stone;
 import com.dantemorrigan.gauntlet.client.cutscene.Cutscene;
 import com.dantemorrigan.gauntlet.client.space.SpaceScene;
 import com.dantemorrigan.gauntlet.net.ModNetwork;
+import com.dantemorrigan.gauntlet.snap.InfinitySnap;
 import com.mojang.blaze3d.platform.InputConstants;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
@@ -141,15 +142,32 @@ public final class TimeRewindClient {
 		int cx = w / 2, cy = h / 2;
 		float r = Math.min(w, h) * 0.32f;
 		float rot = -(localDuration - localTicks + partial) * 0.25f;
+		boolean whiteVoid = localLevel != null && localLevel.dimension().equals(InfinitySnap.WHITE_VOID);
+		if (whiteVoid) drawVoidRing(g, cx, cy, Math.round(r));
 		for (int i = 0; i < 12; i++) {
 			double a = rot + i * Math.PI / 6;
 			int x = cx + (int) (Math.cos(a) * r), y = cy + (int) (Math.sin(a) * r);
 			int s = i % 3 == 0 ? 3 : 2;
-			g.fill(x - s, y - s, x + s, y + s, ARGB.colorFromFloat(0.7f, 0.6f, 1f, 0.7f));
+			g.fill(x - s, y - s, x + s, y + s, whiteVoid ? 0xEE12603B : ARGB.colorFromFloat(0.7f, 0.6f, 1f, 0.7f));
 		}
 		if (localWorld && progress > 0.75f) {
 			float a = (progress - 0.75f) / 0.25f;
 			g.fill(0, 0, w, h, ARGB.colorFromFloat(Math.min(1f, a) * GauntletConfig.get().flashIntensity, 0.85f, 1f, 0.9f));
+		}
+	}
+
+	/** Draw a continuous rim with enough contrast against the white dimension. */
+	private static void drawVoidRing(GuiGraphicsExtractor g, int cx, int cy, int radius) {
+		int inner = Math.max(0, radius - 2);
+		for (int y = -radius; y <= radius; y++) {
+			int outerX = (int) Math.sqrt(radius * radius - y * y);
+			if (Math.abs(y) >= inner) {
+				g.fill(cx - outerX, cy + y, cx + outerX + 1, cy + y + 1, 0xC0258A56);
+			} else {
+				int innerX = (int) Math.sqrt(inner * inner - y * y);
+				g.fill(cx - outerX, cy + y, cx - innerX, cy + y + 1, 0xC0258A56);
+				g.fill(cx + innerX + 1, cy + y, cx + outerX + 1, cy + y + 1, 0xC0258A56);
+			}
 		}
 	}
 
