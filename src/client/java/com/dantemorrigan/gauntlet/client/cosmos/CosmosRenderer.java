@@ -24,8 +24,8 @@ public final class CosmosRenderer {
     private static final float[] WIDTH={55,62,48,65}, ALPHA={.5f,.45f,.4f,.35f};
     private static final String[][] PALETTES={
         {"blue_concrete","light_blue_concrete","grass_block_top","sand","snow","stone","magma","white_concrete"},
-        {"stone","andesite","tuff","light_gray_concrete","calcite","stone","basalt","diorite"},
-        {"red_sandstone","terracotta","red_terracotta","orange_terracotta","basalt","blackstone","magma","orange_terracotta"},
+        {"stone","andesite","tuff","light_gray_concrete","calcite","stone","basalt_side","diorite"},
+        {"red_sandstone","terracotta","red_terracotta","orange_terracotta","basalt_side","blackstone","magma","orange_terracotta"},
         {"blue_ice","packed_ice","light_blue_concrete","calcite","snow","ice","blue_ice","white_concrete"}};
     private static final int[][] N={{1,0,0},{-1,0,0},{0,1,0},{0,-1,0},{0,0,1},{0,0,-1}};
     private static final int[][][] C={{{1,0,0},{1,1,0},{1,1,1},{1,0,1}},{{0,0,1},{0,1,1},{0,1,0},{0,0,0}},

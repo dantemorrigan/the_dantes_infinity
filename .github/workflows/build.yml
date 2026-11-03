@@ -27,6 +27,8 @@ jobs:
         run: java -cp build/classes/java/client src/geometryTest/java/PlanetGeometryCheck.java
       - name: check cosmos navigation
         run: java -cp build/classes/java/main src/geometryTest/java/CosmosRoutesCheck.java
+      - name: validate cosmos textures
+        run: python3 scripts/check_cosmos_assets.py
       - name: cosmos client regression
         timeout-minutes: 12
         env:

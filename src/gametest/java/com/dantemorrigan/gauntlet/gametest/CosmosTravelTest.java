@@ -24,6 +24,12 @@ public class CosmosTravelTest implements FabricClientGameTest {
             ctx.getInput().releaseKey(o->o.keyJump);
             ctx.waitFor(mc->mc.screen==null,400); ctx.waitTicks(20);
             ctx.getInput().lookAt(180,60); ctx.takeScreenshot("cosmos_earth_orbit");
+            ctx.getInput().lookAt(0,0);
+            ctx.getInput().holdKey(o->o.keyUp); ctx.getInput().holdKey(o->o.keySprint);
+            ctx.waitTicks(30);
+            if(ctx.computeOnClient(mc->mc.player.getDeltaMovement().length())<1.6) throw new AssertionError("Boost did not accelerate");
+            ctx.takeScreenshot("cosmos_boost");
+            ctx.getInput().releaseKey(o->o.keyUp); ctx.getInput().releaseKey(o->o.keySprint); ctx.waitTicks(30);
             for(int i=1;i<6;i++) {
                 ctx.getInput().pressKey(GLFW.GLFW_KEY_K);ctx.waitTicks(8);
                 ctx.getInput().pressKey(GLFW.GLFW_KEY_U);ctx.waitTicks(70);
