@@ -101,6 +101,9 @@ public final class GauntletConfig {
 	/** Duration of the world (planet) rewind before players are returned (ticks). */
 	public int timeWorldRewindTicks = 70;
 	public int timeCooldownTicks = 400;
+	/** Day/night switch: how long the sun/moon race lasts (ticks) and its cooldown. */
+	public int timeShiftTicks = 120;
+	public int timeShiftCooldownTicks = 600;
 
 	// ---- Client presentation ----
 	public float cameraShakeScale = 1.0f;

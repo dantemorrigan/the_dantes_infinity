@@ -41,6 +41,8 @@ public class InfinityGauntlet implements ModInitializer {
 		ServerPlayNetworking.registerGlobalReceiver(ModNetwork.SpaceAction.TYPE, (payload, context) -> com.dantemorrigan.gauntlet.power.SpaceStone.action(context.player(), payload.action()));
 		com.dantemorrigan.gauntlet.celestial.CelestialApocalypse.init();
 		ServerPlayNetworking.registerGlobalReceiver(ModNetwork.TimeRewindRequest.TYPE, (payload, context) -> TimeAbility.request(context.player()));
+		com.dantemorrigan.gauntlet.power.TimeShift.init();
+		ServerPlayNetworking.registerGlobalReceiver(ModNetwork.TimeShiftRequest.TYPE, (payload, context) -> com.dantemorrigan.gauntlet.power.TimeShift.request(context.player()));
 		ServerPlayNetworking.registerGlobalReceiver(ModNetwork.ToggleMode.TYPE, (payload, context) -> PowerAbility.toggleMode(context.player()));
 		LOGGER.info("Infinity Gauntlet loaded");
 	}

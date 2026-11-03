@@ -77,6 +77,21 @@ public final class ModNetwork {
 		@Override public Type<TimeRewindRequest> type() { return TYPE; }
 	}
 
+	/** C2S: Time stone day/night switch request. */
+	public record TimeShiftRequest() implements CustomPacketPayload {
+		public static final Type<TimeShiftRequest> TYPE = newType("time_shift_request");
+		public static final StreamCodec<ByteBuf, TimeShiftRequest> CODEC = StreamCodec.unit(new TimeShiftRequest());
+		@Override public Type<TimeShiftRequest> type() { return TYPE; }
+	}
+
+	/** S2C: day/night switch visuals. */
+	public record TimeShiftFx(int duration, boolean toNight) implements CustomPacketPayload {
+		public static final Type<TimeShiftFx> TYPE = newType("time_shift_fx");
+		public static final StreamCodec<ByteBuf, TimeShiftFx> CODEC = StreamCodec.composite(
+				ByteBufCodecs.VAR_INT, TimeShiftFx::duration, ByteBufCodecs.BOOL, TimeShiftFx::toNight, TimeShiftFx::new);
+		@Override public Type<TimeShiftFx> type() { return TYPE; }
+	}
+
 	/** S2C: play rewind visuals. world = planet reassembly in Dead Space; entityId = who rewinds. */
 	public record TimeRewindFx(int entityId, boolean world, int duration) implements CustomPacketPayload {
 		public static final Type<TimeRewindFx> TYPE = newType("time_rewind_fx");
@@ -241,6 +256,8 @@ public final class ModNetwork {
 		PayloadTypeRegistry.clientboundPlay().register(MeteorImpact.TYPE, MeteorImpact.CODEC);
 		PayloadTypeRegistry.serverboundPlay().register(TimeRewindRequest.TYPE, TimeRewindRequest.CODEC);
 		PayloadTypeRegistry.clientboundPlay().register(TimeRewindFx.TYPE, TimeRewindFx.CODEC);
+		PayloadTypeRegistry.serverboundPlay().register(TimeShiftRequest.TYPE, TimeShiftRequest.CODEC);
+		PayloadTypeRegistry.clientboundPlay().register(TimeShiftFx.TYPE, TimeShiftFx.CODEC);
 		PayloadTypeRegistry.serverboundPlay().register(ToggleMode.TYPE, ToggleMode.CODEC);
 		PayloadTypeRegistry.clientboundPlay().register(PowerFx.TYPE, PowerFx.CODEC);
 		PayloadTypeRegistry.clientboundPlay().register(EffectDemo.TYPE, EffectDemo.CODEC);
