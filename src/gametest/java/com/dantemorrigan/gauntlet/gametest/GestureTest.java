@@ -9,7 +9,7 @@ import net.minecraft.client.CameraType;
 
 /** The "admire the gauntlet" gesture: screenshots of each phase in first and third person. */
 public class GestureTest implements FabricClientGameTest {
-	private static final float[] PHASES = {0.15f, 0.27f, 0.42f, 0.56f, 0.66f, 0.75f, 0.85f};
+	private static final float[] PHASES = {0.18f, 0.38f, 0.62f, 0.80f};
 
 	@Override
 	public void runTest(ClientGameTestContext ctx) {
@@ -33,11 +33,11 @@ public class GestureTest implements FabricClientGameTest {
 			ctx.runOnClient(mc -> mc.options.setCameraType(CameraType.FIRST_PERSON));
 			ctx.waitTicks(GauntletGesture.DURATION); // let the last frozen phase finish
 			ctx.getInput().pressKey(GauntletGestureClient.KEY);
-			ctx.waitTicks(30);
+			ctx.waitTicks(20);
 			ctx.runOnClient(mc -> {
 				if (GauntletGestureClient.pose(mc.player.getId()) == null) throw new AssertionError("gesture key did not start the gesture");
 			});
-			ctx.takeScreenshot("gesture_key_30t");
+			ctx.takeScreenshot("gesture_key_20t");
 		}
 	}
 }

@@ -13,7 +13,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-/** Third person: the gauntlet arm of a gesturing player is raised in front of the chest and twisted (see the gesture). */
+/** Third person: the gauntlet arm of a gesturing player is lifted a little and slightly twisted (see the gesture). */
 @Mixin(HumanoidModel.class)
 public abstract class HumanoidModelMixin {
 	@Inject(method = "setupAnim(Lnet/minecraft/client/renderer/entity/state/HumanoidRenderState;)V", at = @At("TAIL"))
@@ -25,9 +25,9 @@ public abstract class HumanoidModelMixin {
 		boolean left = state.mainArm.getOpposite() == net.minecraft.world.entity.HumanoidArm.LEFT;
 		ModelPart arm = left ? model.leftArm : model.rightArm;
 		float side = left ? 1 : -1, lift = gesture.lift();
-		// Raise the forearm forward and in front of the body, then twist it around its own (local Y) axis.
-		float raise = (float) Math.toRadians(-(80f + gesture.tilt()) * lift);
-		float inward = (float) Math.toRadians(side * 14f * lift);
+		// Lift the arm a little forward, then twist it around its own (local Y) axis.
+		float raise = (float) Math.toRadians(-(30f + gesture.tilt()) * lift);
+		float inward = (float) Math.toRadians(side * 6f * lift);
 		Quaternionf q = new Quaternionf().rotationZYX(arm.zRot * (1 - lift), inward, raise)
 				.rotateY((float) Math.toRadians(side * gesture.roll()));
 		Vector3f euler = q.getEulerAnglesZYX(new Vector3f());

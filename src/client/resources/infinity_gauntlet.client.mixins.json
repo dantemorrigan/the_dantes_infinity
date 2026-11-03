@@ -8,7 +8,6 @@
 		"ClientInputAccessor",
 		"FogRendererMixin",
 		"HumanoidModelMixin",
-		"ItemInHandLayerMixin",
 		"ItemInHandRendererMixin",
 		"KeyboardInputMixin",
 		"SkyRendererMixin"

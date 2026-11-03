@@ -14,7 +14,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 /** Adds the worn gauntlet on top of the first-person arm drawn by {@link ItemInHandRendererMixin}. */
 @Mixin(AvatarRenderer.class)
 public abstract class AvatarRendererMixin {
-	/** Gesture: twist the forearm around its own axis (palm / back of the hand toward the camera). */
+	/** Gesture: raise the arm a little and twist the forearm slightly around its own axis. */
 	@Inject(method = "renderHand", at = @At(value = "INVOKE",
 			target = "Lnet/minecraft/client/renderer/SubmitNodeCollector;submitModelPart(Lnet/minecraft/client/model/geom/ModelPart;Lcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/rendertype/RenderType;IILnet/minecraft/client/renderer/texture/TextureAtlasSprite;)V"))
 	private void infinityGauntlet$gestureTwist(PoseStack poseStack, SubmitNodeCollector submitNodeCollector, int lightCoords,
@@ -22,7 +22,7 @@ public abstract class AvatarRendererMixin {
 		if (WornGauntlet.firstPersonStack != null && WornGauntlet.firstPersonGesture != null) {
 			float side = WornGauntlet.firstPersonArm == net.minecraft.world.entity.HumanoidArm.LEFT ? 1 : -1;
 			var g = WornGauntlet.firstPersonGesture;
-			WornGauntlet.orientArm(arm, WornGauntlet.GESTURE_PITCH * g.lift(), side * WornGauntlet.GESTURE_SWING * g.lift(), side * g.roll());
+			WornGauntlet.orientArm(arm, (WornGauntlet.GESTURE_PITCH - g.tilt()) * g.lift(), 0, side * g.roll());
 		}
 	}
 

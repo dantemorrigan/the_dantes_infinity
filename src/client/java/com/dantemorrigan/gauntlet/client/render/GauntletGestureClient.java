@@ -19,32 +19,25 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * "Admire the gauntlet": the hand is raised as a fist, turns palm up while the fingers spread, turns over so the
- * stones face the viewer, closes back into a fist and lowers. Keyframes follow the reference video of a real hand.
- * Purely visual: every client animates the players it was told about (the local one starts instantly).
+ * "Admire the gauntlet": the hand is lifted a little where it already is and the gauntlet is turned slightly
+ * one way and the other, then lowered. Purely visual: every client animates the players it was told about
+ * (the local one starts instantly).
  */
 public final class GauntletGestureClient {
 	public static final KeyMapping KEY = KeyMappingHelper.registerKeyMapping(
 			new KeyMapping("key.infinity_gauntlet.gesture", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_G, ClientPower.CATEGORY));
 
-	/** Animation state at one moment. lift 0..1 raises the hand into view, roll = forearm twist in degrees
-	 *  (0 = back of the hand outward, +180 = palm toward the viewer), open 0 = fist .. 1 = spread fingers,
-	 *  tilt = extra raise of the forearm in degrees. */
-	public record Pose(float lift, float roll, float open, float tilt) {}
+	/** Animation state at one moment: lift 0..1 (small raise), roll = forearm twist in degrees, tilt = extra raise in degrees. */
+	public record Pose(float lift, float roll, float tilt) {}
 
-	// t (0..1), lift, roll, open, tilt
+	// t (0..1), lift, roll, tilt
 	private static final float[][] KEYS = {
-			{0.00f, 0f, 0f, 0f, 0f},
-			{0.12f, 1f, 0f, 0f, 0f},   // fist raised, knuckles outward
-			{0.20f, 1f, 0f, 0f, 0f},   // short hold
-			{0.30f, 1f, 110f, 0.55f, 8f}, // wrist turns, fingers start opening
-			{0.38f, 1f, 165f, 1f, 10f},  // open palm toward the viewer
-			{0.50f, 1f, 170f, 1f, 10f},  // hold, look at the palm
-			{0.62f, 1f, -10f, 1f, 4f},   // turn over: back of the hand, stones, fingers spread
-			{0.70f, 1f, -15f, 1f, 4f},   // hold
-			{0.80f, 1f, 70f, 0f, 12f},   // squeeze into a fist while turning it upright
-			{0.90f, 1f, 75f, 0f, 12f},   // hold the fist
-			{1.00f, 0f, 0f, 0f, 0f},
+			{0.00f, 0f, 0f, 0f},
+			{0.18f, 1f, 0f, 4f},     // lift the fist a little
+			{0.38f, 1f, 24f, 6f},    // turn it slightly one way
+			{0.62f, 1f, -18f, 6f},   // and the other
+			{0.80f, 1f, 6f, 4f},     // settle
+			{1.00f, 0f, 0f, 0f},
 	};
 
 	private static final Map<Integer, Long> STARTS = new HashMap<>();
@@ -96,9 +89,9 @@ public final class GauntletGestureClient {
 			float[] a = KEYS[i - 1];
 			float k = (t - a[0]) / Math.max(1e-4f, b[0] - a[0]);
 			k = k * k * (3 - 2 * k);
-			return new Pose(Mth.lerp(k, a[1], b[1]), Mth.lerp(k, a[2], b[2]), Mth.lerp(k, a[3], b[3]), Mth.lerp(k, a[4], b[4]));
+			return new Pose(Mth.lerp(k, a[1], b[1]), Mth.lerp(k, a[2], b[2]), Mth.lerp(k, a[3], b[3]));
 		}
-		return new Pose(0, 0, 0, 0);
+		return new Pose(0, 0, 0);
 	}
 
 	private GauntletGestureClient() {}

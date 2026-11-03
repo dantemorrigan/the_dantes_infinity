@@ -224,7 +224,7 @@ public final class ModNetwork {
 		@Override public Type<SpaceFx> type() { return TYPE; }
 	}
 
-	/** C2S: the player plays the "admire the gauntlet" hand gesture (fist, open palm, turn, fist). */
+	/** C2S: the player plays the "admire the gauntlet" hand gesture (lift and slightly turn the gauntlet). */
 	public record GestureStart() implements CustomPacketPayload {
 		public static final Type<GestureStart> TYPE = newType("gesture_start");
 		public static final StreamCodec<ByteBuf, GestureStart> CODEC = StreamCodec.unit(new GestureStart());

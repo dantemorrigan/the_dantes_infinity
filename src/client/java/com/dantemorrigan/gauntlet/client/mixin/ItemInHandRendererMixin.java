@@ -4,7 +4,6 @@ import com.dantemorrigan.gauntlet.ModItems;
 import com.dantemorrigan.gauntlet.client.render.GauntletGestureClient;
 import com.dantemorrigan.gauntlet.client.render.WornGauntlet;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.math.Axis;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.client.renderer.ItemInHandRenderer;
 import net.minecraft.client.renderer.SubmitNodeCollector;
@@ -31,11 +30,9 @@ public abstract class ItemInHandRendererMixin {
 		GauntletGestureClient.Pose gesture = GauntletGestureClient.pose(player.getId());
 		poseStack.pushPose();
 		if (gesture != null) {
-			// Bring the hand up toward the middle of the view, forearm angled in from the lower corner.
-			float invert = arm == HumanoidArm.RIGHT ? 1 : -1, lift = gesture.lift();
-			poseStack.translate(-invert * 0.30f * lift, 0.22f * lift, -0.10f * lift);
-			poseStack.mulPose(Axis.ZP.rotationDegrees(-invert * 18f * lift));
-			poseStack.mulPose(Axis.XP.rotationDegrees(gesture.tilt() * lift));
+			// Lift the hand slightly in place; no swing or equip bob while gesturing.
+			float lift = gesture.lift();
+			poseStack.translate(0, 0.05f * lift, 0);
 			inverseArmHeight *= 1 - lift;
 			attack *= 1 - lift;
 		}

@@ -8,10 +8,10 @@ import net.minecraft.server.level.ServerPlayer;
 import java.util.Map;
 import java.util.WeakHashMap;
 
-/** Server relay for the "admire the gauntlet" gesture: purely visual, so it only validates and forwards to viewers. */
+/** Server relay for the "admire the gauntlet" gesture (a slight turn of the hand): purely visual, so it only validates and forwards to viewers. */
 public final class GauntletGesture {
 	/** Gesture length in ticks; the client animation uses the same value. */
-	public static final int DURATION = 90;
+	public static final int DURATION = 50;
 
 	private static final Map<ServerPlayer, Long> LAST = new WeakHashMap<>();
 
