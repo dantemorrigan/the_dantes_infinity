@@ -42,6 +42,7 @@ public class GauntletItem extends Item {
 		if (!GauntletState.inserted(gauntlet).contains(Stone.POWER) || player.getCooldowns().isOnCooldown(gauntlet)) {
 			return InteractionResult.PASS;
 		}
+		if (player instanceof ServerPlayer sp && com.dantemorrigan.gauntlet.power.InfinityBeam.active(sp)) return InteractionResult.FAIL;
 		player.startUsingItem(hand);
 		return InteractionResult.CONSUME;
 	}

@@ -68,6 +68,17 @@ public final class GauntletConfig {
 	public int blinkRange = 96;
 	public int blinkCooldownTicks = 20;
 
+	// ---- All-six-stones Infinity Beam (server) ----
+	public int beamChargeTicks = 40;
+	public int beamFireTicks = 40;
+	public int beamCooldownTicks = 900;
+	public double beamRange = 72;
+	public double beamHitRadius = 1.2;
+	public float beamDamage = 160;
+	public boolean beamBreakBlocks = true;
+	public double beamDrillRadius = 4.5;
+	public int beamBlocksPerTick = 512;
+
 	// ---- Time stone rewind (server) ----
 	/** How far back the personal rewind goes (seconds of recorded history). */
 	public int timeRewindSeconds = 5;

@@ -21,6 +21,7 @@ public class InfinityGauntletClient implements ClientModInitializer {
 		Cutscene.init();
 		SpaceScene.init();
 		com.dantemorrigan.gauntlet.client.celestial.CelestialClient.init();
+		com.dantemorrigan.gauntlet.client.fx.InfinityBeamClient.init();
 		WornGauntlet.init();
 	}
 }

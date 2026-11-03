@@ -157,7 +157,24 @@ public final class ModNetwork {
 		@Override public Type<SpaceFx> type() { return TYPE; }
 	}
 
+	/** C2S: H pressed/released. Server validates six stones and owns the full cast. */
+	public record BeamAction(boolean start) implements CustomPacketPayload {
+		public static final Type<BeamAction> TYPE = newType("beam_action");
+		public static final StreamCodec<ByteBuf, BeamAction> CODEC = StreamCodec.composite(ByteBufCodecs.BOOL, BeamAction::start, BeamAction::new);
+		@Override public Type<BeamAction> type() { return TYPE; }
+	}
+	/** S2C: authoritative beam endpoints; age=-1 ends the cast. */
+	public record BeamFx(int entityId, Vec3 from, Vec3 to, int age, int charge, int duration) implements CustomPacketPayload {
+		public static final Type<BeamFx> TYPE = newType("beam_fx");
+		public static final StreamCodec<ByteBuf, BeamFx> CODEC = StreamCodec.composite(
+			ByteBufCodecs.VAR_INT, BeamFx::entityId, Vec3.STREAM_CODEC, BeamFx::from, Vec3.STREAM_CODEC, BeamFx::to,
+			ByteBufCodecs.VAR_INT, BeamFx::age, ByteBufCodecs.VAR_INT, BeamFx::charge, ByteBufCodecs.VAR_INT, BeamFx::duration, BeamFx::new);
+		@Override public Type<BeamFx> type() { return TYPE; }
+	}
+
 	public static void init() {
+		PayloadTypeRegistry.serverboundPlay().register(BeamAction.TYPE, BeamAction.CODEC);
+		PayloadTypeRegistry.clientboundPlay().register(BeamFx.TYPE, BeamFx.CODEC);
 		PayloadTypeRegistry.serverboundPlay().register(SpaceAction.TYPE, SpaceAction.CODEC);
 		PayloadTypeRegistry.clientboundPlay().register(PortalOpen.TYPE, PortalOpen.CODEC);
 		PayloadTypeRegistry.clientboundPlay().register(PortalClose.TYPE, PortalClose.CODEC);
