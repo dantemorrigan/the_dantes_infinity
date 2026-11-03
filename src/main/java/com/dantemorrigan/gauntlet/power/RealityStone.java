@@ -91,7 +91,7 @@ public final class RealityStone {
 		Vec3 center = Vec3.atBottomCenterOf(player.blockPosition());
 		SESSIONS.put(player.getUUID(), new Session(player.level(), center));
 		GauntletState.setInUse(g, EnumSet.of(Stone.REALITY));
-		broadcast(player.level(), player.getId(), true, center);
+		broadcast(player.level(), player, true, center, 0);
 		player.level().playSound(null, player.blockPosition(), SoundEvents.AMETHYST_BLOCK_RESONATE, SoundSource.PLAYERS, 2.0F, 0.5F);
 	}
 
@@ -108,7 +108,7 @@ public final class RealityStone {
 		COOLDOWN.put(player.getUUID(), player.level().getGameTime() + GauntletConfig.get().realityCooldownTicks);
 		ItemStack g = GauntletState.activeGauntlet(player);
 		if (!g.isEmpty()) GauntletState.setInUse(g, EnumSet.noneOf(Stone.class));
-		broadcast(s.level, player.getId(), false, s.center);
+		broadcast(s.level, player, false, s.center, s.tick);
 		s.level.playSound(null, BlockPos.containing(s.center), SoundEvents.AMETHYST_BLOCK_CHIME, SoundSource.PLAYERS, 2.0F, 0.6F);
 	}
 
@@ -124,8 +124,8 @@ public final class RealityStone {
 		mob.setNoGravity((flags & 8) != 0);
 	}
 
-	private static void broadcast(ServerLevel level, int caster, boolean active, Vec3 center) {
-		ModNetwork.RealityState state = new ModNetwork.RealityState(caster, active, center);
+	private static void broadcast(ServerLevel level, ServerPlayer caster, boolean active, Vec3 center, int age) {
+		ModNetwork.RealityState state = new ModNetwork.RealityState(caster.getId(), active, center, age, caster.getYRot());
 		for (ServerPlayer p : PlayerLookup.around(level, center, 128)) ServerPlayNetworking.send(p, state);
 	}
 
@@ -150,7 +150,7 @@ public final class RealityStone {
 				stop(player);
 				continue;
 			}
-			if (s.tick % 20 == 0) broadcast(s.level, player.getId(), true, s.center);
+			if (s.tick % 20 == 0) broadcast(s.level, player, true, s.center, s.tick);
 			if (s.tick < 20) continue; // charge + fractures first (ability_timeline.json)
 			double r = cfg.realityRadius;
 			AABB box = new AABB(s.center, s.center).inflate(r, r * 0.75, r);
