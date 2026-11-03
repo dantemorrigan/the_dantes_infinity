@@ -18,7 +18,7 @@ public final class ModItems {
 	public static final Item SPACE_STONE = register("space_stone", epic());
 	public static final Item REALITY_STONE = register("reality_stone", epic());
 	public static final Item MIND_STONE = register("mind_stone", epic());
-	public static final Item TIME_STONE = register("time_stone", epic());
+	public static final Item TIME_STONE = register("time_stone", TimeStoneItem::new, epic());
 	public static final Item SOUL_STONE = register("soul_stone", epic());
 
 	private static Item.Properties epic() {

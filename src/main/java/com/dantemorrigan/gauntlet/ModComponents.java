@@ -22,6 +22,11 @@ public final class ModComponents {
 			InfinityGauntlet.id("portal_destination"),
 			DataComponentType.<Integer>builder().persistent(Codec.INT).networkSynchronized(ByteBufCodecs.VAR_INT).build());
 
+	/** Set on the gauntlet and its stones by the Infinity Snap: burnt, dead stones, the gauntlet no longer works. */
+	public static final DataComponentType<Boolean> SNAPPED = Registry.register(BuiltInRegistries.DATA_COMPONENT_TYPE,
+			InfinityGauntlet.id("snapped"),
+			DataComponentType.<Boolean>builder().persistent(Codec.BOOL).networkSynchronized(ByteBufCodecs.BOOL).build());
+
 	public static void init() {}
 
 	private ModComponents() {}

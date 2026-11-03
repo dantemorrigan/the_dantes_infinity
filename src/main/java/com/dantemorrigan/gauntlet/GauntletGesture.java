@@ -16,12 +16,13 @@ public final class GauntletGesture {
 	private static final Map<ServerPlayer, Long> LAST = new WeakHashMap<>();
 
 	public static void start(ServerPlayer player) {
-		if (GauntletState.activeGauntlet(player).isEmpty() || player.isSpectator()) return;
+		if (GauntletState.activeGauntlet(player).isEmpty() || player.isSpectator()
+				|| com.dantemorrigan.gauntlet.snap.InfinitySnap.casting(player)) return;
 		long now = player.level().getGameTime();
 		Long last = LAST.get(player);
 		if (last != null && now - last < DURATION - 10) return;
 		LAST.put(player, now);
-		ModNetwork.GestureFx fx = new ModNetwork.GestureFx(player.getId());
+		ModNetwork.GestureFx fx = new ModNetwork.GestureFx(player.getId(), 0);
 		for (ServerPlayer viewer : PlayerLookup.tracking(player)) {
 			if (viewer != player) ServerPlayNetworking.send(viewer, fx);
 		}

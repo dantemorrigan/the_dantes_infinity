@@ -63,3 +63,19 @@ networking, key-mapping, rendering, particles, dimensions, data-attachment, item
   `order(-1000)` для неба. Туман в Мёртвом космосе отключён (`FogRendererMixin`), иначе всё дальше render distance чёрное.
 - Перчатка на руке: 3-е лицо — display `thirdperson_lefthand` модели `gauntlet_in_hand` (рассчитан под цепочку
   ItemInHandLayer); 1-е лицо — `ItemInHandRendererMixin` рисует руку игрока, `AvatarRendererMixin` надевает на неё модель `gauntlet_worn`.
+
+## Щелчок Бесконечности (как устроено)
+- Способность `Ability.SNAP` (колесо, кнопка справа внизу, нужны все 6 камней). Сервер: `snap/InfinitySnap`.
+  Таймлайн от каста: жест руки (`GestureFx` kind 1) → `SNAP_TICK` звук `infinity_gauntlet:infinity_snap`
+  (`sounds/infinity_snap.ogg`, щелчок в самом начале файла) и перчатка с камнями «сгорают» (компонент `snapped`) →
+  экран белеет (`SnapFx` 0) → `ERASE_TICK` все игроки (кроме Мёртвого космоса) уходят в измерение `white_void`.
+- Белая комната: `data/.../dimension/white_void.json` — плоский мир из одного слоя `barrier` (пол невидим),
+  белые небо/туман, `skybox: none`. Там можно только ходить: колбэки атаки/использования блоков, сущностей и
+  предметов возвращают FAIL (кроме перчатки и Камня Времени), урона нет.
+- Сломанная перчатка: `GauntletState.activeGauntlet` возвращает EMPTY → ни одна способность не работает;
+  `wornGauntlet` отдаёт её как есть. Клавиша колеса открывает её инвентарь. Текстуры `*_damaged.png`
+  генерирует `art/source/snap/make_damaged.py`; модели переключаются условием `minecraft:has_component` в `items/*.json`.
+  Дым — клиентские частицы в `client/fx/SnapClient`.
+- Возврат: Камень Времени (`TimeStoneItem`) вне перчатки, ПКМ в белой комнате → всем игрокам того же щелчка
+  перемотка `REWIND_TICKS`, затем телепорт в сохранённую точку (`snap_record`), щелкнувшему — целая перчатка
+  из записи, все сгоревшие предметы удаляются. Тест: `./gradlew runClientGameTest -PonlyTest=SnapTest`.

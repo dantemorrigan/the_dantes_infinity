@@ -1,0 +1,7 @@
+{
+	"parent": "infinity_gauntlet:item/gauntlet_in_hand_mind",
+	"textures": {
+		"overlay": "infinity_gauntlet:item/gauntlet_model_mind_damaged",
+		"particle": "infinity_gauntlet:item/gauntlet_model_damaged"
+	}
+}

@@ -1,0 +1,7 @@
+{
+	"parent": "infinity_gauntlet:item/gauntlet_in_hand",
+	"textures": {
+		"gauntlet": "infinity_gauntlet:item/gauntlet_model_damaged",
+		"particle": "infinity_gauntlet:item/gauntlet_model_damaged"
+	}
+}

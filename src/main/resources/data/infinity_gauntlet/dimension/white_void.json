@@ -1,0 +1,15 @@
+{
+  "type": "infinity_gauntlet:white_void",
+  "generator": {
+    "type": "minecraft:flat",
+    "settings": {
+      "layers": [
+        {"block": "minecraft:barrier", "height": 1}
+      ],
+      "biome": "infinity_gauntlet:white_void",
+      "lakes": false,
+      "features": false,
+      "structure_overrides": []
+    }
+  }
+}

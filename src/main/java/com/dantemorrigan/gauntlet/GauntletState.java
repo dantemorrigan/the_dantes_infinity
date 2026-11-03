@@ -21,8 +21,15 @@ import java.util.Set;
 public final class GauntletState {
 	private static final int N = Stone.values().length;
 
-	/** The gauntlet only works in the OFF hand. Returns it, or EMPTY if the player has no active gauntlet. */
+	/** The gauntlet only works in the OFF hand. Returns it, or EMPTY if the player has no working gauntlet there
+	 *  (a gauntlet burnt out by the Infinity Snap never works again). */
 	public static ItemStack activeGauntlet(Player player) {
+		ItemStack off = wornGauntlet(player);
+		return Boolean.TRUE.equals(off.get(ModComponents.SNAPPED)) ? ItemStack.EMPTY : off;
+	}
+
+	/** The gauntlet in the off hand, working or burnt out, or EMPTY. */
+	public static ItemStack wornGauntlet(Player player) {
 		ItemStack off = player.getOffhandItem();
 		return off.is(ModItems.GAUNTLET) ? off : ItemStack.EMPTY;
 	}

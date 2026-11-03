@@ -1,319 +1,500 @@
 {
 	"model": {
-		"type": "minecraft:select",
-		"property": "minecraft:display_context",
-		"cases": [
-			{
-				"when": [
-					"gui",
-					"ground",
-					"fixed",
-					"on_shelf"
-				],
-				"model": {
-					"type": "minecraft:composite",
-					"models": [
-						{
-							"type": "minecraft:model",
-							"model": "infinity_gauntlet:item/gauntlet"
-						},
-						{
-							"type": "minecraft:condition",
-							"property": "minecraft:custom_model_data",
-							"index": 0,
-							"on_true": {
+		"type": "minecraft:condition",
+		"property": "minecraft:has_component",
+		"component": "infinity_gauntlet:snapped",
+		"on_true": {
+			"type": "minecraft:select",
+			"property": "minecraft:display_context",
+			"cases": [
+				{
+					"when": [
+						"gui",
+						"ground",
+						"fixed",
+						"on_shelf"
+					],
+					"model": {
+						"type": "minecraft:composite",
+						"models": [
+							{
 								"type": "minecraft:model",
-								"model": "infinity_gauntlet:item/gauntlet_power"
+								"model": "infinity_gauntlet:item/gauntlet_damaged"
 							},
-							"on_false": {
-								"type": "minecraft:empty"
-							}
-						},
-						{
-							"type": "minecraft:condition",
-							"property": "minecraft:custom_model_data",
-							"index": 1,
-							"on_true": {
-								"type": "minecraft:model",
-								"model": "infinity_gauntlet:item/gauntlet_space"
-							},
-							"on_false": {
-								"type": "minecraft:empty"
-							}
-						},
-						{
-							"type": "minecraft:condition",
-							"property": "minecraft:custom_model_data",
-							"index": 2,
-							"on_true": {
-								"type": "minecraft:model",
-								"model": "infinity_gauntlet:item/gauntlet_reality"
-							},
-							"on_false": {
-								"type": "minecraft:empty"
-							}
-						},
-						{
-							"type": "minecraft:condition",
-							"property": "minecraft:custom_model_data",
-							"index": 3,
-							"on_true": {
-								"type": "minecraft:model",
-								"model": "infinity_gauntlet:item/gauntlet_soul"
-							},
-							"on_false": {
-								"type": "minecraft:empty"
-							}
-						},
-						{
-							"type": "minecraft:condition",
-							"property": "minecraft:custom_model_data",
-							"index": 4,
-							"on_true": {
-								"type": "minecraft:model",
-								"model": "infinity_gauntlet:item/gauntlet_mind"
-							},
-							"on_false": {
-								"type": "minecraft:empty"
-							}
-						},
-						{
-							"type": "minecraft:condition",
-							"property": "minecraft:custom_model_data",
-							"index": 5,
-							"on_true": {
-								"type": "minecraft:model",
-								"model": "infinity_gauntlet:item/gauntlet_time"
-							},
-							"on_false": {
-								"type": "minecraft:empty"
-							}
-						}
-					]
-				}
-			},
-			{
-				"when": [
-					"firstperson_lefthand",
-					"thirdperson_lefthand"
-				],
-				"model": {
-					"type": "minecraft:composite",
-					"models": [
-						{
-							"type": "minecraft:model",
-							"model": "infinity_gauntlet:item/gauntlet_in_hand"
-						},
-						{
-							"type": "minecraft:condition",
-							"property": "minecraft:custom_model_data",
-							"index": 6,
-							"on_true": {
-								"type": "minecraft:model",
-								"model": "infinity_gauntlet:item/gauntlet_in_hand_power_active"
-							},
-							"on_false": {
+							{
 								"type": "minecraft:condition",
 								"property": "minecraft:custom_model_data",
 								"index": 0,
 								"on_true": {
 									"type": "minecraft:model",
-									"model": "infinity_gauntlet:item/gauntlet_in_hand_power_glow"
+									"model": "infinity_gauntlet:item/gauntlet_power_damaged"
 								},
 								"on_false": {
 									"type": "minecraft:empty"
 								}
-							}
-						},
-						{
-							"type": "minecraft:condition",
-							"property": "minecraft:custom_model_data",
-							"index": 7,
-							"on_true": {
-								"type": "minecraft:model",
-								"model": "infinity_gauntlet:item/gauntlet_in_hand_space_active"
 							},
-							"on_false": {
+							{
 								"type": "minecraft:condition",
 								"property": "minecraft:custom_model_data",
 								"index": 1,
 								"on_true": {
 									"type": "minecraft:model",
-									"model": "infinity_gauntlet:item/gauntlet_in_hand_space_glow"
+									"model": "infinity_gauntlet:item/gauntlet_space_damaged"
 								},
 								"on_false": {
 									"type": "minecraft:empty"
 								}
-							}
-						},
-						{
-							"type": "minecraft:condition",
-							"property": "minecraft:custom_model_data",
-							"index": 8,
-							"on_true": {
-								"type": "minecraft:model",
-								"model": "infinity_gauntlet:item/gauntlet_in_hand_reality_active"
 							},
-							"on_false": {
+							{
 								"type": "minecraft:condition",
 								"property": "minecraft:custom_model_data",
 								"index": 2,
 								"on_true": {
 									"type": "minecraft:model",
-									"model": "infinity_gauntlet:item/gauntlet_in_hand_reality_glow"
+									"model": "infinity_gauntlet:item/gauntlet_reality_damaged"
 								},
 								"on_false": {
 									"type": "minecraft:empty"
 								}
-							}
-						},
-						{
-							"type": "minecraft:condition",
-							"property": "minecraft:custom_model_data",
-							"index": 9,
-							"on_true": {
-								"type": "minecraft:model",
-								"model": "infinity_gauntlet:item/gauntlet_in_hand_soul_active"
 							},
-							"on_false": {
+							{
 								"type": "minecraft:condition",
 								"property": "minecraft:custom_model_data",
 								"index": 3,
 								"on_true": {
 									"type": "minecraft:model",
-									"model": "infinity_gauntlet:item/gauntlet_in_hand_soul_glow"
+									"model": "infinity_gauntlet:item/gauntlet_soul_damaged"
 								},
 								"on_false": {
 									"type": "minecraft:empty"
 								}
-							}
-						},
-						{
-							"type": "minecraft:condition",
-							"property": "minecraft:custom_model_data",
-							"index": 10,
-							"on_true": {
-								"type": "minecraft:model",
-								"model": "infinity_gauntlet:item/gauntlet_in_hand_mind_active"
 							},
-							"on_false": {
+							{
 								"type": "minecraft:condition",
 								"property": "minecraft:custom_model_data",
 								"index": 4,
 								"on_true": {
 									"type": "minecraft:model",
-									"model": "infinity_gauntlet:item/gauntlet_in_hand_mind_glow"
+									"model": "infinity_gauntlet:item/gauntlet_mind_damaged"
 								},
 								"on_false": {
 									"type": "minecraft:empty"
 								}
-							}
-						},
-						{
-							"type": "minecraft:condition",
-							"property": "minecraft:custom_model_data",
-							"index": 11,
-							"on_true": {
-								"type": "minecraft:model",
-								"model": "infinity_gauntlet:item/gauntlet_in_hand_time_active"
 							},
-							"on_false": {
+							{
 								"type": "minecraft:condition",
 								"property": "minecraft:custom_model_data",
 								"index": 5,
 								"on_true": {
 									"type": "minecraft:model",
-									"model": "infinity_gauntlet:item/gauntlet_in_hand_time_glow"
+									"model": "infinity_gauntlet:item/gauntlet_time_damaged"
 								},
 								"on_false": {
 									"type": "minecraft:empty"
 								}
 							}
+						]
+					}
+				}
+			],
+			"fallback": {
+				"type": "minecraft:composite",
+				"models": [
+					{
+						"type": "minecraft:model",
+						"model": "infinity_gauntlet:item/gauntlet_in_hand_damaged"
+					},
+					{
+						"type": "minecraft:condition",
+						"property": "minecraft:custom_model_data",
+						"index": 0,
+						"on_true": {
+							"type": "minecraft:model",
+							"model": "infinity_gauntlet:item/gauntlet_in_hand_power_damaged"
+						},
+						"on_false": {
+							"type": "minecraft:empty"
 						}
-					]
-				}
+					},
+					{
+						"type": "minecraft:condition",
+						"property": "minecraft:custom_model_data",
+						"index": 1,
+						"on_true": {
+							"type": "minecraft:model",
+							"model": "infinity_gauntlet:item/gauntlet_in_hand_space_damaged"
+						},
+						"on_false": {
+							"type": "minecraft:empty"
+						}
+					},
+					{
+						"type": "minecraft:condition",
+						"property": "minecraft:custom_model_data",
+						"index": 2,
+						"on_true": {
+							"type": "minecraft:model",
+							"model": "infinity_gauntlet:item/gauntlet_in_hand_reality_damaged"
+						},
+						"on_false": {
+							"type": "minecraft:empty"
+						}
+					},
+					{
+						"type": "minecraft:condition",
+						"property": "minecraft:custom_model_data",
+						"index": 3,
+						"on_true": {
+							"type": "minecraft:model",
+							"model": "infinity_gauntlet:item/gauntlet_in_hand_soul_damaged"
+						},
+						"on_false": {
+							"type": "minecraft:empty"
+						}
+					},
+					{
+						"type": "minecraft:condition",
+						"property": "minecraft:custom_model_data",
+						"index": 4,
+						"on_true": {
+							"type": "minecraft:model",
+							"model": "infinity_gauntlet:item/gauntlet_in_hand_mind_damaged"
+						},
+						"on_false": {
+							"type": "minecraft:empty"
+						}
+					},
+					{
+						"type": "minecraft:condition",
+						"property": "minecraft:custom_model_data",
+						"index": 5,
+						"on_true": {
+							"type": "minecraft:model",
+							"model": "infinity_gauntlet:item/gauntlet_in_hand_time_damaged"
+						},
+						"on_false": {
+							"type": "minecraft:empty"
+						}
+					}
+				]
 			}
-		],
-		"fallback": {
-			"type": "minecraft:composite",
-			"models": [
+		},
+		"on_false": {
+			"type": "minecraft:select",
+			"property": "minecraft:display_context",
+			"cases": [
 				{
-					"type": "minecraft:model",
-					"model": "infinity_gauntlet:item/gauntlet_in_hand"
-				},
-				{
-					"type": "minecraft:condition",
-					"property": "minecraft:custom_model_data",
-					"index": 0,
-					"on_true": {
-						"type": "minecraft:model",
-						"model": "infinity_gauntlet:item/gauntlet_in_hand_power"
-					},
-					"on_false": {
-						"type": "minecraft:empty"
+					"when": [
+						"gui",
+						"ground",
+						"fixed",
+						"on_shelf"
+					],
+					"model": {
+						"type": "minecraft:composite",
+						"models": [
+							{
+								"type": "minecraft:model",
+								"model": "infinity_gauntlet:item/gauntlet"
+							},
+							{
+								"type": "minecraft:condition",
+								"property": "minecraft:custom_model_data",
+								"index": 0,
+								"on_true": {
+									"type": "minecraft:model",
+									"model": "infinity_gauntlet:item/gauntlet_power"
+								},
+								"on_false": {
+									"type": "minecraft:empty"
+								}
+							},
+							{
+								"type": "minecraft:condition",
+								"property": "minecraft:custom_model_data",
+								"index": 1,
+								"on_true": {
+									"type": "minecraft:model",
+									"model": "infinity_gauntlet:item/gauntlet_space"
+								},
+								"on_false": {
+									"type": "minecraft:empty"
+								}
+							},
+							{
+								"type": "minecraft:condition",
+								"property": "minecraft:custom_model_data",
+								"index": 2,
+								"on_true": {
+									"type": "minecraft:model",
+									"model": "infinity_gauntlet:item/gauntlet_reality"
+								},
+								"on_false": {
+									"type": "minecraft:empty"
+								}
+							},
+							{
+								"type": "minecraft:condition",
+								"property": "minecraft:custom_model_data",
+								"index": 3,
+								"on_true": {
+									"type": "minecraft:model",
+									"model": "infinity_gauntlet:item/gauntlet_soul"
+								},
+								"on_false": {
+									"type": "minecraft:empty"
+								}
+							},
+							{
+								"type": "minecraft:condition",
+								"property": "minecraft:custom_model_data",
+								"index": 4,
+								"on_true": {
+									"type": "minecraft:model",
+									"model": "infinity_gauntlet:item/gauntlet_mind"
+								},
+								"on_false": {
+									"type": "minecraft:empty"
+								}
+							},
+							{
+								"type": "minecraft:condition",
+								"property": "minecraft:custom_model_data",
+								"index": 5,
+								"on_true": {
+									"type": "minecraft:model",
+									"model": "infinity_gauntlet:item/gauntlet_time"
+								},
+								"on_false": {
+									"type": "minecraft:empty"
+								}
+							}
+						]
 					}
 				},
 				{
-					"type": "minecraft:condition",
-					"property": "minecraft:custom_model_data",
-					"index": 1,
-					"on_true": {
-						"type": "minecraft:model",
-						"model": "infinity_gauntlet:item/gauntlet_in_hand_space"
-					},
-					"on_false": {
-						"type": "minecraft:empty"
-					}
-				},
-				{
-					"type": "minecraft:condition",
-					"property": "minecraft:custom_model_data",
-					"index": 2,
-					"on_true": {
-						"type": "minecraft:model",
-						"model": "infinity_gauntlet:item/gauntlet_in_hand_reality"
-					},
-					"on_false": {
-						"type": "minecraft:empty"
-					}
-				},
-				{
-					"type": "minecraft:condition",
-					"property": "minecraft:custom_model_data",
-					"index": 3,
-					"on_true": {
-						"type": "minecraft:model",
-						"model": "infinity_gauntlet:item/gauntlet_in_hand_soul"
-					},
-					"on_false": {
-						"type": "minecraft:empty"
-					}
-				},
-				{
-					"type": "minecraft:condition",
-					"property": "minecraft:custom_model_data",
-					"index": 4,
-					"on_true": {
-						"type": "minecraft:model",
-						"model": "infinity_gauntlet:item/gauntlet_in_hand_mind"
-					},
-					"on_false": {
-						"type": "minecraft:empty"
-					}
-				},
-				{
-					"type": "minecraft:condition",
-					"property": "minecraft:custom_model_data",
-					"index": 5,
-					"on_true": {
-						"type": "minecraft:model",
-						"model": "infinity_gauntlet:item/gauntlet_in_hand_time"
-					},
-					"on_false": {
-						"type": "minecraft:empty"
+					"when": [
+						"firstperson_lefthand",
+						"thirdperson_lefthand"
+					],
+					"model": {
+						"type": "minecraft:composite",
+						"models": [
+							{
+								"type": "minecraft:model",
+								"model": "infinity_gauntlet:item/gauntlet_in_hand"
+							},
+							{
+								"type": "minecraft:condition",
+								"property": "minecraft:custom_model_data",
+								"index": 6,
+								"on_true": {
+									"type": "minecraft:model",
+									"model": "infinity_gauntlet:item/gauntlet_in_hand_power_active"
+								},
+								"on_false": {
+									"type": "minecraft:condition",
+									"property": "minecraft:custom_model_data",
+									"index": 0,
+									"on_true": {
+										"type": "minecraft:model",
+										"model": "infinity_gauntlet:item/gauntlet_in_hand_power_glow"
+									},
+									"on_false": {
+										"type": "minecraft:empty"
+									}
+								}
+							},
+							{
+								"type": "minecraft:condition",
+								"property": "minecraft:custom_model_data",
+								"index": 7,
+								"on_true": {
+									"type": "minecraft:model",
+									"model": "infinity_gauntlet:item/gauntlet_in_hand_space_active"
+								},
+								"on_false": {
+									"type": "minecraft:condition",
+									"property": "minecraft:custom_model_data",
+									"index": 1,
+									"on_true": {
+										"type": "minecraft:model",
+										"model": "infinity_gauntlet:item/gauntlet_in_hand_space_glow"
+									},
+									"on_false": {
+										"type": "minecraft:empty"
+									}
+								}
+							},
+							{
+								"type": "minecraft:condition",
+								"property": "minecraft:custom_model_data",
+								"index": 8,
+								"on_true": {
+									"type": "minecraft:model",
+									"model": "infinity_gauntlet:item/gauntlet_in_hand_reality_active"
+								},
+								"on_false": {
+									"type": "minecraft:condition",
+									"property": "minecraft:custom_model_data",
+									"index": 2,
+									"on_true": {
+										"type": "minecraft:model",
+										"model": "infinity_gauntlet:item/gauntlet_in_hand_reality_glow"
+									},
+									"on_false": {
+										"type": "minecraft:empty"
+									}
+								}
+							},
+							{
+								"type": "minecraft:condition",
+								"property": "minecraft:custom_model_data",
+								"index": 9,
+								"on_true": {
+									"type": "minecraft:model",
+									"model": "infinity_gauntlet:item/gauntlet_in_hand_soul_active"
+								},
+								"on_false": {
+									"type": "minecraft:condition",
+									"property": "minecraft:custom_model_data",
+									"index": 3,
+									"on_true": {
+										"type": "minecraft:model",
+										"model": "infinity_gauntlet:item/gauntlet_in_hand_soul_glow"
+									},
+									"on_false": {
+										"type": "minecraft:empty"
+									}
+								}
+							},
+							{
+								"type": "minecraft:condition",
+								"property": "minecraft:custom_model_data",
+								"index": 10,
+								"on_true": {
+									"type": "minecraft:model",
+									"model": "infinity_gauntlet:item/gauntlet_in_hand_mind_active"
+								},
+								"on_false": {
+									"type": "minecraft:condition",
+									"property": "minecraft:custom_model_data",
+									"index": 4,
+									"on_true": {
+										"type": "minecraft:model",
+										"model": "infinity_gauntlet:item/gauntlet_in_hand_mind_glow"
+									},
+									"on_false": {
+										"type": "minecraft:empty"
+									}
+								}
+							},
+							{
+								"type": "minecraft:condition",
+								"property": "minecraft:custom_model_data",
+								"index": 11,
+								"on_true": {
+									"type": "minecraft:model",
+									"model": "infinity_gauntlet:item/gauntlet_in_hand_time_active"
+								},
+								"on_false": {
+									"type": "minecraft:condition",
+									"property": "minecraft:custom_model_data",
+									"index": 5,
+									"on_true": {
+										"type": "minecraft:model",
+										"model": "infinity_gauntlet:item/gauntlet_in_hand_time_glow"
+									},
+									"on_false": {
+										"type": "minecraft:empty"
+									}
+								}
+							}
+						]
 					}
 				}
-			]
+			],
+			"fallback": {
+				"type": "minecraft:composite",
+				"models": [
+					{
+						"type": "minecraft:model",
+						"model": "infinity_gauntlet:item/gauntlet_in_hand"
+					},
+					{
+						"type": "minecraft:condition",
+						"property": "minecraft:custom_model_data",
+						"index": 0,
+						"on_true": {
+							"type": "minecraft:model",
+							"model": "infinity_gauntlet:item/gauntlet_in_hand_power"
+						},
+						"on_false": {
+							"type": "minecraft:empty"
+						}
+					},
+					{
+						"type": "minecraft:condition",
+						"property": "minecraft:custom_model_data",
+						"index": 1,
+						"on_true": {
+							"type": "minecraft:model",
+							"model": "infinity_gauntlet:item/gauntlet_in_hand_space"
+						},
+						"on_false": {
+							"type": "minecraft:empty"
+						}
+					},
+					{
+						"type": "minecraft:condition",
+						"property": "minecraft:custom_model_data",
+						"index": 2,
+						"on_true": {
+							"type": "minecraft:model",
+							"model": "infinity_gauntlet:item/gauntlet_in_hand_reality"
+						},
+						"on_false": {
+							"type": "minecraft:empty"
+						}
+					},
+					{
+						"type": "minecraft:condition",
+						"property": "minecraft:custom_model_data",
+						"index": 3,
+						"on_true": {
+							"type": "minecraft:model",
+							"model": "infinity_gauntlet:item/gauntlet_in_hand_soul"
+						},
+						"on_false": {
+							"type": "minecraft:empty"
+						}
+					},
+					{
+						"type": "minecraft:condition",
+						"property": "minecraft:custom_model_data",
+						"index": 4,
+						"on_true": {
+							"type": "minecraft:model",
+							"model": "infinity_gauntlet:item/gauntlet_in_hand_mind"
+						},
+						"on_false": {
+							"type": "minecraft:empty"
+						}
+					},
+					{
+						"type": "minecraft:condition",
+						"property": "minecraft:custom_model_data",
+						"index": 5,
+						"on_true": {
+							"type": "minecraft:model",
+							"model": "infinity_gauntlet:item/gauntlet_in_hand_time"
+						},
+						"on_false": {
+							"type": "minecraft:empty"
+						}
+					}
+				]
+			}
 		}
 	}
 }

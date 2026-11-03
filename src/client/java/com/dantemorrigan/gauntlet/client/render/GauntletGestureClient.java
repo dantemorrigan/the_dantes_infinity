@@ -31,7 +31,7 @@ public final class GauntletGestureClient {
 	public record Pose(float lift, float roll, float tilt) {}
 
 	// t (0..1), lift, roll, tilt
-	private static final float[][] KEYS = {
+	private static final float[][] ADMIRE = {
 			{0.00f, 0f, 0f, 0f},
 			{0.18f, 1f, 0f, 4f},     // lift the fist a little
 			{0.38f, 1f, 24f, 6f},    // turn it slightly one way
@@ -39,54 +39,76 @@ public final class GauntletGestureClient {
 			{0.80f, 1f, 6f, 4f},     // settle
 			{1.00f, 0f, 0f, 0f},
 	};
+	/** The Infinity Snap: a small wind-up turn, then a short flick on the click (server SNAP_TICK = 9 of 30). */
+	private static final float[][] SNAP = {
+			{0.00f, 0f, 0f, 0f},
+			{0.22f, 1f, -10f, 3f},
+			{0.30f, 1f, 9f, 6f},
+			{0.65f, 1f, 6f, 5f},
+			{1.00f, 0f, 0f, 0f},
+	};
+	private static final float[][][] KINDS = {ADMIRE, SNAP};
+	private static final int[] DURATION_TICKS = {GauntletGesture.DURATION, 30};
 
-	private static final Map<Integer, Long> STARTS = new HashMap<>();
+	private record Run(long start, int kind) {}
+
+	private static final Map<Integer, Run> RUNS = new HashMap<>();
 
 	public static void init() {
-		ClientPlayNetworking.registerGlobalReceiver(ModNetwork.GestureFx.TYPE, (fx, ctx) -> STARTS.put(fx.entityId(), Util.getMillis()));
-		ClientPlayConnectionEvents.DISCONNECT.register((h, mc) -> STARTS.clear());
+		ClientPlayNetworking.registerGlobalReceiver(ModNetwork.GestureFx.TYPE, (fx, ctx) -> {
+			int kind = Math.floorMod(fx.kind(), KINDS.length);
+			Run current = RUNS.get(fx.entityId());
+			// The local admire gesture already started on key press; never restart it from the echo.
+			if (kind == 0 && current != null && current.kind() == 0) return;
+			RUNS.put(fx.entityId(), new Run(Util.getMillis(), kind));
+		});
+		ClientPlayConnectionEvents.DISCONNECT.register((h, mc) -> RUNS.clear());
 		ClientTickEvents.END_CLIENT_TICK.register(GauntletGestureClient::tick);
 	}
 
 	private static void tick(Minecraft mc) {
 		long now = Util.getMillis();
-		STARTS.values().removeIf(start -> now - start > durationMs());
+		RUNS.values().removeIf(run -> now - run.start() > durationMs(run.kind()));
 		boolean pressed = false;
 		while (KEY.consumeClick()) pressed = true;
 		if (pressed && mc.player != null && mc.screen == null) play();
 	}
 
-	/** Starts the gesture for the local player (if a gauntlet is worn) and tells the server so others see it. */
+	/** Starts the admire gesture for the local player (if a working gauntlet is worn) and tells the server so others see it. */
 	public static void play() {
 		Minecraft mc = Minecraft.getInstance();
 		if (mc.player == null || GauntletState.activeGauntlet(mc.player).isEmpty()) return;
-		Long current = STARTS.get(mc.player.getId());
-		if (current != null && Util.getMillis() - current < durationMs() - 500) return;
-		STARTS.put(mc.player.getId(), Util.getMillis());
+		Run current = RUNS.get(mc.player.getId());
+		if (current != null && (current.kind() != 0 || Util.getMillis() - current.start() < durationMs(0) - 500)) return;
+		RUNS.put(mc.player.getId(), new Run(Util.getMillis(), 0));
 		if (ClientPlayNetworking.canSend(ModNetwork.GestureStart.TYPE)) ClientPlayNetworking.send(new ModNetwork.GestureStart());
 	}
 
-	private static long durationMs() { return GauntletGesture.DURATION * 50L; }
+	private static long durationMs(int kind) { return DURATION_TICKS[kind] * 50L; }
 
 	/** Current pose of an entity's gesture, or null when it is not gesturing. */
 	public static Pose pose(int entityId) {
-		Long start = STARTS.get(entityId);
-		if (start == null) return null;
-		float t = (Util.getMillis() - start) / (float) durationMs();
+		Run run = RUNS.get(entityId);
+		if (run == null) return null;
+		float t = (Util.getMillis() - run.start()) / (float) durationMs(run.kind());
 		if (t < 0 || t >= 1) return null;
-		return sample(t);
+		return sample(KINDS[run.kind()], t);
 	}
 
-	/** Test hook: freeze an entity's gesture at a given fraction (0..1). */
+	/** Test hook: freeze an entity's gesture of the given kind at a fraction (0..1). */
+	public static void startAt(int entityId, int kind, float fraction) {
+		RUNS.put(entityId, new Run(Util.getMillis() - (long) (fraction * durationMs(kind)), kind));
+	}
+
 	public static void startAt(int entityId, float fraction) {
-		STARTS.put(entityId, Util.getMillis() - (long) (fraction * durationMs()));
+		startAt(entityId, 0, fraction);
 	}
 
-	public static Pose sample(float t) {
-		for (int i = 1; i < KEYS.length; i++) {
-			float[] b = KEYS[i];
+	private static Pose sample(float[][] keys, float t) {
+		for (int i = 1; i < keys.length; i++) {
+			float[] b = keys[i];
 			if (t > b[0]) continue;
-			float[] a = KEYS[i - 1];
+			float[] a = keys[i - 1];
 			float k = (t - a[0]) / Math.max(1e-4f, b[0] - a[0]);
 			k = k * k * (3 - 2 * k);
 			return new Pose(Mth.lerp(k, a[1], b[1]), Mth.lerp(k, a[2], b[2]), Mth.lerp(k, a[3], b[3]));

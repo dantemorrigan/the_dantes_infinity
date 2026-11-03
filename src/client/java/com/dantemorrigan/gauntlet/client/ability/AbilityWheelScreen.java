@@ -59,6 +59,7 @@ public final class AbilityWheelScreen extends Screen {
             double[] p=abilityPoint(a);if(Math.hypot(mx-p[0],my-p[1])<=24*scale()) hovered=a;
         }
         if(hit(mx,my,-140,135,24)) hovered=Ability.BEAM;
+        if(hit(mx,my,140,135,24)) hovered=Ability.SNAP;
     }
     @Override public void tick() {
         if(!AbilityInput.equipped() || Minecraft.getInstance().player==null || !Minecraft.getInstance().player.isAlive()) {onClose();return;}
@@ -102,7 +103,7 @@ public final class AbilityWheelScreen extends Screen {
         if(key==GLFW.GLFW_KEY_TAB || key==GLFW.GLFW_KEY_RIGHT || key==GLFW.GLFW_KEY_LEFT || key==GLFW.GLFW_KEY_DOWN || key==GLFW.GLFW_KEY_UP) {
             int direction=key==GLFW.GLFW_KEY_LEFT||key==GLFW.GLFW_KEY_UP?-1:1;
             if(submenu!=0) target=Math.floorMod(target+direction,submenu==1?3:CosmosRoutes.ALL.size());
-            else {var list=new ArrayList<>(Ability.of(stone,CosmosClient.inCosmos()));list.add(Ability.BEAM);Ability a=keyboard==null?(hovered==null?AbilityInput.last(stone):hovered):keyboard;keyboard=list.get(Math.floorMod(list.indexOf(a)+direction,list.size()));}
+            else {var list=new ArrayList<>(Ability.of(stone,CosmosClient.inCosmos()));list.add(Ability.BEAM);list.add(Ability.SNAP);Ability a=keyboard==null?(hovered==null?AbilityInput.last(stone):hovered):keyboard;keyboard=list.get(Math.floorMod(list.indexOf(a)+direction,list.size()));}
             return true;
         }
         if(key==GLFW.GLFW_KEY_ENTER || key==GLFW.GLFW_KEY_KP_ENTER) {
@@ -149,6 +150,7 @@ public final class AbilityWheelScreen extends Screen {
                 }
             }
             button(g,-140,135,null,Ability.BEAM,(keyboard!=null?keyboard:hovered)==Ability.BEAM,AbilityInput.selectable(Ability.BEAM),Stone.MIND,48);
+            button(g,140,135,null,Ability.SNAP,(keyboard!=null?keyboard:hovered)==Ability.SNAP,AbilityInput.selectable(Ability.SNAP),Stone.MIND,48);
             button(g,0,0,GauntletState.activeGauntlet(Minecraft.getInstance().player),null,false,true,stone,68);
         } else {
             int count=submenu==1?3:CosmosRoutes.ALL.size();

@@ -64,10 +64,13 @@ public final class AbilityController {
     public static String reason(ServerPlayer p,Ability a) {
         if(!p.isAlive() || p.isSpectator()) return "unavailable";
         if(p.containerMenu!=p.inventoryMenu) return "busy";
+        if(com.dantemorrigan.gauntlet.snap.InfinitySnap.snapped(GauntletState.wornGauntlet(p))) return "broken";
         ItemStack g=GauntletState.activeGauntlet(p);
         if(g.isEmpty()) return "gauntlet";
+        if(com.dantemorrigan.gauntlet.snap.InfinitySnap.inVoid(p)) return "dimension";
+        if(com.dantemorrigan.gauntlet.snap.InfinitySnap.casting(p)) return "busy";
         var stones=GauntletState.inserted(g);
-        if(a.stone!=null && !stones.contains(a.stone) || a==Ability.BEAM && stones.size()!=6) return "stone";
+        if(a.stone!=null && !stones.contains(a.stone) || (a==Ability.BEAM || a==Ability.SNAP) && stones.size()!=6) return "stone";
         if(a==Ability.REWIND && TimeAbility.canRestorePlanet(p) && !TimeAbility.isRewinding(p)) return "";
         if(PlanetDestruction.isBusy(p) || TimeAbility.isRewinding(p)) return "busy";
         if(SpaceManager.inSpace(p) && a!=Ability.REWIND) return "dimension";
@@ -83,7 +86,7 @@ public final class AbilityController {
     }
     public static void select(ServerPlayer p,String id,int destination) {
         if(id.equals("inventory")) {
-            var g=GauntletState.activeGauntlet(p);if(g.isEmpty() || !p.isAlive()) return;
+            var g=GauntletState.wornGauntlet(p);if(g.isEmpty() || !p.isAlive()) return;
             cancel(p);MindStone.drop(p);
             p.openMenu(new SimpleMenuProvider((window,inv,player)->new GauntletMenu(window,inv,g,40),Component.translatable("container.infinity_gauntlet.gauntlet")));
             return;
@@ -142,6 +145,7 @@ public final class AbilityController {
             case DROP -> MindStone.drop(p);
             case SOUL -> SoulStone.action(p,0);
             case SOUL_MASS -> SoulStone.action(p,1);
+            case SNAP -> com.dantemorrigan.gauntlet.snap.InfinitySnap.cast(p);
             case BEAM -> {InfinityBeam.request(p,true);if(InfinityBeam.active(p)) HELD.put(p.getUUID(),a);}
             default -> {}
         }

@@ -101,5 +101,9 @@
   "ability.infinity_gauntlet.favorites_bound": "Slot %s · press its number to remove",
   "ability.infinity_gauntlet.favorites_shortcut": "%s + 1–6 — favorites",
   "ability.infinity_gauntlet.favorites_choose": "1–6 or click — select",
-  "ability.infinity_gauntlet.favorites_empty": "Assign abilities in the wheel with 1–6"
+  "ability.infinity_gauntlet.favorites_empty": "Assign abilities in the wheel with 1–6",
+  "ability.infinity_gauntlet.infinity_snap": "Infinity Snap",
+  "ability.infinity_gauntlet.reason.broken": "The gauntlet burnt out after the snap",
+  "snap.infinity_gauntlet.erased": "The universe is gone. Open the gauntlet (wheel key), take the Time stone out and use it (right-click).",
+  "subtitles.infinity_gauntlet.infinity_snap": "Infinity Snap"
 }

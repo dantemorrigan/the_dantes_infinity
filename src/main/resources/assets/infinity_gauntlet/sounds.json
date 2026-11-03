@@ -1,0 +1,8 @@
+{
+  "infinity_snap": {
+    "subtitle": "subtitles.infinity_gauntlet.infinity_snap",
+    "sounds": [
+      {"name": "infinity_gauntlet:infinity_snap", "volume": 1.0}
+    ]
+  }
+}

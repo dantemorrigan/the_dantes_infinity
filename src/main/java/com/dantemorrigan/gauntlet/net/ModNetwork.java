@@ -231,11 +231,21 @@ public final class ModNetwork {
 		@Override public Type<GestureStart> type() { return TYPE; }
 	}
 
-	/** S2C: entityId starts the gauntlet gesture (sent to the players that see it). */
-	public record GestureFx(int entityId) implements CustomPacketPayload {
+	/** S2C: entityId starts a gauntlet hand gesture: kind 0 = admire (turn the gauntlet), 1 = the Infinity Snap. */
+	public record GestureFx(int entityId, int kind) implements CustomPacketPayload {
 		public static final Type<GestureFx> TYPE = newType("gesture_fx");
-		public static final StreamCodec<ByteBuf, GestureFx> CODEC = StreamCodec.composite(ByteBufCodecs.VAR_INT, GestureFx::entityId, GestureFx::new);
+		public static final StreamCodec<ByteBuf, GestureFx> CODEC = StreamCodec.composite(ByteBufCodecs.VAR_INT, GestureFx::entityId, ByteBufCodecs.VAR_INT, GestureFx::kind, GestureFx::new);
 		@Override public Type<GestureFx> type() { return TYPE; }
+	}
+
+	/**
+	 * S2C: Infinity Snap screen effects. phase 0 = the universe fades to white over duration ticks, 1 = arrived in the
+	 * White Void, 2 = the Time stone rewind started (duration), 3 = back in the restored world.
+	 */
+	public record SnapFx(int phase, int duration) implements CustomPacketPayload {
+		public static final Type<SnapFx> TYPE = newType("snap_fx");
+		public static final StreamCodec<ByteBuf, SnapFx> CODEC = StreamCodec.composite(ByteBufCodecs.VAR_INT, SnapFx::phase, ByteBufCodecs.VAR_INT, SnapFx::duration, SnapFx::new);
+		@Override public Type<SnapFx> type() { return TYPE; }
 	}
 
 	/** C2S: H pressed/released. Server validates six stones and owns the full cast. */
@@ -364,6 +374,7 @@ public final class ModNetwork {
 		PayloadTypeRegistry.serverboundPlay().register(ToggleMode.TYPE, ToggleMode.CODEC);
 		PayloadTypeRegistry.serverboundPlay().register(GestureStart.TYPE, GestureStart.CODEC);
 		PayloadTypeRegistry.clientboundPlay().register(GestureFx.TYPE, GestureFx.CODEC);
+		PayloadTypeRegistry.clientboundPlay().register(SnapFx.TYPE, SnapFx.CODEC);
 		PayloadTypeRegistry.clientboundPlay().register(PowerFx.TYPE, PowerFx.CODEC);
 		PayloadTypeRegistry.clientboundPlay().register(EffectDemo.TYPE, EffectDemo.CODEC);
 		PayloadTypeRegistry.clientboundPlay().register(CutsceneStart.TYPE, CutsceneStart.CODEC);

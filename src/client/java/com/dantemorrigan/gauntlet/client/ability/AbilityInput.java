@@ -55,7 +55,7 @@ public final class AbilityInput {
         if(!equipped()) return "gauntlet";
         var p=Minecraft.getInstance().player;
         var stones=GauntletState.inserted(GauntletState.activeGauntlet(p));
-        if(a.stone!=null && !stones.contains(a.stone) || a==Ability.BEAM && stones.size()!=6) return "stone";
+        if(a.stone!=null && !stones.contains(a.stone) || (a==Ability.BEAM || a==Ability.SNAP) && stones.size()!=6) return "stone";
         var v=states.getAsJsonObject(a.id);return v==null?"":v.get("reason").getAsString();
     }
     public static boolean selectable(Ability a) { return equipped(); }
@@ -97,6 +97,8 @@ public final class AbilityInput {
             cancel();
             mc.setScreen(open ? new AbilityWheelScreen() : new AbilityFavoritesScreen());
         }
+        // A gauntlet burnt out by the snap has no abilities left: the wheel key just opens it to take the stones out.
+        else if(open && mc.screen==null && !equipped() && com.dantemorrigan.gauntlet.snap.InfinitySnap.snapped(GauntletState.wornGauntlet(mc.player))) inventory();
         if(!CAST.isDown()) releaseGate=false;
         if(!equipped() || !mc.player.isAlive() || mc.screen!=null || !mc.isWindowActive() || Cutscene.inputLocked() || TimeRewindClient.inputLocked()) {
             if(button) cancel();

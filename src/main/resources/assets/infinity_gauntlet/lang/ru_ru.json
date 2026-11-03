@@ -101,5 +101,9 @@
   "ability.infinity_gauntlet.favorites_bound": "Слот %s · та же цифра убирает способность",
   "ability.infinity_gauntlet.favorites_shortcut": "%s + 1–6 — избранное",
   "ability.infinity_gauntlet.favorites_choose": "1–6 или ЛКМ — выбрать",
-  "ability.infinity_gauntlet.favorites_empty": "Назначь способности в колесе клавишами 1–6"
+  "ability.infinity_gauntlet.favorites_empty": "Назначь способности в колесе клавишами 1–6",
+  "ability.infinity_gauntlet.infinity_snap": "Щелчок Бесконечности",
+  "ability.infinity_gauntlet.reason.broken": "Перчатка сгорела после щелчка",
+  "snap.infinity_gauntlet.erased": "Вселенной больше нет. Открой перчатку (клавиша колеса), достань Камень Времени и используй его (ПКМ).",
+  "subtitles.infinity_gauntlet.infinity_snap": "Щелчок Бесконечности"
 }
