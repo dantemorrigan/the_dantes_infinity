@@ -122,6 +122,15 @@ public final class SoulStone {
 		player.swing(net.minecraft.world.InteractionHand.OFF_HAND, true);
 	}
 
+	public static boolean extractLoose(ServerPlayer player) {
+		if (SpaceManager.inSpace(player) || player.isSpectator()) return false;
+		LivingEntity target = MindStone.lookTarget(player, 8);
+		if (target == null || busy(target) || !player.hasLineOfSight(target)) return false;
+		start(player, target, 0, POINT_EXTRACT, POINT_FLIGHT);
+		player.level().playSound(null, target.blockPosition(), SoundEvents.SOUL_ESCAPE.value(), SoundSource.PLAYERS, 2.0F, 0.6F);
+		return true;
+	}
+
 	private static void mass(ServerPlayer player, ServerLevel level, GauntletConfig cfg) {
 		double r = cfg.soulMassRadius;
 		Vec3 c = player.position();

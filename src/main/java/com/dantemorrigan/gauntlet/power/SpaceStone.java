@@ -287,7 +287,7 @@ public final class SpaceStone {
 			com.dantemorrigan.gauntlet.net.ModStatus.send(player, Component.literal("§9Там негде встать"));
 			return false;
 		}
-		BLINK_COOLDOWN.put(player.getUUID(), now + cfg.blinkCooldownTicks);
+		BLINK_COOLDOWN.put(player.getUUID(), now + (g.isEmpty() ? 60 : cfg.blinkCooldownTicks));
 		Vec3 from = player.position();
 		player.teleport(new TeleportTransition(player.level(), target, Vec3.ZERO, player.getYRot(), player.getXRot(), TeleportTransition.DO_NOTHING));
 		player.fallDistance = 0;
