@@ -94,7 +94,7 @@ public final class MindStone {
 		}
 	}
 
-	private record ThrownMob(LivingEntity mob, UUID owner, Set<Integer> hit, int[] tick) {}
+	private record ThrownMob(LivingEntity mob, UUID owner, Set<Integer> hit, int[] tick, boolean loose) {}
 
 	private static final Map<UUID, Hold> HOLDS = new HashMap<>();
 	private static final List<Flight> FLIGHTS = new ArrayList<>();
@@ -243,6 +243,13 @@ public final class MindStone {
 
 	// ------------------------------------------------------------------ release
 
+	public static void throwLoose(ServerPlayer player, LivingEntity mob) {
+		mob.setDeltaMovement(player.getLookAngle().scale(2).add(0, 0.2, 0));
+		mob.hurtMarked = true;
+		THROWN.removeIf(thrown -> thrown.mob() == mob);
+		THROWN.add(new ThrownMob(mob, player.getUUID(), new HashSet<>(), new int[1], true));
+	}
+
 	private static void throwHeld(ServerPlayer player, Hold hold) {
 		ServerLevel level = player.level();
 		GauntletConfig cfg = GauntletConfig.get();
@@ -253,7 +260,7 @@ public final class MindStone {
 			restore(hold);
 			mob.setDeltaMovement(look.scale(cfg.mindMobThrowSpeed).add(0, 0.15, 0));
 			mob.hurtMarked = true;
-			THROWN.add(new ThrownMob(mob, player.getUUID(), new HashSet<>(), new int[1]));
+			THROWN.add(new ThrownMob(mob, player.getUUID(), new HashSet<>(), new int[1], false));
 		} else {
 			Vec3 start = holdPoint(player, hold);
 			Flight f = new Flight(level, player.getUUID(), nextFlight++, hold.states, hold.offsets, hold.radius, start, look.scale(cfg.mindThrowSpeed));
@@ -346,6 +353,15 @@ public final class MindStone {
 				t.hit().add(other.getId());
 				other.hurtServer(level, owner != null ? level.damageSources().playerAttack(owner) : level.damageSources().magic(), GauntletConfig.get().mindMobThrowDamage * 0.6f);
 				other.push(mob.getDeltaMovement().scale(0.8));
+				if (t.loose()) {
+					mob.hurtServer(level, owner != null ? level.damageSources().playerAttack(owner) : level.damageSources().magic(),
+							GauntletConfig.get().mindMobThrowDamage * 0.6f);
+					break;
+				}
+			}
+			if (t.loose() && !t.hit().isEmpty()) {
+				it.remove();
+				continue;
 			}
 			if (tick > 2 && (mob.horizontalCollision || mob.onGround() || mob.verticalCollision)) {
 				float dmg = (float) (GauntletConfig.get().mindMobThrowDamage * Math.min(1.5, 0.4 + speed));

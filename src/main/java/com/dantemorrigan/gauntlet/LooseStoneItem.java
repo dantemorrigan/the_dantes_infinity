@@ -58,7 +58,7 @@ final class LooseStoneItem extends Item {
 			Hold hold = HOLDS.get(player.getUUID());
 			if (hold != null && hold.hand() == hand && validHold(player, hold)) {
 				HOLDS.remove(player.getUUID());
-				launch(hold.target(), player.getLookAngle().scale(2).add(0, 0.2, 0));
+				MindStone.throwLoose(player, hold.target());
 				player.getCooldowns().addCooldown(player.getItemInHand(hand), 100);
 				return true;
 			}

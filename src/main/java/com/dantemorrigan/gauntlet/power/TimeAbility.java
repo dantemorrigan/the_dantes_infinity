@@ -89,6 +89,7 @@ public final class TimeAbility {
 			player.teleport(new TeleportTransition(player.level(), snapshot.pos(), Vec3.ZERO,
 					snapshot.yRot(), snapshot.xRot(), TeleportTransition.DO_NOTHING));
 			player.fallDistance = 0;
+			player.setHealth(Math.min(snapshot.health(), player.getMaxHealth()));
 			HISTORY.remove(player.getUUID());
 			return true;
 		}
