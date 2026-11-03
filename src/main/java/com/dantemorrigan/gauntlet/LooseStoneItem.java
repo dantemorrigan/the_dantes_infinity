@@ -43,7 +43,11 @@ final class LooseStoneItem extends Item {
 	}
 
 	private boolean activate(ServerPlayer player, InteractionHand hand) {
-		if (stone == Stone.SPACE) return SpaceStone.blinkLoose(player);
+		if (stone == Stone.SPACE) {
+			if (!SpaceStone.blinkLoose(player)) return false;
+			player.getCooldowns().addCooldown(player.getItemInHand(hand), 60);
+			return true;
+		}
 		if (stone == Stone.SOUL) {
 			if (!SoulStone.extractLoose(player)) return false;
 			player.getCooldowns().addCooldown(player.getItemInHand(hand), 400);
