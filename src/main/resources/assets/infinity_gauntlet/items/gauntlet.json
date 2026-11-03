@@ -1,6 +1,19 @@
 {
 	"model": {
-		"type": "minecraft:model",
-		"model": "infinity_gauntlet:item/gauntlet"
+		"type": "minecraft:select",
+		"property": "minecraft:display_context",
+		"cases": [
+			{
+				"when": ["gui", "ground", "fixed", "on_shelf"],
+				"model": {
+					"type": "minecraft:model",
+					"model": "infinity_gauntlet:item/gauntlet"
+				}
+			}
+		],
+		"fallback": {
+			"type": "minecraft:model",
+			"model": "infinity_gauntlet:item/gauntlet_in_hand"
+		}
 	}
 }
