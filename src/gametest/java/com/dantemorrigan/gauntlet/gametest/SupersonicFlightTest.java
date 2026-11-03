@@ -20,15 +20,19 @@ public class SupersonicFlightTest implements FabricClientGameTest {
             sp.getServer().runCommand("fill -12 75 50 12 105 52 minecraft:stone");
             sp.getServer().runCommand("setblock 0 90 51 minecraft:bedrock");
             sp.getServer().runCommand("execute as @p run tp @s 0 90 -65 0 0");
-            ctx.waitTicks(10);ctx.getInput().pressKey(GLFW.GLFW_KEY_J);
+            ctx.waitTicks(2);ctx.getInput().pressKey(GLFW.GLFW_KEY_J);
             ctx.waitFor(mc->mc.player.getAbilities().flying,100);
             ctx.getInput().lookAt(0,0);ctx.getInput().holdKey(o->o.keyUp);
             ctx.waitTicks(5);
-            if(CosmosClient.sonicBooms()!=0) throw new AssertionError("Slow flight triggered a sonic boom");
+            if(ctx.computeOnClient(mc->CosmosClient.sonicBooms())!=0) throw new AssertionError("Slow flight triggered a sonic boom");
             ctx.getInput().holdKey(o->o.keySprint);
             ctx.waitFor(mc->CosmosClient.sonicBooms()>0,150);
             ctx.takeScreenshot("sonic_barrier");
-            ctx.waitFor(mc->mc.player.getZ()>24,150);
+            ctx.getInput().holdKey(o->o.keyUp);ctx.getInput().holdKey(o->o.keySprint);
+            ctx.waitTicks(60);
+            ctx.takeScreenshot("sonic_tree_passage");
+            if(!ctx.computeOnClient(mc->mc.player.getZ()>24))
+                throw new AssertionError("Tree passage blocked: "+ctx.computeOnClient(mc->mc.player.position()+" / "+mc.player.getDeltaMovement()+" impacts="+CosmosClient.impactBursts()));
             sp.getServer().runOnServer(server->{
                 if(!server.overworld().getBlockState(new BlockPos(0,90,11)).isAir()) throw new AssertionError("Flight did not break the tree");
             });

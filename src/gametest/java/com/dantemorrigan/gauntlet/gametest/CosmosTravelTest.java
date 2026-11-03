@@ -64,6 +64,7 @@ public class CosmosTravelTest implements FabricClientGameTest {
             if(ctx.computeOnClient(mc->mc.player.getDeltaMovement().y)>-.5)
                 throw new AssertionError("Normal gravity did not resume");
             ctx.waitFor(mc->mc.player.onGround(),300);
+            if(!ctx.computeOnClient(mc->mc.player.isAlive())) throw new AssertionError("First landing after flight killed the player");
             // A fresh ordinary jump must finish promptly, rather than float with the old 15-second effect.
             ctx.getInput().pressKey(GLFW.GLFW_KEY_SPACE); ctx.waitTicks(3);
             ctx.waitFor(mc->mc.player.onGround(),30);

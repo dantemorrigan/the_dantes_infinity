@@ -36,7 +36,12 @@ public final class CosmosTravel {
         .buildAndRegister(InfinityGauntlet.id("cosmos_fields_ready"));
     private static final Map<UUID, Navigation> NAV = new HashMap<>();
     /** Protect only the first descent after switching flight off, without changing gravity. */
-    private static final Map<UUID, Integer> LANDING_GRACE = new HashMap<>();
+    private static final Map<UUID, LandingGrace> LANDING_GRACE = new HashMap<>();
+    private static final class LandingGrace {
+        final int expires;
+        int groundedTicks;
+        LandingGrace(int expires) { this.expires = expires; }
+    }
     private static final ArrayDeque<RockBlock> BUILD = new ArrayDeque<>();
     private record RockBlock(BlockPos pos, boolean ice) {}
     private static class Navigation { int selected, warp, cooldown; long lastAction = -100; }
@@ -83,8 +88,8 @@ public final class CosmosTravel {
         ServerLivingEntityEvents.ALLOW_DAMAGE.register((e,s,a) -> {
             if (!(e instanceof ServerPlayer p) || !s.is(DamageTypeTags.IS_FALL)) return true;
             if (p.hasAttached(FLIGHT)) return false;
-            Integer until = LANDING_GRACE.remove(p.getUUID());
-            return until == null || p.tickCount > until;
+            LandingGrace grace = LANDING_GRACE.remove(p.getUUID());
+            return grace == null || p.tickCount > grace.expires;
         });
     }
     public static void action(ServerPlayer p, int action) {
@@ -133,7 +138,7 @@ public final class CosmosTravel {
         a.flying = a.mayfly && (p.isSpectator() || f != null && f.flying());
         if (f != null) a.setFlyingSpeed(f.speed());
         p.onUpdateAbilities(); p.fallDistance = 0;
-        if (p.isAlive() && !p.onGround()) LANDING_GRACE.put(p.getUUID(), p.tickCount + 300);
+        if (p.isAlive()) LANDING_GRACE.put(p.getUUID(), new LandingGrace(p.tickCount + 300));
         else LANDING_GRACE.remove(p.getUUID());
         ServerPlayNetworking.send(p, new ModNetwork.CosmosState(false, 0, 0, 0));
     }
@@ -141,9 +146,14 @@ public final class CosmosTravel {
     private static void tick(MinecraftServer server) {
         ServerLevel space = server.getLevel(DIMENSION);
         for (ServerPlayer p : server.getPlayerList().getPlayers()) {
-            Integer landingUntil = LANDING_GRACE.get(p.getUUID());
-            if (landingUntil != null && (p.onGround() || !p.isAlive() || p.tickCount > landingUntil))
-                LANDING_GRACE.remove(p.getUUID());
+            LandingGrace grace = LANDING_GRACE.get(p.getUUID());
+            if (grace != null) {
+                // The movement packet can set onGround before vanilla dispatches fall damage.
+                // Keep a short landing window, then expire even on harmless/soft landings.
+                if (p.onGround()) grace.groundedTicks++; else grace.groundedTicks = 0;
+                if (!p.isAlive() || p.tickCount > grace.expires || grace.groundedTicks >= 4)
+                    LANDING_GRACE.remove(p.getUUID());
+            }
             if (!p.hasAttached(FLIGHT)) { NAV.remove(p.getUUID()); continue; }
             if (!p.isAlive()) { stop(p, false); continue; }
             if (!equipped(p) || p.hasAttached(SpaceManager.RECORD) || !flightDim(p)) {

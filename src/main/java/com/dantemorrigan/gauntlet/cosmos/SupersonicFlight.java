@@ -53,10 +53,10 @@ public final class SupersonicFlight {
                 }
             } else {
                 f.fastTicks=0;
-                if(speed<THRESHOLD*.7 && ++f.belowTicks>6) f.sonic=false;
+                if(speed<THRESHOLD*.7 && ++f.belowTicks>12) f.sonic=false;
             }
-            if(f.sonic && f.cooldown==0 && p.tickCount-f.lastFast<=3) {
-                pruneTrees(p,f.previous.add(0,.9,0),now.add(0,.9,0));
+            if(f.sonic && f.cooldown==0 && p.tickCount-f.lastFast<=8) {
+                pruneTrees(p,f.previous.add(0,.9,0),now.add(0,.9,0).add(f.velocity.normalize().scale(1.6)));
                 BlockHitResult hit=collision(p,f.velocity);
                 if(hit!=null) {
                     impact(p,hit.getLocation(),Vec3.atLowerCornerOf(hit.getDirection().getUnitVec3i()),f.velocity.length());
@@ -89,7 +89,7 @@ public final class SupersonicFlight {
         return s.is(BlockTags.LOGS) || s.is(BlockTags.LEAVES);
     }
     private static void pruneTrees(ServerPlayer p,Vec3 from,Vec3 to) {
-        int budget=32;
+        int budget=64;
         AABB area=new AABB(from,to).inflate(1.6);
         Vec3 segment=to.subtract(from); double length=segment.lengthSqr();
         for(BlockPos pos:BlockPos.betweenClosed((int)Math.floor(area.minX),(int)Math.floor(area.minY),(int)Math.floor(area.minZ),
