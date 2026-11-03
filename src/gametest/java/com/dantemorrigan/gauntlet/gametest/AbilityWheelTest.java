@@ -31,8 +31,11 @@ public class AbilityWheelTest implements FabricClientGameTest {
             server.runCommand("execute as @p run gauntlet give_power");
             server.runCommand("execute as @p run gauntlet give_stone space");
             server.runCommand("execute as @p run gauntlet give_stone mind");ctx.waitTicks(12);
+            choose(ctx,Ability.SOUL_MASS,-1);
+            if(!server.computeOnServer(s->AbilityController.selected(s.getPlayerList().getPlayers().getFirst())==Ability.SOUL_MASS))throw new AssertionError("Server locked ability selection");
+            choose(ctx,Ability.STRIKE,-1);
             open(ctx);ctx.takeScreenshot("wheel_partial_original_items");
-            if(!ctx.computeOnClient(mc->!AbilityInput.selectable(Ability.SOUL_MASS))) throw new AssertionError("Missing Soul stone was not locked");
+            if(!ctx.computeOnClient(mc->java.util.Arrays.stream(Ability.values()).allMatch(AbilityInput::selectable))) throw new AssertionError("Wheel still locks ability selection");
             ctx.getInput().pressKey(GLFW.GLFW_KEY_RIGHT);close(ctx);
             if(!ctx.computeOnClient(mc->AbilityInput.selected()==Ability.PLANET)) throw new AssertionError("Wheel keyboard selection failed");
             server.runOnServer(s->{var p=s.getPlayerList().getPlayers().getFirst();if(AbilityController.chargeTicks(p)>0 || com.dantemorrigan.gauntlet.space.PlanetDestruction.isBusy(p)) throw new AssertionError("Selection activated planet destruction");});
@@ -94,6 +97,20 @@ public class AbilityWheelTest implements FabricClientGameTest {
             open(ctx);
             ctx.getInput().releaseKey(GLFW.GLFW_KEY_R);ctx.getInput().pressKey(GLFW.GLFW_KEY_ESCAPE);close(ctx);
             if(server.computeOnServer(s->InfinityBeam.active(s.getPlayerList().getPlayers().getFirst())))throw new AssertionError("Opening wheel did not cancel the beam");
+            // A personal rewind cooldown must never prevent restoring a destroyed planet.
+            server.runOnServer(s->TimeAbility.request(s.getPlayerList().getPlayers().getFirst()));
+            ctx.waitTicks(GauntletConfig.get().timeRewindPlaybackTicks+12);
+            server.runCommand("gamemode survival @p");
+            server.runOnServer(s->{var p=s.getPlayerList().getPlayers().getFirst();if(!com.dantemorrigan.gauntlet.space.PlanetDestruction.start(p,p.position()))throw new AssertionError("Planet destruction failed to start");});
+            ctx.waitFor(mc->mc.level!=null && mc.level.dimension().equals(com.dantemorrigan.gauntlet.space.SpaceManager.DEAD_SPACE),400);ctx.waitTicks(12);
+            server.runOnServer(s->{var p=s.getPlayerList().getPlayers().getFirst();if(!com.dantemorrigan.gauntlet.space.PlanetDestruction.isBusy(p))throw new AssertionError("Missing destroyed planet record");if(!AbilityController.reason(p,Ability.REWIND).isEmpty())throw new AssertionError("Destroyed planet still blocks rewind");});
+            open(ctx);ctx.getInput().pressKey(GLFW.GLFW_KEY_PAGE_UP);ctx.getInput().pressKey(GLFW.GLFW_KEY_PAGE_UP);
+            ctx.getInput().pressKey(GLFW.GLFW_KEY_RIGHT);ctx.getInput().pressKey(GLFW.GLFW_KEY_LEFT);ctx.takeScreenshot("wheel_destroyed_planet_rewind");close(ctx);
+            if(!ctx.computeOnClient(mc->AbilityInput.selected()==Ability.REWIND))throw new AssertionError("Could not select rewind in Dead Space");
+            ctx.getInput().pressKey(GLFW.GLFW_KEY_R);ctx.waitTicks(5);
+            if(!server.computeOnServer(s->TimeAbility.isRewinding(s.getPlayerList().getPlayers().getFirst())))throw new AssertionError("R failed to restore destroyed planet");
+            ctx.waitFor(mc->mc.level!=null && mc.level.dimension().equals(net.minecraft.world.level.Level.OVERWORLD),300);ctx.waitTicks(8);
+            server.runOnServer(s->{var p=s.getPlayerList().getPlayers().getFirst();if(p.hasAttached(com.dantemorrigan.gauntlet.space.SpaceManager.RECORD))throw new AssertionError("Planet restoration did not clear space record");});
         }
     }
 }

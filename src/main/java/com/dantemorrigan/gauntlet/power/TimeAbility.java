@@ -72,6 +72,10 @@ public final class TimeAbility {
 		return ACTIVE.containsKey(player.getUUID());
 	}
 
+	public static boolean canRestorePlanet(ServerPlayer player) {
+		return SpaceManager.inSpace(player) && player.hasAttached(SpaceManager.RECORD);
+	}
+
 	public static void request(ServerPlayer player) {
 		GauntletConfig cfg = GauntletConfig.get();
 		ItemStack gauntlet = GauntletState.activeGauntlet(player);
@@ -82,7 +86,7 @@ public final class TimeAbility {
 		if (ACTIVE.containsKey(player.getUUID()) || PlanetDestruction.isBusy(player) && !SpaceManager.inSpace(player)) return;
 		long now = player.level().getServer().overworld().getGameTime();
 		Long until = COOLDOWN.get(player.getUUID());
-		if (until != null && now < until && !player.isCreative()) {
+		if (!canRestorePlanet(player) && until != null && now < until && !player.isCreative()) {
 			com.dantemorrigan.gauntlet.net.ModStatus.send(player, Component.literal("§2Камень Времени: " + (until - now) / 20 + " с"));
 			return;
 		}
@@ -187,6 +191,6 @@ public final class TimeAbility {
 	}
 
 	private TimeAbility() {}
-    public static int cooldown(ServerPlayer p) { return (int)Math.max(0, COOLDOWN.getOrDefault(p.getUUID(),0L)-p.level().getGameTime()); }
+    public static int cooldown(ServerPlayer p) { return canRestorePlanet(p)?0:(int)Math.max(0, COOLDOWN.getOrDefault(p.getUUID(),0L)-p.level().getServer().overworld().getGameTime()); }
 
 }

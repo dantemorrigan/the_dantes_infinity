@@ -56,7 +56,7 @@ public final class AbilityInput {
         if(a.stone!=null && !stones.contains(a.stone) || a==Ability.BEAM && stones.size()!=6) return "stone";
         var v=states.getAsJsonObject(a.id);return v==null?"":v.get("reason").getAsString();
     }
-    public static boolean selectable(Ability a) { String r=reason(a);return r.isEmpty() || r.equals("cooldown"); }
+    public static boolean selectable(Ability a) { return equipped(); }
     public static int cooldown(Ability a) { var v=states.getAsJsonObject(a.id);return v==null?0:v.get("cooldown").getAsInt(); }
     public static Component title(Ability a) {
         if(a==Ability.GRAB && holding>0) return Component.translatable("ability.infinity_gauntlet.throw");

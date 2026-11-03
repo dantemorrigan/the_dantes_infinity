@@ -68,6 +68,7 @@ public final class AbilityController {
         if(g.isEmpty()) return "gauntlet";
         var stones=GauntletState.inserted(g);
         if(a.stone!=null && !stones.contains(a.stone) || a==Ability.BEAM && stones.size()!=6) return "stone";
+        if(a==Ability.REWIND && TimeAbility.canRestorePlanet(p) && !TimeAbility.isRewinding(p)) return "";
         if(PlanetDestruction.isBusy(p) || TimeAbility.isRewinding(p)) return "busy";
         if(SpaceManager.inSpace(p) && a!=Ability.REWIND) return "dimension";
         if(a==Ability.BEAM && GauntletEffects.state(p).phase!=GauntletEffects.Phase.AWAKENED) return "awakening";
@@ -88,9 +89,8 @@ public final class AbilityController {
             return;
         }
         Ability a=Ability.byId(id);if(a==null || a==Ability.DESTINATIONS) { sync(p);return; }
-        String why=reason(p,a);
-        // Allow selecting a cooling ability so its countdown remains visible.
-        if(!why.isEmpty() && !why.equals("cooldown")) {sync(p);return;}
+        // Selection is always available; readiness is checked only when casting.
+        if(!p.isAlive() || GauntletState.activeGauntlet(p).isEmpty()) {sync(p);return;}
         if(destination!=-1) {
             if(a==Ability.PORTAL) { if(!SpaceStone.selectDestination(p,destination)) return; }
             else if(a==Ability.WARP) { if(!CosmosTravel.selectDestination(p,destination)) return; }
