@@ -40,6 +40,15 @@ public class VisualTest implements FabricClientGameTest {
 			ctx.takeScreenshot("03_worn_third_person_back");
 			ctx.runOnClient(mc -> mc.options.setCameraType(net.minecraft.client.CameraType.FIRST_PERSON));
 
+			// Time stone: walk away, then rewind (R).
+			cmd(ctx, "gauntlet give_time");
+			ctx.getInput().lookAt(0, 10);
+			ctx.getInput().holdKeyFor(opts -> opts.keyUp, 40);
+			ctx.getInput().pressKey(GLFW.GLFW_KEY_R);
+			ctx.waitTicks(10);
+			ctx.takeScreenshot("03b_time_rewind_personal");
+			ctx.waitTicks(40);
+
 			// Charge (hold right mouse) and look at the ground.
 			ctx.getInput().lookAt(0, 70);
 			ctx.getInput().holdMouse(GLFW.GLFW_MOUSE_BUTTON_RIGHT);
@@ -111,10 +120,17 @@ public class VisualTest implements FabricClientGameTest {
 			ctx.waitTicks(40);
 			ctx.getInput().lookAt(180, -6);
 			ctx.takeScreenshot("14_space_after_relog");
-			cmd(ctx, "gauntlet space return");
+			// Time stone undoes the destruction: planet reassembles, green flash, back home.
+			ctx.getInput().pressKey(GLFW.GLFW_KEY_R);
+			ctx.waitTicks(20);
+			ctx.takeScreenshot("15_world_rewind_t20");
+			ctx.waitTicks(25);
+			ctx.takeScreenshot("16_world_rewind_t45");
 			ctx.waitFor(mc -> mc.level != null && !mc.level.dimension().identifier().getPath().equals("dead_space"), 400);
-			ctx.waitTicks(60);
-			ctx.takeScreenshot("15_returned");
+			ctx.waitTicks(10);
+			ctx.takeScreenshot("17_world_restored");
+			ctx.waitTicks(40);
+			ctx.takeScreenshot("18_world_restored_later");
 		}
 	}
 }

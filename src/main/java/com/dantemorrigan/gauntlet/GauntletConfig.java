@@ -42,6 +42,15 @@ public final class GauntletConfig {
 	/** Max real blocks captured per fragment (ground, stone, building). */
 	public int fragmentMaxBlocks = 27;
 
+	// ---- Time stone rewind (server) ----
+	/** How far back the personal rewind goes (seconds of recorded history). */
+	public int timeRewindSeconds = 5;
+	/** Duration of the visible rewind playback (ticks). */
+	public int timeRewindPlaybackTicks = 30;
+	/** Duration of the world (planet) rewind before players are returned (ticks). */
+	public int timeWorldRewindTicks = 70;
+	public int timeCooldownTicks = 400;
+
 	// ---- Client presentation ----
 	public float cameraShakeScale = 1.0f;
 	public float cameraShakeMaxDegrees = 4.0f;

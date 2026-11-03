@@ -3,6 +3,7 @@ package com.dantemorrigan.gauntlet;
 import com.dantemorrigan.gauntlet.menu.ModMenus;
 import com.dantemorrigan.gauntlet.net.ModNetwork;
 import com.dantemorrigan.gauntlet.power.PowerAbility;
+import com.dantemorrigan.gauntlet.power.TimeAbility;
 import com.dantemorrigan.gauntlet.space.PlanetDestruction;
 import com.dantemorrigan.gauntlet.space.SpaceManager;
 import net.fabricmc.api.ModInitializer;
@@ -28,6 +29,8 @@ public class InfinityGauntlet implements ModInitializer {
 		ModNetwork.init();
 		SpaceManager.init();
 		PlanetDestruction.init();
+		TimeAbility.init();
+		ServerPlayNetworking.registerGlobalReceiver(ModNetwork.TimeRewindRequest.TYPE, (payload, context) -> TimeAbility.request(context.player()));
 		ServerPlayNetworking.registerGlobalReceiver(ModNetwork.ToggleMode.TYPE, (payload, context) -> PowerAbility.toggleMode(context.player()));
 		LOGGER.info("Infinity Gauntlet loaded");
 	}

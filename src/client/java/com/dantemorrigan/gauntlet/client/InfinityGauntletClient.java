@@ -16,6 +16,7 @@ public class InfinityGauntletClient implements ClientModInitializer {
 		MenuScreens.register(ModMenus.GAUNTLET, GauntletScreen::new);
 		ModParticleProviders.init();
 		ClientPower.init();
+		com.dantemorrigan.gauntlet.client.fx.TimeRewindClient.init();
 		Cutscene.init();
 		SpaceScene.init();
 		WornGauntlet.init();

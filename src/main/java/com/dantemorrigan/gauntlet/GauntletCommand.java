@@ -41,6 +41,7 @@ public final class GauntletCommand {
 								.then(Commands.argument("stones", StringArgumentType.greedyString())
 										.executes(ctx -> use(ctx.getSource(), StringArgumentType.getString(ctx, "stones")))))
 						.then(Commands.literal("give_power").executes(ctx -> givePower(ctx.getSource())))
+						.then(Commands.literal("give_time").executes(ctx -> giveTime(ctx.getSource())))
 						.then(Commands.literal("state").executes(ctx -> state(ctx.getSource())))
 						.then(Commands.literal("reload_config").executes(ctx -> {
 							GauntletConfig.reload();
@@ -80,6 +81,23 @@ public final class GauntletCommand {
 		player.setItemInHand(InteractionHand.OFF_HAND, gauntlet);
 		if (!old.isEmpty() && !player.getInventory().add(old)) player.drop(old, false);
 		source.sendSuccess(() -> Component.literal("Перчатка с Камнем Силы надета. ПКМ (держать) — заряд, отпустить — удар. Смена режима — клавиша V."), false);
+		return 1;
+	}
+
+	/** Insert the Time stone into the worn gauntlet (rewind: key R). */
+	private static int giveTime(CommandSourceStack source) throws CommandSyntaxException {
+		ServerPlayer player = source.getPlayerOrException();
+		ItemStack gauntlet = GauntletState.activeGauntlet(player);
+		if (gauntlet.isEmpty()) {
+			source.sendFailure(Component.literal("Сначала /gauntlet give_power"));
+			return 0;
+		}
+		net.minecraft.core.NonNullList<ItemStack> items = net.minecraft.core.NonNullList.withSize(Stone.values().length, ItemStack.EMPTY);
+		gauntlet.getOrDefault(DataComponents.CONTAINER, ItemContainerContents.EMPTY).copyInto(items);
+		items.set(Stone.TIME.ordinal(), new ItemStack(ModItems.TIME_STONE));
+		gauntlet.set(DataComponents.CONTAINER, ItemContainerContents.fromItems(items));
+		GauntletState.refresh(gauntlet);
+		source.sendSuccess(() -> Component.literal("Камень Времени вставлен. R — отмотать время."), false);
 		return 1;
 	}
 

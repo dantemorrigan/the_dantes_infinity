@@ -70,7 +70,24 @@ public final class ModNetwork {
 		@Override public Type<SpaceLeave> type() { return TYPE; }
 	}
 
+	/** C2S: Time stone rewind request. */
+	public record TimeRewindRequest() implements CustomPacketPayload {
+		public static final Type<TimeRewindRequest> TYPE = newType("time_rewind_request");
+		public static final StreamCodec<ByteBuf, TimeRewindRequest> CODEC = StreamCodec.unit(new TimeRewindRequest());
+		@Override public Type<TimeRewindRequest> type() { return TYPE; }
+	}
+
+	/** S2C: play rewind visuals. world = planet reassembly in Dead Space; entityId = who rewinds. */
+	public record TimeRewindFx(int entityId, boolean world, int duration) implements CustomPacketPayload {
+		public static final Type<TimeRewindFx> TYPE = newType("time_rewind_fx");
+		public static final StreamCodec<ByteBuf, TimeRewindFx> CODEC = StreamCodec.composite(
+				ByteBufCodecs.VAR_INT, TimeRewindFx::entityId, ByteBufCodecs.BOOL, TimeRewindFx::world, ByteBufCodecs.VAR_INT, TimeRewindFx::duration, TimeRewindFx::new);
+		@Override public Type<TimeRewindFx> type() { return TYPE; }
+	}
+
 	public static void init() {
+		PayloadTypeRegistry.serverboundPlay().register(TimeRewindRequest.TYPE, TimeRewindRequest.CODEC);
+		PayloadTypeRegistry.clientboundPlay().register(TimeRewindFx.TYPE, TimeRewindFx.CODEC);
 		PayloadTypeRegistry.serverboundPlay().register(ToggleMode.TYPE, ToggleMode.CODEC);
 		PayloadTypeRegistry.clientboundPlay().register(PowerFx.TYPE, PowerFx.CODEC);
 		PayloadTypeRegistry.clientboundPlay().register(EffectDemo.TYPE, EffectDemo.CODEC);

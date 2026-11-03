@@ -100,7 +100,26 @@ public final class SpaceScene {
 		velocity = Vec3.ZERO;
 	}
 
+	private static int rewindTick = -1, rewindDuration;
+	private static float rewindFrom;
+
+	/** Time stone: play the destruction backwards — the planet reassembles. */
+	public static void startRewind(int duration) {
+		rewindFrom = ageAtReceive + ticksSince;
+		rewindTick = 0;
+		rewindDuration = Math.max(1, duration);
+	}
+
+	public static void stopRewind() {
+		rewindTick = -1;
+	}
+
 	private static float age(float partial) {
+		if (rewindTick >= 0) {
+			float t = Mth.clamp((rewindTick + partial) / rewindDuration, 0, 1);
+			float eased = t * t * (3 - 2 * t);
+			return Mth.lerp(eased, rewindFrom, 70f);
+		}
 		return ageAtReceive + ticksSince + partial;
 	}
 
@@ -108,7 +127,8 @@ public final class SpaceScene {
 
 	private static void tick(Minecraft mc) {
 		if (!active() || mc.player == null) return;
-		ticksSince++;
+		if (rewindTick >= 0) rewindTick++;
+		else ticksSince++;
 		move(mc.player);
 		// A few dissolving motes near the debris, with a hard budget.
 		particleBudget = Math.max(0, particleBudget - 1);
