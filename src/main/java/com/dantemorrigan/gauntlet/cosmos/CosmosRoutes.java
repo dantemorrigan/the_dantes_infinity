@@ -9,11 +9,12 @@ public final class CosmosRoutes {
         public double arrivalY() { return id.equals("earth") ? 128 : field ? y : y + radius * .4; }
         public double arrivalZ() { return id.equals("earth") ? 0 : field ? z : z + radius * 2.5; }
     }
+    public static final double EARTH_CENTER_Y = -1000;
     public static final List<Destination> ALL = List.of(
-        new Destination("earth", 0, -400, 0, 350, false),
-        new Destination("moon", 1800, 320, -600, 90, false),
-        new Destination("ember", -2200, 320, -1600, 200, false),
-        new Destination("ice", 800, 320, 2600, 150, false),
+        new Destination("earth", 0, -1000, 0, 875, false),
+        new Destination("moon", 1800, 320, -600, 225, false),
+        new Destination("ember", -2200, 320, -1600, 500, false),
+        new Destination("ice", 800, 320, 2600, 375, false),
         new Destination("belt", -1000, 256, 900, 90, true),
         new Destination("ice_belt", 2400, 256, 1800, 90, true));
     public static final double EXIT_HEIGHT = 640;

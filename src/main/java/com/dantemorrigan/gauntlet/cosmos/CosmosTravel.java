@@ -99,7 +99,7 @@ public final class CosmosTravel {
         if (now - n.lastAction < 5) return;
         n.lastAction = now;
         if (action == 0 && p.hasAttached(FLIGHT)) {
-            if (inCosmos(p) && p.position().distanceTo(new Vec3(0,-400,0)) > 1100) {
+            if (inCosmos(p) && p.position().distanceTo(new Vec3(0,CosmosRoutes.EARTH_CENTER_Y,0)) > 2200) {
                 ModStatus.send(p, Component.translatable("cosmos.infinity_gauntlet.return_near_earth")); return;
             }
             if (inCosmos(p)) { reenter(p); return; }

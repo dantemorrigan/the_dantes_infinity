@@ -102,8 +102,8 @@ public final class CosmosRenderer {
         for(int index:order) {
             if(!orbit && index!=0) continue;
             var d=CosmosRoutes.ALL.get(index);
-            Vec3 center=orbit?new Vec3(d.x(),d.y(),d.z()):new Vec3(cam.x,-300,cam.z);
-            double radius=orbit?d.radius():780;
+            Vec3 center=orbit?new Vec3(d.x(),d.y(),d.z()):new Vec3(cam.x,-1080,cam.z);
+            double radius=orbit?d.radius():1560;
             Vec3 delta=center.subtract(cam);
             double fit=Math.min(1,far*.68/(delta.length()+radius));
             float scale=(float)(radius/PlanetGeometry.RADIUS*fit);
@@ -113,6 +113,10 @@ public final class CosmosRenderer {
             pose.scale(scale,scale,scale);
             pose.mulPose(Axis.ZP.rotationDegrees(index==0?23.4f:12));
             pose.mulPose(Axis.YP.rotationDegrees(index*67));
+            // Solid backing core: any gap in the voxel shell shows planet rock, never space.
+            final int coreAlpha=alpha;
+            var coreType=RenderTypes.entityTranslucentEmissive(Identifier.withDefaultNamespace("textures/block/"+PALETTES[index][5]+".png"));
+            ctx.submitNodeCollector().submitCustomGeometry(pose,coreType,(p,out)->core(p,out,coreAlpha));
             for(int m=0;m<8;m++) {
                 final int material=m, planet=index;
                 var faces=surface.get(m);
@@ -133,6 +137,23 @@ public final class CosmosRenderer {
                 });
             }
             pose.popPose();
+        }
+    }
+    /** UV sphere just under the voxel crust; double-wound so culling never exposes the interior. */
+    private static void core(PoseStack.Pose p,VertexConsumer out,int alpha) {
+        final int lat=24, lon=48; final float r=PlanetGeometry.RADIUS-3f;
+        for(int i=0;i<lat;i++) for(int j=0;j<lon;j++) {
+            double a0=Math.PI*i/lat-Math.PI/2, a1=Math.PI*(i+1)/lat-Math.PI/2;
+            double b0=2*Math.PI*j/lon, b1=2*Math.PI*(j+1)/lon;
+            double[][] q={{a0,b0},{a0,b1},{a1,b1},{a1,b0}};
+            for(int w=0;w<2;w++) for(int k=0;k<4;k++) {
+                double[] c=q[w==0?k:3-k];
+                float nx=(float)(Math.cos(c[0])*Math.cos(c[1])), ny=(float)Math.sin(c[0]), nz=(float)(Math.cos(c[0])*Math.sin(c[1]));
+                float light=(float).2+.8f*Math.max(0,-.35f*nx+.65f*ny+.65f*nz);
+                int g=(int)(150*light);
+                out.addVertex(p,nx*r,ny*r,nz*r).setColor(alpha<<24|g<<16|g<<8|g).setUv(k==0||k==3?0:1,k<2?1:0)
+                    .setOverlay(OverlayTexture.NO_OVERLAY).setLight(LightCoordsUtil.FULL_BRIGHT).setNormal(p,w==0?nx:-nx,w==0?ny:-ny,w==0?nz:-nz);
+            }
         }
     }
     private CosmosRenderer() {}
