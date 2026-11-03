@@ -2,7 +2,7 @@ package com.dantemorrigan.gauntlet;
 
 import net.minecraft.core.NonNullList;
 import net.minecraft.core.component.DataComponents;
-import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.CustomModelData;
 import net.minecraft.world.item.component.ItemContainerContents;
@@ -23,13 +23,13 @@ public final class GauntletState {
 
 	/** The gauntlet only works in the OFF hand. Returns it, or EMPTY if the player has no working gauntlet there
 	 *  (a gauntlet burnt out by the Infinity Snap never works again). */
-	public static ItemStack activeGauntlet(Player player) {
+	public static ItemStack activeGauntlet(LivingEntity player) {
 		ItemStack off = wornGauntlet(player);
 		return Boolean.TRUE.equals(off.get(ModComponents.SNAPPED)) ? ItemStack.EMPTY : off;
 	}
 
 	/** The gauntlet in the off hand, working or burnt out, or EMPTY. */
-	public static ItemStack wornGauntlet(Player player) {
+	public static ItemStack wornGauntlet(LivingEntity player) {
 		ItemStack off = player.getOffhandItem();
 		return off.is(ModItems.GAUNTLET) ? off : ItemStack.EMPTY;
 	}
@@ -42,6 +42,33 @@ public final class GauntletState {
 			if (s.matches(items.get(s.ordinal()))) set.add(s);
 		}
 		return set;
+	}
+
+	/** Takes the stone out of its slot (returns EMPTY if it is not there). */
+	public static ItemStack takeStone(ItemStack gauntlet, Stone stone) {
+		NonNullList<ItemStack> items = NonNullList.withSize(N, ItemStack.EMPTY);
+		gauntlet.getOrDefault(DataComponents.CONTAINER, ItemContainerContents.EMPTY).copyInto(items);
+		ItemStack taken = items.get(stone.ordinal());
+		if (!stone.matches(taken)) return ItemStack.EMPTY;
+		items.set(stone.ordinal(), ItemStack.EMPTY);
+		gauntlet.set(DataComponents.CONTAINER, ItemContainerContents.fromItems(items));
+		refresh(gauntlet);
+		return taken;
+	}
+
+	/** Puts the stone into its own free slot. Returns false if the slot is taken or the item is not that stone. */
+	public static boolean putStone(ItemStack gauntlet, ItemStack stack) {
+		for (Stone stone : Stone.values()) {
+			if (!stone.matches(stack)) continue;
+			NonNullList<ItemStack> items = NonNullList.withSize(N, ItemStack.EMPTY);
+			gauntlet.getOrDefault(DataComponents.CONTAINER, ItemContainerContents.EMPTY).copyInto(items);
+			if (!items.get(stone.ordinal()).isEmpty()) return false;
+			items.set(stone.ordinal(), stack.copyWithCount(1));
+			gauntlet.set(DataComponents.CONTAINER, ItemContainerContents.fromItems(items));
+			refresh(gauntlet);
+			return true;
+		}
+		return false;
 	}
 
 	public static Set<Stone> inUse(ItemStack gauntlet) {

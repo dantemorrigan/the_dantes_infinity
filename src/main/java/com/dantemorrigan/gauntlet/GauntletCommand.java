@@ -50,6 +50,7 @@ public final class GauntletCommand {
 									ctx.getSource().sendFailure(Component.literal("Неизвестный камень: " + id));
 									return 0;
 								})))
+						.then(Commands.literal("doll").executes(ctx -> doll(ctx.getSource())))
 						.then(Commands.literal("state").executes(ctx -> state(ctx.getSource())))
 						.then(Commands.literal("reload_config").executes(ctx -> {
 							GauntletConfig.reload();
@@ -118,6 +119,20 @@ public final class GauntletCommand {
 		gauntlet.set(DataComponents.CONTAINER, ItemContainerContents.fromItems(items));
 		GauntletState.refresh(gauntlet);
 		source.sendSuccess(() -> Component.literal("Камень вставлен: " + stone.id), false);
+		return 1;
+	}
+
+	/** Spawns a Steve doll in a full gauntlet a few blocks in front of the player (target for the Infinity Extractor). */
+	private static int doll(CommandSourceStack source) throws CommandSyntaxException {
+		ServerPlayer player = source.getPlayerOrException();
+		net.minecraft.server.level.ServerLevel level = player.level();
+		net.minecraft.world.phys.Vec3 look = player.getLookAngle();
+		net.minecraft.core.BlockPos pos = net.minecraft.core.BlockPos.containing(player.getX() + look.x * 4, player.getY(), player.getZ() + look.z * 4);
+		if (ModEntities.GAUNTLET_DOLL.spawn(level, pos, net.minecraft.world.entity.EntitySpawnReason.COMMAND) == null) {
+			source.sendFailure(Component.literal("Не удалось призвать куклу"));
+			return 0;
+		}
+		source.sendSuccess(() -> Component.literal("Кукла Стива с полной перчаткой призвана. Попробуй на ней Извлекатор Бесконечности."), false);
 		return 1;
 	}
 

@@ -1,0 +1,9 @@
+{
+  "parent": "infinity_gauntlet:item/infinity_extractor/held_empty",
+  "textures": {
+    "chamber": "minecraft:block/cyan_concrete",
+    "rail": "minecraft:block/prismarine",
+    "lamp1": "minecraft:block/gold_block",
+    "lamp2": "minecraft:block/gold_block"
+  }
+}

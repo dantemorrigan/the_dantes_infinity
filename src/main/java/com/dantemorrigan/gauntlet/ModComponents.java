@@ -27,6 +27,11 @@ public final class ModComponents {
 			InfinityGauntlet.id("snapped"),
 			DataComponentType.<Boolean>builder().persistent(Codec.BOOL).networkSynchronized(ByteBufCodecs.BOOL).build());
 
+	/** Infinity Extractor: ordinal of the stone it pulls, absent = automatic (first free stone of the target). */
+	public static final DataComponentType<Integer> EXTRACTOR_STONE = Registry.register(BuiltInRegistries.DATA_COMPONENT_TYPE,
+			InfinityGauntlet.id("extractor_stone"),
+			DataComponentType.<Integer>builder().persistent(Codec.INT).networkSynchronized(ByteBufCodecs.VAR_INT).build());
+
 	public static void init() {}
 
 	private ModComponents() {}

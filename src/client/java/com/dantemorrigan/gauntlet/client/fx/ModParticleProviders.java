@@ -75,6 +75,30 @@ public final class ModParticleProviders {
 			return new FxParticle(level, x, y, z, sprites, VfxPresets.get("soul_mass_wave"), len, n.div(len), -1, null, 0.45f);
 		});
 		billboard(ModParticles.SOUL_ABSORPTION, "soul_absorption");
+		// Infinity Extractor
+		aligned(ModParticles.EXTRACTOR_TETHER, "extractor_tether", 5);
+		billboard(ModParticles.EXTRACTOR_GATHER, "extractor_gather");
+		billboard(ModParticles.EXTRACTOR_SUCCESS, "extractor_success");
+		billboard(ModParticles.EXTRACTOR_SEAL, "extractor_seal");
+		ParticleProviderRegistry.getInstance().register(ModParticles.EXTRACTOR_MOTE, sprites -> (t, level, x, y, z, xa, ya, za, random) -> {
+			int owner = (int) xa;
+			net.minecraft.world.phys.Vec3 from = new net.minecraft.world.phys.Vec3(x, y, z);
+			return new FxParticle(level, x, y, z, sprites, VfxPresets.get("extractor_mote"), 1f, null, -1, null, 1f) {
+				@Override
+				protected void motion() {
+					net.minecraft.world.entity.Entity entity = this.level.getEntity(owner);
+					if (entity == null) {
+						this.remove();
+						return;
+					}
+					float k = Math.min(1f, this.age / (float) this.lifetime);
+					k = k * k * (3 - 2 * k);
+					net.minecraft.world.phys.Vec3 to = ExtractorClient.muzzle(entity, 1f);
+					net.minecraft.world.phys.Vec3 p = from.lerp(to, k);
+					this.setPos(p.x, p.y, p.z);
+				}
+			};
+		});
 	}
 
 	/** (xa,ya,za) = direction of travel: the sprite's +X runs along it. Short-lived segment of a looping strip. */

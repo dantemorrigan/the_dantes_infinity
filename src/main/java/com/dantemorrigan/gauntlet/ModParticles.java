@@ -58,6 +58,15 @@ public final class ModParticles {
 	public static final SimpleParticleType SOUL_MASS_WAVE = register("soul_mass_wave");   // (xa,ya,za) = normal, length = size
 	public static final SimpleParticleType SOUL_ABSORPTION = register("soul_absorption"); // xa = size
 
+	// Infinity Extractor (pack: Infinity_Extractor_Visual_Pack).
+	/** (xa,ya,za) = direction the pulse flows along (toward the extractor). A short segment of the thread. */
+	public static final SimpleParticleType EXTRACTOR_TETHER = register("extractor_tether");
+	public static final SimpleParticleType EXTRACTOR_GATHER = register("extractor_gather");   // xa = size
+	public static final SimpleParticleType EXTRACTOR_SUCCESS = register("extractor_success"); // xa = size
+	public static final SimpleParticleType EXTRACTOR_SEAL = register("extractor_seal");       // xa = size
+	/** xa = owner entity id: flies from its spawn point into the extractor's chamber. */
+	public static final SimpleParticleType EXTRACTOR_MOTE = register("extractor_mote");
+
 	private static SimpleParticleType register(String name) {
 		return Registry.register(BuiltInRegistries.PARTICLE_TYPE, InfinityGauntlet.id(name), FabricParticleTypes.simple(true));
 	}

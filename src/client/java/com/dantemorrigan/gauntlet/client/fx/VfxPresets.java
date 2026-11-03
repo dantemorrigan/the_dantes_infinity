@@ -54,7 +54,12 @@ public final class VfxPresets {
 			Map.entry("soul_wisp", new Spec(4, 3, 36, true, 0.7f, true, Orientation.CAMERA)),
 			Map.entry("soul_siphon", new Spec(4, 2, 36, true, 1.3f, true, Orientation.CAMERA)),
 			Map.entry("soul_mass_wave", new Spec(4, 3, 12, false, 8f, true, Orientation.FLAT)),
-			Map.entry("soul_absorption", new Spec(4, 3, 12, false, 1.2f, true, Orientation.CAMERA)));
+			Map.entry("soul_absorption", new Spec(4, 3, 12, false, 1.2f, true, Orientation.CAMERA)),
+			Map.entry("extractor_tether", new Spec(4, 1, 6, true, 1.4f, true, Orientation.CAMERA)),
+			Map.entry("extractor_gather", new Spec(2, 1, 14, false, 1.1f, true, Orientation.CAMERA)),
+			Map.entry("extractor_success", new Spec(2, 1, 10, false, 0.45f, true, Orientation.CAMERA)),
+			Map.entry("extractor_seal", new Spec(2, 1, 16, false, 0.5f, true, Orientation.CAMERA)),
+			Map.entry("extractor_mote", new Spec(2, 1, 12, false, 0.45f, true, Orientation.CAMERA)));
 
 	private static Map<String, Spec> loaded;
 

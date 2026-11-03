@@ -21,6 +21,12 @@ public final class ModItems {
 	public static final Item TIME_STONE = register("time_stone", TimeStoneItem::new, epic());
 	public static final Item SOUL_STONE = register("soul_stone", epic());
 
+	public static final Item INFINITY_EXTRACTOR = register("infinity_extractor", com.dantemorrigan.gauntlet.extractor.InfinityExtractorItem::new,
+			new Item.Properties().stacksTo(1).rarity(Rarity.EPIC).fireResistant());
+	/** Test dummy: a Steve doll wearing a full gauntlet. */
+	public static final Item GAUNTLET_DOLL_SPAWN_EGG = register("gauntlet_doll_spawn_egg", net.minecraft.world.item.SpawnEggItem::new,
+			new Item.Properties().spawnEgg(ModEntities.GAUNTLET_DOLL));
+
 	private static Item.Properties epic() {
 		return new Item.Properties().stacksTo(1).rarity(Rarity.EPIC).fireResistant();
 	}

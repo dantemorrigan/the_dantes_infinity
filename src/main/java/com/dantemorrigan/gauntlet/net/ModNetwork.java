@@ -248,6 +248,19 @@ public final class ModNetwork {
 		@Override public Type<SnapFx> type() { return TYPE; }
 	}
 
+	/**
+	 * S2C: Infinity Extractor visuals. kind: 0 = a cycle starts (tether from the target to the extractor),
+	 * 1 = cycle done (cycles = how many are done), 2 = cycle failed / released, 3 = the stone is in use (blocked),
+	 * 4 = the stone is captured into the extractor, 5 = the stone was returned into a gauntlet.
+	 */
+	public record ExtractorFx(int kind, int ownerId, int targetId, int stone, int cycles) implements CustomPacketPayload {
+		public static final Type<ExtractorFx> TYPE = newType("extractor_fx");
+		public static final StreamCodec<ByteBuf, ExtractorFx> CODEC = StreamCodec.composite(
+				ByteBufCodecs.VAR_INT, ExtractorFx::kind, ByteBufCodecs.VAR_INT, ExtractorFx::ownerId, ByteBufCodecs.VAR_INT, ExtractorFx::targetId,
+				ByteBufCodecs.VAR_INT, ExtractorFx::stone, ByteBufCodecs.VAR_INT, ExtractorFx::cycles, ExtractorFx::new);
+		@Override public Type<ExtractorFx> type() { return TYPE; }
+	}
+
 	/** C2S: H pressed/released. Server validates six stones and owns the full cast. */
 	public record BeamAction(boolean start) implements CustomPacketPayload {
 		public static final Type<BeamAction> TYPE = newType("beam_action");
@@ -375,6 +388,7 @@ public final class ModNetwork {
 		PayloadTypeRegistry.serverboundPlay().register(GestureStart.TYPE, GestureStart.CODEC);
 		PayloadTypeRegistry.clientboundPlay().register(GestureFx.TYPE, GestureFx.CODEC);
 		PayloadTypeRegistry.clientboundPlay().register(SnapFx.TYPE, SnapFx.CODEC);
+		PayloadTypeRegistry.clientboundPlay().register(ExtractorFx.TYPE, ExtractorFx.CODEC);
 		PayloadTypeRegistry.clientboundPlay().register(PowerFx.TYPE, PowerFx.CODEC);
 		PayloadTypeRegistry.clientboundPlay().register(EffectDemo.TYPE, EffectDemo.CODEC);
 		PayloadTypeRegistry.clientboundPlay().register(CutsceneStart.TYPE, CutsceneStart.CODEC);

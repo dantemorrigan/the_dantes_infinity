@@ -19,6 +19,8 @@ public final class ModCreativeTab {
 				output.accept(ModItems.MIND_STONE);
 				output.accept(ModItems.TIME_STONE);
 				output.accept(ModItems.SOUL_STONE);
+				output.accept(ModItems.INFINITY_EXTRACTOR);
+				output.accept(ModItems.GAUNTLET_DOLL_SPAWN_EGG);
 			})
 			.build();
 
