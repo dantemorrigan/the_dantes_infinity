@@ -111,7 +111,7 @@ public final class CosmosClient {
                 cooldown>0?Component.translatable("cosmos.infinity_gauntlet.cooldown",(cooldown+19)/20):
                 Component.translatable("cosmos.infinity_gauntlet.controls",NEXT.getTranslatedKeyMessage(),WARP.getTranslatedKeyMessage(),FLIGHT.getTranslatedKeyMessage()));
         } else {
-            StatusHud.persistent("cosmos",Component.translatable("cosmos.infinity_gauntlet.ascent",(int)p.getY(),(int)CosmosRoutes.EXIT_HEIGHT,speed));
+            StatusHud.persistent("cosmos",mc.level.dimension().equals(Level.OVERWORLD)?Component.translatable("cosmos.infinity_gauntlet.ascent",(int)p.getY(),(int)CosmosRoutes.EXIT_HEIGHT,speed):null);
             StatusHud.persistent("cosmos_keys",Component.translatable("cosmos.infinity_gauntlet.flight_controls",FLIGHT.getTranslatedKeyMessage()));
         }
     }

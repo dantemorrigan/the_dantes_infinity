@@ -40,6 +40,20 @@ public final class CosmosTravel {
     private record RockBlock(BlockPos pos, boolean ice) {}
     private static class Navigation { int selected, warp, cooldown; long lastAction = -100; }
     public static boolean inCosmos(ServerPlayer p) { return p.level().dimension().equals(DIMENSION); }
+    /** Dimensions where J flight works: Overworld (with exit to space), Nether and End (bounded), and the cosmos itself. */
+    private static boolean flightDim(ServerPlayer p) {
+        var d = p.level().dimension();
+        return d.equals(Level.OVERWORLD) || d.equals(Level.NETHER) || d.equals(Level.END) || d.equals(DIMENSION);
+    }
+    /** Re-entry from space: appear high above the take-off point and keep flying, so the descent is manual. */
+    private static void reenter(ServerPlayer p) {
+        Flight f = p.getAttached(FLIGHT);
+        ServerLevel overworld = p.level().getServer().overworld();
+        Vec3 home = f == null ? Vec3.atBottomCenterOf(overworld.getRespawnData().pos()) : f.home();
+        double y = Math.min(CosmosRoutes.EXIT_HEIGHT - 80, Math.max(home.y + 200, 260));
+        p.teleport(new TeleportTransition(overworld, new Vec3(home.x, y, home.z), Vec3.ZERO, p.getYRot(), 25, TeleportTransition.DO_NOTHING));
+        p.fallDistance = 0;
+    }
     public static boolean equipped(ServerPlayer p) {
         var g = GauntletState.activeGauntlet(p);
         return !g.isEmpty() && GauntletState.inserted(g).contains(Stone.SPACE);
@@ -50,7 +64,7 @@ public final class CosmosTravel {
         ServerPlayConnectionEvents.JOIN.register((h,s,server) -> {
             ServerPlayer p = h.getPlayer();
             if (p.hasAttached(FLIGHT)) {
-                if ((inCosmos(p) || p.level().dimension().equals(Level.OVERWORLD)) && equipped(p) && !p.hasAttached(SpaceManager.RECORD)) enable(p);
+                if (flightDim(p) && equipped(p) && !p.hasAttached(SpaceManager.RECORD)) enable(p);
                 else stop(p, inCosmos(p));
             } else if (inCosmos(p)) rescue(p);
         });
@@ -75,10 +89,11 @@ public final class CosmosTravel {
             if (inCosmos(p) && p.position().distanceTo(new Vec3(0,-400,0)) > 1100) {
                 ModStatus.send(p, Component.translatable("cosmos.infinity_gauntlet.return_near_earth")); return;
             }
-            stop(p, inCosmos(p)); return;
+            if (inCosmos(p)) { reenter(p); return; }
+            stop(p, false); return;
         }
         if (!equipped(p)) { ModStatus.send(p, Component.translatable("cosmos.infinity_gauntlet.need_stone")); return; }
-        if (action == 0 && p.level().dimension().equals(Level.OVERWORLD)) {
+        if (action == 0 && !inCosmos(p) && flightDim(p)) {
             var a = p.getAbilities();
             p.setAttached(FLIGHT, new Flight(p.position().add(0,1,0), a.mayfly, a.flying, a.getFlyingSpeed()));
             enable(p);
@@ -119,14 +134,21 @@ public final class CosmosTravel {
         for (ServerPlayer p : server.getPlayerList().getPlayers()) {
             if (!p.hasAttached(FLIGHT)) { NAV.remove(p.getUUID()); continue; }
             if (!p.isAlive()) { stop(p, false); continue; }
-            if (!equipped(p) || p.hasAttached(SpaceManager.RECORD) || !(inCosmos(p) || p.level().dimension().equals(Level.OVERWORLD))) {
+            if (!equipped(p) || p.hasAttached(SpaceManager.RECORD) || !flightDim(p)) {
                 stop(p, inCosmos(p)); continue;
             }
             p.setNoGravity(true); p.fallDistance = 0;
             if (!p.getAbilities().flying || !p.getAbilities().mayfly) enable(p);
             Navigation n = NAV.computeIfAbsent(p.getUUID(), id -> new Navigation());
             if (n.cooldown > 0) n.cooldown--;
-            if (!inCosmos(p) && p.getY() >= CosmosRoutes.EXIT_HEIGHT && space != null) {
+            if (p.level().dimension().equals(Level.NETHER) || p.level().dimension().equals(Level.END)) {
+                // No way out of these worlds: keep the player under the roof / build limit.
+                double ceiling = p.level().dimension().equals(Level.NETHER) ? 126 : 250;
+                if (p.getY() > ceiling) {
+                    p.teleport(new TeleportTransition(p.level(), new Vec3(p.getX(), ceiling, p.getZ()), Vec3.ZERO, p.getYRot(), p.getXRot(), TeleportTransition.DO_NOTHING));
+                }
+            }
+            if (p.level().dimension().equals(Level.OVERWORLD) && p.getY() >= CosmosRoutes.EXIT_HEIGHT && space != null) {
                 p.teleport(new TeleportTransition(space, new Vec3(0,128,0), Vec3.ZERO, p.getYRot(), 30, TeleportTransition.DO_NOTHING));
                 sync(p,n);
             }
@@ -143,7 +165,7 @@ public final class CosmosTravel {
                     var d = CosmosRoutes.ALL.get(i); Vec3 center = new Vec3(d.x(),d.y(),d.z());
                     Vec3 delta = p.position().subtract(center);
                     if (delta.length() < d.radius()+16) {
-                        if (i == 0) { stop(p,true); break; }
+                        if (i == 0) { reenter(p); sync(p,n); break; }
                         Vec3 out = delta.lengthSqr() < 1 ? new Vec3(0,1,0) : delta.normalize();
                         p.teleport(new TeleportTransition(p.level(),center.add(out.scale(d.radius()+28)),Vec3.ZERO,p.getYRot(),p.getXRot(),TeleportTransition.DO_NOTHING));
                     }
