@@ -7,7 +7,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
+import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
@@ -59,6 +61,7 @@ final class LooseStoneItem extends Item {
 			if (hold != null && hold.hand() == hand && validHold(player, hold)) {
 				HOLDS.remove(player.getUUID());
 				MindStone.throwLoose(player, hold.target());
+				burst(hold.target(), Stone.MIND, 20);
 				player.getCooldowns().addCooldown(player.getItemInHand(hand), 100);
 				return true;
 			}
@@ -71,11 +74,13 @@ final class LooseStoneItem extends Item {
 		long now = player.level().getGameTime();
 		if (stone == Stone.REALITY) {
 			launch(target, new Vec3(0, 1.7, 0));
+			burst(target, Stone.REALITY, 24);
 			SLAMS.put(target, now + 19);
 			player.getCooldowns().addCooldown(player.getItemInHand(hand), 100);
 			return true;
 		}
 		if (stone == Stone.MIND) {
+			burst(target, Stone.MIND, 16);
 			HOLDS.put(player.getUUID(), new Hold(target, hand, target.position().add(0, 2, 0), now + 80));
 			return true;
 		}
@@ -95,6 +100,7 @@ final class LooseStoneItem extends Item {
 			ServerPlayer owner = server.getPlayerList().getPlayer(entry.getKey());
 			Hold hold = entry.getValue();
 			if (!validHold(owner, hold)) return true;
+			if (owner.level().getGameTime() % 5 == 0) burst(hold.target(), Stone.MIND, 4);
 			launch(hold.target(), hold.anchor().subtract(hold.target().position()).scale(0.45));
 			return false;
 		});
@@ -103,8 +109,15 @@ final class LooseStoneItem extends Item {
 			if (!target.isAlive() || target.isRemoved()) return true;
 			if (target.level().getGameTime() < entry.getValue()) return false;
 			launch(target, new Vec3(0, -2.8, 0));
+			burst(target, Stone.REALITY, 28);
 			return true;
 		});
+	}
+
+	private static void burst(LivingEntity target, Stone stone, int count) {
+		ServerLevel level = (ServerLevel) target.level();
+		level.sendParticles(new DustParticleOptions(stone.color, 1.35F), target.getX(),
+				target.getY() + target.getBbHeight() * 0.5, target.getZ(), count, 0.45, 0.45, 0.45, 0.08);
 	}
 
 	private static void launch(LivingEntity target, Vec3 velocity) {

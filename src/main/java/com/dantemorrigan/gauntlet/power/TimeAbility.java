@@ -11,6 +11,7 @@ import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.networking.v1.PlayerLookup;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
+import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
@@ -86,14 +87,26 @@ public final class TimeAbility {
 			if (++samples < 40 / SAMPLE_EVERY) continue;
 			Vec3 offset = snapshot.pos().subtract(player.position());
 			if (!player.level().noCollision(player, player.getBoundingBox().move(offset))) return false;
+			looseRewindRing(player.level(), player.position());
 			player.teleport(new TeleportTransition(player.level(), snapshot.pos(), Vec3.ZERO,
 					snapshot.yRot(), snapshot.xRot(), TeleportTransition.DO_NOTHING));
 			player.fallDistance = 0;
 			player.setHealth(Math.min(snapshot.health(), player.getMaxHealth()));
+			looseRewindRing(player.level(), snapshot.pos());
+			player.level().playSound(null, player.blockPosition(), SoundEvents.BEACON_DEACTIVATE, SoundSource.PLAYERS, 0.8F, 1.6F);
 			HISTORY.remove(player.getUUID());
 			return true;
 		}
 		return false;
+	}
+
+	private static void looseRewindRing(ServerLevel level, Vec3 center) {
+		DustParticleOptions dust = new DustParticleOptions(Stone.TIME.color, 1.4F);
+		for (int i = 0; i < 16; i++) {
+			double angle = i * Math.PI / 8;
+			level.sendParticles(dust, center.x + Math.cos(angle), center.y + 0.15,
+					center.z + Math.sin(angle), 1, 0, 0, 0, 0);
+		}
 	}
 
 	public static void request(ServerPlayer player) {
