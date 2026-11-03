@@ -22,16 +22,6 @@ public final class CosmosRenderer {
     private static final String[] NEBULAE={"cyan_arch","violet_crescent","amber_nursery","ice_ribbon"};
     private static final double[] YAW={35,155,255,320}, PITCH={12,-18,24,-35}, PARALLAX={.012,.006,.009,.018};
     private static final float[] WIDTH={55,62,48,65}, ALPHA={.5f,.45f,.4f,.35f};
-    private static final String[][] PALETTES={
-        {"blue_concrete","light_blue_concrete","grass_block_top","sand","snow","stone","magma","white_concrete"},
-        {"stone","andesite","tuff","light_gray_concrete","calcite","stone","basalt_side","diorite"},
-        {"red_sandstone","terracotta","red_terracotta","orange_terracotta","basalt_side","blackstone","magma","orange_terracotta"},
-        {"blue_ice","packed_ice","light_blue_concrete","calcite","snow","ice","blue_ice","white_concrete"}};
-    private static final int[][] N={{1,0,0},{-1,0,0},{0,1,0},{0,-1,0},{0,0,1},{0,0,-1}};
-    private static final int[][][] C={{{1,0,0},{1,1,0},{1,1,1},{1,0,1}},{{0,0,1},{0,1,1},{0,1,0},{0,0,0}},
-        {{0,1,1},{1,1,1},{1,1,0},{0,1,0}},{{0,0,0},{1,0,0},{1,0,1},{0,0,1}},
-        {{1,0,1},{1,1,1},{0,1,1},{0,0,1}},{{0,0,0},{0,1,0},{1,1,0},{1,0,0}}};
-    private static List<List<PlanetGeometry.Face>> surface;
     public static void init() { LevelRenderEvents.COLLECT_SUBMITS.register(CosmosRenderer::render); }
     private static Vector3f face(int f,float u,float v) {
         return switch(f) {
@@ -79,19 +69,11 @@ public final class CosmosRenderer {
             });
         }
     }
-    private static void build() {
-        surface=new ArrayList<>(); for(int m=0;m<8;m++) surface.add(new ArrayList<>());
-        // Retain only the exterior of the intact planet: no fracture interiors or moving shards.
-        for(var p:PlanetGeometry.build(1234).parents()) for(int m=0;m<8;m++) for(var f:p.materials().get(m)) {
-            int[] n=N[f.side()]; double x=f.x()+.5+n[0],y=f.y()+.5+n[1],z=f.z()+.5+n[2];
-            if(x*x+y*y+z*z>PlanetGeometry.RADIUS*PlanetGeometry.RADIUS) surface.get(m).add(f);
-        }
-    }
+    private static final float[][] ATMOS={{.35f,.60f,1f},{0,0,0},{1f,.45f,.25f},{.65f,.85f,1f}};
     private static void render(LevelRenderContext ctx) {
         var mc=Minecraft.getInstance();
         boolean orbit=CosmosClient.inCosmos(); float atmosphere=CosmosClient.atmosphere();
         if(mc.player==null || (!orbit && atmosphere<.65)) return;
-        if(surface==null) build();
         Vec3 cam=mc.gameRenderer.getMainCamera().position();
         float far=mc.options.getEffectiveRenderDistance()*64f;
         // Far to near submission preserves the visual order of distant worlds.
@@ -106,53 +88,57 @@ public final class CosmosRenderer {
             double radius=orbit?d.radius():1560;
             Vec3 delta=center.subtract(cam);
             double fit=Math.min(1,far*.68/(delta.length()+radius));
-            float scale=(float)(radius/PlanetGeometry.RADIUS*fit);
+            float scale=(float)(radius*fit);
             int alpha=orbit?255:(int)(255*Math.min(1,(atmosphere-.65)/.35));
+            // Camera in the planet's unit-sphere space, for the rim glow.
+            final float cx=(float)(-delta.x*fit/scale), cy=(float)(-delta.y*fit/scale), cz=(float)(-delta.z*fit/scale);
             var pose=ctx.poseStack(); pose.pushPose();
             pose.translate(delta.x*fit,delta.y*fit,delta.z*fit);
             pose.scale(scale,scale,scale);
-            pose.mulPose(Axis.ZP.rotationDegrees(index==0?23.4f:12));
-            pose.mulPose(Axis.YP.rotationDegrees(index*67));
-            // Solid backing core: any gap in the voxel shell shows planet rock, never space.
-            final int coreAlpha=alpha;
-            var coreType=RenderTypes.entityTranslucentEmissive(Identifier.withDefaultNamespace("textures/block/"+PALETTES[index][5]+".png"));
-            ctx.submitNodeCollector().submitCustomGeometry(pose,coreType,(p,out)->core(p,out,coreAlpha));
-            for(int m=0;m<8;m++) {
-                final int material=m, planet=index;
-                var faces=surface.get(m);
-                var type=RenderTypes.entityTranslucentEmissive(Identifier.withDefaultNamespace("textures/block/"+PALETTES[index][m]+".png"));
-                ctx.submitNodeCollector().submitCustomGeometry(pose,type,(p,out)->{
-                    for(var f:faces) {
-                        double len=Math.sqrt(f.x()*f.x()+f.y()*f.y()+f.z()*f.z());
-                        float light=(float)(.20+.80*Math.max(0,(-.35*f.x()+.65*f.y()+.65*f.z())/Math.max(1,len)));
-                        int tint=planet==0 && material==2?0x86AF55:0xFFFFFF;
-                        int color=alpha<<24 | (int)(((tint>>16)&255)*light)<<16 | (int)(((tint>>8)&255)*light)<<8 | (int)((tint&255)*light);
-                        int[] normal=N[f.side()];
-                        for(int v=0;v<4;v++) {
-                            int[] c=C[f.side()][v];
-                            out.addVertex(p,f.x()+c[0],f.y()+c[1],f.z()+c[2]).setColor(color).setUv(v==0||v==3?0:1,v<2?1:0)
-                                .setOverlay(OverlayTexture.NO_OVERLAY).setLight(LightCoordsUtil.FULL_BRIGHT).setNormal(p,normal[0],normal[1],normal[2]);
-                        }
-                    }
-                });
+            final int planet=index, a=alpha;
+            var type=RenderTypes.entityTranslucentEmissive(CosmosPlanets.texture(index));
+            ctx.submitNodeCollector().submitCustomGeometry(pose,type,(p,out)->surface(p,out,planet,a));
+            if(ATMOS[index][0]>0) {
+                var white=RenderTypes.entityTranslucentEmissive(Identifier.withDefaultNamespace("textures/block/white_concrete.png"));
+                ctx.submitNodeCollector().submitCustomGeometry(pose,white,(p,out)->glow(p,out,planet,a,cx,cy,cz));
             }
             pose.popPose();
         }
     }
-    /** UV sphere just under the voxel crust; double-wound so culling never exposes the interior. */
-    private static void core(PoseStack.Pose p,VertexConsumer out,int alpha) {
-        final int lat=24, lon=48; final float r=PlanetGeometry.RADIUS-3f;
-        for(int i=0;i<lat;i++) for(int j=0;j<lon;j++) {
-            double a0=Math.PI*i/lat-Math.PI/2, a1=Math.PI*(i+1)/lat-Math.PI/2;
-            double b0=2*Math.PI*j/lon, b1=2*Math.PI*(j+1)/lon;
-            double[][] q={{a0,b0},{a0,b1},{a1,b1},{a1,b0}};
+    private static void surface(PoseStack.Pose p,VertexConsumer out,int planet,int alpha) {
+        final int la=CosmosPlanets.LAT, lo=CosmosPlanets.LON; float[] v=new float[3];
+        for(int i=0;i<la;i++) for(int j=0;j<lo;j++) {
+            int[][] q={{i,j},{i,j+1},{i+1,j+1},{i+1,j}};
             for(int w=0;w<2;w++) for(int k=0;k<4;k++) {
-                double[] c=q[w==0?k:3-k];
-                float nx=(float)(Math.cos(c[0])*Math.cos(c[1])), ny=(float)Math.sin(c[0]), nz=(float)(Math.cos(c[0])*Math.sin(c[1]));
-                float light=(float).2+.8f*Math.max(0,-.35f*nx+.65f*ny+.65f*nz);
-                int g=(int)(150*light);
-                out.addVertex(p,nx*r,ny*r,nz*r).setColor(alpha<<24|g<<16|g<<8|g).setUv(k==0||k==3?0:1,k<2?1:0)
-                    .setOverlay(OverlayTexture.NO_OVERLAY).setLight(LightCoordsUtil.FULL_BRIGHT).setNormal(p,w==0?nx:-nx,w==0?ny:-ny,w==0?nz:-nz);
+                int[] c=q[w==0?k:3-k];
+                CosmosPlanets.vertex(planet,c[0],c[1],la,lo,v);
+                int g=(int)(255*CosmosPlanets.light(v[0],v[1],v[2]));
+                int r=g, b=Math.min(255,g+(int)((255-g)*.06f));
+                float u=c[1]/(float)lo, t=1f-c[0]/(float)la;
+                out.addVertex(p,v[0],v[1],v[2]).setColor(alpha<<24|r<<16|g<<8|b).setUv(u,t)
+                    .setOverlay(OverlayTexture.NO_OVERLAY).setLight(LightCoordsUtil.FULL_BRIGHT).setNormal(p,v[0],v[1],v[2]);
+            }
+        }
+    }
+    /** Thin translucent shells: soft atmospheric rim that fades toward the planet's centre disc. */
+    private static void glow(PoseStack.Pose p,VertexConsumer out,int planet,int alpha,float cx,float cy,float cz) {
+        final int la=40, lo=80; float[] v=new float[3]; float[] col=ATMOS[planet];
+        float[] sizes={1.012f,1.03f,1.06f}, strength={.34f,.20f,.10f};
+        for(int s=0;s<sizes.length;s++) {
+            for(int i=0;i<la;i++) for(int j=0;j<lo;j++) {
+                int[][] q={{i,j},{i,j+1},{i+1,j+1},{i+1,j}};
+                for(int w=0;w<2;w++) for(int k=0;k<4;k++) {
+                    int[] c=q[w==0?k:3-k];
+                    CosmosPlanets.vertex(planet,c[0],c[1],la,lo,v);
+                    float x=v[0]*sizes[s],y=v[1]*sizes[s],z=v[2]*sizes[s];
+                    float vx=cx-x,vy=cy-y,vz=cz-z, vl=(float)Math.sqrt(vx*vx+vy*vy+vz*vz);
+                    float facing=Math.max(0,(v[0]*vx+v[1]*vy+v[2]*vz)/Math.max(1e-4f,vl));
+                    float rim=(float)Math.pow(1-facing,2.2);
+                    float day=.25f+.75f*CosmosPlanets.light(v[0],v[1],v[2]);
+                    int a=(int)(alpha*strength[s]*rim*day);
+                    out.addVertex(p,x,y,z).setColor(a<<24|(int)(col[0]*255)<<16|(int)(col[1]*255)<<8|(int)(col[2]*255)).setUv(.5f,.5f)
+                        .setOverlay(OverlayTexture.NO_OVERLAY).setLight(LightCoordsUtil.FULL_BRIGHT).setNormal(p,v[0],v[1],v[2]);
+                }
             }
         }
     }

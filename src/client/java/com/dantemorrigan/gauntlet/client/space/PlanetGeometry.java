@@ -94,7 +94,7 @@ public final class PlanetGeometry {
         {{112,-12},{133,-11},{153,-24},{146,-39},{116,-34}},
         {{-58,60},{-22,70},{-25,83},{-60,82}},{{44,-13},{50,-16},{47,-26},{43,-23}}
     };
-    private static boolean land(double lon,double lat) {
+    public static boolean land(double lon,double lat) {
         for(double[][] polygon:CONTINENTS) {
             boolean inside=false;
             for(int i=0,j=polygon.length-1;i<polygon.length;j=i++) {
