@@ -94,10 +94,11 @@ fabricApi {
 
 // A focused real-client regression run, without replaying every unrelated cinematic suite.
 // ./gradlew runClientGameTest -PcosmosTest (Linux headless: prefix with xvfb-run -a).
+def onlyCosmosTests = providers.gradleProperty('cosmosTest').isPresent()
 tasks.named('processGametestResources') {
-    inputs.property('cosmosTest', providers.gradleProperty('cosmosTest').isPresent())
+    inputs.property('cosmosTest', onlyCosmosTests)
     doLast {
-        if (providers.gradleProperty('cosmosTest').isPresent()) {
+        if (onlyCosmosTests) {
             def metadata = new File(destinationDir, 'fabric.mod.json')
             def data = new groovy.json.JsonSlurper().parse(metadata)
             data.entrypoints['fabric-client-gametest'] = ['com.dantemorrigan.gauntlet.gametest.CosmosTravelTest']

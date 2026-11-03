@@ -122,7 +122,7 @@ public final class CosmosClient {
             Vec3 right=look.cross(new Vec3(0,1,0));
             if(right.lengthSqr()<.01) right=new Vec3(1,0,0); else right=right.normalize();
             Vec3 up=right.cross(look).normalize();
-            int count=mc.options.particles().get()==ParticleStatus.MINIMAL?1:4;
+            int count=switch (mc.options.particles().get()) { case MINIMAL -> 1; default -> 4; };
             for(int i=0;i<count;i++) {
                 double a=rnd.nextDouble()*Math.PI*2, r=2+rnd.nextDouble()*5;
                 Vec3 pos=p.getEyePosition().add(look.scale(4+rnd.nextDouble()*18)).add(right.scale(Math.cos(a)*r)).add(up.scale(Math.sin(a)*r));
