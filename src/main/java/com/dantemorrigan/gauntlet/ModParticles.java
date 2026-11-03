@@ -24,6 +24,10 @@ public final class ModParticles {
 	public static final SimpleParticleType PLANET_RIFT = register("planet_rift");
 	public static final SimpleParticleType DETONATION_FLASH = register("detonation_flash");
 	public static final SimpleParticleType VOID_DISSOLVE = register("void_dissolve");
+	/** (xa,ya,za) = meteor velocity: the sheet diagonal is turned along it (bright tip forward). */
+	public static final SimpleParticleType CELESTIAL_METEOR_TRAIL = register("celestial_meteor_trail");
+	/** xa = size multiplier. Upright flash at the ground impact. */
+	public static final SimpleParticleType CELESTIAL_METEOR_IMPACT = register("celestial_meteor_impact");
 
 	private static SimpleParticleType register(String name) {
 		return Registry.register(BuiltInRegistries.PARTICLE_TYPE, InfinityGauntlet.id(name), FabricParticleTypes.simple(true));

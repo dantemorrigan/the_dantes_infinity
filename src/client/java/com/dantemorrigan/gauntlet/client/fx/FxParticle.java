@@ -23,6 +23,15 @@ public class FxParticle extends SingleQuadParticle {
 	private final int ownerId;
 	private final Function<Entity, Vec3> follow;
 	private final float baseAlpha;
+	/** If set, the sprite's +X/-Y diagonal is turned along this world direction every frame (meteor trail). */
+	private org.joml.Vector3f alignTo;
+	private boolean fadeOverLife;
+
+	public FxParticle alignTo(org.joml.Vector3f velocity) {
+		this.alignTo = velocity;
+		this.fadeOverLife = true;
+		return this;
+	}
 
 	public FxParticle(ClientLevel level, double x, double y, double z, SpriteSet sprites, VfxPresets.Spec spec,
 			float sizeMul, Vector3f normal, int ownerId, Function<Entity, Vec3> follow, float alpha) {
@@ -72,7 +81,9 @@ public class FxParticle extends SingleQuadParticle {
 				? (this.age / this.spec.ticksPerFrame()) % this.spec.frames()
 				: Math.min(last, this.age / this.spec.ticksPerFrame());
 		this.setSprite(this.sprites.get(frame, last));
-		if (!this.spec.loop() && frame == last) {
+		if (this.fadeOverLife) {
+			this.alpha = this.baseAlpha * Math.max(0f, 1f - this.age / (float) this.lifetime);
+		} else if (!this.spec.loop() && frame == last) {
 			float t = (this.age - last * this.spec.ticksPerFrame()) / (float) Math.max(1, this.lifetime - last * this.spec.ticksPerFrame());
 			this.alpha = this.baseAlpha * Math.max(0f, 1f - t);
 		}
@@ -80,6 +91,16 @@ public class FxParticle extends SingleQuadParticle {
 
 	@Override
 	public FacingCameraMode getFacingCameraMode() {
+		if (this.alignTo != null) {
+			org.joml.Vector3f v = this.alignTo;
+			return (target, camera, partial) -> {
+				target.set(camera.rotation());
+				org.joml.Vector3f right = new org.joml.Vector3f(1, 0, 0).rotate(target);
+				org.joml.Vector3f up = new org.joml.Vector3f(0, 1, 0).rotate(target);
+				float ang = (float) Math.atan2(v.dot(up), v.dot(right));
+				target.rotateZ(ang + (float) Math.PI / 4f);
+			};
+		}
 		if (this.flatRotation != null) {
 			Quaternionf rot = this.flatRotation;
 			return (target, camera, partial) -> target.set(rot);

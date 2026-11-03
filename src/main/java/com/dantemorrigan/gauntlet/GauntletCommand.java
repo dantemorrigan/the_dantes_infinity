@@ -58,6 +58,18 @@ public final class GauntletCommand {
 									PlanetDestruction.cancelFor(ctx.getSource().getPlayerOrException());
 									return 1;
 								})))
+						.then(Commands.literal("celestial")
+								.then(Commands.literal("sun").executes(ctx -> celestial(ctx.getSource(), "sun")))
+								.then(Commands.literal("moon").executes(ctx -> celestial(ctx.getSource(), "moon")))
+								.then(Commands.literal("stop").executes(ctx -> {
+									com.dantemorrigan.gauntlet.celestial.CelestialApocalypse.stop(ctx.getSource().getServer());
+									return 1;
+								}))
+								.then(Commands.literal("restore").executes(ctx -> {
+									com.dantemorrigan.gauntlet.celestial.CelestialApocalypse.restoreBodies(ctx.getSource().getServer());
+									ctx.getSource().sendSuccess(() -> Component.literal("Солнце и луна восстановлены"), true);
+									return 1;
+								})))
 						.then(Commands.literal("space")
 								.then(Commands.literal("enter").executes(ctx -> spaceEnter(ctx.getSource())))
 								.then(Commands.literal("return")
@@ -67,7 +79,7 @@ public final class GauntletCommand {
 	}
 
 	static final List<String> FX = List.of("power_charge", "power_impact", "power_shockwave", "power_sparks_smoke", "power_strike",
-			"ground_fracture", "planet_rift", "detonation_flash", "void_dissolve", "camera_shake", "white_flash", "lift_debris");
+			"ground_fracture", "planet_rift", "detonation_flash", "void_dissolve", "camera_shake", "white_flash", "lift_debris", "meteor");
 
 	/** Gauntlet with only the Power stone, put into the off hand (worn). */
 	private static int givePower(CommandSourceStack source) throws CommandSyntaxException {
@@ -126,6 +138,16 @@ public final class GauntletCommand {
 		ServerPlayer player = source.getPlayerOrException();
 		BlockPos ground = player.level().getHeightmapPos(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, player.blockPosition());
 		return PlanetDestruction.start(player, Vec3.atBottomCenterOf(ground)) ? 1 : 0;
+	}
+
+	/** Break the sun/moon without aiming (debug). */
+	private static int celestial(CommandSourceStack source, String body) throws CommandSyntaxException {
+		ServerPlayer player = source.getPlayerOrException();
+		if (!com.dantemorrigan.gauntlet.celestial.CelestialApocalypse.start(player, body)) {
+			source.sendFailure(Component.literal("Событие уже идёт: /gauntlet celestial stop"));
+			return 0;
+		}
+		return 1;
 	}
 
 	/** Jump straight into Dead Space (as if the planet broke a few seconds ago). */

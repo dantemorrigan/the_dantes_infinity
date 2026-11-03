@@ -85,7 +85,53 @@ public final class ModNetwork {
 		@Override public Type<TimeRewindFx> type() { return TYPE; }
 	}
 
+	/** S2C: celestial event state (sent on change, periodically and on join). phase: 0 none, 1 fracture, 2 rain, 3 ending. */
+	public record CelestialSync(int phase, String body, Vec3 center, int eventTicks, int rainRemainingMs, boolean sunDestroyed, boolean moonDestroyed)
+			implements CustomPacketPayload {
+		public static final Type<CelestialSync> TYPE = newType("celestial_sync");
+		public static final StreamCodec<ByteBuf, CelestialSync> CODEC = new StreamCodec<>() {
+			@Override
+			public CelestialSync decode(ByteBuf buf) {
+				return new CelestialSync(ByteBufCodecs.VAR_INT.decode(buf), ByteBufCodecs.STRING_UTF8.decode(buf), Vec3.STREAM_CODEC.decode(buf),
+						ByteBufCodecs.VAR_INT.decode(buf), ByteBufCodecs.VAR_INT.decode(buf), ByteBufCodecs.BOOL.decode(buf), ByteBufCodecs.BOOL.decode(buf));
+			}
+
+			@Override
+			public void encode(ByteBuf buf, CelestialSync v) {
+				ByteBufCodecs.VAR_INT.encode(buf, v.phase);
+				ByteBufCodecs.STRING_UTF8.encode(buf, v.body);
+				Vec3.STREAM_CODEC.encode(buf, v.center);
+				ByteBufCodecs.VAR_INT.encode(buf, v.eventTicks);
+				ByteBufCodecs.VAR_INT.encode(buf, v.rainRemainingMs);
+				ByteBufCodecs.BOOL.encode(buf, v.sunDestroyed);
+				ByteBufCodecs.BOOL.encode(buf, v.moonDestroyed);
+			}
+		};
+		@Override public Type<CelestialSync> type() { return TYPE; }
+	}
+
+	/** S2C: a physical meteor was launched (server decides where it lands). */
+	public record MeteorSpawn(int id, Vec3 from, Vec3 to, int flightTicks, int size, boolean solar) implements CustomPacketPayload {
+		public static final Type<MeteorSpawn> TYPE = newType("meteor_spawn");
+		public static final StreamCodec<ByteBuf, MeteorSpawn> CODEC = StreamCodec.composite(
+				ByteBufCodecs.VAR_INT, MeteorSpawn::id, Vec3.STREAM_CODEC, MeteorSpawn::from, Vec3.STREAM_CODEC, MeteorSpawn::to,
+				ByteBufCodecs.VAR_INT, MeteorSpawn::flightTicks, ByteBufCodecs.VAR_INT, MeteorSpawn::size, ByteBufCodecs.BOOL, MeteorSpawn::solar, MeteorSpawn::new);
+		@Override public Type<MeteorSpawn> type() { return TYPE; }
+	}
+
+	/** S2C: meteor hit the ground (visuals; the crater/fire/damage were done by the server). */
+	public record MeteorImpact(int id, Vec3 pos, int size, int groundState) implements CustomPacketPayload {
+		public static final Type<MeteorImpact> TYPE = newType("meteor_impact");
+		public static final StreamCodec<ByteBuf, MeteorImpact> CODEC = StreamCodec.composite(
+				ByteBufCodecs.VAR_INT, MeteorImpact::id, Vec3.STREAM_CODEC, MeteorImpact::pos, ByteBufCodecs.VAR_INT, MeteorImpact::size,
+				ByteBufCodecs.VAR_INT, MeteorImpact::groundState, MeteorImpact::new);
+		@Override public Type<MeteorImpact> type() { return TYPE; }
+	}
+
 	public static void init() {
+		PayloadTypeRegistry.clientboundPlay().register(CelestialSync.TYPE, CelestialSync.CODEC);
+		PayloadTypeRegistry.clientboundPlay().register(MeteorSpawn.TYPE, MeteorSpawn.CODEC);
+		PayloadTypeRegistry.clientboundPlay().register(MeteorImpact.TYPE, MeteorImpact.CODEC);
 		PayloadTypeRegistry.serverboundPlay().register(TimeRewindRequest.TYPE, TimeRewindRequest.CODEC);
 		PayloadTypeRegistry.clientboundPlay().register(TimeRewindFx.TYPE, TimeRewindFx.CODEC);
 		PayloadTypeRegistry.serverboundPlay().register(ToggleMode.TYPE, ToggleMode.CODEC);

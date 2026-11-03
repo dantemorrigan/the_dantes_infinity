@@ -1,0 +1,41 @@
+{
+  "format": "custom renderer authoring data; not automatically loaded by Minecraft",
+  "minecraft_version": "26.1.2",
+  "source_tag": "26.1.2-assets",
+  "source_commit": "394aa1bf4c0fad7c76af57abadff6ded12aa411b",
+  "base_textures": {
+    "sun": "minecraft:textures/environment/celestial/sun.png",
+    "full_moon": "minecraft:textures/environment/celestial/moon/full_moon.png",
+    "waning_gibbous": "minecraft:textures/environment/celestial/moon/waning_gibbous.png",
+    "third_quarter": "minecraft:textures/environment/celestial/moon/third_quarter.png",
+    "waning_crescent": "minecraft:textures/environment/celestial/moon/waning_crescent.png",
+    "new_moon": "minecraft:textures/environment/celestial/moon/new_moon.png",
+    "waxing_crescent": "minecraft:textures/environment/celestial/moon/waxing_crescent.png",
+    "first_quarter": "minecraft:textures/environment/celestial/moon/first_quarter.png",
+    "waxing_gibbous": "minecraft:textures/environment/celestial/moon/waxing_gibbous.png"
+  },
+  "damage_stages": 4,
+  "overlay_textures": {
+    "sun": [
+      "infinity_gauntlet:textures/celestial/sun_crack_0.png",
+      "infinity_gauntlet:textures/celestial/sun_crack_1.png",
+      "infinity_gauntlet:textures/celestial/sun_crack_2.png",
+      "infinity_gauntlet:textures/celestial/sun_crack_3.png"
+    ],
+    "moon": [
+      "infinity_gauntlet:textures/celestial/moon_crack_0.png",
+      "infinity_gauntlet:textures/celestial/moon_crack_1.png",
+      "infinity_gauntlet:textures/celestial/moon_crack_2.png",
+      "infinity_gauntlet:textures/celestial/moon_crack_3.png"
+    ]
+  },
+  "base_render": "Use original active-resource-pack celestial texture and original sky-quad UVs. Do not replace the sprite with a painted approximation.",
+  "overlay_render": "Add violet cracks in the same UVs; preserve brightness. Clip overlay by the base alpha AND visible brightness mask, because black sky pixels can have alpha 255.",
+  "visible_mask": "baseAlpha * clamp((max(baseRGB)-0.04)/0.12,0,1); compute in linear color if possible",
+  "moon_phase_rule": "Use current native phase texture, not legacy moon_phases.png atlas. New moon can have no visible target pixels; do not fabricate a full moon.",
+  "color_rule": "Do not multiply the whole celestial sprite by purple. Original white/gold/gray pixels remain visible.",
+  "destroyed_state": "Hide the original body only for clients affected by the event; render UV fragments in the same apparent sky location.",
+  "uv_filter": "nearest",
+  "overlay_depth_write": false,
+  "targeting": "Use the actual client celestial sky transform for each visible body. Test view direction against its visible quad/alpha mask and terrain occlusion; sun/moon are not ordinary entities."
+}

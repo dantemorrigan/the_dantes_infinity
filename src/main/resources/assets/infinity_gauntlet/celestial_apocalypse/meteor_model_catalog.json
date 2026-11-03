@@ -1,0 +1,110 @@
+[
+  {
+    "name": "solar_meteor_0",
+    "model": "infinity_gauntlet:celestial_apocalypse/solar_meteor_0",
+    "materials": [
+      "minecraft:block/glowstone",
+      "minecraft:block/magma"
+    ],
+    "logical_block_count": 27,
+    "model_units_per_logical_block": 5,
+    "pivot_model_units": [
+      8,
+      8,
+      8
+    ],
+    "render_width_blocks": 0.6,
+    "energy_overlay": "violet edge sparks and trail, separate full-bright layer",
+    "notes": "Magma and glowstone do not emit actual block light from this entity model. Moon meteors use native stone, with flames/energy on a separate layer."
+  },
+  {
+    "name": "solar_meteor_1",
+    "model": "infinity_gauntlet:celestial_apocalypse/solar_meteor_1",
+    "materials": [
+      "minecraft:block/glowstone",
+      "minecraft:block/magma"
+    ],
+    "logical_block_count": 33,
+    "model_units_per_logical_block": 5,
+    "pivot_model_units": [
+      8,
+      8,
+      8
+    ],
+    "render_width_blocks": 1.2,
+    "energy_overlay": "violet edge sparks and trail, separate full-bright layer",
+    "notes": "Magma and glowstone do not emit actual block light from this entity model. Moon meteors use native stone, with flames/energy on a separate layer."
+  },
+  {
+    "name": "solar_meteor_2",
+    "model": "infinity_gauntlet:celestial_apocalypse/solar_meteor_2",
+    "materials": [
+      "minecraft:block/glowstone",
+      "minecraft:block/magma"
+    ],
+    "logical_block_count": 57,
+    "model_units_per_logical_block": 5,
+    "pivot_model_units": [
+      8,
+      8,
+      8
+    ],
+    "render_width_blocks": 2.4,
+    "energy_overlay": "violet edge sparks and trail, separate full-bright layer",
+    "notes": "Magma and glowstone do not emit actual block light from this entity model. Moon meteors use native stone, with flames/energy on a separate layer."
+  },
+  {
+    "name": "lunar_meteor_0",
+    "model": "infinity_gauntlet:celestial_apocalypse/lunar_meteor_0",
+    "materials": [
+      "minecraft:block/cobblestone",
+      "minecraft:block/stone"
+    ],
+    "logical_block_count": 27,
+    "model_units_per_logical_block": 5,
+    "pivot_model_units": [
+      8,
+      8,
+      8
+    ],
+    "render_width_blocks": 0.6,
+    "energy_overlay": "violet edge sparks and trail, separate full-bright layer",
+    "notes": "Magma and glowstone do not emit actual block light from this entity model. Moon meteors use native stone, with flames/energy on a separate layer."
+  },
+  {
+    "name": "lunar_meteor_1",
+    "model": "infinity_gauntlet:celestial_apocalypse/lunar_meteor_1",
+    "materials": [
+      "minecraft:block/cobblestone",
+      "minecraft:block/stone"
+    ],
+    "logical_block_count": 33,
+    "model_units_per_logical_block": 5,
+    "pivot_model_units": [
+      8,
+      8,
+      8
+    ],
+    "render_width_blocks": 1.2,
+    "energy_overlay": "violet edge sparks and trail, separate full-bright layer",
+    "notes": "Magma and glowstone do not emit actual block light from this entity model. Moon meteors use native stone, with flames/energy on a separate layer."
+  },
+  {
+    "name": "lunar_meteor_2",
+    "model": "infinity_gauntlet:celestial_apocalypse/lunar_meteor_2",
+    "materials": [
+      "minecraft:block/cobblestone",
+      "minecraft:block/stone"
+    ],
+    "logical_block_count": 57,
+    "model_units_per_logical_block": 5,
+    "pivot_model_units": [
+      8,
+      8,
+      8
+    ],
+    "render_width_blocks": 2.4,
+    "energy_overlay": "violet edge sparks and trail, separate full-bright layer",
+    "notes": "Magma and glowstone do not emit actual block light from this entity model. Moon meteors use native stone, with flames/energy on a separate layer."
+  }
+]

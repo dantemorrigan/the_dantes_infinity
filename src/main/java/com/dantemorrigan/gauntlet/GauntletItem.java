@@ -58,8 +58,12 @@ public class GauntletItem extends Item {
 
 	@Override
 	public void onUseTick(Level level, LivingEntity entity, ItemStack stack, int ticksRemaining) {
-		if (!level.isClientSide() && MAX_USE - ticksRemaining == 1) {
-			GauntletState.setInUse(stack, EnumSet.of(Stone.POWER)); // strong glow while charging
+		if (level.isClientSide()) return;
+		int used = MAX_USE - ticksRemaining;
+		if (used == 1) GauntletState.setInUse(stack, EnumSet.of(Stone.POWER)); // strong glow while charging
+		if (entity instanceof ServerPlayer player && PowerAbility.mode(stack) == PowerAbility.MODE_CELESTIAL
+				&& com.dantemorrigan.gauntlet.celestial.CelestialApocalypse.aimTick(player, stack, used)) {
+			player.stopUsingItem();
 		}
 	}
 

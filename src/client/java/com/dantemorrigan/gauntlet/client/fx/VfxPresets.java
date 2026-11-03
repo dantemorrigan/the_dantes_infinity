@@ -30,7 +30,9 @@ public final class VfxPresets {
 			"ground_fracture", new Spec(4, 5, 20, false, 12f, true, Orientation.FLAT),
 			"planet_rift", new Spec(4, 4, 16, false, 6f, true, Orientation.CAMERA),
 			"detonation_flash", new Spec(4, 1, 4, false, 10f, true, Orientation.CAMERA),
-			"void_dissolve", new Spec(4, 3, 12, false, 2f, true, Orientation.CAMERA));
+			"void_dissolve", new Spec(4, 3, 12, false, 2f, true, Orientation.CAMERA),
+			"celestial_meteor_trail", new Spec(4, 2, 12, false, 2.2f, true, Orientation.CAMERA),
+			"celestial_meteor_impact", new Spec(4, 2, 8, false, 4f, true, Orientation.CAMERA));
 
 	private static Map<String, Spec> loaded;
 
@@ -45,18 +47,21 @@ public final class VfxPresets {
 
 	private static void load() {
 		Map<String, Spec> map = new HashMap<>(DEFAULTS);
-		for (String file : new String[]{"power_vfx_presets.json", "destruction_vfx_presets.json"}) {
-			JsonObject root = readJson(InfinityGauntlet.id("planet_destruction/" + file));
-			if (root == null || !root.has("effects")) continue;
-			for (Map.Entry<String, JsonElement> e : root.getAsJsonObject("effects").entrySet()) {
+		for (String file : new String[]{"power_vfx_presets.json", "destruction_vfx_presets.json", "../celestial_apocalypse/meteor_vfx_presets.json"}) {
+			JsonObject root = readJson(InfinityGauntlet.id(file.startsWith("../") ? file.substring(3) : "planet_destruction/" + file));
+			if (root == null) continue;
+			JsonObject effects = root.has("effects") ? root.getAsJsonObject("effects") : root;
+			for (Map.Entry<String, JsonElement> e : effects.entrySet()) {
+				if (!e.getValue().isJsonObject()) continue;
 				Spec def = DEFAULTS.get(e.getKey());
 				if (def == null) continue;
 				JsonObject o = e.getValue().getAsJsonObject();
 				int frames = o.has("frames") ? o.get("frames").getAsInt() : def.frames();
 				int tpf = o.has("ticks_per_frame") ? o.get("ticks_per_frame").getAsInt() : def.ticksPerFrame();
 				int life = o.has("lifetime_ticks") ? o.get("lifetime_ticks").getAsInt() : def.lifetime();
-				boolean loop = o.has("loop") ? o.get("loop").getAsBoolean() : def.loop();
-				float width = o.has("full_quad_width_blocks") ? o.get("full_quad_width_blocks").getAsFloat()
+				if (e.getKey().equals("celestial_meteor_trail")) life = def.lifetime(); // trail: fade over its own life, not looped
+				boolean loop = e.getKey().equals("celestial_meteor_trail") ? false : o.has("loop") ? o.get("loop").getAsBoolean() : def.loop();
+				float width = o.has("width_blocks") ? o.get("width_blocks").getAsFloat() : o.has("full_quad_width_blocks") ? o.get("full_quad_width_blocks").getAsFloat()
 						: o.has("suggested_full_quad_width_blocks") ? o.get("suggested_full_quad_width_blocks").getAsFloat() : def.width();
 				boolean bright = o.has("full_bright") ? o.get("full_bright").getAsBoolean() : def.fullBright();
 				Orientation orient = def.orientation();

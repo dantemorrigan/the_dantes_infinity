@@ -1,0 +1,40 @@
+{
+  "coordinate_system": "+Y up; right-handed; UV image origin top-left",
+  "cubemap_size": 512,
+  "mapping": {
+    "+X": [
+      1,
+      "-v",
+      "-u"
+    ],
+    "-X": [
+      -1,
+      "-v",
+      "u"
+    ],
+    "+Y": [
+      "u",
+      1,
+      "v"
+    ],
+    "-Y": [
+      "u",
+      -1,
+      "-v"
+    ],
+    "+Z": [
+      "u",
+      "-v",
+      1
+    ],
+    "-Z": [
+      "-u",
+      "-v",
+      -1
+    ]
+  },
+  "equirectangular": "u=atan2(z,x)/(2*pi)+0.5; v=0.5-asin(y)/pi",
+  "wrap": "clamp_to_edge for cube; repeat horizontal and clamp vertical for panorama",
+  "blend": "Use smooth radial event influence and day/night interpolation. Fade or blend the panorama azimuth seam if noticeable in-game.",
+  "depth_write": false
+}

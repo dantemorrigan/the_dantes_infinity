@@ -1,0 +1,66 @@
+{
+  "minecraft_version": "26.1.2",
+  "tag": "26.1.2-assets",
+  "files": [
+    {
+      "name": "end_flash.png",
+      "path": "assets/minecraft/textures/environment/celestial/end_flash.png",
+      "git_blob_sha": "b1aa4798b407a1698610e713850e08d6eea23b16",
+      "bytes": 1341
+    },
+    {
+      "name": "sun.png",
+      "path": "assets/minecraft/textures/environment/celestial/sun.png",
+      "git_blob_sha": "8c8ecaae9a9abea8dd6f0ca4cbca04d7247a00b7",
+      "bytes": 458
+    },
+    {
+      "name": "first_quarter.png",
+      "path": "assets/minecraft/textures/environment/celestial/moon/first_quarter.png",
+      "git_blob_sha": "2b982d7426ef2eae55ffe112986200f2d2132816",
+      "bytes": 496
+    },
+    {
+      "name": "full_moon.png",
+      "path": "assets/minecraft/textures/environment/celestial/moon/full_moon.png",
+      "git_blob_sha": "1a2e8f98f468c3fe3a8b2be60df89b84ab4ef069",
+      "bytes": 497
+    },
+    {
+      "name": "new_moon.png",
+      "path": "assets/minecraft/textures/environment/celestial/moon/new_moon.png",
+      "git_blob_sha": "d3737963a191a66613954223cfceec6e6938918b",
+      "bytes": 451
+    },
+    {
+      "name": "third_quarter.png",
+      "path": "assets/minecraft/textures/environment/celestial/moon/third_quarter.png",
+      "git_blob_sha": "3324491e5e744f0d491807a8777e46d5743358a9",
+      "bytes": 492
+    },
+    {
+      "name": "waning_crescent.png",
+      "path": "assets/minecraft/textures/environment/celestial/moon/waning_crescent.png",
+      "git_blob_sha": "827fc5044035e5a60bbcc1631ae8edd78ac5c333",
+      "bytes": 466
+    },
+    {
+      "name": "waning_gibbous.png",
+      "path": "assets/minecraft/textures/environment/celestial/moon/waning_gibbous.png",
+      "git_blob_sha": "f3d9d42c406c75b94dc3039eacb8bd05688f711c",
+      "bytes": 499
+    },
+    {
+      "name": "waxing_crescent.png",
+      "path": "assets/minecraft/textures/environment/celestial/moon/waxing_crescent.png",
+      "git_blob_sha": "b92a71c81bd1ea310fbca596ab3737d044beddb8",
+      "bytes": 472
+    },
+    {
+      "name": "waxing_gibbous.png",
+      "path": "assets/minecraft/textures/environment/celestial/moon/waxing_gibbous.png",
+      "git_blob_sha": "052c0c49d9fbe0ca420842f8a1812653ec00f25c",
+      "bytes": 500
+    }
+  ]
+}

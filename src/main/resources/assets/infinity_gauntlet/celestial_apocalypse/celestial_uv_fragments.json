@@ -1,0 +1,487 @@
+{
+  "format": "custom mesh specification; original-texture UV pieces, not registered blocks",
+  "sprite_space": "UV origin top-left, body centered at origin, +Y up",
+  "fragments": [
+    {
+      "id": 0,
+      "uv": [
+        0.0,
+        0.0,
+        0.25,
+        0.25
+      ],
+      "local_center_in_body_widths": [
+        -0.375,
+        0.375,
+        0
+      ],
+      "outward_direction": [
+        -0.70711,
+        0.70711,
+        0.15
+      ],
+      "initial_quad_size_in_body_widths": [
+        0.25,
+        0.25
+      ],
+      "thickness_in_body_widths": 0.015,
+      "tumble_degrees_per_second": [
+        12,
+        -20,
+        8
+      ]
+    },
+    {
+      "id": 1,
+      "uv": [
+        0.25,
+        0.0,
+        0.5,
+        0.25
+      ],
+      "local_center_in_body_widths": [
+        -0.125,
+        0.375,
+        0
+      ],
+      "outward_direction": [
+        -0.31623,
+        0.94868,
+        0.15
+      ],
+      "initial_quad_size_in_body_widths": [
+        0.25,
+        0.25
+      ],
+      "thickness_in_body_widths": 0.015,
+      "tumble_degrees_per_second": [
+        19,
+        -20,
+        11
+      ]
+    },
+    {
+      "id": 2,
+      "uv": [
+        0.5,
+        0.0,
+        0.75,
+        0.25
+      ],
+      "local_center_in_body_widths": [
+        0.125,
+        0.375,
+        0
+      ],
+      "outward_direction": [
+        0.31623,
+        0.94868,
+        0.15
+      ],
+      "initial_quad_size_in_body_widths": [
+        0.25,
+        0.25
+      ],
+      "thickness_in_body_widths": 0.015,
+      "tumble_degrees_per_second": [
+        26,
+        -20,
+        14
+      ]
+    },
+    {
+      "id": 3,
+      "uv": [
+        0.75,
+        0.0,
+        1.0,
+        0.25
+      ],
+      "local_center_in_body_widths": [
+        0.375,
+        0.375,
+        0
+      ],
+      "outward_direction": [
+        0.70711,
+        0.70711,
+        0.15
+      ],
+      "initial_quad_size_in_body_widths": [
+        0.25,
+        0.25
+      ],
+      "thickness_in_body_widths": 0.015,
+      "tumble_degrees_per_second": [
+        33,
+        -20,
+        17
+      ]
+    },
+    {
+      "id": 4,
+      "uv": [
+        0.0,
+        0.25,
+        0.25,
+        0.5
+      ],
+      "local_center_in_body_widths": [
+        -0.375,
+        0.125,
+        0
+      ],
+      "outward_direction": [
+        -0.94868,
+        0.31623,
+        0.15
+      ],
+      "initial_quad_size_in_body_widths": [
+        0.25,
+        0.25
+      ],
+      "thickness_in_body_widths": 0.015,
+      "tumble_degrees_per_second": [
+        12,
+        -11,
+        8
+      ]
+    },
+    {
+      "id": 5,
+      "uv": [
+        0.25,
+        0.25,
+        0.5,
+        0.5
+      ],
+      "local_center_in_body_widths": [
+        -0.125,
+        0.125,
+        0
+      ],
+      "outward_direction": [
+        -0.70711,
+        0.70711,
+        0.15
+      ],
+      "initial_quad_size_in_body_widths": [
+        0.25,
+        0.25
+      ],
+      "thickness_in_body_widths": 0.015,
+      "tumble_degrees_per_second": [
+        19,
+        -11,
+        11
+      ]
+    },
+    {
+      "id": 6,
+      "uv": [
+        0.5,
+        0.25,
+        0.75,
+        0.5
+      ],
+      "local_center_in_body_widths": [
+        0.125,
+        0.125,
+        0
+      ],
+      "outward_direction": [
+        0.70711,
+        0.70711,
+        0.15
+      ],
+      "initial_quad_size_in_body_widths": [
+        0.25,
+        0.25
+      ],
+      "thickness_in_body_widths": 0.015,
+      "tumble_degrees_per_second": [
+        26,
+        -11,
+        14
+      ]
+    },
+    {
+      "id": 7,
+      "uv": [
+        0.75,
+        0.25,
+        1.0,
+        0.5
+      ],
+      "local_center_in_body_widths": [
+        0.375,
+        0.125,
+        0
+      ],
+      "outward_direction": [
+        0.94868,
+        0.31623,
+        0.15
+      ],
+      "initial_quad_size_in_body_widths": [
+        0.25,
+        0.25
+      ],
+      "thickness_in_body_widths": 0.015,
+      "tumble_degrees_per_second": [
+        33,
+        -11,
+        17
+      ]
+    },
+    {
+      "id": 8,
+      "uv": [
+        0.0,
+        0.5,
+        0.25,
+        0.75
+      ],
+      "local_center_in_body_widths": [
+        -0.375,
+        -0.125,
+        0
+      ],
+      "outward_direction": [
+        -0.94868,
+        -0.31623,
+        0.15
+      ],
+      "initial_quad_size_in_body_widths": [
+        0.25,
+        0.25
+      ],
+      "thickness_in_body_widths": 0.015,
+      "tumble_degrees_per_second": [
+        12,
+        -2,
+        8
+      ]
+    },
+    {
+      "id": 9,
+      "uv": [
+        0.25,
+        0.5,
+        0.5,
+        0.75
+      ],
+      "local_center_in_body_widths": [
+        -0.125,
+        -0.125,
+        0
+      ],
+      "outward_direction": [
+        -0.70711,
+        -0.70711,
+        0.15
+      ],
+      "initial_quad_size_in_body_widths": [
+        0.25,
+        0.25
+      ],
+      "thickness_in_body_widths": 0.015,
+      "tumble_degrees_per_second": [
+        19,
+        -2,
+        11
+      ]
+    },
+    {
+      "id": 10,
+      "uv": [
+        0.5,
+        0.5,
+        0.75,
+        0.75
+      ],
+      "local_center_in_body_widths": [
+        0.125,
+        -0.125,
+        0
+      ],
+      "outward_direction": [
+        0.70711,
+        -0.70711,
+        0.15
+      ],
+      "initial_quad_size_in_body_widths": [
+        0.25,
+        0.25
+      ],
+      "thickness_in_body_widths": 0.015,
+      "tumble_degrees_per_second": [
+        26,
+        -2,
+        14
+      ]
+    },
+    {
+      "id": 11,
+      "uv": [
+        0.75,
+        0.5,
+        1.0,
+        0.75
+      ],
+      "local_center_in_body_widths": [
+        0.375,
+        -0.125,
+        0
+      ],
+      "outward_direction": [
+        0.94868,
+        -0.31623,
+        0.15
+      ],
+      "initial_quad_size_in_body_widths": [
+        0.25,
+        0.25
+      ],
+      "thickness_in_body_widths": 0.015,
+      "tumble_degrees_per_second": [
+        33,
+        -2,
+        17
+      ]
+    },
+    {
+      "id": 12,
+      "uv": [
+        0.0,
+        0.75,
+        0.25,
+        1.0
+      ],
+      "local_center_in_body_widths": [
+        -0.375,
+        -0.375,
+        0
+      ],
+      "outward_direction": [
+        -0.70711,
+        -0.70711,
+        0.15
+      ],
+      "initial_quad_size_in_body_widths": [
+        0.25,
+        0.25
+      ],
+      "thickness_in_body_widths": 0.015,
+      "tumble_degrees_per_second": [
+        12,
+        7,
+        8
+      ]
+    },
+    {
+      "id": 13,
+      "uv": [
+        0.25,
+        0.75,
+        0.5,
+        1.0
+      ],
+      "local_center_in_body_widths": [
+        -0.125,
+        -0.375,
+        0
+      ],
+      "outward_direction": [
+        -0.31623,
+        -0.94868,
+        0.15
+      ],
+      "initial_quad_size_in_body_widths": [
+        0.25,
+        0.25
+      ],
+      "thickness_in_body_widths": 0.015,
+      "tumble_degrees_per_second": [
+        19,
+        7,
+        11
+      ]
+    },
+    {
+      "id": 14,
+      "uv": [
+        0.5,
+        0.75,
+        0.75,
+        1.0
+      ],
+      "local_center_in_body_widths": [
+        0.125,
+        -0.375,
+        0
+      ],
+      "outward_direction": [
+        0.31623,
+        -0.94868,
+        0.15
+      ],
+      "initial_quad_size_in_body_widths": [
+        0.25,
+        0.25
+      ],
+      "thickness_in_body_widths": 0.015,
+      "tumble_degrees_per_second": [
+        26,
+        7,
+        14
+      ]
+    },
+    {
+      "id": 15,
+      "uv": [
+        0.75,
+        0.75,
+        1.0,
+        1.0
+      ],
+      "local_center_in_body_widths": [
+        0.375,
+        -0.375,
+        0
+      ],
+      "outward_direction": [
+        0.70711,
+        -0.70711,
+        0.15
+      ],
+      "initial_quad_size_in_body_widths": [
+        0.25,
+        0.25
+      ],
+      "thickness_in_body_widths": 0.015,
+      "tumble_degrees_per_second": [
+        33,
+        7,
+        17
+      ]
+    }
+  ],
+  "alpha_rule": "Discard invisible pixels; black sky background must not become dark flying tiles",
+  "full_bright": true,
+  "detachment_stages": [
+    {
+      "progress": 0,
+      "separation_body_widths": 0
+    },
+    {
+      "progress": 0.5,
+      "separation_body_widths": 0.12
+    },
+    {
+      "progress": 1,
+      "separation_body_widths": 0.4
+    }
+  ],
+  "notes": "Keep apparent sun/moon angular size inherited from vanilla; this is not a giant spherical sun replacement."
+}

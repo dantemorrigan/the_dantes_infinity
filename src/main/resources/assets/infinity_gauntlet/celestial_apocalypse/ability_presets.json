@@ -1,0 +1,44 @@
+{
+  "format": "custom implementation specification, not auto-loaded config",
+  "ability_id": "infinity_gauntlet:celestial_apocalypse",
+  "required_stone": "power",
+  "target_kinds": [
+    "sun",
+    "moon"
+  ],
+  "aim_hold_seconds": 3,
+  "fracture_seconds": 6,
+  "fragment_pull_seconds": 3,
+  "rain_duration_seconds": 300,
+  "nominal_ticks_at_20_tps": 6000,
+  "real_time_rule": "Start 300-second monotonic server deadline at first meteor. Tick count alone is insufficient under lag. Persist wall-clock expiry for restart recovery.",
+  "event_center": "snapshot of impact-zone ground position chosen when activation finishes",
+  "effect_radius_blocks": 256,
+  "sky_blend_falloff_blocks": 64,
+  "red_sky": "local to event area; blend by distance and smooth day/night transition. Preserve normal world time.",
+  "meteor_spawn_height_above_ground": [
+    90,
+    150
+  ],
+  "server_impact_rate_per_second": 1.2,
+  "client_distant_trail_rate_per_second": 8,
+  "max_active_physical_meteors": 24,
+  "crater_radius_blocks": [
+    3,
+    8
+  ],
+  "terrain_destruction_block_budget_per_tick": 256,
+  "impact_effects": [
+    "violet_white_flash",
+    "fire_burst",
+    "ground_shockwave",
+    "smoke",
+    "stone_chips"
+  ],
+  "meteor_trail": "full-bright billboard ribbon oriented opposite velocity, not fixed world-axis particles",
+  "world_changes": "Crater, explosion, ignition and damage are server-authoritative; do not infer them from client particles.",
+  "performance": "Distant meteors are cosmetic client trails. No ticking unseen chunks; ground impacts only in loaded chunks. Rate, radius and budgets configurable.",
+  "end_rule": "Stop new meteors at deadline; existing meteors finish within a short bounded grace period. Fade local red sky, detach camera effects; already placed fires follow vanilla rules.",
+  "celestial_end_rule": "Persist destroyed-body state separately from temporary red sky. Do not spontaneously restore the broken sun/moon just because rain ended.",
+  "cancel_cleanup": "Clear client overlays, tracked meteors, camera effects on cancellation; server owns event state."
+}

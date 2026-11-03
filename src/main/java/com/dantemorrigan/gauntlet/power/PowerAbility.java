@@ -39,8 +39,17 @@ public final class PowerAbility {
 		return GauntletState.activeGauntlet(player) == gauntlet && GauntletState.inserted(gauntlet).contains(Stone.POWER);
 	}
 
+	public static final int MODE_STRIKE = 0, MODE_PLANET = 1, MODE_CELESTIAL = 2;
+	private static final String[] MODE_NAMES = {"§dсиловой удар", "§5УНИЧТОЖЕНИЕ ПЛАНЕТЫ", "§cРАЗРУШЕНИЕ СОЛНЦА И ЛУНЫ"};
+
+	public static int mode(ItemStack gauntlet) {
+		Integer m = gauntlet.get(ModComponents.POWER_MODE);
+		if (m != null) return m;
+		return Boolean.TRUE.equals(gauntlet.get(ModComponents.ULTIMATE_MODE)) ? MODE_PLANET : MODE_STRIKE;
+	}
+
 	public static boolean isUltimate(ItemStack gauntlet) {
-		return Boolean.TRUE.equals(gauntlet.get(ModComponents.ULTIMATE_MODE));
+		return mode(gauntlet) == MODE_PLANET;
 	}
 
 	/** Toggle strike / ultimate. Requested by the client keybind. */
@@ -50,19 +59,29 @@ public final class PowerAbility {
 			player.sendOverlayMessage(Component.literal("Нужна перчатка с Камнем Силы в левой руке"));
 			return;
 		}
-		boolean ultimate = !isUltimate(gauntlet);
-		gauntlet.set(ModComponents.ULTIMATE_MODE, ultimate);
-		player.sendOverlayMessage(Component.literal(ultimate ? "§5Камень Силы: УНИЧТОЖЕНИЕ ПЛАНЕТЫ" : "§dКамень Силы: силовой удар"));
-		player.level().playSound(null, player.blockPosition(), SoundEvents.BEACON_POWER_SELECT, SoundSource.PLAYERS, 0.6F, ultimate ? 0.6F : 1.4F);
+		int mode = (mode(gauntlet) + 1) % MODE_NAMES.length;
+		gauntlet.set(ModComponents.POWER_MODE, mode);
+		gauntlet.remove(ModComponents.ULTIMATE_MODE);
+		player.sendOverlayMessage(Component.literal("Камень Силы: " + MODE_NAMES[mode]));
+		player.level().playSound(null, player.blockPosition(), SoundEvents.BEACON_POWER_SELECT, SoundSource.PLAYERS, 0.6F, 1.4F - mode * 0.4F);
 	}
 
 	/** Called when the player releases the charge. */
 	public static void release(ServerPlayer player, ItemStack gauntlet, int chargeTicks) {
 		GauntletConfig cfg = GauntletConfig.get();
 		GauntletState.setInUse(gauntlet, EnumSet.noneOf(Stone.class));
-		if (!canUse(player, gauntlet) || chargeTicks < cfg.strikeMinChargeTicks) return;
+		if (!canUse(player, gauntlet)) return;
+		if (mode(gauntlet) == MODE_CELESTIAL) {
+			com.dantemorrigan.gauntlet.celestial.CelestialApocalypse.resetAim(player);
+			return;
+		}
+		if (chargeTicks < cfg.strikeMinChargeTicks) return;
 		if (player.getCooldowns().isOnCooldown(gauntlet)) return;
 
+		if (mode(gauntlet) == MODE_CELESTIAL) {
+			com.dantemorrigan.gauntlet.celestial.CelestialApocalypse.resetAim(player);
+			return; // celestial mode works while charging (aim at the sky), release does nothing
+		}
 		HitResult hit = pick(player, cfg.strikeReach);
 		if (isUltimate(gauntlet)) {
 			tryUltimate(player, gauntlet, chargeTicks, hit);

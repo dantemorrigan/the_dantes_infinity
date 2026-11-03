@@ -8,7 +8,8 @@
 		"ClientInputAccessor",
 		"FogRendererMixin",
 		"ItemInHandRendererMixin",
-		"KeyboardInputMixin"
+		"KeyboardInputMixin",
+		"SkyRendererMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1

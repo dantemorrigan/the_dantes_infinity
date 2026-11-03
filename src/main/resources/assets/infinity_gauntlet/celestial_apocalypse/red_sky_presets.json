@@ -1,0 +1,55 @@
+{
+  "format": "custom sky-renderer settings",
+  "day": {
+    "sky_rgb": [
+      0.56,
+      0.16,
+      0.1
+    ],
+    "horizon_rgb": [
+      0.88,
+      0.29,
+      0.1
+    ],
+    "fog_rgb": [
+      0.5,
+      0.2,
+      0.15
+    ],
+    "stars_alpha": 0,
+    "sun_base_preserved_until_destroyed": true,
+    "cloud_rgb": [
+      0.32,
+      0.08,
+      0.09
+    ]
+  },
+  "night": {
+    "sky_rgb": [
+      0.045,
+      0.006,
+      0.014
+    ],
+    "horizon_rgb": [
+      0.25,
+      0.025,
+      0.035
+    ],
+    "fog_rgb": [
+      0.13,
+      0.018,
+      0.025
+    ],
+    "stars_alpha": 0.55,
+    "moon_base_preserved_until_destroyed": true,
+    "cloud_rgb": [
+      0.085,
+      0.008,
+      0.018
+    ]
+  },
+  "blend": "Smooth interpolation using actual dimension daylight factor; radial falloff relative to event center; fade in 2s and out 5s.",
+  "distance_rule": "Sky tint and fog tint must both fade to vanilla across effect_radius..effect_radius+falloff. Do not globally recolor other dimensions or players.",
+  "panorama_rule": "Use horizon-only red cloud bands at modest opacity, keep native celestial sprites separate. Cubemap stars must not be doubled by native star rendering.",
+  "lighting": "Do not rewrite world block lighting or game time merely to tint sky. Optional full-screen grade is weak and must not erase vanilla block textures."
+}

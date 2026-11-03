@@ -19,6 +19,13 @@ public final class ModParticleProviders {
 		billboard(ModParticles.PLANET_RIFT, "planet_rift");
 		billboard(ModParticles.DETONATION_FLASH, "detonation_flash");
 		billboard(ModParticles.VOID_DISSOLVE, "void_dissolve");
+		billboard(ModParticles.CELESTIAL_METEOR_IMPACT, "celestial_meteor_impact");
+		ParticleProviderRegistry.getInstance().register(ModParticles.CELESTIAL_METEOR_TRAIL, sprites -> (t, level, x, y, z, xa, ya, za, random) -> {
+			Vector3f v = new Vector3f((float) xa, (float) ya, (float) za);
+			float speed = v.length();
+			if (speed < 1.0e-4f) v.set(0, -1, 0);
+			return new FxParticle(level, x, y, z, sprites, VfxPresets.get("celestial_meteor_trail"), 1f, null, -1, null, 1f).alignTo(v.normalize());
+		});
 	}
 
 	/** xa = size multiplier (0 → 1). */

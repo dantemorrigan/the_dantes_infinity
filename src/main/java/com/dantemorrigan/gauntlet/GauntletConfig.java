@@ -42,6 +42,25 @@ public final class GauntletConfig {
 	/** Max real blocks captured per fragment (ground, stone, building). */
 	public int fragmentMaxBlocks = 27;
 
+	// ---- Celestial Apocalypse (server) ----
+	/** Seconds the gauntlet must stay aimed at the sun/moon to lock on. */
+	public float celestialAimSeconds = 3f;
+	/** Aim tolerance in degrees around the body's center. */
+	public float celestialAimDegrees = 9f;
+	/** Meteor rain length in REAL seconds (monotonic deadline, survives lag and restarts). */
+	public int meteorRainSeconds = 300;
+	public float meteorImpactsPerSecond = 1.2f;
+	/** Ground impacts happen within this radius of the event center (loaded chunks only). */
+	public int meteorImpactRadius = 96;
+	public int maxActiveMeteors = 24;
+	public float craterPowerMin = 3.0f;
+	public float craterPowerMax = 6.0f;
+	/** Red sky radius around the event center; the color fades out over the extra falloff. */
+	public int redSkyRadius = 256;
+	public int redSkyFalloff = 64;
+	/** Meteors don't target ground closer than this to a player. */
+	public int meteorPlayerSafeRadius = 6;
+
 	// ---- Time stone rewind (server) ----
 	/** How far back the personal rewind goes (seconds of recorded history). */
 	public int timeRewindSeconds = 5;

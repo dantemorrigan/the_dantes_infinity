@@ -5,7 +5,10 @@
 	"name": "Infinity Gauntlet visual tests",
 	"environment": "*",
 	"entrypoints": {
-		"fabric-client-gametest": ["com.dantemorrigan.gauntlet.gametest.VisualTest"]
+		"fabric-client-gametest": [
+			"com.dantemorrigan.gauntlet.gametest.VisualTest",
+			"com.dantemorrigan.gauntlet.gametest.CelestialTest"
+		]
 	},
 	"depends": {
 		"infinity_gauntlet": "*"

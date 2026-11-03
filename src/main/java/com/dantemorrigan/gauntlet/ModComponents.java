@@ -12,6 +12,11 @@ public final class ModComponents {
 			InfinityGauntlet.id("ultimate_mode"),
 			DataComponentType.<Boolean>builder().persistent(Codec.BOOL).networkSynchronized(ByteBufCodecs.BOOL).build());
 
+	/** Power stone ability: 0 = strike, 1 = Planet Destruction, 2 = Celestial Apocalypse (break the sun/moon). */
+	public static final DataComponentType<Integer> POWER_MODE = Registry.register(BuiltInRegistries.DATA_COMPONENT_TYPE,
+			InfinityGauntlet.id("power_mode"),
+			DataComponentType.<Integer>builder().persistent(Codec.INT).networkSynchronized(ByteBufCodecs.VAR_INT).build());
+
 	public static void init() {}
 
 	private ModComponents() {}

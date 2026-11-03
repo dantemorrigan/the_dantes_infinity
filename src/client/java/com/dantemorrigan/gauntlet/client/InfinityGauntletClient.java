@@ -19,6 +19,7 @@ public class InfinityGauntletClient implements ClientModInitializer {
 		com.dantemorrigan.gauntlet.client.fx.TimeRewindClient.init();
 		Cutscene.init();
 		SpaceScene.init();
+		com.dantemorrigan.gauntlet.client.celestial.CelestialClient.init();
 		WornGauntlet.init();
 	}
 }

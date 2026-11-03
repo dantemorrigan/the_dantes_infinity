@@ -1,0 +1,22 @@
+{
+  "format": "custom presets, not native Minecraft config",
+  "celestial_meteor_trail": {
+    "frames": 4,
+    "ticks_per_frame": 2,
+    "loop": true,
+    "full_bright": true,
+    "gravity": 0,
+    "orientation": "local +X/-Y sheet diagonal mapped to velocity; bright tip travels forward",
+    "alpha": "scale to lifetime; never leave detached static halos"
+  },
+  "celestial_meteor_impact": {
+    "frames": 4,
+    "ticks_per_frame": 2,
+    "lifetime_ticks": 8,
+    "loop": false,
+    "full_bright": true,
+    "orientation": "upright at ground impact",
+    "width_blocks": 4,
+    "supplement": "Reuse power_shockwave, power_sparks_smoke and vanilla block-chip particles with the actual ground BlockState."
+  }
+}
