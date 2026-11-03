@@ -15,6 +15,7 @@ public class InfinityGauntlet implements ModInitializer {
 		ModItems.init();
 		ModCreativeTab.init();
 		ModMenus.init();
+		GauntletCommand.init();
 		LOGGER.info("Infinity Gauntlet loaded");
 	}
 

@@ -1,5 +1,6 @@
 package com.dantemorrigan.gauntlet.menu;
 
+import com.dantemorrigan.gauntlet.GauntletState;
 import com.dantemorrigan.gauntlet.InfinityGauntlet;
 import com.dantemorrigan.gauntlet.Stone;
 import net.minecraft.core.NonNullList;
@@ -12,11 +13,8 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.component.CustomModelData;
 import net.minecraft.world.item.component.ItemContainerContents;
 
-import java.util.ArrayList;
-import java.util.List;
 
 public class GauntletMenu extends AbstractContainerMenu {
 	public static final int STONE_SLOTS = Stone.values().length;
@@ -100,10 +98,7 @@ public class GauntletMenu extends AbstractContainerMenu {
 		public void setChanged() {
 			super.setChanged();
 			gauntlet.set(DataComponents.CONTAINER, ItemContainerContents.fromItems(getItems()));
-			// One flag per stone (Stone order) so the item model can show inserted stones.
-			List<Boolean> flags = new ArrayList<>();
-			for (int i = 0; i < STONE_SLOTS; i++) flags.add(!getItem(i).isEmpty());
-			gauntlet.set(DataComponents.CUSTOM_MODEL_DATA, new CustomModelData(List.of(), flags, List.of(), List.of()));
+			GauntletState.refresh(gauntlet);
 		}
 	}
 

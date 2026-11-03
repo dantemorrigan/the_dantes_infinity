@@ -1,0 +1,61 @@
+{
+	"parent": "infinity_gauntlet:item/gauntlet_in_hand",
+	"textures": {
+		"overlay": "infinity_gauntlet:item/gauntlet_model_space_active",
+		"particle": "infinity_gauntlet:item/gauntlet_model"
+	},
+	"elements": [
+		{
+			"from": [
+				5.44,
+				1.94,
+				5.94
+			],
+			"to": [
+				10.56,
+				14.06,
+				10.06
+			],
+			"shade": false,
+			"light_emission": 15,
+			"faces": {
+				"west": {
+					"uv": [
+						0,
+						0,
+						3.5,
+						10.5
+					],
+					"texture": "#overlay"
+				},
+				"south": {
+					"uv": [
+						3.5,
+						0,
+						7.875,
+						10.5
+					],
+					"texture": "#overlay"
+				},
+				"east": {
+					"uv": [
+						7.875,
+						0,
+						11.375,
+						10.5
+					],
+					"texture": "#overlay"
+				},
+				"north": {
+					"uv": [
+						11.375,
+						0,
+						15.75,
+						10.5
+					],
+					"texture": "#overlay"
+				}
+			}
+		}
+	]
+}
