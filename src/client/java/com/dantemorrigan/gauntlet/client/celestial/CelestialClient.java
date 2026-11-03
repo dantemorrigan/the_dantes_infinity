@@ -92,10 +92,9 @@ public final class CelestialClient {
 		LevelRenderEvents.COLLECT_SUBMITS.register(CelestialClient::render);
 		HudElementRegistry.addLast(InfinityGauntlet.id("meteor_timer"), (g, d) -> {
 			Minecraft mc = Minecraft.getInstance();
-			if (phase != 2 || mc.font == null) return;
 			int ms = remainingMs();
-			String text = "§cМетеоритный дождь: " + ms / 60000 + ":" + String.format("%02d", (ms / 1000) % 60);
-			g.text(mc.font, Component.literal(text), g.guiWidth() / 2 - mc.font.width(text) / 2 + 6, 6, 0xFFFFFFFF, true);
+			com.dantemorrigan.gauntlet.client.StatusHud.persistent("meteor", phase == 2
+					? Component.literal("§cМетеоритный дождь: " + ms / 60000 + ":" + String.format("%02d", (ms / 1000) % 60)) : null);
 		});
 	}
 

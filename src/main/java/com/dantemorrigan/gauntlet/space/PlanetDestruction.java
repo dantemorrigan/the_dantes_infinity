@@ -86,7 +86,7 @@ public final class PlanetDestruction {
 	/** Start the event. Validation (stone, mode, charge, cooldown) is done by the caller. */
 	public static boolean start(ServerPlayer activator, Vec3 impact) {
 		if (isBusy(activator)) {
-			activator.sendOverlayMessage(Component.literal("Событие уже идёт"));
+			com.dantemorrigan.gauntlet.net.ModStatus.send(activator, Component.literal("Событие уже идёт"));
 			return false;
 		}
 		ServerLevel level = activator.level();

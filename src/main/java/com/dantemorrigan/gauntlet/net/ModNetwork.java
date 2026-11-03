@@ -172,7 +172,14 @@ public final class ModNetwork {
 		@Override public Type<BeamFx> type() { return TYPE; }
 	}
 
+	public record Status(String text) implements CustomPacketPayload {
+		public static final Type<Status> TYPE = newType("status");
+		public static final StreamCodec<ByteBuf, Status> CODEC = StreamCodec.composite(ByteBufCodecs.STRING_UTF8, Status::text, Status::new);
+		@Override public Type<Status> type() { return TYPE; }
+	}
+
 	public static void init() {
+		PayloadTypeRegistry.clientboundPlay().register(Status.TYPE, Status.CODEC);
 		PayloadTypeRegistry.serverboundPlay().register(BeamAction.TYPE, BeamAction.CODEC);
 		PayloadTypeRegistry.clientboundPlay().register(BeamFx.TYPE, BeamFx.CODEC);
 		PayloadTypeRegistry.serverboundPlay().register(SpaceAction.TYPE, SpaceAction.CODEC);

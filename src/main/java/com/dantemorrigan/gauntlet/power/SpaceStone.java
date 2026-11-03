@@ -89,7 +89,7 @@ public final class SpaceStone {
 	private static ItemStack gauntletWithSpace(ServerPlayer player) {
 		ItemStack g = GauntletState.activeGauntlet(player);
 		if (g.isEmpty() || !GauntletState.inserted(g).contains(Stone.SPACE)) {
-			player.sendOverlayMessage(Component.literal("Нужна перчатка с Камнем Пространства в левой руке"));
+			com.dantemorrigan.gauntlet.net.ModStatus.send(player, Component.literal("Нужна перчатка с Камнем Пространства в левой руке"));
 			return ItemStack.EMPTY;
 		}
 		return g;
@@ -111,7 +111,7 @@ public final class SpaceStone {
 				int next = (destination(g, player.level()) + 1) % DESTINATIONS.length;
 				if (DIMS.get(next).equals(player.level().dimension())) next = (next + 1) % DESTINATIONS.length;
 				g.set(ModComponents.PORTAL_DESTINATION, next);
-				player.sendOverlayMessage(Component.literal("§9Портал: " + name(next)));
+				com.dantemorrigan.gauntlet.net.ModStatus.send(player, Component.literal("§9Портал: " + name(next)));
 				player.level().playSound(null, player.blockPosition(), SoundEvents.AMETHYST_BLOCK_CHIME, SoundSource.PLAYERS, 1f, 0.8f + next * 0.2f);
 			}
 			case 2 -> blink(player, g);
@@ -145,7 +145,7 @@ public final class SpaceStone {
 		Vec3 center = player.position().add(forward.scale(2.5)).add(0, PORTAL_SIZE / 2 - 0.1, 0);
 		open(player.level(), center, yaw + 180, dest, player.getUUID(), GauntletConfig.get().portalLifetimeSeconds * 20);
 		GauntletState.setInUse(g, EnumSet.of(Stone.SPACE));
-		player.sendOverlayMessage(Component.literal("§9Портал открыт: " + name(dest)));
+		com.dantemorrigan.gauntlet.net.ModStatus.send(player, Component.literal("§9Портал открыт: " + name(dest)));
 		player.level().playSound(null, BlockPos.containing(center), SoundEvents.PORTAL_TRIGGER, SoundSource.PLAYERS, 0.8f, 1.6f);
 	}
 
@@ -259,12 +259,12 @@ public final class SpaceStone {
 		Vec3 end = eye.add(player.getLookAngle().scale(cfg.blinkRange));
 		BlockHitResult hit = player.level().clip(new ClipContext(eye, end, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, player));
 		if (hit.getType() != HitResult.Type.BLOCK) {
-			player.sendOverlayMessage(Component.literal("§9Слишком далеко (до " + cfg.blinkRange + " блоков)"));
+			com.dantemorrigan.gauntlet.net.ModStatus.send(player, Component.literal("§9Слишком далеко (до " + cfg.blinkRange + " блоков)"));
 			return;
 		}
 		Vec3 target = standingSpot(player.level(), hit);
 		if (target == null) {
-			player.sendOverlayMessage(Component.literal("§9Там негде встать"));
+			com.dantemorrigan.gauntlet.net.ModStatus.send(player, Component.literal("§9Там негде встать"));
 			return;
 		}
 		BLINK_COOLDOWN.put(player.getUUID(), now + cfg.blinkCooldownTicks);

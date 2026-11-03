@@ -64,7 +64,7 @@ public class InfinityBeamTest implements FabricClientGameTest {
             onServer(server, () -> { InfinityBeam.request(server.getPlayerList().getPlayers().getFirst(), true); return null; });
             ctx.waitTicks(55);
             ctx.takeScreenshot("beam_02_drilling");
-            ctx.waitTicks(35);
+            ctx.waitTicks(Math.max(1, GauntletConfig.get().beamChargeTicks + GauntletConfig.get().beamFireTicks - 55 + 10));
             onServer(server, () -> {
                 var p = server.getPlayerList().getPlayers().getFirst();
                 check(p.level().getBlockState(new BlockPos(0, 101, 12)).isAir(), "Beam must drill stone");
@@ -76,7 +76,7 @@ public class InfinityBeamTest implements FabricClientGameTest {
             float before = onServer(server, () -> server.overworld().getEntitiesOfClass(EnderDragon.class,
                     new AABB(-32, 80, -32, 32, 120, 64)).getFirst().getHealth());
             onServer(server, () -> { InfinityBeam.request(server.getPlayerList().getPlayers().getFirst(), true); return null; });
-            ctx.waitTicks(85);
+            ctx.waitTicks(GauntletConfig.get().beamChargeTicks + GauntletConfig.get().beamFireTicks + 5);
             onServer(server, () -> {
                 var dragon = server.overworld().getEntitiesOfClass(EnderDragon.class,
                         new AABB(-32, 80, -32, 32, 120, 64)).getFirst();

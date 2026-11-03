@@ -56,13 +56,13 @@ public final class PowerAbility {
 	public static void toggleMode(ServerPlayer player) {
 		ItemStack gauntlet = GauntletState.activeGauntlet(player);
 		if (gauntlet.isEmpty() || !GauntletState.inserted(gauntlet).contains(Stone.POWER)) {
-			player.sendOverlayMessage(Component.literal("Нужна перчатка с Камнем Силы в левой руке"));
+			com.dantemorrigan.gauntlet.net.ModStatus.send(player, Component.literal("Нужна перчатка с Камнем Силы в левой руке"));
 			return;
 		}
 		int mode = (mode(gauntlet) + 1) % MODE_NAMES.length;
 		gauntlet.set(ModComponents.POWER_MODE, mode);
 		gauntlet.remove(ModComponents.ULTIMATE_MODE);
-		player.sendOverlayMessage(Component.literal("Камень Силы: " + MODE_NAMES[mode]));
+		com.dantemorrigan.gauntlet.net.ModStatus.send(player, Component.literal("Камень Силы: " + MODE_NAMES[mode]));
 		player.level().playSound(null, player.blockPosition(), SoundEvents.BEACON_POWER_SELECT, SoundSource.PLAYERS, 0.6F, 1.4F - mode * 0.4F);
 	}
 
@@ -93,21 +93,21 @@ public final class PowerAbility {
 	private static void tryUltimate(ServerPlayer player, ItemStack gauntlet, int chargeTicks, HitResult hit) {
 		GauntletConfig cfg = GauntletConfig.get();
 		if (chargeTicks < cfg.ultimateChargeTicks) {
-			player.sendOverlayMessage(Component.literal("§5Недостаточно заряда (" + chargeTicks + "/" + cfg.ultimateChargeTicks + ")"));
+			com.dantemorrigan.gauntlet.net.ModStatus.send(player, Component.literal("§5Недостаточно заряда (" + chargeTicks + "/" + cfg.ultimateChargeTicks + ")"));
 			return;
 		}
 		if (!(hit instanceof BlockHitResult block) || hit.getType() != HitResult.Type.BLOCK || block.getDirection() != Direction.UP) {
-			player.sendOverlayMessage(Component.literal("§5Ударь по земле под собой"));
+			com.dantemorrigan.gauntlet.net.ModStatus.send(player, Component.literal("§5Ударь по земле под собой"));
 			return;
 		}
 		if (SpaceManager.inSpace(player)) {
-			player.sendOverlayMessage(Component.literal("§5Здесь нечего разрушать"));
+			com.dantemorrigan.gauntlet.net.ModStatus.send(player, Component.literal("§5Здесь нечего разрушать"));
 			return;
 		}
 		long now = player.level().getServer().overworld().getGameTime();
 		Long until = ULTIMATE_COOLDOWN.get(player.getUUID());
 		if (until != null && now < until && !player.isCreative()) {
-			player.sendOverlayMessage(Component.literal("§5Перезарядка: " + (until - now) / 20 + " с"));
+			com.dantemorrigan.gauntlet.net.ModStatus.send(player, Component.literal("§5Перезарядка: " + (until - now) / 20 + " с"));
 			return;
 		}
 		Vec3 impact = block.getLocation();

@@ -64,10 +64,18 @@ public final class InfinityBeamClient {
             if (mc.player != null && down != held) ClientPlayNetworking.send(new ModNetwork.BeamAction(down));
             held = down;
             BEAMS.values().removeIf(v -> ticks - v.received > 10);
-            PUFFS.removeIf(p -> ticks - p.start > 8);
+            PUFFS.removeIf(p -> ticks - p.start > 16);
             if (mc.player != null) {
                 Visual v = BEAMS.get(mc.player.getId());
-                if (v != null && v.state.age() >= v.state.charge()) Cutscene.shake(.12f, 2);
+                if (v != null) {
+                    float age = v.state.age() + Math.min(2, ticks - v.received);
+                    boolean charging = age < v.state.charge();
+                    float progress = charging ? age / v.state.charge() : (age - v.state.charge()) / v.state.duration();
+                    com.dantemorrigan.gauntlet.client.StatusHud.persistent("beam", net.minecraft.network.chat.Component.literal(
+                            charging ? "§eЛуч Бесконечности: заряд " + Math.min(100, (int)(progress * 100)) + "%"
+                                    : "§dЛуч Бесконечности: " + String.format(java.util.Locale.ROOT, "%.1f", Math.max(0, (v.state.duration() - age + v.state.charge()) / 20f)) + " с"));
+                    if (!charging) Cutscene.shake(.12f, 2);
+                } else com.dantemorrigan.gauntlet.client.StatusHud.persistent("beam", null);
             }
         });
         LevelRenderEvents.COLLECT_SUBMITS.register(InfinityBeamClient::render);
@@ -88,7 +96,14 @@ public final class InfinityBeamClient {
             Vec3 from = FistPosition.of(entity, partial);
             if (age < s.charge()) {
                 int frame = Math.min(3, (int) (age * 4 / s.charge()));
-                billboard(ctx, camera, from, right, up, .5f, texture("charge", frame), 0xFFFFFFFF);
+                float charge = Math.min(1, age / s.charge());
+                billboard(ctx, camera, from, right, up, .3f + .55f * charge, texture("charge", frame), 0xFFFFFFFF);
+                for (int i = 0; i < 6; i++) {
+                    double angle = age * .13 + i * Math.PI / 3;
+                    double radius = .55 * (1 - charge) + .08;
+                    Vec3 orb = from.add(right.scale(Math.cos(angle) * radius)).add(up.scale(Math.sin(angle) * radius));
+                    billboard(ctx, camera, orb, right, up, .12f, texture("charge", frame), 0xE0000000 | COLORS[i]);
+                }
                 continue;
             }
             Vec3 end = v.previousEnd.lerp(s.to(), Math.min(1, (ticks - v.received + partial) / 2.0));
@@ -98,6 +113,9 @@ public final class InfinityBeamClient {
             Vec3 dir = line.scale(1 / length);
             Vec3 axis = Math.abs(dir.y) > .95 ? new Vec3(1, 0, 0) : new Vec3(0, 1, 0);
             Vec3 a = dir.cross(axis).normalize(), b = dir.cross(a).normalize();
+            float fireAge = age - s.charge();
+            double envelope = Math.min(1, (fireAge + 1) / 8.0) * Math.min(1, (s.duration() - fireAge) / 12.0);
+            double power = Math.max(.12, envelope) * (1 + .06 * Math.sin(age * .65));
             int frame = ((int) (age - s.charge()) / 2) % 4;
             Identifier body = InfinityGauntlet.id("textures/infinity_beam/beam_body_" + frame + ".png");
             // Mirrored UV tiles, split at boundaries: stable core, no giant stretched billboard.
@@ -109,8 +127,8 @@ public final class InfinityBeamClient {
                 float u0 = (float) ((x - d) / 4), u1 = (float) ((y - d) / 4);
                 if ((tile & 1) != 0) { u0 = 1-u0; u1 = 1-u1; }
                 Vec3 p = from.add(dir.scale(x)), q = from.add(dir.scale(y));
-                ribbon(ctx, camera, p, q, a, .9, body, 0xFFFFFFFF, u0, u1);
-                ribbon(ctx, camera, p, q, b, .9, body, 0xDFFFFFFF, u0, u1);
+                ribbon(ctx, camera, p, q, a, 1.1 * power, body, 0xFFFFFFFF, u0, u1);
+                ribbon(ctx, camera, p, q, b, 1.1 * power, body, 0xDFFFFFFF, u0, u1);
             }
             // Six separate helical streams around the bright beam, one for each stone.
             for (int color = 0; color < 6; color++) {
@@ -121,15 +139,15 @@ public final class InfinityBeamClient {
                     Vec3 p = from.add(dir.scale(d)).add(a.scale(Math.cos(angle0)*.65)).add(b.scale(Math.sin(angle0)*.65));
                     Vec3 q = from.add(dir.scale(next)).add(a.scale(Math.cos(angle1)*.65)).add(b.scale(Math.sin(angle1)*.65));
                     Vec3 side = q.subtract(p).cross(camera.subtract(p)).normalize();
-                    ribbon(ctx, camera, p, q, side, .075, body, 0xE0000000 | COLORS[color], 0, 1);
+                    ribbon(ctx, camera, p, q, side, .1 * power, body, 0xE0000000 | COLORS[color], 0, 1);
                 }
             }
-            billboard(ctx, camera, from, right, up, .7f, texture("muzzle", frame), 0xFFFFFFFF);
-            billboard(ctx, camera, end, right, up, 1.7f, texture("impact", ((int)age/2)%4), 0xFFFFFFFF);
+            billboard(ctx, camera, from, right, up, (float)(.9 * power), texture("muzzle", frame), 0xFFFFFFFF);
+            billboard(ctx, camera, end, right, up, (float)(2.1 * power), texture("impact", ((int)age/2)%4), 0xFFFFFFFF);
         }
         for (Puff puff : PUFFS) {
             int age = ticks - puff.start;
-            billboard(ctx, camera, puff.pos, right, up, 1.7f, texture("residual", Math.min(3, age/2)), 0xDFFFFFFF);
+            billboard(ctx, camera, puff.pos, right, up, 1.7f, texture("residual", Math.min(3, age/4)), 0xDFFFFFFF);
         }
     }
     private static void billboard(LevelRenderContext ctx, Vec3 camera, Vec3 center, Vec3 right, Vec3 up,

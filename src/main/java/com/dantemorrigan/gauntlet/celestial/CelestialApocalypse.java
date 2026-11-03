@@ -123,19 +123,19 @@ public final class CelestialApocalypse {
 	public static boolean aimTick(ServerPlayer player, ItemStack gauntlet, int useTicks) {
 		MinecraftServer server = player.level().getServer();
 		if (server.overworld().getAttached(EVENT) != null) {
-			if (useTicks % 20 == 1) player.sendOverlayMessage(Component.literal("§5Небо уже рушится"));
+			if (useTicks % 20 == 1) com.dantemorrigan.gauntlet.net.ModStatus.send(player, Component.literal("§5Небо уже рушится"));
 			return false;
 		}
 		String body = aimedBody(player);
 		int lock = Math.round(GauntletConfig.get().celestialAimSeconds * 20);
 		if (body == null) {
 			AIM.remove(player.getUUID());
-			if (useTicks % 10 == 1) player.sendOverlayMessage(Component.literal("§5Наведи перчатку на солнце или луну"));
+			if (useTicks % 10 == 1) com.dantemorrigan.gauntlet.net.ModStatus.send(player, Component.literal("§5Наведи перчатку на солнце или луну"));
 			return false;
 		}
 		int t = AIM.merge(player.getUUID(), 1, Integer::sum);
 		if (t % 5 == 0) {
-			player.sendOverlayMessage(Component.literal("§5Захват: " + (body.equals("sun") ? "СОЛНЦЕ" : "ЛУНА") + " " + Math.min(100, t * 100 / lock) + "%"));
+			com.dantemorrigan.gauntlet.net.ModStatus.send(player, Component.literal("§5Захват: " + (body.equals("sun") ? "СОЛНЦЕ" : "ЛУНА") + " " + Math.min(100, t * 100 / lock) + "%"));
 			player.level().playSound(null, player.blockPosition(), SoundEvents.BEACON_AMBIENT, SoundSource.PLAYERS, 1.0F, 0.5F + t / (float) lock);
 		}
 		if (t >= lock) {

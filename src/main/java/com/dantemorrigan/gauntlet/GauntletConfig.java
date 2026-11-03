@@ -70,7 +70,9 @@ public final class GauntletConfig {
 
 	// ---- All-six-stones Infinity Beam (server) ----
 	public int beamChargeTicks = 40;
-	public int beamFireTicks = 40;
+	public int beamFireTicks = 120;
+	/** Version marker for the one-time migration of the original 2-second default. */
+	public int beamTimingVersion = 1;
 	public int beamCooldownTicks = 900;
 	public double beamRange = 72;
 	public double beamHitRadius = 1.2;
@@ -118,8 +120,13 @@ public final class GauntletConfig {
 		try {
 			if (Files.exists(path)) {
 				try (Reader reader = Files.newBufferedReader(path)) {
-					GauntletConfig read = gson.fromJson(reader, GauntletConfig.class);
-					if (read != null) config = read;
+					com.google.gson.JsonElement json = com.google.gson.JsonParser.parseReader(reader);
+					GauntletConfig read = gson.fromJson(json, GauntletConfig.class);
+					if (read != null) {
+						config = read;
+						if (json.isJsonObject() && !json.getAsJsonObject().has("beamTimingVersion") && config.beamFireTicks == 40)
+							config.beamFireTicks = 120;
+					}
 				}
 			}
 			Files.createDirectories(path.getParent());
