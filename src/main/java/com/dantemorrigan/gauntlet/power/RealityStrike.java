@@ -93,6 +93,28 @@ public final class RealityStrike {
 		double r = cfg.realityStrikeRadius;
 		Vec3 center = player.position();
 		BlockPos c = player.blockPosition();
+		List<Column> columns = groundColumns(level, c, r, true);
+
+		WAVES.add(new Wave(level, center, player.getUUID(), columns, targets(player, center, r, 1), false));
+		player.swing(InteractionHand.OFF_HAND, true);
+		GauntletState.setInUse(g, EnumSet.of(Stone.REALITY));
+		send(level, center, new ModNetwork.RealityFx(4, center, new Vec3(r, 0, 0)));
+		level.playSound(null, c, SoundEvents.GENERIC_EXPLODE.value(), SoundSource.PLAYERS, 1.4F, 0.55F);
+		level.playSound(null, c, SoundEvents.AMETHYST_BLOCK_BREAK, SoundSource.PLAYERS, 2.0F, 0.5F);
+	}
+
+	public static boolean strikeLoose(ServerPlayer player) {
+		if (SpaceManager.inSpace(player) || player.isSpectator()) return false;
+		ServerLevel level = player.level();
+		Vec3 center = player.position();
+		WAVES.add(new Wave(level, center, player.getUUID(), groundColumns(level, player.blockPosition(), LOOSE_RADIUS, false),
+				targets(player, center, LOOSE_RADIUS, 0), true));
+		send(level, center, new ModNetwork.RealityFx(4, center, new Vec3(LOOSE_RADIUS, 0, 0)));
+		level.playSound(null, player.blockPosition(), SoundEvents.GENERIC_EXPLODE.value(), SoundSource.PLAYERS, 0.8F, 0.85F);
+		return true;
+	}
+
+	private static List<Column> groundColumns(ServerLevel level, BlockPos c, double r, boolean fire) {
 		var rnd = level.getRandom();
 
 		// Ground: the top solid block of every column in an uneven circle (no block entities, nothing unbreakable).
@@ -109,28 +131,11 @@ public final class RealityStrike {
 				BlockState state = level.getBlockState(ground);
 				if (state.isAir() || !state.getFluidState().isEmpty() || state.hasBlockEntity() || state.getDestroySpeed(level, ground) < 0
 						|| !state.isCollisionShapeFullBlock(level, ground) || state.is(Blocks.REDSTONE_BLOCK)) continue;
-				columns.add(new Column(ground, d, d > 2.2 && rnd.nextFloat() < 0.22f));
+				columns.add(new Column(ground, d, fire && d > 2.2 && rnd.nextFloat() < 0.22f));
 			}
 		}
 		columns.sort(Comparator.comparingDouble(Column::dist));
-
-		WAVES.add(new Wave(level, center, player.getUUID(), columns, targets(player, center, r, 1), false));
-		player.swing(InteractionHand.OFF_HAND, true);
-		GauntletState.setInUse(g, EnumSet.of(Stone.REALITY));
-		send(level, center, new ModNetwork.RealityFx(4, center, new Vec3(r, 0, 0)));
-		level.playSound(null, c, SoundEvents.GENERIC_EXPLODE.value(), SoundSource.PLAYERS, 1.4F, 0.55F);
-		level.playSound(null, c, SoundEvents.AMETHYST_BLOCK_BREAK, SoundSource.PLAYERS, 2.0F, 0.5F);
-	}
-
-	public static boolean strikeLoose(ServerPlayer player) {
-		if (SpaceManager.inSpace(player) || player.isSpectator()) return false;
-		ServerLevel level = player.level();
-		Vec3 center = player.position();
-		WAVES.add(new Wave(level, center, player.getUUID(), new ArrayList<>(),
-				targets(player, center, LOOSE_RADIUS, 0), true));
-		send(level, center, new ModNetwork.RealityFx(4, center, new Vec3(LOOSE_RADIUS, 0, 0)));
-		level.playSound(null, player.blockPosition(), SoundEvents.GENERIC_EXPLODE.value(), SoundSource.PLAYERS, 0.8F, 0.85F);
-		return true;
+		return columns;
 	}
 
 	private static List<Mob> targets(ServerPlayer player, Vec3 center, double r, double reachPadding) {
@@ -153,22 +158,6 @@ public final class RealityStrike {
 		for (Iterator<Wave> it = WAVES.iterator(); it.hasNext(); ) {
 			Wave w = it.next();
 			double front = ++w.tick * WAVE_SPEED;
-			if (w.loose) {
-				ServerPlayer caster = server.getPlayerList().getPlayer(w.caster);
-				if (caster == null || caster.level() != w.level || front > LOOSE_RADIUS + WAVE_SPEED) {
-					it.remove();
-					continue;
-				}
-				w.mobs.removeIf(mob -> {
-					double distance = mob.position().distanceTo(w.center);
-					if (!mob.isAlive() || mob.level() != w.level || distance > LOOSE_RADIUS) return true;
-					if (distance > front) return false;
-					mob.hurtServer(w.level, caster.damageSources().playerAttack(caster), LOOSE_DAMAGE);
-					return true;
-				});
-				if (w.mobs.isEmpty()) it.remove();
-				continue;
-			}
 			// Ground turns red as the wave passes.
 			int changed = 0;
 			while (!w.columns.isEmpty() && w.columns.getFirst().dist <= front) {
@@ -187,6 +176,22 @@ public final class RealityStrike {
 			}
 			if (changed > 0 && w.tick % 3 == 0) {
 				w.level.playSound(null, BlockPos.containing(w.center), SoundEvents.FIRECHARGE_USE, SoundSource.PLAYERS, 0.8F, 0.6F + w.tick * 0.03F);
+			}
+			if (w.loose) {
+				ServerPlayer caster = server.getPlayerList().getPlayer(w.caster);
+				if (caster == null || caster.level() != w.level || front > LOOSE_RADIUS + WAVE_SPEED) {
+					it.remove();
+					continue;
+				}
+				w.mobs.removeIf(mob -> {
+					double distance = mob.position().distanceTo(w.center);
+					if (!mob.isAlive() || mob.level() != w.level || distance > LOOSE_RADIUS) return true;
+					if (distance > front) return false;
+					mob.hurtServer(w.level, caster.damageSources().playerAttack(caster), LOOSE_DAMAGE);
+					return true;
+				});
+				if (w.mobs.isEmpty() && w.columns.isEmpty()) it.remove();
+				continue;
 			}
 			// Mobs the wave reaches become red butterflies and dissolve.
 			while (!w.mobs.isEmpty() && w.mobs.getFirst().position().distanceTo(w.center) <= front + 0.5) {
