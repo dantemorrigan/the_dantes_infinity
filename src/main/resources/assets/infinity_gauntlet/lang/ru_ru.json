@@ -142,5 +142,8 @@
   "meteor.infinity_gauntlet.no_ground": "Наведи круг на землю (не слишком близко)",
   "meteor.infinity_gauntlet.protected": "Эта зона защищена",
   "meteor.infinity_gauntlet.too_many": "Сейчас уже идёт слишком много потоков метеоритов",
-  "meteor.infinity_gauntlet.fired": "Поток метеоритов начался (%s с)"
+  "meteor.infinity_gauntlet.fired": "Поток метеоритов начался (%s с)",
+  "ability.infinity_gauntlet.reason.portal_unsafe": "Путь через портал закрыт: нет безопасной точки прибытия",
+  "ability.infinity_gauntlet.mind_escape": "Камень Разума удерживает тебя. Присядь, чтобы вырваться.",
+  "ability.infinity_gauntlet.soul_escape": "Камень Души вытягивает здоровье. Присядь или уйди за укрытие."
 }

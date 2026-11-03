@@ -313,10 +313,11 @@ public final class ModNetwork {
 	}
 
 	/** S2C: Reality Inversion started/ended for an entity, around center. */
-	public record RealityState(int entityId, boolean active, Vec3 center) implements CustomPacketPayload {
+	public record RealityState(int entityId, boolean active, Vec3 center, int age, float yaw) implements CustomPacketPayload {
 		public static final Type<RealityState> TYPE = newType("reality_state");
 		public static final StreamCodec<ByteBuf, RealityState> CODEC = StreamCodec.composite(
-				ByteBufCodecs.VAR_INT, RealityState::entityId, ByteBufCodecs.BOOL, RealityState::active, Vec3.STREAM_CODEC, RealityState::center, RealityState::new);
+				ByteBufCodecs.VAR_INT, RealityState::entityId, ByteBufCodecs.BOOL, RealityState::active, Vec3.STREAM_CODEC, RealityState::center,
+				ByteBufCodecs.VAR_INT, RealityState::age, ByteBufCodecs.FLOAT, RealityState::yaw, RealityState::new);
 		@Override public Type<RealityState> type() { return TYPE; }
 	}
 

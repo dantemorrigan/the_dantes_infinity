@@ -79,7 +79,7 @@ public final class RealityClient {
 	private static final Map<BlockPos, BlockState> HIDDEN = new HashMap<>();
 	/** Other entities currently casting (for the charge aura). */
 	private static final Set<Integer> CASTERS = new HashSet<>();
-	private record Inversion(Vec3 center, long expires) {}
+	private record Inversion(Vec3 center, long started, long expires, float yaw) {}
 	private static final Map<Integer, Inversion> INVERSIONS = new HashMap<>();
 	private static ClientLevel inversionLevel;
 	private static int renderedCaster = -1;
@@ -91,7 +91,7 @@ public final class RealityClient {
 
 	public static void init() {
 		ClientTickEvents.END_CLIENT_TICK.register(RealityClient::tick);
-		ClientPlayNetworking.registerGlobalReceiver(ModNetwork.RealityState.TYPE, (s, ctx) -> state(s.entityId(), s.active(), s.center()));
+		ClientPlayNetworking.registerGlobalReceiver(ModNetwork.RealityState.TYPE, (s, ctx) -> state(s.entityId(), s.active(), s.center(), s.age(), s.yaw()));
 		ClientPlayNetworking.registerGlobalReceiver(ModNetwork.RealityFx.TYPE, (f, ctx) -> fx(f.kind(), f.pos(), f.vel()));
 		ClientPlayConnectionEvents.DISCONNECT.register((h, mc) -> mc.execute(() -> restore(true)));
 		LevelRenderEvents.COLLECT_SUBMITS.register(RealityClient::render);
@@ -103,7 +103,8 @@ public final class RealityClient {
 
 	/** Movement is frozen while reality is turned (you steer with your gaze — the hand). */
 	public static boolean inputLocked() {
-		return active || releaseAge >= 0;
+		var player = Minecraft.getInstance().player;
+		return player != null && renderedCaster == player.getId() && (active || releaseAge >= 0);
 	}
 
 	public static Vec3 fistWhileCharging(Entity e) {
@@ -112,7 +113,7 @@ public final class RealityClient {
 
 	// ------------------------------------------------------------------ state
 
-	private static void state(int entityId, boolean on, Vec3 c) {
+	private static void state(int entityId, boolean on, Vec3 c, int remoteAge, float remoteYaw) {
 		Minecraft mc = Minecraft.getInstance();
 		if (mc.level == null || mc.player == null) return;
 		if (inversionLevel != mc.level) {
@@ -120,10 +121,13 @@ public final class RealityClient {
 			inversionLevel = mc.level;
 		}
 		if (on) {
-			if (!INVERSIONS.containsKey(entityId)) {
+			if (!INVERSIONS.containsKey(entityId) && remoteAge < T_CRACKS) {
 				ClientPower.spawn(ModParticles.REALITY_CHARGE, c.add(0, 1, 0), entityId, 0, 0);
 			}
-			INVERSIONS.put(entityId, new Inversion(c, mc.level.getGameTime() + 60));
+			long now = mc.level.getGameTime();
+			Inversion previous = INVERSIONS.get(entityId);
+			long started = previous == null ? now - remoteAge : previous.started();
+			INVERSIONS.put(entityId, new Inversion(c, started, now + 60, remoteYaw));
 			CASTERS.add(entityId);
 		} else {
 			INVERSIONS.remove(entityId);
@@ -168,10 +172,13 @@ public final class RealityClient {
 		restore(false);
 		renderedCaster = selected;
 		active = true;
-		center = INVERSIONS.get(selected).center();
+		Inversion inversion = INVERSIONS.get(selected);
+		center = inversion.center();
 		level = mc.level;
+		age = (int) Math.max(0, mc.level.getGameTime() - inversion.started());
 		Entity caster = mc.level.getEntity(selected);
-		yaw = prevYaw = caster == null ? 0 : caster.getYRot();
+		yaw = prevYaw = caster == null ? inversion.yaw() : caster.getYRot();
+		if (age >= T_FOLD) capture(mc);
 	}
 
 	private static void fx(int kind, Vec3 pos, Vec3 vel) {
@@ -236,7 +243,8 @@ public final class RealityClient {
 		if (active) {
 			age++;
 			Entity caster = mc.level.getEntity(renderedCaster);
-			if (caster != null) yaw += Mth.wrapDegrees(caster.getYRot() - yaw) * 0.15f;
+			float targetYaw = caster == null ? INVERSIONS.get(renderedCaster).yaw() : caster.getYRot();
+			yaw += Mth.wrapDegrees(targetYaw - yaw) * 0.15f;
 			if (age == T_CRACKS) cracks(mc);
 			if (age == T_FOLD) {
 				capture(mc);
@@ -326,7 +334,7 @@ public final class RealityClient {
 			}
 		}
 		columns.sort((a, b) -> Double.compare(a.distSqr(c), b.distSqr(c)));
-		RandomSource rnd = lvl.getRandom();
+		RandomSource rnd = RandomSource.create(c.asLong());
 		int budget = cfg.realityMaxBlocks;
 		for (BlockPos col : columns) {
 			int skin = 0;
@@ -358,11 +366,18 @@ public final class RealityClient {
 		InfinityGauntlet.LOGGER.debug("Reality inversion took {} blocks", ENTRIES.size());
 	}
 
+	/** Keep a server block update that arrives while this block is hidden for the illusion. */
+	public static void invalidateHiddenBlock(BlockPos pos) {
+		if (HIDDEN.remove(pos) != null) ENTRIES.removeIf(entry -> entry.pos().equals(pos));
+	}
+
 	/** Put every real block back (immediately). */
 	private static void restore(boolean abort) {
 		Minecraft mc = Minecraft.getInstance();
 		if (!HIDDEN.isEmpty() && level != null && mc.level == level) {
-			HIDDEN.forEach((p, s) -> level.setBlock(p, s, 18));
+			HIDDEN.forEach((p, s) -> {
+				if (level.hasChunkAt(p) && level.getBlockState(p).isAir()) level.setBlock(p, s, 18);
+			});
 		}
 		HIDDEN.clear();
 		ENTRIES.clear();

@@ -42,6 +42,7 @@ import java.util.UUID;
  */
 public final class RealityStone {
 	public static final String TAG = "infinity_gauntlet_reality";
+	private static final String ORIGINAL_FLAGS = TAG + "_flags_";
 
 	private static final class Session {
 		final Vec3 center;
@@ -90,7 +91,7 @@ public final class RealityStone {
 		Vec3 center = Vec3.atBottomCenterOf(player.blockPosition());
 		SESSIONS.put(player.getUUID(), new Session(player.level(), center));
 		GauntletState.setInUse(g, EnumSet.of(Stone.REALITY));
-		broadcast(player.level(), player.getId(), true, center);
+		broadcast(player.level(), player, true, center, 0);
 		player.level().playSound(null, player.blockPosition(), SoundEvents.AMETHYST_BLOCK_RESONATE, SoundSource.PLAYERS, 2.0F, 0.5F);
 	}
 
@@ -107,20 +108,24 @@ public final class RealityStone {
 		COOLDOWN.put(player.getUUID(), player.level().getGameTime() + GauntletConfig.get().realityCooldownTicks);
 		ItemStack g = GauntletState.activeGauntlet(player);
 		if (!g.isEmpty()) GauntletState.setInUse(g, EnumSet.noneOf(Stone.class));
-		broadcast(s.level, player.getId(), false, s.center);
+		broadcast(s.level, player, false, s.center, s.tick);
 		s.level.playSound(null, BlockPos.containing(s.center), SoundEvents.AMETHYST_BLOCK_CHIME, SoundSource.PLAYERS, 2.0F, 0.6F);
 	}
 
 	private static void restoreMob(Mob mob) {
 		mob.removeTag(TAG);
-		mob.setInvisible(false);
-		mob.setNoAi(false);
-		mob.setInvulnerable(false);
-		mob.setNoGravity(false);
+		int flags = 0;
+		for (int mask = 0; mask < 16; mask++) {
+			if (mob.removeTag(ORIGINAL_FLAGS + mask)) flags = mask;
+		}
+		mob.setInvisible((flags & 1) != 0);
+		mob.setNoAi((flags & 2) != 0);
+		mob.setInvulnerable((flags & 4) != 0);
+		mob.setNoGravity((flags & 8) != 0);
 	}
 
-	private static void broadcast(ServerLevel level, int caster, boolean active, Vec3 center) {
-		ModNetwork.RealityState state = new ModNetwork.RealityState(caster, active, center);
+	private static void broadcast(ServerLevel level, ServerPlayer caster, boolean active, Vec3 center, int age) {
+		ModNetwork.RealityState state = new ModNetwork.RealityState(caster.getId(), active, center, age, caster.getYRot());
 		for (ServerPlayer p : PlayerLookup.around(level, center, 128)) ServerPlayNetworking.send(p, state);
 	}
 
@@ -145,14 +150,18 @@ public final class RealityStone {
 				stop(player);
 				continue;
 			}
-			if (s.tick % 20 == 0) broadcast(s.level, player.getId(), true, s.center);
+			if (s.tick % 20 == 0) broadcast(s.level, player, true, s.center, s.tick);
 			if (s.tick < 20) continue; // charge + fractures first (ability_timeline.json)
 			double r = cfg.realityRadius;
 			AABB box = new AABB(s.center, s.center).inflate(r, r * 0.75, r);
 			// Mobs -> butterflies (bosses are too real to rewrite).
 			if (s.tick % 5 == 0) {
 				for (Mob mob : s.level.getEntitiesOfClass(Mob.class, box, m -> m.isAlive() && !m.entityTags().contains(TAG)
+						&& !MindStone.holdsEntity(m) && !SoulStone.isExtracting(m)
 						&& !(m instanceof EnderDragon) && !(m instanceof WitherBoss) && m.position().distanceTo(s.center) <= r)) {
+					int flags = (mob.isInvisible() ? 1 : 0) | (mob.isNoAi() ? 2 : 0)
+							| (mob.isInvulnerable() ? 4 : 0) | (mob.isNoGravity() ? 8 : 0);
+					mob.addTag(ORIGINAL_FLAGS + flags);
 					mob.addTag(TAG);
 					mob.setInvisible(true);
 					mob.setNoAi(true);

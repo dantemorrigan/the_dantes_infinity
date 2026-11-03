@@ -113,6 +113,7 @@ public final class MindStone {
 			HOLDS.clear();
 			FLIGHTS.clear();
 			THROWN.clear();
+			COOLDOWN.clear();
 		});
 	}
 
@@ -174,7 +175,7 @@ public final class MindStone {
 		Vec3 end = eye.add(look.scale(reach));
 		AABB box = player.getBoundingBox().expandTowards(look.scale(reach)).inflate(1.5);
 		EntityHitResult hit = ProjectileUtil.getEntityHitResult(player, eye, end, box,
-				e -> e instanceof LivingEntity l && l.isAlive() && !e.isSpectator() && (!(e instanceof Player) || allowPlayers && CoopRules.canAffect(player, e)) && !isBoss(e), reach * reach);
+				e -> e instanceof LivingEntity l && l.isAlive() && !e.isSpectator() && (!(e instanceof Player) || allowPlayers && CoopRules.canAffect(player, e)) && !e.entityTags().contains(RealityStone.TAG) && !isBoss(e), reach * reach);
 		return hit != null ? (LivingEntity) hit.getEntity() : null;
 	}
 
@@ -244,7 +245,10 @@ public final class MindStone {
 
 	private static void grabMob(ServerPlayer player, LivingEntity mob) {
 		if (holdsEntity(mob) || SoulStone.isExtracting(mob)) return;
-		if (mob instanceof ServerPlayer victim && victim.isShiftKeyDown()) return;
+		if (mob instanceof ServerPlayer victim) {
+			if (victim.isShiftKeyDown()) return;
+			ModStatus.send(victim, Component.translatable("ability.infinity_gauntlet.mind_escape"));
+		}
 		THROWN.removeIf(t -> t.mob() == mob);
 		Hold hold = new Hold();
 		hold.mob = mob;
@@ -525,7 +529,7 @@ public final class MindStone {
 			out = out.lengthSqr() < 1e-4 ? new Vec3(0, 1, 0) : out.normalize();
 			fb.setDeltaMovement(base.add(out.scale(spread * (0.5 + rnd.nextDouble()))).add(0, spread * 0.6, 0));
 			fb.dropItem = false;
-			fb.setHurtsEntities(1.5f, 20);
+			// Impact damage is applied above with the caster and PvP rules; debris only settles.
 			level.addFreshEntity(fb);
 		}
 	}

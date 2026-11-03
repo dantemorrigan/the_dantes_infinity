@@ -1,5 +1,6 @@
 package com.dantemorrigan.gauntlet.power;
 
+import net.minecraft.core.BlockPos;
 import com.dantemorrigan.gauntlet.GauntletConfig;
 import com.dantemorrigan.gauntlet.GauntletState;
 import com.dantemorrigan.gauntlet.Stone;
@@ -208,7 +209,16 @@ public final class TimeAbility {
 		int index = Math.min(r.path.size() - 1, (int) ((r.tick / (float) r.duration) * r.path.size()));
 		Snapshot s = r.path.get(index);
 		ServerLevel level = p.level();
-		p.teleport(new TeleportTransition(level, s.pos(), Vec3.ZERO, s.yRot(), s.xRot(), TeleportTransition.DO_NOTHING));
+		if (!s.dim().equals(level.dimension()) || !p.isAlive()) {
+			ACTIVE.remove(p.getUUID());
+			clearGlow(p);
+			ServerPlayNetworking.send(p, new ModNetwork.TimeRewindFx(p.getId(), false, 0));
+			return;
+		}
+		boolean safe = level.hasChunkAt(BlockPos.containing(s.pos()))
+				&& level.getWorldBorder().isWithinBounds(BlockPos.containing(s.pos()))
+				&& level.noCollision(p, p.getBoundingBox().move(s.pos().subtract(p.position())));
+		if (safe) p.teleport(new TeleportTransition(level, s.pos(), Vec3.ZERO, s.yRot(), s.xRot(), TeleportTransition.DO_NOTHING));
 		p.fallDistance = 0;
 		if (r.tick >= r.duration) {
 			Snapshot oldest = r.path.get(r.path.size() - 1);

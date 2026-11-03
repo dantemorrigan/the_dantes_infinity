@@ -142,5 +142,8 @@
   "meteor.infinity_gauntlet.no_ground": "Aim the circle at the ground (not too close)",
   "meteor.infinity_gauntlet.protected": "That area is protected",
   "meteor.infinity_gauntlet.too_many": "Too many meteor streams are running right now",
-  "meteor.infinity_gauntlet.fired": "The meteor stream has begun (%s s)"
+  "meteor.infinity_gauntlet.fired": "The meteor stream has begun (%s s)",
+  "ability.infinity_gauntlet.reason.portal_unsafe": "Portal blocked: no safe arrival point",
+  "ability.infinity_gauntlet.mind_escape": "The Mind Stone is holding you. Sneak to break free.",
+  "ability.infinity_gauntlet.soul_escape": "The Soul Stone is draining you. Sneak or get behind cover."
 }

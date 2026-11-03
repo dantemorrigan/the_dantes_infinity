@@ -25,6 +25,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.portal.TeleportTransition;
 import net.minecraft.world.phys.BlockHitResult;
@@ -226,7 +227,12 @@ public final class SpaceStone {
 		ServerLevel target = server.getLevel(DIMS.get(p.dest));
 		if (target == null) return;
 		Vec3 from = player.position();
-		Vec3 arrival = arrivalPoint(player.level(), target, player.position());
+		Vec3 arrival = arrivalPoint(player, target);
+		if (arrival == null) {
+			TRAVEL_GRACE.put(player.getUUID(), 20);
+			com.dantemorrigan.gauntlet.net.ModStatus.send(player, Component.translatable("ability.infinity_gauntlet.reason.portal_unsafe"));
+			return;
+		}
 		TRAVEL_GRACE.put(player.getUUID(), 40);
 		sendFx(player.level(), from, from);
 		player.teleport(new TeleportTransition(target, arrival, Vec3.ZERO, player.getYRot(), player.getXRot(), TeleportTransition.DO_NOTHING));
@@ -239,19 +245,29 @@ public final class SpaceStone {
 	}
 
 	/** Safe arrival: Nether scales coordinates (1/8), End goes to the main island, Overworld to the surface. */
-	private static Vec3 arrivalPoint(ServerLevel from, ServerLevel to, Vec3 pos) {
+	private static Vec3 arrivalPoint(ServerPlayer player, ServerLevel to) {
+		ServerLevel from = player.level();
+		Vec3 pos = player.position();
 		double scale = from.dimensionType().coordinateScale() / to.dimensionType().coordinateScale();
 		if (to.dimension().equals(Level.END)) {
 			BlockPos spawn = ServerLevel.END_SPAWN_POINT;
+			if (!to.getWorldBorder().isWithinBounds(spawn)) return null;
 			to.getChunk(spawn);
 			BlockPos top = to.getHeightmapPos(Heightmap.Types.MOTION_BLOCKING, spawn);
-			if (top.getY() > spawn.getY() + 2) return Vec3.atBottomCenterOf(top); // spawn point is buried: arrive on the island
+			if (top.getY() > spawn.getY() + 2 && safeFeet(to, top)) return Vec3.atBottomCenterOf(top); // spawn point is buried: arrive on the island
+			if (safeFeet(to, spawn)) return Vec3.atBottomCenterOf(spawn);
+			if (!GauntletConfig.get().abilityBlockChanges) return null;
+			for (BlockPos block : BlockPos.betweenClosed(spawn.offset(-2, -1, -2), spawn.offset(2, 3, 2))) {
+				if (!to.getWorldBorder().isWithinBounds(block) || !to.mayInteract(player, block)
+						|| to.getBlockState(block).hasBlockEntity() || to.getBlockState(block).getDestroySpeed(to, block) < 0) return null;
+			}
 			// Same obsidian platform (with cleared air) as a vanilla End portal.
 			net.minecraft.world.level.levelgen.feature.EndPlatformFeature.createEndPlatform(to, spawn.below(), true);
 			return Vec3.atBottomCenterOf(spawn);
 		}
 		BlockPos column = BlockPos.containing(pos.x * scale, 64, pos.z * scale);
 		if (from.dimension().equals(Level.END)) column = BlockPos.containing(pos.x, 64, pos.z);
+		if (!to.getWorldBorder().isWithinBounds(column)) return null;
 		to.getChunk(column); // load
 		if (to.dimension().equals(Level.NETHER)) {
 			for (int r = 0; r <= 12; r += 2) {
@@ -259,28 +275,37 @@ public final class SpaceStone {
 					for (int dz = -r; dz <= r; dz += Math.max(1, r)) {
 						for (int y = 100; y > 32; y--) {
 							BlockPos p = column.offset(dx, y - 64, dz);
-							if (to.getBlockState(p).isAir() && to.getBlockState(p.above()).isAir() && to.getBlockState(p.below()).isFaceSturdy(to, p.below(), Direction.UP)
-									&& to.getFluidState(p.below()).isEmpty()) return Vec3.atBottomCenterOf(p);
+							if (safeFeet(to, p)) return Vec3.atBottomCenterOf(p);
 						}
 					}
 				}
 			}
 			BlockPos p = column.atY(70);
-			ensurePlatform(to, p.below());
-			for (int i = 0; i < 3; i++) to.setBlockAndUpdate(p.above(i), Blocks.AIR.defaultBlockState());
-			return Vec3.atBottomCenterOf(p);
+			if (!GauntletConfig.get().abilityBlockChanges || !clearFeet(to, p)
+					|| !to.mayInteract(player, p.below()) || !to.getBlockState(p.below()).isAir()) return null;
+			to.setBlockAndUpdate(p.below(), Blocks.OBSIDIAN.defaultBlockState());
+			return safeFeet(to, p) ? Vec3.atBottomCenterOf(p) : null;
 		}
 		BlockPos top = to.getHeightmapPos(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, column);
-		return Vec3.atBottomCenterOf(top);
+		return safeFeet(to, top) ? Vec3.atBottomCenterOf(top) : null;
 	}
 
-	private static void ensurePlatform(ServerLevel level, BlockPos center) {
-		for (int dx = -1; dx <= 1; dx++) {
-			for (int dz = -1; dz <= 1; dz++) {
-				BlockPos p = center.offset(dx, 0, dz);
-				if (!level.getBlockState(p).isFaceSturdy(level, p, Direction.UP)) level.setBlockAndUpdate(p, Blocks.OBSIDIAN.defaultBlockState());
-			}
+	private static boolean clearFeet(ServerLevel level, BlockPos feet) {
+		if (!level.hasChunkAt(feet) || !level.getWorldBorder().isWithinBounds(feet)) return false;
+		for (BlockPos pos : List.of(feet, feet.above())) {
+			BlockState state = level.getBlockState(pos);
+			if (!state.getCollisionShape(level, pos).isEmpty() || !state.getFluidState().isEmpty()
+					|| state.is(Blocks.FIRE) || state.is(Blocks.SOUL_FIRE) || state.is(Blocks.POWDER_SNOW)) return false;
 		}
+		return true;
+	}
+
+	private static boolean safeFeet(ServerLevel level, BlockPos feet) {
+		if (!clearFeet(level, feet)) return false;
+		BlockPos floor = feet.below();
+		BlockState state = level.getBlockState(floor);
+		return state.isFaceSturdy(level, floor, Direction.UP) && state.getFluidState().isEmpty()
+				&& !state.is(Blocks.MAGMA_BLOCK) && !state.is(Blocks.CAMPFIRE) && !state.is(Blocks.SOUL_CAMPFIRE);
 	}
 
 	// ------------------------------------------------------------------ teleport where you look
@@ -342,7 +367,7 @@ public final class SpaceStone {
 				// Drop to the ground below if we're next to a wall.
 				BlockPos ground = p;
 				for (int i = 0; i < 6 && level.getBlockState(ground.below()).getCollisionShape(level, ground.below()).isEmpty(); i++) ground = ground.below();
-				return Vec3.atBottomCenterOf(ground);
+				if (safeFeet(level, ground)) return Vec3.atBottomCenterOf(ground);
 			}
 		}
 		return null;
