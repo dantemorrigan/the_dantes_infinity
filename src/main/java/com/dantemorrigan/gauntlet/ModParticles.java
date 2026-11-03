@@ -47,6 +47,17 @@ public final class ModParticles {
     public static final SimpleParticleType COSMOS_WARP_RING = register("cosmos_warp_ring");
     public static final SimpleParticleType COSMOS_STAR_DUST = register("cosmos_star_dust");
 
+	// Mind stone (pack: Mind_Stone_Telekinesis_VFX). mind_hold: xa = owner id (follows the held target), ya = size.
+	public static final SimpleParticleType MIND_HOLD = register("mind_hold");
+	public static final SimpleParticleType MIND_LIFT_FRACTURE = register("mind_lift_fracture"); // (xa,ya,za) = normal, length = size
+	public static final SimpleParticleType MIND_THROW_TRAIL = register("mind_throw_trail");     // (xa,ya,za) = velocity
+	public static final SimpleParticleType MIND_RUPTURE = register("mind_rupture");             // xa = size
+	// Soul stone (pack: Soul_Stone_Extraction_VFX). soul_wisp: xa = client soul id (follows that soul).
+	public static final SimpleParticleType SOUL_WISP = register("soul_wisp");
+	public static final SimpleParticleType SOUL_SIPHON = register("soul_siphon");         // (xa,ya,za) = flow direction
+	public static final SimpleParticleType SOUL_MASS_WAVE = register("soul_mass_wave");   // (xa,ya,za) = normal, length = size
+	public static final SimpleParticleType SOUL_ABSORPTION = register("soul_absorption"); // xa = size
+
 	private static SimpleParticleType register(String name) {
 		return Registry.register(BuiltInRegistries.PARTICLE_TYPE, InfinityGauntlet.id(name), FabricParticleTypes.simple(true));
 	}

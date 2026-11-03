@@ -1,0 +1,86 @@
+{
+  "format": "infinity_gauntlet:vfx_authoring_v1",
+  "note": "Requires client provider and particle registration; these settings are not vanilla particle behavior.",
+  "effects": {
+    "mind_hold": {
+      "frames": 4,
+      "ticks_per_frame": 3,
+      "lifetime_ticks": 36,
+      "loop": true,
+      "full_bright": true,
+      "width_blocks": 1.8,
+      "orientation": "camera",
+      "resolution": [
+        64,
+        64
+      ],
+      "pivot_uv": [
+        0.5,
+        0.5
+      ],
+      "blend": "straight_alpha",
+      "filter": "nearest",
+      "end_behavior": "expire_even_when_looped"
+    },
+    "mind_lift_fracture": {
+      "frames": 4,
+      "ticks_per_frame": 3,
+      "lifetime_ticks": 12,
+      "loop": false,
+      "full_bright": true,
+      "width_blocks": 5,
+      "orientation": "surface_normal",
+      "resolution": [
+        128,
+        128
+      ],
+      "pivot_uv": [
+        0.5,
+        0.5
+      ],
+      "blend": "straight_alpha",
+      "filter": "nearest",
+      "end_behavior": "play_once_then_remove"
+    },
+    "mind_throw_trail": {
+      "frames": 4,
+      "ticks_per_frame": 2,
+      "lifetime_ticks": 36,
+      "loop": true,
+      "full_bright": true,
+      "width_blocks": 1.4,
+      "orientation": "velocity_right",
+      "resolution": [
+        64,
+        64
+      ],
+      "pivot_uv": [
+        0.5,
+        0.5
+      ],
+      "blend": "straight_alpha",
+      "filter": "nearest",
+      "end_behavior": "expire_even_when_looped"
+    },
+    "mind_rupture": {
+      "frames": 4,
+      "ticks_per_frame": 2,
+      "lifetime_ticks": 8,
+      "loop": false,
+      "full_bright": true,
+      "width_blocks": 3,
+      "orientation": "camera",
+      "resolution": [
+        128,
+        128
+      ],
+      "pivot_uv": [
+        0.5,
+        0.5
+      ],
+      "blend": "straight_alpha",
+      "filter": "nearest",
+      "end_behavior": "play_once_then_remove"
+    }
+  }
+}

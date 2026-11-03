@@ -95,13 +95,22 @@ fabricApi {
 // A focused real-client regression run, without replaying every unrelated cinematic suite.
 // ./gradlew runClientGameTest -PcosmosTest (Linux headless: prefix with xvfb-run -a).
 def onlyCosmosTests = providers.gradleProperty('cosmosTest').isPresent()
+// ./gradlew runClientGameTest -PonlyTest=MindSoulTest — run a single client game test class.
+def onlyTest = providers.gradleProperty('onlyTest').getOrNull()
 tasks.named('processGametestResources') {
     inputs.property('cosmosTest', onlyCosmosTests)
+    inputs.property('onlyTest', onlyTest ?: '')
     doLast {
         if (onlyCosmosTests) {
             def metadata = new File(destinationDir, 'fabric.mod.json')
             def data = new groovy.json.JsonSlurper().parse(metadata)
             data.entrypoints['fabric-client-gametest'] = ['com.dantemorrigan.gauntlet.gametest.CosmosTravelTest', 'com.dantemorrigan.gauntlet.gametest.SupersonicFlightTest']
+            metadata.text = groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(data))
+        }
+        if (onlyTest != null) {
+            def metadata = new File(destinationDir, 'fabric.mod.json')
+            def data = new groovy.json.JsonSlurper().parse(metadata)
+            data.entrypoints['fabric-client-gametest'] = ['com.dantemorrigan.gauntlet.gametest.' + onlyTest]
             metadata.text = groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(data))
         }
     }

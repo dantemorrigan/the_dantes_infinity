@@ -1,0 +1,22 @@
+{
+  "visual_recipes_only": true,
+  "profiles": {
+    "lift": [
+      "mind_hold",
+      "mind_lift_fracture"
+    ],
+    "hold": [
+      "mind_hold"
+    ],
+    "throw": [
+      "mind_throw_trail"
+    ],
+    "impact": [
+      "mind_rupture"
+    ],
+    "mob_tear": [
+      "mind_hold",
+      "mind_rupture"
+    ]
+  }
+}

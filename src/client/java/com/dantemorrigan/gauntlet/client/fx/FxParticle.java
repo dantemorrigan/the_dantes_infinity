@@ -35,8 +35,23 @@ public class FxParticle extends SingleQuadParticle {
 		return this;
 	}
 
+	/** A looping sprite that ends after the given number of ticks (fading out in its last quarter). */
+	public FxParticle lifetime(int ticks) {
+		this.finiteLoop = true;
+		this.lifetime = Math.max(1, ticks);
+		return this;
+	}
+
 	/** Movement hook for subclasses (called once per tick after the frame update). */
 	protected void motion() {}
+
+	private float alignOffset = (float) Math.PI / 4f;
+
+	/** Like {@link #alignTo} for strips drawn along +X (not along the diagonal). */
+	public FxParticle alignX(org.joml.Vector3f velocity) {
+		this.alignOffset = 0f;
+		return alignTo(velocity);
+	}
 
 	public FxParticle alignTo(org.joml.Vector3f velocity) {
 		this.alignTo = velocity;
@@ -111,12 +126,13 @@ public class FxParticle extends SingleQuadParticle {
 	public FacingCameraMode getFacingCameraMode() {
 		if (this.alignTo != null) {
 			org.joml.Vector3f v = this.alignTo;
+			float offset = this.alignOffset;
 			return (target, camera, partial) -> {
 				target.set(camera.rotation());
 				org.joml.Vector3f right = new org.joml.Vector3f(1, 0, 0).rotate(target);
 				org.joml.Vector3f up = new org.joml.Vector3f(0, 1, 0).rotate(target);
 				float ang = (float) Math.atan2(v.dot(up), v.dot(right));
-				target.rotateZ(ang + (float) Math.PI / 4f);
+				target.rotateZ(ang + offset);
 			};
 		}
 		if (this.flatRotation != null) {

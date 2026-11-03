@@ -1,0 +1,256 @@
+package com.dantemorrigan.gauntlet.power;
+
+import com.dantemorrigan.gauntlet.GauntletConfig;
+import com.dantemorrigan.gauntlet.GauntletState;
+import com.dantemorrigan.gauntlet.InfinityGauntlet;
+import com.dantemorrigan.gauntlet.Stone;
+import com.dantemorrigan.gauntlet.net.ModNetwork;
+import com.dantemorrigan.gauntlet.net.ModStatus;
+import com.dantemorrigan.gauntlet.space.SpaceManager;
+import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
+import net.fabricmc.fabric.api.networking.v1.PlayerLookup;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
+import net.minecraft.core.Holder;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.ai.attributes.Attribute;
+import net.minecraft.world.entity.ai.attributes.AttributeInstance;
+import net.minecraft.world.entity.ai.attributes.AttributeModifier;
+import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.entity.monster.Enemy;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
+
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
+/**
+ * Soul stone — soul extraction.
+ * <ul>
+ *   <li>O on a mob: its soul is drawn out (the body hangs frozen), the mob dies soulless and the soul flies into the
+ *       player: +max health and +attack damage per soul, stacking, for a while (refreshed by every new soul).</li>
+ *   <li>Shift+O: a wave rolls out and pulls the souls of every enemy in a large radius, killing them.</li>
+ * </ul>
+ * The bonus uses transient attribute modifiers, so it is never saved into the player data.
+ */
+public final class SoulStone {
+	private static final Identifier HEALTH_ID = InfinityGauntlet.id("soul_health");
+	private static final Identifier DAMAGE_ID = InfinityGauntlet.id("soul_damage");
+	private static final double WAVE_SPEED = 0.8; // blocks per tick
+	private static final int POINT_EXTRACT = 30, POINT_FLIGHT = 22, MASS_EXTRACT = 16, MASS_FLIGHT = 26;
+
+	private static final class Extraction {
+		final UUID owner;
+		final LivingEntity target;
+		final int delay, extract, flight;
+		boolean frozen, hadNoAi, hadNoGravity, killed;
+		int tick;
+
+		Extraction(UUID owner, LivingEntity target, int delay, int extract, int flight) {
+			this.owner = owner;
+			this.target = target;
+			this.delay = delay;
+			this.extract = extract;
+			this.flight = flight;
+		}
+	}
+
+	private record Buff(int souls, long until) {}
+
+	private static final List<Extraction> ACTIVE = new ArrayList<>();
+	private static final Map<UUID, Buff> BUFFS = new HashMap<>();
+	private static final Map<UUID, Long> POINT_CD = new HashMap<>(), MASS_CD = new HashMap<>();
+
+	public static void init() {
+		ServerTickEvents.END_SERVER_TICK.register(SoulStone::tick);
+		ServerPlayConnectionEvents.DISCONNECT.register((h, s) -> BUFFS.remove(h.getPlayer().getUUID()));
+		ServerPlayerEvents.AFTER_RESPAWN.register((old, p, alive) -> {
+			BUFFS.remove(p.getUUID());
+			apply(p, 0);
+		});
+		ServerLifecycleEvents.SERVER_STOPPING.register(s -> {
+			for (Extraction e : ACTIVE) unfreeze(e);
+			ACTIVE.clear();
+			BUFFS.clear();
+		});
+	}
+
+	public static void action(ServerPlayer player, int action) {
+		ItemStack g = GauntletState.activeGauntlet(player);
+		if (g.isEmpty() || !GauntletState.inserted(g).contains(Stone.SOUL)) {
+			ModStatus.send(player, Component.literal("Нужна перчатка с Камнем Души в левой руке"));
+			return;
+		}
+		if (SpaceManager.inSpace(player) || player.isSpectator()) return;
+		ServerLevel level = player.level();
+		long now = level.getGameTime();
+		GauntletConfig cfg = GauntletConfig.get();
+		if (action == 1) {
+			Long cd = MASS_CD.get(player.getUUID());
+			if (cd != null && now < cd && !player.isCreative()) {
+				ModStatus.send(player, Component.literal("§6Массовое извлечение: " + (cd - now) / 20 + " с"));
+				return;
+			}
+			mass(player, level, cfg);
+			MASS_CD.put(player.getUUID(), now + cfg.soulMassCooldownTicks);
+		} else {
+			if (now < POINT_CD.getOrDefault(player.getUUID(), 0L) && !player.isCreative()) return;
+			LivingEntity target = MindStone.lookTarget(player, cfg.soulRange);
+			if (target == null || busy(target)) return;
+			POINT_CD.put(player.getUUID(), now + cfg.soulPointCooldownTicks);
+			start(player, target, 0, POINT_EXTRACT, POINT_FLIGHT);
+			level.playSound(null, target.blockPosition(), SoundEvents.SOUL_ESCAPE.value(), SoundSource.PLAYERS, 2.0F, 0.6F);
+		}
+		GauntletState.setInUse(g, EnumSet.of(Stone.SOUL));
+		player.swing(net.minecraft.world.InteractionHand.OFF_HAND, true);
+	}
+
+	private static void mass(ServerPlayer player, ServerLevel level, GauntletConfig cfg) {
+		double r = cfg.soulMassRadius;
+		Vec3 c = player.position();
+		List<LivingEntity> targets = new ArrayList<>(level.getEntitiesOfClass(LivingEntity.class, new AABB(c, c).inflate(r, r * 0.5, r),
+				e -> e instanceof Enemy && e.isAlive() && !MindStone.isBoss(e) && !e.hasCustomName() && !busy(e) && e.position().distanceTo(c) <= r));
+		targets.sort(Comparator.comparingDouble(e -> e.position().distanceToSqr(c)));
+		if (targets.size() > cfg.soulMassMaxTargets) targets = targets.subList(0, cfg.soulMassMaxTargets);
+		ModNetwork.SoulFx wave = new ModNetwork.SoulFx(1, player.getId(), -1, c, (int) r, 0, 0);
+		for (ServerPlayer p : PlayerLookup.around(level, c, 160)) ServerPlayNetworking.send(p, wave);
+		for (LivingEntity t : targets) start(player, t, (int) (t.position().distanceTo(c) / WAVE_SPEED), MASS_EXTRACT, MASS_FLIGHT);
+		level.playSound(null, player.blockPosition(), SoundEvents.WARDEN_SONIC_BOOM, SoundSource.PLAYERS, 1.6F, 0.5F);
+		level.playSound(null, player.blockPosition(), SoundEvents.SOUL_ESCAPE.value(), SoundSource.PLAYERS, 3.0F, 0.5F);
+	}
+
+	private static boolean busy(LivingEntity e) {
+		for (Extraction x : ACTIVE) if (x.target == e) return true;
+		return false;
+	}
+
+	private static void start(ServerPlayer owner, LivingEntity target, int delay, int extract, int flight) {
+		ACTIVE.add(new Extraction(owner.getUUID(), target, delay, extract, flight));
+		ModNetwork.SoulFx fx = new ModNetwork.SoulFx(0, owner.getId(), target.getId(), target.position(), delay, extract, flight);
+		for (ServerPlayer p : PlayerLookup.around(owner.level(), target.position(), 160)) ServerPlayNetworking.send(p, fx);
+	}
+
+	private static void tick(MinecraftServer server) {
+		long now = server.overworld().getGameTime();
+		for (Iterator<Extraction> it = ACTIVE.iterator(); it.hasNext(); ) {
+			Extraction e = it.next();
+			e.tick++;
+			ServerPlayer owner = server.getPlayerList().getPlayer(e.owner);
+			if (owner == null || !owner.isAlive()) {
+				unfreeze(e);
+				it.remove();
+				continue;
+			}
+			LivingEntity t = e.target;
+			if (e.tick < e.delay) {
+				if (!t.isAlive()) it.remove();
+				continue;
+			}
+			if (!e.killed) {
+				if (!t.isAlive()) { // died otherwise during the extraction: no soul
+					unfreeze(e);
+					it.remove();
+					continue;
+				}
+				if (!e.frozen) freeze(e);
+				// The body hangs, lifted a little, while the soul is pulled out of it.
+				t.setDeltaMovement(new Vec3(0, 0.015, 0));
+				t.hurtMarked = true;
+				if ((e.tick - e.delay) % 8 == 0) t.level().playSound(null, t.blockPosition(), SoundEvents.SOUL_ESCAPE.value(), SoundSource.HOSTILE, 1.0F, 0.7F);
+				if (e.tick >= e.delay + e.extract) {
+					unfreeze(e);
+					e.killed = true;
+					ServerLevel level = (ServerLevel) t.level();
+					t.hurtServer(level, level.damageSources().playerAttack(owner), Float.MAX_VALUE);
+				}
+				continue;
+			}
+			if (e.tick >= e.delay + e.extract + e.flight) {
+				it.remove();
+				absorb(owner, now);
+			}
+		}
+		// Expired buffs
+		for (Iterator<Map.Entry<UUID, Buff>> it = BUFFS.entrySet().iterator(); it.hasNext(); ) {
+			Map.Entry<UUID, Buff> b = it.next();
+			if (now < b.getValue().until()) continue;
+			it.remove();
+			ServerPlayer p = server.getPlayerList().getPlayer(b.getKey());
+			if (p != null) {
+				apply(p, 0);
+				ServerPlayNetworking.send(p, new ModNetwork.SoulBuff(0, 0));
+				p.level().playSound(null, p.blockPosition(), SoundEvents.SOUL_ESCAPE.value(), SoundSource.PLAYERS, 1.0F, 0.4F);
+			}
+		}
+		// Clear the stone glow once nothing is being extracted for that player.
+		if (now % 10 == 0) {
+			for (ServerPlayer p : server.getPlayerList().getPlayers()) {
+				boolean any = false;
+				for (Extraction e : ACTIVE) if (e.owner.equals(p.getUUID())) { any = true; break; }
+				ItemStack g = GauntletState.activeGauntlet(p);
+				if (!any && !g.isEmpty() && GauntletState.inUse(g).contains(Stone.SOUL)) GauntletState.setInUse(g, EnumSet.noneOf(Stone.class));
+			}
+		}
+	}
+
+	private static void freeze(Extraction e) {
+		e.frozen = true;
+		e.hadNoGravity = e.target.isNoGravity();
+		e.target.setNoGravity(true);
+		if (e.target instanceof Mob m) {
+			e.hadNoAi = m.isNoAi();
+			m.setNoAi(true);
+		}
+	}
+
+	private static void unfreeze(Extraction e) {
+		if (!e.frozen) return;
+		e.frozen = false;
+		e.target.setNoGravity(e.hadNoGravity);
+		if (e.target instanceof Mob m) m.setNoAi(e.hadNoAi);
+	}
+
+	private static void absorb(ServerPlayer p, long now) {
+		GauntletConfig cfg = GauntletConfig.get();
+		Buff old = BUFFS.get(p.getUUID());
+		int souls = Math.min(cfg.soulMaxStacks, (old != null ? old.souls() : 0) + 1);
+		BUFFS.put(p.getUUID(), new Buff(souls, now + cfg.soulBuffTicks));
+		apply(p, souls);
+		p.heal((float) cfg.soulHealthPerSoul + 2f);
+		ServerPlayNetworking.send(p, new ModNetwork.SoulBuff(souls, cfg.soulBuffTicks));
+		p.level().playSound(null, p.blockPosition(), SoundEvents.RESPAWN_ANCHOR_CHARGE, SoundSource.PLAYERS, 0.9F, 1.2F + souls * 0.02F);
+	}
+
+	private static void apply(ServerPlayer p, int souls) {
+		GauntletConfig cfg = GauntletConfig.get();
+		modifier(p, Attributes.MAX_HEALTH, HEALTH_ID, souls * cfg.soulHealthPerSoul);
+		modifier(p, Attributes.ATTACK_DAMAGE, DAMAGE_ID, souls * cfg.soulDamagePerSoul);
+		if (p.getHealth() > p.getMaxHealth()) p.setHealth(p.getMaxHealth());
+	}
+
+	private static void modifier(ServerPlayer p, Holder<Attribute> attribute, Identifier id, double amount) {
+		AttributeInstance inst = p.getAttribute(attribute);
+		if (inst == null) return;
+		if (amount <= 0) inst.removeModifier(id);
+		else inst.addOrUpdateTransientModifier(new AttributeModifier(id, amount, AttributeModifier.Operation.ADD_VALUE));
+	}
+
+	private SoulStone() {}
+}

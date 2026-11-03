@@ -105,6 +105,32 @@ public final class GauntletConfig {
 	public int timeShiftTicks = 120;
 	public int timeShiftCooldownTicks = 600;
 
+	// ---- Mind stone: telekinesis (server) ----
+	public double mindRange = 40;
+	/** Radius of the chunk of terrain torn out around the aimed block. */
+	public double mindGrabRadius = 2.6;
+	public int mindMaxBlocks = 64;
+	public double mindThrowSpeed = 2.0;
+	/** Impact damage of a thrown cluster (grows with its size). */
+	public float mindThrowDamage = 10f;
+	public double mindMobThrowSpeed = 2.2;
+	public float mindMobThrowDamage = 12f;
+	/** Ticks the held mob is torn apart before it bursts. */
+	public int mindRuptureTicks = 24;
+	public int mindCooldownTicks = 20;
+
+	// ---- Soul stone: extraction (server) ----
+	public double soulRange = 32;
+	public int soulPointCooldownTicks = 60;
+	public double soulMassRadius = 24;
+	public int soulMassMaxTargets = 48;
+	public int soulMassCooldownTicks = 900;
+	/** Absorbed souls stack up to this; each adds max health and attack damage for soulBuffTicks (refreshed per soul). */
+	public int soulMaxStacks = 20;
+	public double soulHealthPerSoul = 2;
+	public double soulDamagePerSoul = 0.5;
+	public int soulBuffTicks = 1200;
+
 	// ---- Client presentation ----
 	public float cameraShakeScale = 1.0f;
 	public float cameraShakeMaxDegrees = 4.0f;

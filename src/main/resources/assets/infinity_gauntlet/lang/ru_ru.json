@@ -12,6 +12,8 @@
   "key.category.infinity_gauntlet.gauntlet": "Перчатка Бесконечности",
   "key.infinity_gauntlet.time_rewind": "Камень Времени: отмотать время",
   "key.infinity_gauntlet.time_shift": "Камень Времени: сменить день и ночь",
+  "key.infinity_gauntlet.mind": "Камень Разума: телекинез (Shift — разорвать / уронить)",
+  "key.infinity_gauntlet.soul": "Камень Души: извлечь душу (Shift — массовое извлечение)",
   "key.infinity_gauntlet.space_portal": "Камень Пространства: портал (Shift — измерение)",
   "key.infinity_gauntlet.space_blink": "Камень Пространства: телепорт по взгляду",
   "key.infinity_gauntlet.infinity_beam": "Луч Бесконечности (удерживать)",

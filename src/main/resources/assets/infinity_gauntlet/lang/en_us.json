@@ -12,6 +12,8 @@
   "key.category.infinity_gauntlet.gauntlet": "Infinity Gauntlet",
   "key.infinity_gauntlet.time_rewind": "Time stone: rewind",
   "key.infinity_gauntlet.time_shift": "Time stone: day / night",
+  "key.infinity_gauntlet.mind": "Mind stone: telekinesis (Shift: tear apart / drop)",
+  "key.infinity_gauntlet.soul": "Soul stone: extract a soul (Shift: mass extraction)",
   "key.infinity_gauntlet.space_portal": "Space stone: portal (Shift = destination)",
   "key.infinity_gauntlet.space_blink": "Space stone: teleport where you look",
   "key.infinity_gauntlet.infinity_beam": "Infinity Beam (hold)",

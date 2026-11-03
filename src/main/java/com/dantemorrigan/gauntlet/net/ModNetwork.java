@@ -1,5 +1,7 @@
 package com.dantemorrigan.gauntlet.net;
 
+import net.minecraft.core.BlockPos;
+import java.util.List;
 import com.dantemorrigan.gauntlet.InfinityGauntlet;
 import com.dantemorrigan.gauntlet.space.SpaceRecord;
 import io.netty.buffer.ByteBuf;
@@ -68,6 +70,56 @@ public final class ModNetwork {
 		public static final Type<SpaceLeave> TYPE = newType("space_leave");
 		public static final StreamCodec<ByteBuf, SpaceLeave> CODEC = StreamCodec.unit(new SpaceLeave());
 		@Override public Type<SpaceLeave> type() { return TYPE; }
+	}
+
+	/** C2S: Mind stone. 0 = grab / throw, 1 = (Shift) tear the held mob apart / drop the held blocks. */
+	public record MindAction(int action) implements CustomPacketPayload {
+		public static final Type<MindAction> TYPE = newType("mind_action");
+		public static final StreamCodec<ByteBuf, MindAction> CODEC = StreamCodec.composite(ByteBufCodecs.VAR_INT, MindAction::action, MindAction::new);
+		@Override public Type<MindAction> type() { return TYPE; }
+	}
+
+	/**
+	 * S2C: Mind stone visuals. kind: 0 hold blocks (pos = origin centre, states/offsets = the cluster), 1 hold mob (id),
+	 * 2 release, 3 throw (id = flight id, pos = start, vec = velocity, states/offsets), 4 impact (id = flight, pos),
+	 * 5 tearing starts (id = mob), 6 rupture (id = mob, pos), 7 thrown mob hit (pos).
+	 */
+	public record MindFx(int kind, int ownerId, int id, Vec3 pos, Vec3 vec, List<Integer> states, List<BlockPos> offsets) implements CustomPacketPayload {
+		public static final Type<MindFx> TYPE = newType("mind_fx");
+		public static final StreamCodec<ByteBuf, MindFx> CODEC = StreamCodec.composite(
+				ByteBufCodecs.VAR_INT, MindFx::kind, ByteBufCodecs.VAR_INT, MindFx::ownerId, ByteBufCodecs.VAR_INT, MindFx::id,
+				Vec3.STREAM_CODEC, MindFx::pos, Vec3.STREAM_CODEC, MindFx::vec,
+				ByteBufCodecs.VAR_INT.apply(ByteBufCodecs.list()), MindFx::states, BlockPos.STREAM_CODEC.apply(ByteBufCodecs.list()), MindFx::offsets,
+				MindFx::new);
+		@Override public Type<MindFx> type() { return TYPE; }
+	}
+
+	/** C2S: Soul stone. 0 = extract the soul of the aimed mob, 1 = (Shift) mass extraction. */
+	public record SoulAction(int action) implements CustomPacketPayload {
+		public static final Type<SoulAction> TYPE = newType("soul_action");
+		public static final StreamCodec<ByteBuf, SoulAction> CODEC = StreamCodec.composite(ByteBufCodecs.VAR_INT, SoulAction::action, SoulAction::new);
+		@Override public Type<SoulAction> type() { return TYPE; }
+	}
+
+	/**
+	 * S2C: Soul stone visuals. kind 0: a soul leaves targetId after delay ticks, is drawn out for extract ticks and flies
+	 * to ownerId for flight ticks. kind 1: mass wave at pos, delay = radius.
+	 */
+	public record SoulFx(int kind, int ownerId, int targetId, Vec3 pos, int delay, int extract, int flight) implements CustomPacketPayload {
+		public static final Type<SoulFx> TYPE = newType("soul_fx");
+		public static final StreamCodec<ByteBuf, SoulFx> CODEC = StreamCodec.composite(
+				ByteBufCodecs.VAR_INT, SoulFx::kind, ByteBufCodecs.VAR_INT, SoulFx::ownerId, ByteBufCodecs.VAR_INT, SoulFx::targetId,
+				Vec3.STREAM_CODEC, SoulFx::pos, ByteBufCodecs.VAR_INT, SoulFx::delay, ByteBufCodecs.VAR_INT, SoulFx::extract,
+				ByteBufCodecs.VAR_INT, SoulFx::flight, SoulFx::new);
+		@Override public Type<SoulFx> type() { return TYPE; }
+	}
+
+	/** S2C: absorbed souls of the receiving player and the remaining buff time. */
+	public record SoulBuff(int souls, int ticks) implements CustomPacketPayload {
+		public static final Type<SoulBuff> TYPE = newType("soul_buff");
+		public static final StreamCodec<ByteBuf, SoulBuff> CODEC = StreamCodec.composite(
+				ByteBufCodecs.VAR_INT, SoulBuff::souls, ByteBufCodecs.VAR_INT, SoulBuff::ticks, SoulBuff::new);
+		@Override public Type<SoulBuff> type() { return TYPE; }
 	}
 
 	/** C2S: Time stone rewind request. */
@@ -265,6 +317,11 @@ public final class ModNetwork {
 		PayloadTypeRegistry.clientboundPlay().register(MeteorSpawn.TYPE, MeteorSpawn.CODEC);
 		PayloadTypeRegistry.clientboundPlay().register(MeteorImpact.TYPE, MeteorImpact.CODEC);
 		PayloadTypeRegistry.serverboundPlay().register(TimeRewindRequest.TYPE, TimeRewindRequest.CODEC);
+		PayloadTypeRegistry.serverboundPlay().register(MindAction.TYPE, MindAction.CODEC);
+		PayloadTypeRegistry.clientboundPlay().register(MindFx.TYPE, MindFx.CODEC);
+		PayloadTypeRegistry.serverboundPlay().register(SoulAction.TYPE, SoulAction.CODEC);
+		PayloadTypeRegistry.clientboundPlay().register(SoulFx.TYPE, SoulFx.CODEC);
+		PayloadTypeRegistry.clientboundPlay().register(SoulBuff.TYPE, SoulBuff.CODEC);
 		PayloadTypeRegistry.clientboundPlay().register(TimeRewindFx.TYPE, TimeRewindFx.CODEC);
 		PayloadTypeRegistry.serverboundPlay().register(TimeShiftRequest.TYPE, TimeShiftRequest.CODEC);
 		PayloadTypeRegistry.clientboundPlay().register(TimeShiftFx.TYPE, TimeShiftFx.CODEC);

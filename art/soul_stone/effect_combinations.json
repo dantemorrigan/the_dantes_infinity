@@ -1,0 +1,19 @@
+{
+  "visual_recipes_only": true,
+  "profiles": {
+    "single_extract": [
+      "soul_wisp",
+      "soul_siphon",
+      "soul_absorption"
+    ],
+    "mass_extract": [
+      "soul_mass_wave",
+      "soul_wisp",
+      "soul_siphon",
+      "soul_absorption"
+    ],
+    "empowered_pulse": [
+      "soul_absorption"
+    ]
+  }
+}

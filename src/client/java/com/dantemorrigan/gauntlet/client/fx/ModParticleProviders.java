@@ -48,6 +48,42 @@ public final class ModParticleProviders {
 			if (speed < 1.0e-4f) v.set(0, -1, 0);
 			return new FxParticle(level, x, y, z, sprites, VfxPresets.get("celestial_meteor_trail"), 1f, null, -1, null, 1f).alignTo(v.normalize());
 		});
+		// Mind stone
+		ParticleProviderRegistry.getInstance().register(ModParticles.MIND_HOLD, sprites -> (t, level, x, y, z, xa, ya, za, random) ->
+				new FxParticle(level, x, y, z, sprites, VfxPresets.get("mind_hold"), ya > 0 ? (float) ya : 1f, null, (int) xa, MindClient::holdCenter, 0.9f));
+		flat(ModParticles.MIND_LIFT_FRACTURE, "mind_lift_fracture");
+		aligned(ModParticles.MIND_THROW_TRAIL, "mind_throw_trail", 10);
+		billboard(ModParticles.MIND_RUPTURE, "mind_rupture");
+		// Soul stone
+		ParticleProviderRegistry.getInstance().register(ModParticles.SOUL_WISP, sprites -> (t, level, x, y, z, xa, ya, za, random) -> {
+			int id = (int) xa;
+			return new FxParticle(level, x, y, z, sprites, VfxPresets.get("soul_wisp"), ya > 0 ? (float) ya : 1f, null, -1, null, 1f) {
+				@Override
+				protected void motion() {
+					net.minecraft.world.phys.Vec3 p = SoulClient.soulPos(id);
+					if (p == null) this.remove();
+					else this.setPos(p.x, p.y, p.z);
+				}
+			}.lifetime(400);
+		});
+		aligned(ModParticles.SOUL_SIPHON, "soul_siphon", 6);
+		// Ground wave: translucent, it must not hide the souls rising behind it.
+		ParticleProviderRegistry.getInstance().register(ModParticles.SOUL_MASS_WAVE, sprites -> (t, level, x, y, z, xa, ya, za, random) -> {
+			Vector3f n = new Vector3f((float) xa, (float) ya, (float) za);
+			float len = n.length();
+			if (len < 1.0e-4f) { n.set(0, 1, 0); len = 1; }
+			return new FxParticle(level, x, y, z, sprites, VfxPresets.get("soul_mass_wave"), len, n.div(len), -1, null, 0.45f);
+		});
+		billboard(ModParticles.SOUL_ABSORPTION, "soul_absorption");
+	}
+
+	/** (xa,ya,za) = direction of travel: the sprite's +X runs along it. Short-lived segment of a looping strip. */
+	private static void aligned(SimpleParticleType type, String name, int life) {
+		ParticleProviderRegistry.getInstance().register(type, sprites -> (t, level, x, y, z, xa, ya, za, random) -> {
+			Vector3f v = new Vector3f((float) xa, (float) ya, (float) za);
+			if (v.lengthSquared() < 1.0e-8f) v.set(1, 0, 0);
+			return new FxParticle(level, x, y, z, sprites, VfxPresets.get(name), 1f, null, -1, null, 1f).alignX(v.normalize()).lifetime(life);
+		});
 	}
 
     private static void cosmos(SimpleParticleType type,String name) {

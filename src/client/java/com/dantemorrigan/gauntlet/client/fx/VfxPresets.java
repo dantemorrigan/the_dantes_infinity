@@ -46,7 +46,15 @@ public final class VfxPresets {
 			Map.entry("reality_butterfly", new Spec(4, 2, 80, true, 0.35f, true, Orientation.CAMERA)),
 			Map.entry("reality_petal", new Spec(4, 3, 60, true, 0.18f, true, Orientation.CAMERA)),
 			Map.entry("reality_glass", new Spec(4, 3, 36, true, 0.4f, true, Orientation.CAMERA)),
-			Map.entry("reality_aether", new Spec(4, 3, 48, true, 0.55f, true, Orientation.CAMERA)));
+			Map.entry("reality_aether", new Spec(4, 3, 48, true, 0.55f, true, Orientation.CAMERA)),
+			Map.entry("mind_hold", new Spec(4, 3, 36, true, 1.8f, true, Orientation.CAMERA)),
+			Map.entry("mind_lift_fracture", new Spec(4, 3, 12, false, 5f, true, Orientation.FLAT)),
+			Map.entry("mind_throw_trail", new Spec(4, 2, 36, true, 1.4f, true, Orientation.CAMERA)),
+			Map.entry("mind_rupture", new Spec(4, 2, 8, false, 3f, true, Orientation.CAMERA)),
+			Map.entry("soul_wisp", new Spec(4, 3, 36, true, 0.7f, true, Orientation.CAMERA)),
+			Map.entry("soul_siphon", new Spec(4, 2, 36, true, 1.3f, true, Orientation.CAMERA)),
+			Map.entry("soul_mass_wave", new Spec(4, 3, 12, false, 8f, true, Orientation.FLAT)),
+			Map.entry("soul_absorption", new Spec(4, 3, 12, false, 1.2f, true, Orientation.CAMERA)));
 
 	private static Map<String, Spec> loaded;
 
@@ -61,7 +69,7 @@ public final class VfxPresets {
 
 	private static void load() {
 		Map<String, Spec> map = new HashMap<>(DEFAULTS);
-		for (String file : new String[]{"power_vfx_presets.json", "destruction_vfx_presets.json", "../celestial_apocalypse/meteor_vfx_presets.json", "../space_stone/particle_presets.json", "../reality_stone/particle_presets.json", "../cosmos/particle_presets.json"}) {
+		for (String file : new String[]{"power_vfx_presets.json", "destruction_vfx_presets.json", "../celestial_apocalypse/meteor_vfx_presets.json", "../space_stone/particle_presets.json", "../reality_stone/particle_presets.json", "../cosmos/particle_presets.json", "../mind_stone/particle_presets.json", "../soul_stone/particle_presets.json"}) {
 			JsonObject root = readJson(InfinityGauntlet.id(file.startsWith("../") ? file.substring(3) : "planet_destruction/" + file));
 			if (root == null) continue;
 			JsonObject effects = root.has("effects") ? root.getAsJsonObject("effects") : root;
@@ -79,7 +87,7 @@ public final class VfxPresets {
 						: o.has("suggested_full_quad_width_blocks") ? o.get("suggested_full_quad_width_blocks").getAsFloat() : def.width();
 				boolean bright = o.has("full_bright") ? o.get("full_bright").getAsBoolean() : def.fullBright();
 				Orientation orient = def.orientation();
-				if (o.has("orientation")) orient = o.get("orientation").getAsString().contains("terrain") ? Orientation.FLAT : Orientation.CAMERA;
+				if (o.has("orientation")) orient = (o.get("orientation").getAsString().contains("terrain") || o.get("orientation").getAsString().contains("surface")) ? Orientation.FLAT : Orientation.CAMERA;
 				map.put(e.getKey(), new Spec(frames, tpf, life, loop, width, bright, orient));
 			}
 		}
