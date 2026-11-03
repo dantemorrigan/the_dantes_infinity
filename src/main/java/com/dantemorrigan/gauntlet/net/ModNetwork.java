@@ -237,7 +237,17 @@ public final class ModNetwork {
         @Override public Type<CosmosState> type() { return TYPE; }
     }
 
+    /** S2C: sonic transition (0) or physical flight impact (1), validated by the server. */
+    public record FlightFx(int entityId,int kind,Vec3 pos,Vec3 direction,float strength) implements CustomPacketPayload {
+        public static final Type<FlightFx> TYPE=newType("flight_fx");
+        public static final StreamCodec<ByteBuf,FlightFx> CODEC=StreamCodec.composite(
+            ByteBufCodecs.VAR_INT,FlightFx::entityId,ByteBufCodecs.VAR_INT,FlightFx::kind,
+            Vec3.STREAM_CODEC,FlightFx::pos,Vec3.STREAM_CODEC,FlightFx::direction,ByteBufCodecs.FLOAT,FlightFx::strength,FlightFx::new);
+        @Override public Type<FlightFx> type() { return TYPE; }
+    }
+
 	public static void init() {
+        PayloadTypeRegistry.clientboundPlay().register(FlightFx.TYPE,FlightFx.CODEC);
         PayloadTypeRegistry.serverboundPlay().register(CosmosAction.TYPE,CosmosAction.CODEC);
         PayloadTypeRegistry.clientboundPlay().register(CosmosState.TYPE,CosmosState.CODEC);
 		PayloadTypeRegistry.serverboundPlay().register(RealityHold.TYPE, RealityHold.CODEC);

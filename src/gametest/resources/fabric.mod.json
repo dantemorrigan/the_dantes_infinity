@@ -15,7 +15,8 @@
       "com.dantemorrigan.gauntlet.gametest.SpaceCollisionTest",
       "com.dantemorrigan.gauntlet.gametest.RealityStoneTest",
       "com.dantemorrigan.gauntlet.gametest.RealityStrikeTest",
-      "com.dantemorrigan.gauntlet.gametest.CosmosTravelTest"
+      "com.dantemorrigan.gauntlet.gametest.CosmosTravelTest",
+      "com.dantemorrigan.gauntlet.gametest.SupersonicFlightTest"
     ]
   },
   "depends": {

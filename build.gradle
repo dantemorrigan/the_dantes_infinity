@@ -101,7 +101,7 @@ tasks.named('processGametestResources') {
         if (onlyCosmosTests) {
             def metadata = new File(destinationDir, 'fabric.mod.json')
             def data = new groovy.json.JsonSlurper().parse(metadata)
-            data.entrypoints['fabric-client-gametest'] = ['com.dantemorrigan.gauntlet.gametest.CosmosTravelTest']
+            data.entrypoints['fabric-client-gametest'] = ['com.dantemorrigan.gauntlet.gametest.CosmosTravelTest', 'com.dantemorrigan.gauntlet.gametest.SupersonicFlightTest']
             metadata.text = groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(data))
         }
     }

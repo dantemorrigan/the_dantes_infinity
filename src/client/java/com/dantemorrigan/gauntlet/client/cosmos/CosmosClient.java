@@ -21,7 +21,10 @@ public final class CosmosClient {
     public static final KeyMapping NEXT = key("cosmos_next", GLFW.GLFW_KEY_K);
     public static final KeyMapping WARP = key("cosmos_warp", GLFW.GLFW_KEY_U);
     private static boolean enabled;
-    private static int selected, warp, cooldown, ticks;
+    private static int selected, warp, cooldown, ticks, impactPause;
+    private static int sonicBooms, impactBursts;
+    public static int sonicBooms() { return sonicBooms; }
+    public static int impactBursts() { return impactBursts; }
     private static Vec3 velocity = Vec3.ZERO, previous;
     private static float intensity;
     private static boolean lastBoost;
@@ -30,6 +33,21 @@ public final class CosmosClient {
         return KeyMappingHelper.registerKeyMapping(new KeyMapping("key.infinity_gauntlet."+name, InputConstants.Type.KEYSYM, code, ClientPower.CATEGORY));
     }
     public static void init() {
+        ClientPlayNetworking.registerGlobalReceiver(ModNetwork.FlightFx.TYPE,(p,c)->{
+            boolean local=Minecraft.getInstance().player!=null && Minecraft.getInstance().player.getId()==p.entityId();
+            Vec3 n=p.direction().normalize().scale(p.kind()==0?1.2:2.2);
+            ClientPower.spawn(ModParticles.COSMOS_WARP_RING,p.pos(),n.x,n.y,n.z);
+            ClientPower.spawn(ModParticles.COSMOS_BOOST_FLASH,p.pos(),p.kind()==0?1.4:3,0,0);
+            if(p.kind()==0) {
+                if(local) sonicBooms++;
+                if(local) com.dantemorrigan.gauntlet.client.cutscene.Cutscene.shake(.22f,10);
+            } else {
+                if(local) { impactBursts++;velocity=Vec3.ZERO;impactPause=10; }
+                double distance=Minecraft.getInstance().player==null?128:Minecraft.getInstance().player.position().distanceTo(p.pos());
+                if(distance<64) com.dantemorrigan.gauntlet.client.cutscene.Cutscene.shake((float)(.8*(1-distance/64)),18);
+                ClientPower.spawn(ModParticles.DETONATION_FLASH,p.pos(),.65*p.strength(),0,0);
+            }
+        });
         ClientPlayNetworking.registerGlobalReceiver(ModNetwork.CosmosState.TYPE, (p,c) -> {
             if (!p.enabled()) clear();
             else {
@@ -44,7 +62,7 @@ public final class CosmosClient {
     }
     private static void clear() {
         enabled=false; velocity=Vec3.ZERO; previous=null; intensity=0; warp=0; cooldown=0;
-        lastBoost=false; lastDimension=null;
+        lastBoost=false; lastDimension=null; impactPause=0;sonicBooms=0;impactBursts=0;
         StatusHud.persistent("cosmos",null); StatusHud.persistent("cosmos_keys",null);
     }
     public static boolean inCosmos() {
@@ -73,6 +91,7 @@ public final class CosmosClient {
         if(!enabled) return;
         if(mc.isPaused()) return;
         ticks++;
+        if(impactPause>0) impactPause--;
         if(cooldown>0) cooldown--;
         if(warp>1) warp--; // only the server clears the final tick / completes travel
         var p=mc.player;
@@ -80,7 +99,7 @@ public final class CosmosClient {
             velocity=Vec3.ZERO; lastDimension=mc.level.dimension();
         }
         previous=p.position();
-        boolean locked=mc.screen!=null || com.dantemorrigan.gauntlet.client.cutscene.Cutscene.inputLocked()
+        boolean locked=impactPause>0 || mc.screen!=null || com.dantemorrigan.gauntlet.client.cutscene.Cutscene.inputLocked()
             || TimeRewindClient.inputLocked() || RealityClient.inputLocked();
         var input=p.input;
         Vec3 look=p.getViewVector(1);
@@ -101,7 +120,7 @@ public final class CosmosClient {
         intensity+=( (boost||warp>0?1:0)-intensity)*.16f;
         if(boost && !lastBoost) flash();
         lastBoost=boost;
-        if(inCosmos() || atmosphere()>.2f) effects(mc,look);
+        if(intensity>.15f || inCosmos() || atmosphere()>.2f) effects(mc,look);
         String speed=String.format(java.util.Locale.ROOT,"%.0f",velocity.length()*20);
         if(inCosmos()) {
             var d=CosmosRoutes.ALL.get(selected);
