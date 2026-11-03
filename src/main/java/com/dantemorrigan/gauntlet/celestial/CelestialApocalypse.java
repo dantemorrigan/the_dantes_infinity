@@ -177,13 +177,55 @@ public final class CelestialApocalypse {
 
 	public static void restoreBodies(MinecraftServer server) {
 		server.overworld().removeAttached(DESTROYED);
+		dusking = false;
 		broadcast(server);
 	}
 
 	// ------------------------------------------------------------------ tick
 
+	/** True while the clock runs fast toward the first eternal night (right after the sun breaks). */
+	private static boolean dusking;
+	private static final int DUSK_RATE = 100;
+	/** Eternal night window (time of day): dark night, before the pre-dawn glow. */
+	private static final long NIGHT_START = 14000, NIGHT_END = 22500;
+
+	/**
+	 * No sun, no day: the overworld clock is kept in the night. Right after the sun breaks it fast-forwards to
+	 * dusk (darkness falls in a few seconds); afterwards every dawn jumps to the start of the next night, so the
+	 * moon keeps rising and its phases keep changing. A destroyed moon changes nothing (starry sky, normal days).
+	 */
+	private static void eternalNight(MinecraftServer server) {
+		var clock = server.registryAccess().get(net.minecraft.world.clock.WorldClocks.OVERWORLD);
+		if (clock.isEmpty()) return;
+		var manager = server.clockManager();
+		if (!isDestroyed(server, "sun")) {
+			dusking = false;
+			return;
+		}
+		long total = manager.getTotalTicks(clock.get());
+		long tod = Math.floorMod(total, 24000L);
+		boolean night = tod >= NIGHT_START && tod < NIGHT_END;
+		if (dusking) {
+			// Advance the clock ourselves (works even with the advance_time game rule off).
+			if (night) dusking = false;
+			else manager.addTicks(clock.get(), (int) Math.min(DUSK_RATE, tod >= NIGHT_END ? 24000 - tod + NIGHT_START : NIGHT_START - tod));
+		} else if (!night) {
+			long add = tod >= NIGHT_END ? 24000 - tod + NIGHT_START : NIGHT_START - tod;
+			manager.addTicks(clock.get(), (int) add);
+		}
+	}
+
+	private static void startDusk(MinecraftServer server) {
+		var clock = server.registryAccess().get(net.minecraft.world.clock.WorldClocks.OVERWORLD);
+		if (clock.isEmpty()) return;
+		long tod = Math.floorMod(server.clockManager().getTotalTicks(clock.get()), 24000L);
+		if (tod >= NIGHT_START && tod < NIGHT_END) return;
+		dusking = true;
+	}
+
 	private static void tick(MinecraftServer server) {
 		ServerLevel level = server.overworld();
+		eternalNight(server);
 		Event e = level.getAttached(EVENT);
 		if (e == null) return;
 		long t = level.getGameTime() - e.startGameTime();
@@ -197,6 +239,7 @@ public final class CelestialApocalypse {
 			if (!destroyed.contains(e.body())) destroyed.add(e.body());
 			level.setAttached(DESTROYED, destroyed);
 			level.playSound(null, BlockPos.containing(e.center()), SoundEvents.WITHER_DEATH, SoundSource.AMBIENT, 8.0F, 0.5F);
+			if (e.body().equals("sun")) startDusk(server);
 			broadcast(server);
 		}
 		if (t == T_PULL) broadcast(server);
