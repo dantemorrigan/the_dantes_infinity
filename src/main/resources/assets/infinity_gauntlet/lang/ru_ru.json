@@ -95,5 +95,11 @@
   "cosmos.infinity_gauntlet.neptune": "Нептун",
   "cosmos.infinity_gauntlet.no_target": "Наведи прицел на планету или Солнце",
   "cosmos.infinity_gauntlet.target": "%s · %s м · %s м/с",
-  "cosmos.infinity_gauntlet.aim": "Наведи на цель · %s м/с"
+  "cosmos.infinity_gauntlet.aim": "Наведи на цель · %s м/с",
+  "key.infinity_gauntlet.favorites": "Избранные способности",
+  "ability.infinity_gauntlet.favorites_bind": "1–6 — назначить в избранное",
+  "ability.infinity_gauntlet.favorites_bound": "Слот %s · та же цифра убирает способность",
+  "ability.infinity_gauntlet.favorites_shortcut": "%s + 1–6 — избранное",
+  "ability.infinity_gauntlet.favorites_choose": "1–6 или ЛКМ — выбрать",
+  "ability.infinity_gauntlet.favorites_empty": "Назначь способности в колесе клавишами 1–6"
 }

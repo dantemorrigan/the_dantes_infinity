@@ -1,6 +1,9 @@
 package com.dantemorrigan.gauntlet.client;
 
 import com.dantemorrigan.gauntlet.InfinityGauntlet;
+import com.dantemorrigan.gauntlet.client.ability.AbilityFavorites;
+import com.dantemorrigan.gauntlet.client.ability.AbilityFavoritesScreen;
+import com.dantemorrigan.gauntlet.client.ability.AbilityInput;
 import com.dantemorrigan.gauntlet.net.ModNetwork;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
@@ -48,7 +51,7 @@ public final class StatusHud {
     }
     private static void render(GuiGraphicsExtractor g) {
         Minecraft mc = Minecraft.getInstance();
-        if (mc.player == null || mc.options.hideGui || mc.screen instanceof com.dantemorrigan.gauntlet.client.ability.AbilityWheelScreen || (notice == null && LINES.isEmpty() && !com.dantemorrigan.gauntlet.client.ability.AbilityInput.equipped())) return;
+        if (mc.player == null || mc.options.hideGui || mc.screen instanceof AbilityFavoritesScreen || mc.screen instanceof com.dantemorrigan.gauntlet.client.ability.AbilityWheelScreen || (notice == null && LINES.isEmpty() && !com.dantemorrigan.gauntlet.client.ability.AbilityInput.equipped())) return;
         int maxWidth = Math.max(60, Math.min(270, g.guiWidth() - 40));
         List<FormattedCharSequence> rows = new ArrayList<>();
         boolean ability=com.dantemorrigan.gauntlet.client.ability.AbilityInput.equipped();
@@ -62,18 +65,24 @@ public final class StatusHud {
         for (Component line : LINES.values()) rows.addAll(mc.font.split(bold(line), maxWidth));
         if (notice != null) rows.addAll(mc.font.split(bold(notice), maxWidth));
         // Bound the panel on small windows; long messages wrap inside its background.
-        int limit = Math.max(1, (g.guiHeight() - 125) / 12);
+        int limit = Math.max(1, (g.guiHeight() - 125 - (ability ? 38 : 0)) / 12);
         if (rows.size() > limit) rows = new ArrayList<>(rows.subList(0, limit));
-        int width = 120;
+        int width = ability ? AbilityFavorites.WIDTH : 120;
         for (int i=0;i<rows.size();i++) width = Math.max(width, mc.font.width(rows.get(i))+(i<cardRows?28:0));
         width = Math.min(width, maxWidth);
-        int x = 12, y = 52, height = 23 + rows.size() * 12;
+        int x = 12, y = 52, height = 23 + rows.size() * 12 + (ability ? 38 : 0);
         g.fill(x, y, x + width + 18, y + height, 0xD014101F);
         g.fill(x, y, x + 2, y + height, 0xFFE8B75F);
         for (int i = 0; i < 6; i++) g.fill(x + 9 + i * 7, y + 8, x + 13 + i * 7, y + 11, COLORS[i]);
         g.fill(x + 9, y + 17, x + width + 9, y + 18, 0x504F4263);
         if(ability) com.dantemorrigan.gauntlet.client.ability.AbilityWheelScreen.icon(g,com.dantemorrigan.gauntlet.client.ability.AbilityInput.selected(),x+9,y+24,20);
         for (int i = 0; i < rows.size(); i++) g.text(mc.font, rows.get(i), x + 9 + (i<cardRows?28:0), y + 23 + i * 12, 0xFFF4EFFA, true);
+        if (ability) {
+            int barY = y + 23 + rows.size() * 12;
+            g.text(mc.font, Component.translatable("ability.infinity_gauntlet.favorites_shortcut",
+                AbilityInput.FAVORITES.getTranslatedKeyMessage()), x + 9, barY, 0xFFF4D68D, true);
+            AbilityFavorites.render(g, x + 9, barY + 11, -1);
+        }
     }
     private StatusHud() {}
 }

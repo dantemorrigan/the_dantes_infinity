@@ -89,6 +89,13 @@ public final class AbilityWheelScreen extends Screen {
         int key=event.key();
         if(key==GLFW.GLFW_KEY_ESCAPE) {if(submenu!=0){submenu=0;target=-1;}else onClose();return true;}
         if(key==KeyMappingHelper.getBoundKeyOf(AbilityInput.WHEEL).getValue() && GauntletConfig.get().abilityWheelToggle) {finish();return true;}
+        int favoriteSlot = AbilityFavorites.slotForKey(key);
+        if (submenu == 0 && favoriteSlot >= 0) {
+            Ability ability = keyboard != null ? keyboard : hovered;
+            if (ability == null) ability = AbilityInput.last(stone);
+            if (ability != Ability.DESTINATIONS) AbilityFavorites.toggle(favoriteSlot, ability);
+            return true;
+        }
         if(key==GLFW.GLFW_KEY_PAGE_DOWN || key==GLFW.GLFW_KEY_PAGE_UP) {
             stone=ORDER[Math.floorMod(index(stone)+(key==GLFW.GLFW_KEY_PAGE_DOWN?1:-1),6)];keyboard=null;hovered=null;pending=null;return true;
         }
@@ -166,7 +173,14 @@ public final class AbilityWheelScreen extends Screen {
             text(g,AbilityInput.title(focus),width/2,y,color(focus.stone==null?Stone.MIND:focus.stone));
             text(g,(focus==Ability.DESTINATIONS || focus==Ability.PORTAL)?Component.translatable("ability.infinity_gauntlet.open_submenu",AbilityInput.WHEEL.getTranslatedKeyMessage()):AbilityInput.hint(focus),width/2,y+12,0xFFE1D9E8);
         } else text(g,Component.translatable("ability.infinity_gauntlet.pick_destination"),width/2,y,0xFFDED7EA);
-        text(g,Component.translatable("ability.infinity_gauntlet.wheel_help",AbilityInput.WHEEL.getTranslatedKeyMessage()),width/2,y+26,0xFF9BA7BB);
+        if (submenu == 0) {
+            int slot = AbilityFavorites.find(focus);
+            Component binding = slot < 0
+                ? Component.translatable("ability.infinity_gauntlet.favorites_bind")
+                : Component.translatable("ability.infinity_gauntlet.favorites_bound", slot + 1);
+            text(g, binding, width / 2, y + 24, 0xFFF4D68D);
+        }
+        text(g,Component.translatable("ability.infinity_gauntlet.wheel_help",AbilityInput.WHEEL.getTranslatedKeyMessage()),width/2,y+(submenu==0?36:26),0xFF9BA7BB);
     }
     private static void text(GuiGraphicsExtractor g,Component text,int center,int y,int color) {
         var font=Minecraft.getInstance().font;g.text(font,text,center-font.width(text)/2,y,color,true);

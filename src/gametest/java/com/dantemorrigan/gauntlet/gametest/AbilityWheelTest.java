@@ -39,7 +39,21 @@ public class AbilityWheelTest implements FabricClientGameTest {
             ctx.getInput().pressKey(GLFW.GLFW_KEY_RIGHT);close(ctx);
             if(!ctx.computeOnClient(mc->AbilityInput.selected()==Ability.PLANET)) throw new AssertionError("Wheel keyboard selection failed");
             server.runOnServer(s->{var p=s.getPlayerList().getPlayers().getFirst();if(AbilityController.chargeTicks(p)>0 || com.dantemorrigan.gauntlet.space.PlanetDestruction.isBusy(p)) throw new AssertionError("Selection activated planet destruction");});
-            open(ctx);ctx.getInput().pressKey(GLFW.GLFW_KEY_LEFT);close(ctx);
+            open(ctx);
+            ctx.getInput().pressKey(GLFW.GLFW_KEY_LEFT);
+            ctx.getInput().pressKey(GLFW.GLFW_KEY_1);
+            ctx.getInput().pressKey(GLFW.GLFW_KEY_ESCAPE);
+            close(ctx);
+            ctx.getInput().holdKey(GLFW.GLFW_KEY_B);
+            ctx.waitFor(mc->mc.screen instanceof AbilityFavoritesScreen,100);
+            ctx.takeScreenshot("favorites_quick_selection");
+            ctx.getInput().pressKey(GLFW.GLFW_KEY_1);
+            ctx.getInput().releaseKey(GLFW.GLFW_KEY_B);
+            ctx.waitFor(mc->mc.screen==null,100);
+            ctx.waitTicks(8);
+            if(!server.computeOnServer(s->AbilityController.selected(s.getPlayerList().getPlayers().getFirst())==Ability.STRIKE)) {
+                throw new AssertionError("Favorite shortcut did not switch the server selection");
+            }
             if(!ctx.computeOnClient(mc->AbilityInput.selected()==Ability.STRIKE)) throw new AssertionError("Power strike not selected");
             server.runCommand("execute as @p run tp @s 0 -60 0 0 0");
             server.runCommand("summon minecraft:cow 0.5 -60 4.5 {NoAI:1b,Tags:[\"wheel_test\"]}");ctx.waitTicks(8);

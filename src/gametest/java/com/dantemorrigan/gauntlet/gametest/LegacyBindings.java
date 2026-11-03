@@ -20,6 +20,7 @@ public final class LegacyBindings {
             for(int i=0;i<keys.length;i++) keys[i].setKey(legacy?InputConstants.Type.KEYSYM.getOrCreate(values[i]):InputConstants.UNKNOWN);
             AbilityInput.WHEEL.setKey(legacy?InputConstants.UNKNOWN:InputConstants.Type.KEYSYM.getOrCreate(86));
             com.dantemorrigan.gauntlet.client.render.GauntletGestureClient.KEY.setKey(legacy?InputConstants.UNKNOWN:InputConstants.Type.KEYSYM.getOrCreate(71));
+            AbilityInput.FAVORITES.setKey(legacy?InputConstants.UNKNOWN:InputConstants.Type.KEYSYM.getOrCreate(66));
             AbilityInput.CAST.setKey(legacy?InputConstants.UNKNOWN:InputConstants.Type.KEYSYM.getOrCreate(82));
             KeyMapping.resetMapping();
         });

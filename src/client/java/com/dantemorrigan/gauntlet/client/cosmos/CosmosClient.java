@@ -101,7 +101,8 @@ public final class CosmosClient {
             velocity=Vec3.ZERO; lastDimension=mc.level.dimension();
         }
         previous=p.position();
-        boolean wheel=mc.screen instanceof com.dantemorrigan.gauntlet.client.ability.AbilityWheelScreen;
+        boolean wheel=mc.screen instanceof com.dantemorrigan.gauntlet.client.ability.AbilityWheelScreen
+            || mc.screen instanceof com.dantemorrigan.gauntlet.client.ability.AbilityFavoritesScreen;
         boolean locked=impactPause>0 || mc.screen!=null && !wheel || com.dantemorrigan.gauntlet.client.cutscene.Cutscene.inputLocked()
             || TimeRewindClient.inputLocked() || RealityClient.inputLocked();
         var input=p.input;

@@ -95,5 +95,11 @@
   "cosmos.infinity_gauntlet.neptune": "Neptune",
   "cosmos.infinity_gauntlet.no_target": "Aim at a planet or the Sun",
   "cosmos.infinity_gauntlet.target": "%s · %s m · %s m/s",
-  "cosmos.infinity_gauntlet.aim": "Aim at a target · %s m/s"
+  "cosmos.infinity_gauntlet.aim": "Aim at a target · %s m/s",
+  "key.infinity_gauntlet.favorites": "Favorite abilities",
+  "ability.infinity_gauntlet.favorites_bind": "1–6 — assign a favorite",
+  "ability.infinity_gauntlet.favorites_bound": "Slot %s · press its number to remove",
+  "ability.infinity_gauntlet.favorites_shortcut": "%s + 1–6 — favorites",
+  "ability.infinity_gauntlet.favorites_choose": "1–6 or click — select",
+  "ability.infinity_gauntlet.favorites_empty": "Assign abilities in the wheel with 1–6"
 }

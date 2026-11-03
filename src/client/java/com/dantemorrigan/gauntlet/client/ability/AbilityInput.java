@@ -23,6 +23,8 @@ import java.util.*;
 /** Exactly one activation edge, explicit release/cancel; selection alone never activates anything. */
 public final class AbilityInput {
     public static final KeyMapping WHEEL=KeyMappingHelper.registerKeyMapping(new KeyMapping("key.infinity_gauntlet.ability_wheel",InputConstants.Type.KEYSYM,GLFW.GLFW_KEY_V,ClientPower.CATEGORY));
+    public static final KeyMapping FAVORITES = KeyMappingHelper.registerKeyMapping(new KeyMapping(
+        "key.infinity_gauntlet.favorites", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_B, ClientPower.CATEGORY));
     public static final KeyMapping CAST=KeyMappingHelper.registerKeyMapping(new KeyMapping("key.infinity_gauntlet.ability_cast",InputConstants.Type.KEYSYM,GLFW.GLFW_KEY_R,ClientPower.CATEGORY));
     private static Ability selected=Ability.STRIKE;
     private static JsonObject states=new JsonObject();
@@ -88,7 +90,13 @@ public final class AbilityInput {
         if(mc.player==null || mc.level==null) {reset();return;}
         if(lastLevel!=mc.level) {cancel();lastLevel=mc.level;}
         boolean open=false;while(WHEEL.consumeClick()) open=true;
-        if(open && mc.screen==null && equipped() && !Cutscene.inputLocked() && !TimeRewindClient.inputLocked()) {cancel();mc.setScreen(new AbilityWheelScreen());}
+        boolean openFavorites = false;
+        while (FAVORITES.consumeClick()) openFavorites = true;
+        if ((open || openFavorites) && mc.screen == null && equipped()
+                && !Cutscene.inputLocked() && !TimeRewindClient.inputLocked()) {
+            cancel();
+            mc.setScreen(open ? new AbilityWheelScreen() : new AbilityFavoritesScreen());
+        }
         if(!CAST.isDown()) releaseGate=false;
         if(!equipped() || !mc.player.isAlive() || mc.screen!=null || !mc.isWindowActive() || Cutscene.inputLocked() || TimeRewindClient.inputLocked()) {
             if(button) cancel();
