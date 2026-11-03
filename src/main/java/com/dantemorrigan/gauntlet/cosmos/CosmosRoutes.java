@@ -5,9 +5,9 @@ import java.util.List;
 /** Shared, deterministic navigation catalogue. Distances are world blocks, radii are visual exclusion zones. */
 public final class CosmosRoutes {
     public record Destination(String id, double x, double y, double z, double radius, boolean field) {
-        public double arrivalX() { return x; }
-        public double arrivalY() { return field ? y : y + radius * .4; }
-        public double arrivalZ() { return field ? z : z + radius * 2.5; }
+        public double arrivalX() { return id.equals("earth") ? 0 : x; }
+        public double arrivalY() { return id.equals("earth") ? 128 : field ? y : y + radius * .4; }
+        public double arrivalZ() { return id.equals("earth") ? 0 : field ? z : z + radius * 2.5; }
     }
     public static final List<Destination> ALL = List.of(
         new Destination("earth", 0, -400, 0, 350, false),

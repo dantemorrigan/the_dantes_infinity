@@ -19,7 +19,7 @@ import org.lwjgl.glfw.GLFW;
 public final class CosmosClient {
     public static final KeyMapping FLIGHT = key("cosmos_flight", GLFW.GLFW_KEY_J);
     public static final KeyMapping NEXT = key("cosmos_next", GLFW.GLFW_KEY_K);
-    public static final KeyMapping WARP = key("cosmos_warp", GLFW.GLFW_KEY_L);
+    public static final KeyMapping WARP = key("cosmos_warp", GLFW.GLFW_KEY_U);
     private static boolean enabled;
     private static int selected, warp, cooldown, ticks;
     private static Vec3 velocity = Vec3.ZERO, previous;
@@ -129,7 +129,10 @@ public final class CosmosClient {
                 Vec3 v=look.scale(-.8-velocity.length());
                 ClientPower.spawn(ModParticles.COSMOS_SPEED_STREAK,pos,v.x,v.y,v.z);
             }
-            if(ticks%2==0) ClientPower.spawn(ModParticles.COSMOS_STAR_DUST,FistPosition.of(p,1),-velocity.x*.15,-velocity.y*.15,-velocity.z*.15);
+            if(ticks%2==0) {
+                ClientPower.spawn(ModParticles.COSMOS_STAR_DUST,FistPosition.of(p,1),-velocity.x*.15,-velocity.y*.15,-velocity.z*.15);
+                ClientPower.spawn(ModParticles.SPACE_ENERGY_WISPS,FistPosition.of(p,1),.7,0,0);
+            }
             if(warp>0 && ticks%8==0) ClientPower.spawn(ModParticles.COSMOS_WARP_RING,p.getEyePosition().add(look.scale(9)),look.x,look.y,look.z);
         } else if(inCosmos() && ticks%6==0) {
             Vec3 pos=p.getEyePosition().add(rnd.nextGaussian()*12,rnd.nextGaussian()*8,rnd.nextGaussian()*12);

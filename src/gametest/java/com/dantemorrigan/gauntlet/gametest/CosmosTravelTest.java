@@ -26,14 +26,14 @@ public class CosmosTravelTest implements FabricClientGameTest {
             ctx.getInput().lookAt(180,60); ctx.takeScreenshot("cosmos_earth_orbit");
             for(int i=1;i<6;i++) {
                 ctx.getInput().pressKey(GLFW.GLFW_KEY_K);ctx.waitTicks(8);
-                ctx.getInput().pressKey(GLFW.GLFW_KEY_L);ctx.waitTicks(70);
+                ctx.getInput().pressKey(GLFW.GLFW_KEY_U);ctx.waitTicks(70);
                 final var d=CosmosRoutes.ALL.get(i);
                 if(!ctx.computeOnClient(mc->mc.player.position().distanceToSqr(d.arrivalX(),d.arrivalY(),d.arrivalZ())<400))
                     throw new AssertionError("Warp failed: "+d.id());
                 ctx.takeScreenshot("cosmos_"+d.id());ctx.waitTicks(100);
             }
             ctx.getInput().pressKey(GLFW.GLFW_KEY_K);ctx.waitTicks(8);
-            ctx.getInput().pressKey(GLFW.GLFW_KEY_L);ctx.waitTicks(70);
+            ctx.getInput().pressKey(GLFW.GLFW_KEY_U);ctx.waitTicks(70);
             ctx.getInput().pressKey(GLFW.GLFW_KEY_J);
             ctx.waitFor(mc->mc.level.dimension().equals(net.minecraft.world.level.Level.OVERWORLD),200);
             ctx.waitTicks(10);

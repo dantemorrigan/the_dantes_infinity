@@ -134,7 +134,7 @@ public final class CosmosTravel {
                 if (space != null && !Boolean.TRUE.equals(space.getAttached(FIELDS_READY)) && BUILD.isEmpty()) planFields();
                 if (n.warp > 0 && --n.warp == 0) {
                     var d = CosmosRoutes.ALL.get(n.selected);
-                    Vec3 arrival = n.selected == 0 ? new Vec3(0,128,0) : new Vec3(d.arrivalX(), d.arrivalY(), d.arrivalZ());
+                    Vec3 arrival = new Vec3(d.arrivalX(), d.arrivalY(), d.arrivalZ());
                     p.teleport(new TeleportTransition(p.level(), arrival, Vec3.ZERO, 180, n.selected == 0 ? 60 : 8, TeleportTransition.DO_NOTHING));
                     n.cooldown = 100; sync(p,n);
                 }
