@@ -59,10 +59,12 @@ import java.util.UUID;
 public final class ThanosEncounter {
 	public static final int FX_SHIP_ARRIVE = 0, FX_SHIP_LEAVE = 1, FX_BEAM = 2, FX_DRAGON_CHARGE = 3, FX_DRAGON_RAY = 4,
 			FX_RIFT_OPEN = 5, FX_RIFT_CLOSE = 6, FX_LINE = 7, FX_MUSIC_START = 8, FX_MUSIC_STOP = 9, FX_IMPACT = 10,
-			FX_SHAKE = 11, FX_END = 12, FX_BEAM_UP = 13;
+			FX_SHAKE = 11, FX_END = 12, FX_BEAM_UP = 13, FX_SHIP_CRASH = 14;
 	public static final int LINE_ARRIVAL = 0, LINE_GIVE_STONES = 1, LINE_UNIVERSE = 2, LINE_DIE = 3, LINE_DEFEAT_1 = 4, LINE_DEFEAT_2 = 5;
 	/** Length of each line in ticks (the recordings). */
 	public static final int[] LINE_TICKS = {50, 46, 75, 52, 75, 43};
+	/** Ticks the ship falls before it hits the ground; the wreck burns this long after. */
+	public static final int CRASH_TICKS = 110, WRECK_TICKS = 600;
 	public static final int SHIP_APPROACH = 120, BEAM_TICKS = 70, RIFT_OPEN = 46, DRAGON_CHARGE = 28;
 	/** How far the scene is sent (blocks). */
 	private static final double FX_RANGE = 640;
@@ -72,7 +74,7 @@ public final class ThanosEncounter {
 
 	private enum Mode { SKY, RIFT }
 
-	private enum Stage { WARNING, ARRIVAL, FIGHT, LEAVING, DEFEAT, DEPARTING }
+	private enum Stage { WARNING, ARRIVAL, FIGHT, LEAVING, DEFEAT, DEPARTING, CRASH }
 
 	private static final class Encounter {
 		UUID playerId;
@@ -89,6 +91,8 @@ public final class ThanosEncounter {
 		Thanos boss;
 		int awayTicks;
 		boolean shipShown;
+		Vec3 site;
+		int carveX = Integer.MIN_VALUE;
 	}
 
 	private static Encounter active;
@@ -229,6 +233,7 @@ public final class ThanosEncounter {
 			case FIGHT -> fight(e, p);
 			case LEAVING -> leaving(e, age);
 			case DEFEAT -> { /* Thanos.tickDeath drives the defeat; onDefeatDone moves us on */ if (e.boss == null || e.boss.isRemoved() && age > Thanos.DEATH_TICKS + 40) depart(e); }
+			case CRASH -> crash(e, age);
 			case DEPARTING -> {
 				if (age >= SHIP_APPROACH + 20) {
 					sendAll(e, FX_END, 0, Vec3.ZERO, Vec3.ZERO, 0, 0);
@@ -400,11 +405,20 @@ public final class ThanosEncounter {
 	}
 
 	private static void depart(Encounter e) {
-		if (e.stage == Stage.DEPARTING) return;
-		setStage(e, Stage.DEPARTING);
+		if (e.stage == Stage.DEPARTING || e.stage == Stage.CRASH) return;
 		ServerPlayer p = player(e);
-		if (e.shipShown) sendAll(e, FX_SHIP_LEAVE, 0, e.ship, e.shipDir, e.shipYaw, SHIP_APPROACH);
-		if (p != null && e.boss != null && e.boss.isRemoved() && e.boss.isDeadOrDying()) {
+		boolean victory = e.boss != null && e.boss.isRemoved() && e.boss.isDeadOrDying();
+		if (victory && e.shipShown && GauntletConfig.get().thanosShipCrash) {
+			// His ship, left without its master, goes down: it falls beyond the battlefield and burns.
+			setStage(e, Stage.CRASH);
+			e.site = crashSite(e);
+			sendAll(e, FX_SHIP_CRASH, e.site == null ? 1 : 0, e.ship, e.site != null ? e.site : e.ship.add(0, -160, 0), e.shipYaw, CRASH_TICKS);
+			e.level.playSound(null, BlockPos.containing(e.ship), SoundEvents.WITHER_DEATH, SoundSource.HOSTILE, 8f, 0.4f);
+		} else {
+			setStage(e, Stage.DEPARTING);
+			if (e.shipShown) sendAll(e, FX_SHIP_LEAVE, 0, e.ship, e.shipDir, e.shipYaw, SHIP_APPROACH);
+		}
+		if (p != null && victory) {
 			ServerPlayNetworking.send(p, new ModNetwork.QuestAlert(Component.translatable("msg.infinity_gauntlet.thanos.defeated"), 1));
 			p.level().playSound(null, p.blockPosition(), SoundEvents.UI_TOAST_CHALLENGE_COMPLETE, SoundSource.PLAYERS, 1f, 1f);
 		}
@@ -451,6 +465,184 @@ public final class ThanosEncounter {
 			else {
 				sendAll(e, FX_END, 0, Vec3.ZERO, Vec3.ZERO, 0, 0);
 				active = null;
+			}
+		}
+	}
+
+	// ------------------------------------------------------------------ the ship goes down
+
+	/** Where the ship falls: beyond its hover point, away from the player, on loaded ground. */
+	private static Vec3 crashSite(Encounter e) {
+		Vec3 away = new Vec3(-e.shipDir.x, 0, -e.shipDir.z);
+		for (double d : new double[]{30, 15, 0, -20}) {
+			Vec3 c = e.ship.add(away.scale(d));
+			BlockPos column = BlockPos.containing(c.x, 0, c.z);
+			if (!e.level.hasChunkAt(column)) continue;
+			int y = e.level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, column.getX(), column.getZ());
+			if (y <= e.level.getMinY() + 1) continue; // the End's void
+			return new Vec3(column.getX() + 0.5, y, column.getZ() + 0.5);
+		}
+		return null;
+	}
+
+	/** The falling ship's center, k = 0..1 (shared with the client so drops fall from where it is drawn). */
+	public static Vec3 crashPos(Vec3 hover, Vec3 site, float k) {
+		float e = k * k;
+		Vec3 mid = new Vec3((hover.x + site.x) / 2, hover.y + 6, (hover.z + site.z) / 2);
+		Vec3 a = hover.lerp(mid, e), b = mid.lerp(site, e);
+		return a.lerp(b, e);
+	}
+
+	private static void crash(Encounter e, int age) {
+		ServerLevel level = e.level;
+		Vec3 target = e.site != null ? e.site : e.ship.add(0, -120, 0);
+		if (age < CRASH_TICKS) {
+			Vec3 at = crashPos(e.ship, target, age / (float) CRASH_TICKS);
+			if (age % 15 == 0) {
+				level.playSound(null, BlockPos.containing(at), SoundEvents.GENERIC_EXPLODE.value(), SoundSource.HOSTILE, 10f, 0.4f + age * 0.002f);
+			}
+			// Pieces of the hull rain down: iron, now and then netherite.
+			if (e.site != null && age % 5 == 0 && age > 10) {
+				for (int i = 0; i < 2; i++) {
+					var r = level.getRandom();
+					Vec3 p = at.add((r.nextDouble() - 0.5) * 40, -8, (r.nextDouble() - 0.5) * 30);
+					ItemStack loot = r.nextInt(8) == 0 ? new ItemStack(net.minecraft.world.item.Items.NETHERITE_SCRAP)
+							: new ItemStack(net.minecraft.world.item.Items.IRON_INGOT, 2 + r.nextInt(4));
+					drop(level, p, loot, new Vec3((r.nextDouble() - 0.5) * 0.3, -0.2, (r.nextDouble() - 0.5) * 0.3));
+				}
+			}
+			return;
+		}
+		if (age == CRASH_TICKS) {
+			if (e.site == null) return;
+			impact(e);
+		}
+		// Carve the crater one slice per tick, then the wreck heap and the fires.
+		if (e.site != null && GauntletConfig.get().thanosShipCrater && e.carveX <= CRATER_R) {
+			carveSlice(e);
+			if (e.carveX > CRATER_R) wreck(e);
+		}
+		if (age >= CRASH_TICKS + WRECK_TICKS + 80) {
+			sendAll(e, FX_END, 0, Vec3.ZERO, Vec3.ZERO, 0, 0);
+			active = null;
+		}
+	}
+
+	private static final int CRATER_R = 18, CRATER_D = 8;
+
+	private static void impact(Encounter e) {
+		ServerLevel level = e.level;
+		Vec3 c = e.site;
+		level.explode(null, c.x, c.y + 2, c.z, 8f, Level.ExplosionInteraction.NONE);
+		level.playSound(null, BlockPos.containing(c), SoundEvents.GENERIC_EXPLODE.value(), SoundSource.HOSTILE, 16f, 0.3f);
+		level.playSound(null, BlockPos.containing(c), SoundEvents.DRAGON_FIREBALL_EXPLODE, SoundSource.HOSTILE, 16f, 0.4f);
+		level.playSound(null, BlockPos.containing(c), SoundEvents.ANVIL_LAND, SoundSource.HOSTILE, 12f, 0.2f);
+		for (ServerPlayer p : level.players()) {
+			double d = p.position().distanceTo(c);
+			if (d < 260) send(p, FX_SHAKE, 0, c, Vec3.ZERO, (float) Math.max(0.35, 1.6 * (1 - d / 260)), 50);
+		}
+		// The ship spills its metal: lots of iron, some netherite.
+		var r = level.getRandom();
+		for (int i = 0; i < 40; i++) {
+			Vec3 v = new Vec3((r.nextDouble() - 0.5) * 1.6, 0.6 + r.nextDouble() * 0.8, (r.nextDouble() - 0.5) * 1.6);
+			drop(level, c.add(0, 6, 0), new ItemStack(net.minecraft.world.item.Items.IRON_INGOT, 3 + r.nextInt(6)), v);
+		}
+		for (int i = 0; i < 10; i++) {
+			Vec3 v = new Vec3((r.nextDouble() - 0.5) * 1.2, 0.7 + r.nextDouble() * 0.6, (r.nextDouble() - 0.5) * 1.2);
+			drop(level, c.add(0, 6, 0), new ItemStack(net.minecraft.world.item.Items.NETHERITE_SCRAP, 1 + r.nextInt(2)), v);
+		}
+		for (int i = 0; i < 3; i++) {
+			Vec3 v = new Vec3((r.nextDouble() - 0.5) * 0.8, 0.9, (r.nextDouble() - 0.5) * 0.8);
+			drop(level, c.add(0, 6, 0), new ItemStack(net.minecraft.world.item.Items.NETHERITE_INGOT), v);
+		}
+		for (int i = 0; i < 6; i++) {
+			Vec3 v = new Vec3((r.nextDouble() - 0.5) * 1.0, 0.8, (r.nextDouble() - 0.5) * 1.0);
+			drop(level, c.add(0, 6, 0), new ItemStack(net.minecraft.world.item.Items.IRON_BLOCK, 1 + r.nextInt(2)), v);
+		}
+		e.carveX = -CRATER_R;
+	}
+
+	/** Loot that survives the fire it lands in. */
+	private static void drop(ServerLevel level, Vec3 at, ItemStack stack, Vec3 velocity) {
+		var item = new net.minecraft.world.entity.item.ItemEntity(level, at.x, at.y, at.z, stack);
+		item.setDeltaMovement(velocity);
+		item.setInvulnerable(true);
+		level.addFreshEntity(item);
+	}
+
+	private static boolean breakable(ServerLevel level, BlockPos pos) {
+		var state = level.getBlockState(pos);
+		return !state.isAir() && !state.hasBlockEntity() && state.getDestroySpeed(level, pos) >= 0;
+	}
+
+	/** One x-slice of the bowl: everything above the crater surface goes, the floor becomes scorched rock and fire. */
+	private static void carveSlice(Encounter e) {
+		ServerLevel level = e.level;
+		var r = level.getRandom();
+		int dx = e.carveX++;
+		BlockPos c = BlockPos.containing(e.site);
+		for (int dz = -CRATER_R; dz <= CRATER_R; dz++) {
+			double h = (dx * dx + dz * dz) / (double) (CRATER_R * CRATER_R);
+			if (h > 1) continue;
+			int depth = (int) Math.round(CRATER_D * Math.sqrt(1 - h));
+			int x = c.getX() + dx, z = c.getZ() + dz;
+			// Clear the column from well above the ground down to the bowl.
+			for (int y = c.getY() + 14; y > c.getY() - depth; y--) {
+				BlockPos p = new BlockPos(x, y, z);
+				if (breakable(level, p) || !level.getFluidState(p).isEmpty()) level.setBlock(p, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 2);
+			}
+			BlockPos floor = new BlockPos(x, c.getY() - depth, z);
+			if (!breakable(level, floor)) continue;
+			var rock = switch (r.nextInt(6)) {
+				case 0 -> net.minecraft.world.level.block.Blocks.MAGMA_BLOCK;
+				case 1, 2 -> net.minecraft.world.level.block.Blocks.BLACKSTONE;
+				case 3 -> net.minecraft.world.level.block.Blocks.BASALT;
+				case 4 -> net.minecraft.world.level.block.Blocks.COAL_BLOCK;
+				default -> net.minecraft.world.level.block.Blocks.NETHERRACK;
+			};
+			level.setBlock(floor, rock.defaultBlockState(), 3);
+			if (rock == net.minecraft.world.level.block.Blocks.NETHERRACK && r.nextInt(2) == 0) {
+				level.setBlock(floor.above(), net.minecraft.world.level.block.Blocks.FIRE.defaultBlockState(), 3);
+			}
+		}
+	}
+
+	/** The broken hull: a heap of iron and dark metal in the middle of the crater, and the land around on fire. */
+	private static void wreck(Encounter e) {
+		ServerLevel level = e.level;
+		var r = level.getRandom();
+		BlockPos c = BlockPos.containing(e.site).below(CRATER_D - 1);
+		int R = 7;
+		for (int dx = -R; dx <= R; dx++) {
+			for (int dz = -R; dz <= R; dz++) {
+				double d = Math.sqrt(dx * dx + dz * dz);
+				if (d > R) continue;
+				int h = (int) Math.round((1 - d / R) * 6 + r.nextInt(2));
+				for (int y = 0; y < h; y++) {
+					BlockPos p = c.offset(dx, y, dz);
+					if (!level.getBlockState(p).isAir() && !level.getBlockState(p).is(net.minecraft.world.level.block.Blocks.FIRE)) continue;
+					int k = r.nextInt(12);
+					var b = k < 3 ? net.minecraft.world.level.block.Blocks.IRON_BLOCK
+							: k < 6 ? net.minecraft.world.level.block.Blocks.POLISHED_BLACKSTONE_BRICKS
+							: k < 8 ? net.minecraft.world.level.block.Blocks.BLACKSTONE
+							: k < 9 ? net.minecraft.world.level.block.Blocks.IRON_BARS
+							: k < 10 ? net.minecraft.world.level.block.Blocks.IRON_CHAIN
+							: k < 11 ? net.minecraft.world.level.block.Blocks.MAGMA_BLOCK
+							: net.minecraft.world.level.block.Blocks.ANCIENT_DEBRIS;
+					level.setBlock(p, b.defaultBlockState(), 3);
+				}
+			}
+		}
+		// Fires all around the crater.
+		BlockPos s = BlockPos.containing(e.site);
+		for (int i = 0; i < 260; i++) {
+			double a = r.nextDouble() * Math.PI * 2, d = CRATER_R - 2 + r.nextDouble() * 18;
+			int x = (int) Math.floor(s.getX() + Math.cos(a) * d), z = (int) Math.floor(s.getZ() + Math.sin(a) * d);
+			if (!level.hasChunkAt(new BlockPos(x, 0, z))) continue;
+			int y = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z);
+			BlockPos p = new BlockPos(x, y, z);
+			if (level.getBlockState(p).isAir() && level.getFluidState(p.below()).isEmpty() && !level.getBlockState(p.below()).isAir()) {
+				level.setBlock(p, net.minecraft.world.level.block.Blocks.FIRE.defaultBlockState(), 3);
 			}
 		}
 	}

@@ -119,6 +119,9 @@ public final class GauntletConfig {
 	public float thanosOtherTaken = 0.35f;
 	/** Experience dropped on defeat. */
 	public int thanosExperience = 3000;
+	/** After his defeat his ship falls and burns (iron and netherite rain down); with the crater it digs one where it lands. */
+	public boolean thanosShipCrash = true;
+	public boolean thanosShipCrater = true;
 
 	// ---- Finding the Power Stone (server) ----
 	/** Meteor showers that bring the Power Stone; they stop once it is found. */
