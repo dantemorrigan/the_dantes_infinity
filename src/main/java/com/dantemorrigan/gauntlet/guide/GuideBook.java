@@ -73,10 +73,11 @@ public final class GuideBook {
 	}
 
 	private static Stone stoneForSegment(int page, int segment) {
-		// Contents labels alternate with page numbers. The hints name the first three stones.
+		// Contents labels alternate with page numbers. The hints also include the Soul Stone.
 		if (page == 2 && segment >= 6 && segment <= 16 && segment % 2 == 0) {
 			return STONE_CHAPTERS.get((segment - 6) / 2);
 		}
+		if (page == 4 && segment == 9) return Stone.SOUL;
 		if (page == 4 && (segment == 3 || segment == 5 || segment == 7)) {
 			return STONE_CHAPTERS.get((segment - 3) / 2);
 		}
