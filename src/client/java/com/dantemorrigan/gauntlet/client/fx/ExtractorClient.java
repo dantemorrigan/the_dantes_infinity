@@ -118,7 +118,13 @@ public final class ExtractorClient {
 			aimed = false;
 			return;
 		}
-		aimed = holding(mc.player) && aimedTarget(mc.player) != null;
+		locked = holding(mc.player) ? aimedTarget(mc.player) : null;
+		aimed = locked != null;
+		// A mark on the hooked target, so it is clear who the extractor will grab.
+		if (locked != null && mc.level.getGameTime() % 5 == 0) {
+			Vec3 mark = locked.position().add(0, locked.getBbHeight() * 0.55, 0);
+			mc.level.addParticle(ModParticles.EXTRACTOR_GATHER, mark.x, mark.y, mark.z, 0.7, 0, 0);
+		}
 		long time = mc.level.getGameTime();
 		TETHERS.entrySet().removeIf(entry -> {
 			Entity owner = mc.level.getEntity(entry.getKey());
@@ -146,14 +152,11 @@ public final class ExtractorClient {
 	}
 
 	private static LivingEntity aimedTarget(Player p) {
-		Vec3 eye = p.getEyePosition();
-		Vec3 look = p.getViewVector(1f);
-		int range = StoneExtraction.RANGE;
-		AABB box = p.getBoundingBox().expandTowards(look.scale(range)).inflate(1.0);
-		EntityHitResult hit = ProjectileUtil.getEntityHitResult(p, eye, eye.add(look.scale(range)), box,
-				e -> e != p && !e.isSpectator() && e.isAlive() && e instanceof LivingEntity le && !GauntletState.activeGauntlet(le).isEmpty(), range * range);
-		return hit != null && hit.getEntity() instanceof LivingEntity le ? le : null;
+		return StoneExtraction.pick(p, e -> true);
 	}
+
+	/** The hooked target (for the reticle label). */
+	private static LivingEntity locked;
 
 	/** Cycles shown on the ring for an extractor stack (model state 0..4). */
 	private static int cycles(ItemStack stack) {
@@ -167,6 +170,7 @@ public final class ExtractorClient {
 		Minecraft mc = Minecraft.getInstance();
 		if (mc.player == null || mc.options.hideGui || !holding(mc.player)) return;
 		boolean active = TETHERS.containsKey(mc.player.getId());
+		reticle(g, mc, active);
 		if (!aimed && !active && blocked <= 0 && flash <= 0) return;
 		String name = blocked > 0 ? "blocked" : "cycles_" + cycles(mc.player.getMainHandItem());
 		float size = 40f * (flash > 0 ? 1f + 0.12f * (flash / 14f) : 1f);
@@ -176,6 +180,49 @@ public final class ExtractorClient {
 		g.pose().scale(size / 64f, size / 64f);
 		g.blit(RenderPipelines.GUI_TEXTURED, InfinityGauntlet.id("textures/gui/extractor/" + name + ".png"), 0, 0, 0f, 0f, 64, 64, 64, 64);
 		g.pose().popMatrix();
+	}
+
+	/**
+	 * A crisp reticle: four corner brackets and a dot. Grey = nobody to hook, amber = a gauntlet wearer is hooked
+	 * (their name under it), green + bar = a cycle is running; three pips show finished cycles.
+	 */
+	private static void reticle(GuiGraphicsExtractor g, Minecraft mc, boolean active) {
+		int cx = g.guiWidth() / 2, cy = g.guiHeight() / 2;
+		boolean lock = aimed || active;
+		int color = blocked > 0 ? 0xFFFF4D4D : active ? 0xFF6CFF8A : lock ? 0xFFFFC94D : 0xAAD0D0D0;
+		int shadow = 0xCC000000;
+		int gap = lock ? 11 : 15, len = 6, t = 2;
+		for (int pass = 0; pass < 2; pass++) {
+			int c = pass == 0 ? shadow : color, o = pass == 0 ? 1 : 0;
+			// corners
+			for (int sx = -1; sx <= 1; sx += 2) for (int sy = -1; sy <= 1; sy += 2) {
+				int x = cx + sx * gap, y = cy + sy * gap;
+				int x0 = sx < 0 ? x : x - len, x1 = sx < 0 ? x + len : x;
+				g.fill(x0 + o, y - (sy < 0 ? 0 : t) + o, x1 + o, y + (sy < 0 ? t : 0) + o, c);
+				int y0 = sy < 0 ? y : y - len, y1 = sy < 0 ? y + len : y;
+				g.fill(x - (sx < 0 ? 0 : t) + o, y0 + o, x + (sx < 0 ? t : 0) + o, y1 + o, c);
+			}
+			g.fill(cx - 1 + o, cy - 1 + o, cx + 1 + o, cy + 1 + o, c);
+		}
+		if (!lock && blocked <= 0) return;
+		int stackCycles = cycles(mc.player.getMainHandItem());
+		// progress of the running cycle
+		if (active) {
+			float k = Mth.clamp(mc.player.getTicksUsingItem() / (float) StoneExtraction.CYCLE_TICKS, 0f, 1f);
+			int w = 44, x0 = cx - w / 2, y0 = cy + 22;
+			g.fill(x0 - 1, y0 - 1, x0 + w + 1, y0 + 5, 0xCC000000);
+			g.fill(x0, y0, x0 + (int) (w * k), y0 + 4, 0xFF6CFF8A);
+		}
+		// finished cycles: three pips
+		for (int i = 0; i < StoneExtraction.CYCLES; i++) {
+			int px = cx - 13 + i * 11, py = cy + 30;
+			g.fill(px - 1, py - 1, px + 7, py + 7, 0xCC000000);
+			g.fill(px, py, px + 6, py + 6, i < stackCycles ? 0xFFFFC94D : 0xFF4A4A4A);
+		}
+		if (locked != null) {
+			var name = locked.getDisplayName();
+			g.text(mc.font, name, cx - mc.font.width(name) / 2, cy - 30, color, true);
+		}
 	}
 
 	private ExtractorClient() {}

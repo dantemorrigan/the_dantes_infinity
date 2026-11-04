@@ -56,12 +56,14 @@ import java.util.UUID;
  * the next one runs), 4 a stone sits in the chamber.
  */
 public final class StoneExtraction {
-	public static final int RANGE = 16;
+	public static final int RANGE = 20;
 	public static final int CYCLES = 3;
-	public static final int CYCLE_TICKS = 60;
+	public static final int CYCLE_TICKS = 36;
 	public static final int KEEP_TICKS = 20 * 20;
 	/** cos of the largest angle between the line of sight and the target before the cycle breaks. */
-	private static final double AIM_DOT = 0.9;
+	private static final double AIM_DOT = 0.8;
+	/** Ticks the extractor may drift off its target (a step, a turn of the head) before the cycle breaks; nothing is gained meanwhile. */
+	private static final int AIM_GRACE = 12;
 
 	// Fx kinds, see ModNetwork.ExtractorFx.
 	private static final int FX_START = 0, FX_CYCLE = 1, FX_FAIL = 2, FX_BLOCKED = 3, FX_CAPTURED = 4, FX_RETURNED = 5;
@@ -73,6 +75,7 @@ public final class StoneExtraction {
 		final ServerLevel level;
 		int cycles;
 		int channelTicks;
+		int lostTicks;
 		boolean channeling;
 		long touched;
 
@@ -196,6 +199,7 @@ public final class StoneExtraction {
 		}
 		s.channeling = true;
 		s.channelTicks = 0;
+		s.lostTicks = 0;
 		s.touched = now;
 		setState(extractor, s.cycles == 0 ? 1 : s.cycles + 1);
 		fx(p, FX_START, target, stone, s.cycles);
@@ -229,11 +233,20 @@ public final class StoneExtraction {
 		}
 		Vec3 toTarget = target.getBoundingBox().getCenter().subtract(p.getEyePosition());
 		double distance = toTarget.length();
-		if (distance > RANGE + 2 || toTarget.normalize().dot(p.getLookAngle()) < AIM_DOT || !p.hasLineOfSight(target)) {
+		if (distance > RANGE + 4) {
 			notice(p, Component.translatable("extractor.infinity_gauntlet.lost"), false);
 			abort(p, extractor, s, target, false);
 			return;
 		}
+		// A forgiving hold: a short drift off the target only pauses the cycle, a long one breaks it.
+		if (toTarget.normalize().dot(p.getLookAngle()) < AIM_DOT || !p.hasLineOfSight(target)) {
+			if (++s.lostTicks > AIM_GRACE) {
+				notice(p, Component.translatable("extractor.infinity_gauntlet.lost"), false);
+				abort(p, extractor, s, target, false);
+			}
+			return;
+		}
+		s.lostTicks = 0;
 		s.channelTicks++;
 		s.touched = level.getGameTime();
 		if (s.channelTicks % 12 == 0) {
@@ -336,14 +349,35 @@ public final class StoneExtraction {
 	}
 
 	private static LivingEntity findTarget(ServerPlayer p) {
+		return pick(p, e -> canExtract(p, e));
+	}
+
+	/**
+	 * The gauntlet wearer the extractor hooks onto: the one nearest to the crosshair inside a forgiving cone (8 degrees
+	 * plus the angular size of the target, so close or big targets are easy to catch), in line of sight and in range.
+	 * The client uses the same rule for its reticle, so what is shown is what will be hooked.
+	 */
+	public static LivingEntity pick(net.minecraft.world.entity.player.Player p, java.util.function.Predicate<LivingEntity> allow) {
 		Vec3 eye = p.getEyePosition();
-		Vec3 look = p.getLookAngle();
-		Vec3 end = eye.add(look.scale(RANGE));
-		AABB box = p.getBoundingBox().expandTowards(look.scale(RANGE)).inflate(1.0);
-		EntityHitResult hit = ProjectileUtil.getEntityHitResult(p, eye, end, box,
-				e -> e != p && !e.isSpectator() && e.isAlive() && e instanceof LivingEntity le && canExtract(p, le) && !GauntletState.activeGauntlet(le).isEmpty(), RANGE * RANGE);
-		if (hit == null || !(hit.getEntity() instanceof LivingEntity target) || !p.hasLineOfSight(target)) return null;
-		return target;
+		Vec3 look = p.getViewVector(1f);
+		AABB box = p.getBoundingBox().expandTowards(look.scale(RANGE)).inflate(4.0);
+		LivingEntity best = null;
+		double bestDot = -2;
+		for (LivingEntity e : p.level().getEntitiesOfClass(LivingEntity.class, box,
+				e -> e != p && !e.isSpectator() && e.isAlive() && !GauntletState.activeGauntlet(e).isEmpty() && allow.test(e))) {
+			Vec3 to = e.getBoundingBox().getCenter().subtract(eye);
+			double dist = to.length();
+			if (dist > RANGE || dist < 0.4) continue;
+			double dot = to.scale(1 / dist).dot(look);
+			double radius = Math.max(e.getBbWidth(), e.getBbHeight() * 0.5) * 0.5;
+			double minDot = Math.cos(Math.toRadians(8) + Math.atan2(radius, dist));
+			if (dot < minDot || !p.hasLineOfSight(e)) continue;
+			if (dot > bestDot) {
+				best = e;
+				bestDot = dot;
+			}
+		}
+		return best;
 	}
 
 	private static void serverTick(MinecraftServer server) {
