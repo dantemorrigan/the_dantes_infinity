@@ -1,4 +1,8 @@
 {
+  "hud.infinity_gauntlet.quest_compass.time_temple": "Temple of Time",
+  "hud.infinity_gauntlet.quest_compass.soul_temple": "Temple of Soul",
+  "hud.infinity_gauntlet.quest_compass.mind_city": "Ruined City",
+  "hud.infinity_gauntlet.quest_compass.distance": "%s · %s blocks",
   "item.infinity_gauntlet.gauntlet": "Infinity Gauntlet",
   "item.infinity_gauntlet.power_stone": "Power Stone",
   "item.infinity_gauntlet.space_stone": "Space Stone",
