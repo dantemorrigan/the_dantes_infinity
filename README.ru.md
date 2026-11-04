@@ -1,4 +1,8 @@
-# Infinity Gauntlet (Fabric, Minecraft 26.1.2)
+<p align="center">
+  <img src="docs/assets/the-dantes-infinity.webp" alt="The Dante’s Infinity" width="720">
+</p>
+
+# The Dante’s Infinity (Fabric, Minecraft 26.1.2)
 
 [🇬🇧 English](README.md) · 🇷🇺 Русский
 
