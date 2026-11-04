@@ -2,6 +2,7 @@ package com.dantemorrigan.gauntlet.guide;
 
 import com.dantemorrigan.gauntlet.GauntletConfig;
 import com.dantemorrigan.gauntlet.InfinityGauntlet;
+import com.dantemorrigan.gauntlet.Stone;
 import com.mojang.serialization.Codec;
 import net.fabricmc.fabric.api.attachment.v1.AttachmentRegistry;
 import net.fabricmc.fabric.api.attachment.v1.AttachmentType;
@@ -30,6 +31,9 @@ public final class GuideBook {
 	/** Number of {@code guide.infinity_gauntlet.pageN} keys in the lang files. */
 	public static final int PAGE_COUNT = 15;
 
+	private static final List<Stone> STONE_CHAPTERS = List.of(
+			Stone.POWER, Stone.SPACE, Stone.REALITY, Stone.TIME, Stone.MIND, Stone.SOUL);
+
 	/** Set once a player has received the book, so it is handed out only on their first join. */
 	private static final AttachmentType<Boolean> GIVEN = AttachmentRegistry.<Boolean>builder()
 			.persistent(Codec.BOOL)
@@ -53,6 +57,11 @@ public final class GuideBook {
 		MutableComponent page = Component.empty();
 		for (int j = 0; j < styles.length(); j++) {
 			MutableComponent part = Component.translatable("guide.infinity_gauntlet.p" + number + "." + (j + 1));
+			Stone stone = stoneForSegment(number, j + 1);
+			if (stone != null) {
+				page.append(part.withStyle(style -> style.withColor(bookColor(stone)).withBold(true)));
+				continue;
+			}
 			page.append(switch (styles.charAt(j)) {
 				case 'H' -> part.withStyle(ChatFormatting.DARK_PURPLE, ChatFormatting.BOLD);
 				case 'B' -> part.withStyle(ChatFormatting.BLACK, ChatFormatting.BOLD);
@@ -61,6 +70,30 @@ public final class GuideBook {
 			});
 		}
 		return page;
+	}
+
+	private static Stone stoneForSegment(int page, int segment) {
+		// Contents labels alternate with page numbers. The hints name the first three stones.
+		if (page == 2 && segment >= 6 && segment <= 16 && segment % 2 == 0) {
+			return STONE_CHAPTERS.get((segment - 6) / 2);
+		}
+		if (page == 4 && (segment == 3 || segment == 5 || segment == 7)) {
+			return STONE_CHAPTERS.get((segment - 3) / 2);
+		}
+		if (page >= 6 && page <= 11 && segment == 1) {
+			return STONE_CHAPTERS.get(page - 6);
+		}
+		return null;
+	}
+
+	private static int bookColor(Stone stone) {
+		// Keep the lighter stone colors legible on the parchment.
+		return switch (stone) {
+			case MIND -> 0x896100;
+			case SOUL -> 0xA54400;
+			case TIME -> 0x007527;
+			default -> stone.color;
+		};
 	}
 
 	public static void give(ServerPlayer player) {
