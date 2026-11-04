@@ -65,14 +65,46 @@ public final class StoneKeeper {
 
 	/** Stones in {@code old} that are not in {@code now} were deleted in the creative inventory. */
 	public static void creativeReplaced(ServerPlayer player, ItemStack old, ItemStack now) {
+		var server = player.level().getServer();
+		java.util.Set<Stone> after = stonesIn(now);
+		if (now.is(ModItems.POWER_ORB)) after.add(Stone.POWER);
+		if (now.is(ModItems.QUEST_SPACE_TESSERACT)) after.add(Stone.SPACE);
+		for (Stone s : after) {
+			if (s == Stone.POWER && now.is(ModItems.POWER_ORB)) StoneRegistry.markFound(server, Stone.POWER);
+			else if (s == Stone.SPACE && now.is(ModItems.QUEST_SPACE_TESSERACT)) StoneRegistry.markFound(server, Stone.SPACE);
+			else StoneRegistry.markReleased(server, s);
+			if (s == Stone.TIME) TimeQuest.markClockCompleted(server);
+		}
 		if (!precious(old)) return;
-		java.util.Set<Stone> before = stonesIn(old), after = stonesIn(now);
-		before.removeAll(after);
+		java.util.Set<Stone> before = stonesIn(old);
 		boolean orb = old.is(ModItems.POWER_ORB) && !now.is(ModItems.POWER_ORB);
 		boolean cube = old.is(ModItems.QUEST_SPACE_TESSERACT) && !now.is(ModItems.QUEST_SPACE_TESSERACT);
 		if (orb) before.add(Stone.POWER);
 		if (cube) before.add(Stone.SPACE);
-		for (Stone s : before) StoneRegistry.forget(player.level().getServer(), s);
+		before.removeAll(after);
+		for (Stone s : before) {
+			if (!anyPlayerHasExcluding(server, old, s)) {
+				StoneRegistry.forget(server, s);
+			}
+		}
+	}
+
+	/** Returns true if any online player currently carries the given stone (in inventory, cursor, gauntlet, or extractor). */
+	public static boolean anyPlayerHas(net.minecraft.server.MinecraftServer server, Stone stone) {
+		return anyPlayerHasExcluding(server, ItemStack.EMPTY, stone);
+	}
+
+	private static boolean anyPlayerHasExcluding(net.minecraft.server.MinecraftServer server, ItemStack excluded, Stone stone) {
+		for (ServerPlayer p : server.getPlayerList().getPlayers()) {
+			Inventory inv = p.getInventory();
+			for (int i = 0; i < inv.getContainerSize(); i++) {
+				ItemStack stack = inv.getItem(i);
+				if (stack != excluded && stonesIn(stack).contains(stone)) return true;
+			}
+			ItemStack carried = p.containerMenu.getCarried();
+			if (carried != excluded && stonesIn(carried).contains(stone)) return true;
+		}
+		return false;
 	}
 
 	private static java.util.Set<Stone> stonesIn(ItemStack stack) {

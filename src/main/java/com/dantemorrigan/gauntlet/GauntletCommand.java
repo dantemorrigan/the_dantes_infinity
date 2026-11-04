@@ -55,7 +55,14 @@ public final class GauntletCommand {
 						.then(Commands.literal("uru").executes(ctx -> uru(ctx.getSource())))
 						.then(Commands.literal("meteor").executes(ctx -> meteor(ctx.getSource())))
 						.then(Commands.literal("state").executes(ctx -> state(ctx.getSource())))
+						.then(Commands.literal("tp")
+								.then(Commands.argument("trial", StringArgumentType.word())
+										.suggests((ctx, b) -> SharedSuggestionProvider.suggest(TP_TRIALS, b))
+										.executes(ctx -> tpTrial(ctx.getSource(), StringArgumentType.getString(ctx, "trial")))))
 						.then(Commands.literal("soul_quest")
+								.then(Commands.literal("tp")
+										.executes(ctx -> tpTrial(ctx.getSource(), "soul"))
+										.then(Commands.literal("summit").executes(ctx -> tpTrial(ctx.getSource(), "soul_summit"))))
 								.then(Commands.literal("temple_here").executes(ctx -> {
 									var p = ctx.getSource().getPlayerOrException();
 									var level = p.level().getServer().overworld();
@@ -76,6 +83,9 @@ public final class GauntletCommand {
 								}))
 								.then(Commands.literal("ritual").executes(ctx -> com.dantemorrigan.gauntlet.stones.SoulQuest.sacrifice(ctx.getSource().getPlayerOrException(), null) ? 1 : 0)))
 						.then(Commands.literal("time_quest")
+								.then(Commands.literal("tp")
+										.executes(ctx -> tpTrial(ctx.getSource(), "time"))
+										.then(Commands.literal("clock").executes(ctx -> tpTrial(ctx.getSource(), "time_clock"))))
 								.then(Commands.literal("temple_here").executes(ctx -> {
 									var p = ctx.getSource().getPlayerOrException();
 									var level = p.level().getServer().overworld();
@@ -106,6 +116,7 @@ public final class GauntletCommand {
 									return 1;
 								})))
 						.then(Commands.literal("mind_quest")
+								.then(Commands.literal("tp").executes(ctx -> tpTrial(ctx.getSource(), "mind")))
 								.then(Commands.literal("city_here").executes(ctx -> {
 									var p = ctx.getSource().getPlayerOrException();
 									var level = p.level().getServer().overworld();
@@ -131,6 +142,9 @@ public final class GauntletCommand {
 								})))
 						.then(Commands.literal("reality_fog").executes(ctx -> com.dantemorrigan.gauntlet.stones.RealityFog.start(ctx.getSource().getPlayerOrException()) ? 1 : 0))
 						.then(Commands.literal("space_quest")
+								.then(Commands.literal("tp")
+										.executes(ctx -> tpTrial(ctx.getSource(), "space"))
+										.then(Commands.literal("rift").executes(ctx -> tpTrial(ctx.getSource(), "space_rift"))))
 								.then(Commands.literal("rift").executes(ctx -> {
 									var end = ctx.getSource().getServer().getLevel(net.minecraft.world.level.Level.END);
 									if (end == null) return 0;
@@ -200,6 +214,85 @@ public final class GauntletCommand {
 
 	static final List<String> FX = List.of("power_charge", "power_impact", "power_shockwave", "power_sparks_smoke", "power_strike",
 			"ground_fracture", "planet_rift", "detonation_flash", "void_dissolve", "camera_shake", "white_flash", "lift_debris", "meteor");
+
+	static final List<String> TP_TRIALS = List.of("time", "time_clock", "mind", "soul", "soul_summit", "space", "space_rift");
+
+	/** Teleports the player directly to the start of a stone trial (building its temple/city/tower if not yet built). */
+	private static int tpTrial(CommandSourceStack source, String trial) throws CommandSyntaxException {
+		ServerPlayer player = source.getPlayerOrException();
+		var server = source.getServer();
+		var overworld = server.overworld();
+		switch (trial.toLowerCase(Locale.ROOT)) {
+			case "time" -> {
+				BlockPos site = com.dantemorrigan.gauntlet.stones.TimeTemple.site(server);
+				if (!com.dantemorrigan.gauntlet.stones.TimeTemple.built(server)) {
+					com.dantemorrigan.gauntlet.stones.TimeTemple.forceBuild(overworld);
+				}
+				Vec3 stand = com.dantemorrigan.gauntlet.stones.TimeTemple.courtyardStand(site);
+				player.teleport(new net.minecraft.world.level.portal.TeleportTransition(overworld, stand, Vec3.ZERO, 180f, 0f, net.minecraft.world.level.portal.TeleportTransition.DO_NOTHING));
+				source.sendSuccess(() -> Component.literal("Teleported to Temple of Time (" + site.toShortString() + ")"), false);
+				return 1;
+			}
+			case "time_clock" -> {
+				BlockPos site = com.dantemorrigan.gauntlet.stones.TimeTemple.site(server);
+				if (!com.dantemorrigan.gauntlet.stones.TimeTemple.built(server)) {
+					com.dantemorrigan.gauntlet.stones.TimeTemple.forceBuild(overworld);
+				}
+				Vec3 stand = com.dantemorrigan.gauntlet.stones.TimeTemple.sanctumStand(site);
+				player.teleport(new net.minecraft.world.level.portal.TeleportTransition(overworld, stand, Vec3.ZERO, 180f, 0f, net.minecraft.world.level.portal.TeleportTransition.DO_NOTHING));
+				source.sendSuccess(() -> Component.literal("Teleported to Temple of Time Clock (" + site.toShortString() + ")"), false);
+				return 1;
+			}
+			case "mind" -> {
+				BlockPos site = com.dantemorrigan.gauntlet.stones.MindCity.site(server);
+				if (!com.dantemorrigan.gauntlet.stones.MindCity.built(server)) {
+					com.dantemorrigan.gauntlet.stones.MindCity.forceBuild(overworld);
+				}
+				Vec3 stand = com.dantemorrigan.gauntlet.stones.MindCity.entranceStand(site);
+				player.teleport(new net.minecraft.world.level.portal.TeleportTransition(overworld, stand, Vec3.ZERO, 180f, 0f, net.minecraft.world.level.portal.TeleportTransition.DO_NOTHING));
+				source.sendSuccess(() -> Component.literal("Teleported to Ruined City (" + site.toShortString() + ")"), false);
+				return 1;
+			}
+			case "soul" -> {
+				BlockPos site = com.dantemorrigan.gauntlet.stones.SoulTemple.site(server);
+				if (!com.dantemorrigan.gauntlet.stones.SoulTemple.built(server)) {
+					com.dantemorrigan.gauntlet.stones.SoulTemple.forceBuild(overworld);
+				}
+				Vec3 stand = com.dantemorrigan.gauntlet.stones.SoulTemple.stairwayStart(site);
+				player.teleport(new net.minecraft.world.level.portal.TeleportTransition(overworld, stand, Vec3.ZERO, 0f, 0f, net.minecraft.world.level.portal.TeleportTransition.DO_NOTHING));
+				source.sendSuccess(() -> Component.literal("Teleported to Temple of Soul stairway (" + site.toShortString() + ")"), false);
+				return 1;
+			}
+			case "soul_summit" -> {
+				BlockPos site = com.dantemorrigan.gauntlet.stones.SoulTemple.site(server);
+				if (!com.dantemorrigan.gauntlet.stones.SoulTemple.built(server)) {
+					com.dantemorrigan.gauntlet.stones.SoulTemple.forceBuild(overworld);
+				}
+				Vec3 stand = com.dantemorrigan.gauntlet.stones.SoulTemple.summitStand(site);
+				player.teleport(new net.minecraft.world.level.portal.TeleportTransition(overworld, stand, Vec3.ZERO, 90f, 0f, net.minecraft.world.level.portal.TeleportTransition.DO_NOTHING));
+				source.sendSuccess(() -> Component.literal("Teleported to Temple of Soul summit (" + site.toShortString() + ")"), false);
+				return 1;
+			}
+			case "space" -> {
+				com.dantemorrigan.gauntlet.stones.SpaceStoneQuest.goToAsteroid(player);
+				source.sendSuccess(() -> Component.literal("Teleported to Frost Asteroid Ice Tower"), false);
+				return 1;
+			}
+			case "space_rift", "rift" -> {
+				var end = server.getLevel(net.minecraft.world.level.Level.END);
+				if (end == null) return 0;
+				BlockPos rift = com.dantemorrigan.gauntlet.stones.SpaceStoneQuest.buildEndRift(end);
+				Vec3 stand = new Vec3(rift.getX() + 0.5, rift.getY() - 1.0, rift.getZ() - 4.5);
+				player.teleport(new net.minecraft.world.level.portal.TeleportTransition(end, stand, Vec3.ZERO, 0f, 0f, net.minecraft.world.level.portal.TeleportTransition.DO_NOTHING));
+				source.sendSuccess(() -> Component.literal("Teleported to End Rift (" + rift.toShortString() + ")"), false);
+				return 1;
+			}
+			default -> {
+				source.sendFailure(Component.literal("Unknown trial: " + trial + " (expected: " + String.join(", ", TP_TRIALS) + ")"));
+				return 0;
+			}
+		}
+	}
 
 	/** Gauntlet with only the Power stone, put into the off hand (worn). */
 	private static int givePower(CommandSourceStack source) throws CommandSyntaxException {

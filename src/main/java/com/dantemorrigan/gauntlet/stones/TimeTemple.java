@@ -2,6 +2,7 @@ package com.dantemorrigan.gauntlet.stones;
 
 import com.dantemorrigan.gauntlet.InfinityGauntlet;
 import com.dantemorrigan.gauntlet.ModBlocks;
+import com.dantemorrigan.gauntlet.Stone;
 import com.mojang.serialization.Codec;
 import net.fabricmc.fabric.api.attachment.v1.AttachmentRegistry;
 import net.fabricmc.fabric.api.attachment.v1.AttachmentType;
@@ -17,6 +18,7 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.LanternBlock;
 import net.minecraft.world.level.block.StairBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.Heightmap;
@@ -110,6 +112,11 @@ public final class TimeTemple {
 		return new Vec3(site.getX() + 0.5, site.getY() + 2, site.getZ() - 1.5);
 	}
 
+	/** Standing position at the south courtyard entrance looking at the Temple of Time. */
+	public static Vec3 courtyardStand(BlockPos site) {
+		return new Vec3(site.getX() + 0.5, site.getY() + 1, site.getZ() + 14.5);
+	}
+
 	private static Set<Long> shaped(ServerLevel level) {
 		if (shapedCache == null) {
 			List<Long> list = level.getAttached(SHAPED);
@@ -150,6 +157,14 @@ public final class TimeTemple {
 				if (!level.hasChunk(cp.x(), cp.z()) || !shaped(level).contains(cp.pack())) { ready = false; break; }
 			}
 			if (ready) build(level, site);
+		} else if (level.getGameTime() % 40 == 0 && built(server) && level.hasChunkAt(site)) {
+			if (level.getBlockState(new BlockPos(site.getX() - 2, site.getY() + 5, site.getZ() - 3)).is(Blocks.LANTERN)) {
+				patchSanctumLanterns(level, site);
+			}
+			if (StoneKeeper.anyPlayerHas(server, Stone.TIME)) {
+				StoneRegistry.markReleased(server, Stone.TIME);
+				TimeQuest.markClockCompleted(server);
+			}
 		}
 	}
 
@@ -379,7 +394,7 @@ public final class TimeTemple {
 			set(level, new BlockPos(cx, y0 + dy, cz), chain);
 		}
 		set(level, new BlockPos(cx, y0 + 6, cz), gold);
-		set(level, new BlockPos(cx, y0 + 5, cz), soulLantern);
+		set(level, new BlockPos(cx, y0 + 5, cz), soulLantern.setValue(LanternBlock.HANGING, true));
 
 		// Inner Sanctum Altar & the Clock Mechanism on the north side (facing SOUTH).
 		for (int dx = -3; dx <= 3; dx++) {
@@ -401,10 +416,7 @@ public final class TimeTemple {
 				set(level, p, frame);
 			}
 		}
-		set(level, new BlockPos(cx - 2, y0 + 5, cz - 3), lantern);
-		set(level, new BlockPos(cx + 2, y0 + 5, cz - 3), lantern);
-		set(level, new BlockPos(cx - 4, y0 + 3, cz + 3), lantern);
-		set(level, new BlockPos(cx + 4, y0 + 3, cz + 3), lantern);
+		placeSanctumLanterns(level, site);
 
 		int inserted = TimeQuest.insertedCount(level.getServer());
 		set(level, clockPos(site), ModBlocks.QUEST_TIME_CLOCK.defaultBlockState()
@@ -413,6 +425,33 @@ public final class TimeTemple {
 
 		level.setAttached(BUILT, true);
 		InfinityGauntlet.LOGGER.info("Temple of Time built at {}", site);
+	}
+
+	private static void placeSanctumLanterns(ServerLevel level, BlockPos site) {
+		int cx = site.getX(), y0 = site.getY(), cz = site.getZ();
+		BlockState carved = ModBlocks.QUEST_TIME_CARVED_STONE.defaultBlockState(),
+				wall = Blocks.STONE_BRICK_WALL.defaultBlockState(),
+				lantern = Blocks.LANTERN.defaultBlockState();
+		// Altar corner lantern posts at (cx ± 3, cz - 2) standing on the y0 + 2 altar rim.
+		for (int sx : new int[]{-3, 3}) {
+			set(level, new BlockPos(cx + sx, y0 + 3, cz - 2), wall);
+			set(level, new BlockPos(cx + sx, y0 + 4, cz - 2), lantern);
+		}
+		// Sanctum entrance lantern pedestals at (cx ± 4, cz + 3) standing on the y0 + 1 sanctum floor.
+		for (int sx : new int[]{-4, 4}) {
+			set(level, new BlockPos(cx + sx, y0 + 2, cz + 3), carved);
+			set(level, new BlockPos(cx + sx, y0 + 3, cz + 3), wall);
+			set(level, new BlockPos(cx + sx, y0 + 4, cz + 3), lantern);
+		}
+	}
+
+	private static void patchSanctumLanterns(ServerLevel level, BlockPos site) {
+		int cx = site.getX(), y0 = site.getY(), cz = site.getZ();
+		BlockState air = Blocks.AIR.defaultBlockState();
+		set(level, new BlockPos(cx - 2, y0 + 5, cz - 3), air);
+		set(level, new BlockPos(cx + 2, y0 + 5, cz - 3), air);
+		set(level, new BlockPos(cx, y0 + 5, cz), Blocks.SOUL_LANTERN.defaultBlockState().setValue(LanternBlock.HANGING, true));
+		placeSanctumLanterns(level, site);
 	}
 
 	private TimeTemple() {}

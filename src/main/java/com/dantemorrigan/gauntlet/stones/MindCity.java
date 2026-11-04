@@ -128,6 +128,11 @@ public final class MindCity {
 		return new Vec3(site.getX() + 0.5, site.getY() + 1, site.getZ() + 6.5);
 	}
 
+	/** Standing position at the south entrance of the Ruined City looking along the main avenue. */
+	public static Vec3 entranceStand(BlockPos site) {
+		return new Vec3(site.getX() + 0.5, site.getY() + 1, site.getZ() + 18.5);
+	}
+
 	private static Set<Long> shaped(ServerLevel level) {
 		if (shapedCache == null) {
 			List<Long> list = level.getAttached(SHAPED);

@@ -56,17 +56,45 @@ public final class TimeQuest {
 	}
 
 	public static int insertedCount(MinecraftServer server) {
+		if (StoneRegistry.released(server, Stone.TIME) || StoneKeeper.anyPlayerHas(server, Stone.TIME)) return 3;
 		return Math.min(3, insertedGears(server).size());
+	}
+
+	/** Ensures the world record and clock block reflect all 3 gears inserted. */
+	public static void markClockCompleted(MinecraftServer server) {
+		ServerLevel overworld = server.overworld();
+		overworld.setAttached(INSERTED_GEARS, List.of(GEAR_OVERWORLD, GEAR_NETHER, GEAR_END));
+		if (!TimeTemple.built(server)) return;
+		BlockPos clockPos = TimeTemple.clockPos(TimeTemple.site(server));
+		if (overworld.hasChunkAt(clockPos)) {
+			BlockState state = overworld.getBlockState(clockPos);
+			if (state.is(ModBlocks.QUEST_TIME_CLOCK) && state.getValue(TimeClockBlock.GEARS) != 3) {
+				overworld.setBlock(clockPos, state.setValue(TimeClockBlock.GEARS, 3), Block.UPDATE_ALL);
+			}
+		}
+	}
+
+	private static boolean isCompleted(MinecraftServer server, ServerLevel level, BlockPos pos, BlockState state) {
+		boolean hasStone = StoneKeeper.anyPlayerHas(server, Stone.TIME);
+		if (hasStone || StoneRegistry.released(server, Stone.TIME) || insertedGears(server).size() >= 3) {
+			if (hasStone) StoneRegistry.markReleased(server, Stone.TIME);
+			markClockCompleted(server);
+			if (state.is(ModBlocks.QUEST_TIME_CLOCK) && state.getValue(TimeClockBlock.GEARS) != 3) {
+				level.setBlock(pos, state.setValue(TimeClockBlock.GEARS, 3), Block.UPDATE_ALL);
+			}
+			return true;
+		}
+		return false;
 	}
 
 	/** Right-click on the clock without a gear in main hand: tries offhand/backpack gear, or reports status. */
 	public static void inspectOrInsertFromInventory(ServerPlayer player, BlockPos pos, BlockState state) {
 		MinecraftServer server = player.level().getServer();
-		List<String> current = insertedGears(server);
-		if (current.size() >= 3 || StoneRegistry.released(server, Stone.TIME)) {
+		if (isCompleted(server, (ServerLevel) player.level(), pos, state)) {
 			ModStatus.send(player, Component.translatable("msg.infinity_gauntlet.time_quest.already_running"));
 			return;
 		}
+		List<String> current = insertedGears(server);
 		// Check if the player has a needed gear anywhere in their inventory (hands or backpack).
 		Inventory inv = player.getInventory();
 		for (int i = 0; i < inv.getContainerSize(); i++) {
@@ -85,12 +113,13 @@ public final class TimeQuest {
 		String id = gearId(stack);
 		if (id == null) return false;
 		MinecraftServer server = player.level().getServer();
-		ServerLevel overworld = server.overworld();
-		List<String> current = new ArrayList<>(insertedGears(server));
-		if (current.size() >= 3 || StoneRegistry.released(server, Stone.TIME)) {
+		ServerLevel level = (ServerLevel) player.level();
+		if (isCompleted(server, level, pos, state)) {
 			ModStatus.send(player, Component.translatable("msg.infinity_gauntlet.time_quest.already_running"));
 			return false;
 		}
+		ServerLevel overworld = server.overworld();
+		List<String> current = new ArrayList<>(insertedGears(server));
 		if (current.contains(id)) {
 			ModStatus.send(player, Component.translatable("msg.infinity_gauntlet.time_quest.duplicate_gear", current.size()));
 			player.level().playSound(null, pos, SoundEvents.COPPER_BULB_TURN_OFF, SoundSource.BLOCKS, 1.0F, 0.7F);
@@ -103,7 +132,6 @@ public final class TimeQuest {
 		StoneRegistry.markFound(server, Stone.TIME);
 
 		int count = Math.min(3, current.size());
-		ServerLevel level = (ServerLevel) player.level();
 		Direction facing = state.hasProperty(TimeClockBlock.FACING) ? state.getValue(TimeClockBlock.FACING) : Direction.SOUTH;
 		if (state.is(ModBlocks.QUEST_TIME_CLOCK)) {
 			level.setBlock(pos, state.setValue(TimeClockBlock.GEARS, count), Block.UPDATE_ALL);
@@ -130,7 +158,12 @@ public final class TimeQuest {
 		level.playSound(null, pos, SoundEvents.BELL_BLOCK, SoundSource.BLOCKS, 3.0F, 0.9F);
 
 		if (StoneRegistry.markReleased(server, Stone.TIME)) {
-			OrbItem.giveIntoBackpack(player, new ItemStack(ModItems.TIME_STONE));
+			ItemStack timeStone = new ItemStack(ModItems.TIME_STONE);
+			if (player.getMainHandItem().isEmpty()) {
+				player.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, timeStone);
+			} else if (!player.getInventory().add(timeStone)) {
+				OrbItem.giveIntoBackpack(player, timeStone);
+			}
 		}
 		ModStatus.send(player, Component.translatable("msg.infinity_gauntlet.time_quest.completed"));
 		return true;

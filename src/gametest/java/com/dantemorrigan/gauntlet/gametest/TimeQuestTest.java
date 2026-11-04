@@ -92,6 +92,42 @@ public class TimeQuestTest implements FabricClientGameTest {
 			if (!server.computeOnServer(s -> player(s).getInventory().contains(st -> st.is(ModItems.TIME_STONE)))) {
 				throw new AssertionError("Player did not receive the Time Stone");
 			}
+
+			// Verify no lanterns in the Temple of Time are floating in mid-air without support.
+			server.runOnServer(s -> {
+				var level = s.overworld();
+				for (int dx = -18; dx <= 18; dx++) {
+					for (int dz = -18; dz <= 18; dz++) {
+						for (int dy = 1; dy <= 30; dy++) {
+							var p = site.offset(dx, dy, dz);
+							var st = level.getBlockState(p);
+							if (st.getBlock() instanceof net.minecraft.world.level.block.LanternBlock) {
+								boolean hanging = st.getValue(net.minecraft.world.level.block.LanternBlock.HANGING);
+								var support = hanging ? level.getBlockState(p.above()) : level.getBlockState(p.below());
+								if (support.isAir()) {
+									throw new AssertionError("Floating lantern found at " + p);
+								}
+							}
+						}
+					}
+				}
+			});
+
+			// Moving the Time Stone in creative inventory and rewinding time must not empty the clock or allow duping.
+			ctx.waitTicks(45);
+			server.runOnServer(s -> {
+				var p = player(s);
+				var level = s.overworld();
+				com.dantemorrigan.gauntlet.stones.StoneKeeper.creativeReplaced(p, new ItemStack(ModItems.TIME_STONE), ItemStack.EMPTY);
+				com.dantemorrigan.gauntlet.stones.StoneKeeper.creativeReplaced(p, ItemStack.EMPTY, new ItemStack(ModItems.TIME_STONE));
+				com.dantemorrigan.gauntlet.power.TimeAbility.rewindLoose(p);
+				if (TimeQuest.insertGear(p, clockPos, level.getBlockState(clockPos), new ItemStack(ModItems.QUEST_TIME_GEAR_OVERWORLD))) {
+					throw new AssertionError("Clock must not accept gears again after Time Stone is obtained and time is rewound");
+				}
+				if (level.getBlockState(clockPos).getValue(TimeClockBlock.GEARS) != 3) {
+					throw new AssertionError("Clock must remain at 3 gears after rewinding time");
+				}
+			});
 		}
 	}
 }

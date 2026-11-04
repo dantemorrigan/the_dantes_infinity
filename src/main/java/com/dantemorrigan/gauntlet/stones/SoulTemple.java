@@ -123,6 +123,11 @@ public final class SoulTemple {
 		return new Vec3(site.getX() + 0.5 - d[0] * 4, summitY(site) + 1, site.getZ() + 0.5 - d[1] * 4);
 	}
 
+	/** Foot of the mountain stairway on the snow waste. */
+	public static Vec3 stairwayStart(BlockPos site) {
+		return new Vec3(site.getX() + R_M - 1.5, site.getY() + 1, site.getZ() - 2.5);
+	}
+
 	/** The chasm faces away from where the stairway arrives. */
 	private static double[] chasmDir() {
 		double end = TURNS * Math.PI * 2 + Math.PI;
