@@ -1,4 +1,8 @@
 {
+  "hud.infinity_gauntlet.quest_compass.time_temple": "Храм Времени",
+  "hud.infinity_gauntlet.quest_compass.soul_temple": "Храм Души",
+  "hud.infinity_gauntlet.quest_compass.mind_city": "Руины города",
+  "hud.infinity_gauntlet.quest_compass.distance": "%s · %s бл.",
   "item.infinity_gauntlet.gauntlet": "Перчатка Бесконечности",
   "item.infinity_gauntlet.power_stone": "Камень Силы",
   "item.infinity_gauntlet.space_stone": "Камень Пространства",
