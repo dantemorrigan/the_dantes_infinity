@@ -179,7 +179,11 @@ public final class ThanosClient {
 				captionUntil = ticks + fx.ticks() + 30;
 			}
 			case ThanosEncounter.FX_MUSIC_START -> {
-				if (music == null || music.isStopped() || music.fading()) {
+				// Sent at the start and again every few seconds of the fight: (re)start unless it is really playing.
+				if (mc.player == null || !mc.player.isAlive()) break;
+				boolean playing = music != null && !music.isStopped() && !music.fading() && mc.getSoundManager().isActive(music);
+				if (!playing) {
+					if (music != null && !music.isStopped() && !music.fading() && music.age < 40) break; // just queued, give it a moment
 					if (music != null) music.halt();
 					music = new Music();
 					mc.getSoundManager().play(music);
@@ -568,6 +572,7 @@ public final class ThanosClient {
 		private static final float LEVEL = 0.42f;
 		private float step = LEVEL / 40f;
 		private boolean out;
+		int age;
 
 		Music() {
 			super(ModSounds.THANOS_MUSIC, SoundSource.RECORDS, SoundInstance.createUnseededRandom());
@@ -590,6 +595,7 @@ public final class ThanosClient {
 
 		@Override
 		public void tick() {
+			age++;
 			if (out) {
 				this.volume -= step;
 				if (this.volume <= 0.001f) this.stop();

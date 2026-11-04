@@ -369,6 +369,8 @@ public final class ThanosEncounter {
 		if (boss == null || boss.isRemoved()) { withdraw(false); return; }
 		if (p == null) { withdraw(false); return; }
 		boolean away = p.level() != boss.level() || p.distanceTo(boss) > 96;
+		// Keep the battle theme alive for everyone near the fight (clients ignore it while the track already plays).
+		if ((e.t - e.stageStart) % 100 == 0) sendNear(e, boss.position(), 128, FX_MUSIC_START, 0, Vec3.ZERO, Vec3.ZERO, 0, 0);
 		e.awayTicks = away ? e.awayTicks + 1 : 0;
 		if (e.awayTicks > 200) {
 			send(p, FX_MUSIC_STOP, 0, Vec3.ZERO, Vec3.ZERO, 0, 60);

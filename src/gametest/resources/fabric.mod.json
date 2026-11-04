@@ -8,6 +8,7 @@
     "fabric-client-gametest": [
       "com.dantemorrigan.gauntlet.gametest.VisualTest",
       "com.dantemorrigan.gauntlet.gametest.ThanosTest",
+      "com.dantemorrigan.gauntlet.gametest.StoneDeathDupTest",
       "com.dantemorrigan.gauntlet.gametest.CelestialTest",
       "com.dantemorrigan.gauntlet.gametest.EternalNightTest",
       "com.dantemorrigan.gauntlet.gametest.SpaceStoneTest",

@@ -38,7 +38,7 @@ public final class StoneKeeper {
 	private static final java.util.Map<java.util.UUID, List<ItemStack>> PENDING = new java.util.HashMap<>();
 
 	public static void init() {
-		ServerPlayerEvents.AFTER_RESPAWN.register((old, player, alive) -> restore(player));
+		ServerPlayerEvents.AFTER_RESPAWN.register((old, player, alive) -> restore(old, player));
 		// Died, then the server stopped before the respawn: the attachment brings the stones back on the next respawn.
 		net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents.SERVER_STOPPED.register(s -> PENDING.clear());
 		ServerEntityEvents.ENTITY_LOAD.register((entity, level) -> {
@@ -123,8 +123,8 @@ public final class StoneKeeper {
 		if (level.getGameRules().get(GameRules.KEEP_INVENTORY) || killedByPlayer(player)) return;
 		Inventory inv = player.getInventory();
 		List<ItemStack> kept = new ArrayList<>();
-		List<ItemStack> previous = player.getAttached(KEPT);
-		if (previous != null) kept.addAll(previous);
+		// Never merge an older stash: a player can't die twice without respawning, so anything still attached here is a
+		// stale copy of stones already given back (merging it doubled them).
 		for (int i = 0; i < inv.getContainerSize(); i++) {
 			ItemStack stack = inv.getItem(i);
 			if (precious(stack)) {
@@ -145,10 +145,20 @@ public final class StoneKeeper {
 		return (attacker instanceof Player && attacker != player) || (credit instanceof Player && credit != player);
 	}
 
-	private static void restore(ServerPlayer player) {
+	private static void restore(ServerPlayer old, ServerPlayer player) {
 		List<ItemStack> kept = PENDING.remove(player.getUUID());
+		if (kept == null) kept = old.getAttached(KEPT);
 		if (kept == null) kept = player.getAttached(KEPT);
+		// Clear the stash everywhere: the death copy of attachments may reach the new player after this event, and a
+		// stale stash would be added again on the next death (stones doubled).
+		old.removeAttached(KEPT);
 		player.removeAttached(KEPT);
+		var server = player.level().getServer();
+		java.util.UUID id = player.getUUID();
+		server.execute(() -> {
+			ServerPlayer now = server.getPlayerList().getPlayer(id);
+			if (now != null) now.removeAttached(KEPT);
+		});
 		if (kept == null) return;
 		for (ItemStack stack : kept) OrbItem.giveIntoBackpack(player, stack.copy());
 	}
