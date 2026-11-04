@@ -22,14 +22,14 @@ add('cover',
  f"\n{H}   ПЕРЧАТКА\n   БЕСКОНЕЧНОСТИ{R}\n\n{G}Путеводитель{R}\n\nШесть камней, одна перчатка и сила, способная стирать миры.\n\n{G}Листай дальше ▶")
 add('contents', None, None)  # built below
 add('start',
- f"{H}First steps{R}\nThe gauntlet works in your {B}offhand{R}: press {B}F{R}. Right-click it in your main hand to open the stone slots.\n\nThere are six stones. Each exists {B}once{R} per world and can't be crafted: you have to find it.",
- f"{H}Первые шаги{R}\nПерчатка работает в {B}левой руке{R}: нажми {B}F{R}. ПКМ с ней в правой руке открывает слоты камней.\n\nКамней шесть. Каждый есть в мире в {B}одном{R} экземпляре и не крафтится: его нужно найти.")
+ f"{H}First steps{R}\nThe gauntlet works in your {B}offhand{R}: press {B}F{R}. Right-click it in your main hand to open the stone slots.\n\nFour stones have {B}survival sources{R}. Time and Mind are available in Creative.",
+ f"{H}Первые шаги{R}\nПерчатка работает в {B}левой руке{R}: нажми {B}F{R}. ПКМ с ней в правой руке открывает слоты камней.\n\nЧетыре камня доступны в {B}выживании{R}. Время и Разум есть в творческом режиме.")
 add('hints',
- f"{H}Where to look{R}\n{B}Power{R}: follow the fallen stars.\n{B}Space{R}: when the dragon dies, the End opens a door. Dress warmly.\n{B}Reality{R}: red mist in the Nether. An arrow is faster than a hand.\n{B}Soul{R}: a lone snowy peak asks for a loyal friend.",
- f"{H}Где искать{R}\n{B}Сила{R}: иди за упавшими звёздами.\n{B}Пространство{R}: после дракона Край откроет дверь. Оденься тепло.\n{B}Реальность{R}: красный туман Незера. Стрела быстрее руки.\n{B}Душа{R}: гора просит верного друга.")
+ f"{H}Where to look{R}\n{B}Power{R}: follow the fallen stars.\n{B}Space{R}: beat the dragon. Bring iron armor.\n{B}Reality{R}: shoot the wisp in the Nether mist.\n{B}Soul{R}: find a temple map. Offer a pet or player.",
+ f"{H}Где искать{R}\n{B}Сила{R}: иди за упавшими звёздами.\n{B}Пространство{R}: победи дракона. Возьми железную броню.\n{B}Реальность{R}: выстрели в камень в тумане Незера.\n{B}Душа{R}: карта храма. Жертва: питомец или игрок.")
 add('wheel',
- f"{H}Ability wheel{R}\nHold {B}V{R}, point at a stone, then an ability, release. {B}R{R} uses it; hold R for charged powers.\n\n{B}Esc{R} cancels. A dimmed ability is unavailable.",
- f"{H}Колесо способностей{R}\nДержи {B}V{R}, наведи на камень, потом на способность, отпусти. {B}R{R} — применить, держи R для заряжаемых.\n\n{B}Esc{R} — отмена. Серая способность недоступна.")
+ f"{H}Ability wheel{R}\nHold {B}V{R}, point at a stone, then an ability, release. {B}R{R} uses it; hold R for charged powers.\n\n{B}Esc{R} cancels. Pin with 1–6. Hold B for favorites.",
+ f"{H}Колесо способностей{R}\nДержи {B}V{R}, наведи на камень, потом на способность, отпусти. {B}R{R} — применить, держи R для заряжаемых.\n\n{B}Esc{R} — отмена. 1–6 закрепляют способность. Держи B для избранного.")
 add('power',
  f"{H}Power Stone{R}\n{B}Power strike{R}: hold R, release.\n{B}Planet Destruction{R}: full charge, hit the ground.\n{B}Celestial Destruction{R}: aim at the sun or moon.\n{B}Meteor Stream{R}: lock on, aim a circle.\n\nHeld bare, it kills.",
  f"{H}Камень Силы{R}\n{B}Силовой удар{R}: держи R, отпусти.\n{B}Уничтожение планеты{R}: заряд и удар в землю.\n{B}Разрушение светил{R}: наведи на солнце или луну.\n{B}Поток метеоритов{R}: захват, круг.\n\nГолым он убивает.")
@@ -37,8 +37,8 @@ add('space',
  f"{H}Space Stone{R}\n{B}Portal{R}: a door to the Nether, End or Overworld.\n{B}Blink{R}: teleport where you look.\n{B}Flight{R}: Ctrl boosts; beyond the sky lies the Solar System.\n{B}Warp{R}: jump to a planet.",
  f"{H}Камень Пространства{R}\n{B}Портал{R}: дверь в другое измерение.\n{B}Рывок{R}: телепорт туда, куда смотришь.\n{B}Полёт{R}: Ctrl ускоряет; за небом — Солнечная система.\n{B}Варп{R}: прыжок к планете.")
 add('reality',
- f"{H}Reality Stone{R}\n{B}Reality strike{R}: tap R. Mobs become butterflies, the ground turns to redstone and fire.\n\n{B}Inversion{R}: hold R. The world folds around your gaze, on your screen only.",
- f"{H}Камень Реальности{R}\n{B}Удар Реальности{R}: нажми R. Мобы — бабочки, земля — красный камень и огонь.\n\n{B}Изнанка{R}: держи R. Мир складывается вслед за взглядом, только у тебя на экране.")
+ f"{H}Reality Stone{R}\n{B}Reality strike{R}: select the strike and press R. Mobs become butterflies, the ground turns to redstone and fire.\n\n{B}Inversion{R}: hold R. The world folds around your gaze. Blocks stay intact.",
+ f"{H}Камень Реальности{R}\n{B}Удар Реальности{R}: выбери удар и нажми R. Мобы — бабочки, земля — красный камень и огонь.\n\n{B}Изнанка{R}: держи R. Мир складывается вслед за взглядом. Блоки не ломаются.")
 add('time',
  f"{H}Time Stone{R}\n{B}Rewind{R}: you are played back through your last 5 seconds.\n{B}Day / Night{R}: spins the sky to the other half of the day.\n\nIn Dead Space, rewind reassembles a destroyed planet.",
  f"{H}Камень Времени{R}\n{B}Перемотка{R}: тебя «проигрывает» назад на 5 секунд.\n{B}День / Ночь{R}: прокручивает небо на другую половину суток.\n\nВ Мёртвом космосе перемотка собирает разрушенную планету.")
@@ -52,8 +52,8 @@ add('beam',
  f"{H}All six stones{R}\n{B}Infinity Beam{R}: hold R. Drills tunnels, wounds the Ender Dragon.\n\n{B}Infinity Snap{R}: erases the universe and burns the gauntlet out. A loose Time Stone can undo it.",
  f"{H}Все шесть камней{R}\n{B}Луч Бесконечности{R}: держи R. Пробивает тоннели, ранит Дракона.\n\n{B}Щелчок{R}: стирает вселенную и сжигает перчатку. Вернуть может Камень Времени вне перчатки.")
 add('uru',
- f"{H}Uru{R}\nA rare metal deep underground (a diamond pickaxe is needed). Smelt it into ingots.\n\n{B}Uru armor{R} is crafted like iron and is the only protection against a full gauntlet.",
- f"{H}Уру{R}\nРедкий металл глубоко под землёй (нужна алмазная кирка). Переплавь в слитки.\n\n{B}Броня из Уру{R} крафтится как железная и единственная защищает от полной перчатки.")
+ f"{H}Uru{R}\nFind ore near Y=−32. Mine with diamond or netherite and smelt it.\n\n{B}Uru armor{R} uses iron recipes. A full set reduces full-gauntlet damage. Ingots also go into the gauntlet recipe.",
+ f"{H}Уру{R}\nИщи около Y=−32. Добудь алмазной или незеритовой киркой и переплавь.\n\n{B}Броня из Уру{R} крафтится как железная. Полный комплект гасит урон полной перчатки. Слитки нужны и для перчатки.")
 add('extractor',
  f"{H}Infinity Extractor{R}\nPulls a stone out of someone's gauntlet: hold right-click on them, three cycles. Shift + right-click picks which stone.\n\nYour stones stay with you when you die, unless another player kills you.",
  f"{H}Извлекатель{R}\nВытягивает камень из чужой перчатки: держи ПКМ на цели, три цикла. Shift + ПКМ выбирает камень.\n\nПосле смерти камни остаются у тебя, если не убил другой игрок.")
