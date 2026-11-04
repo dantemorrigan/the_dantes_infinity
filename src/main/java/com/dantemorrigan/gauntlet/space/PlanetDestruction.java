@@ -83,7 +83,8 @@ public final class PlanetDestruction {
 
 	private static boolean inVanillaDimension(ServerPlayer p) {
 		var d = p.level().dimension();
-		return d.equals(net.minecraft.world.level.Level.OVERWORLD) || d.equals(net.minecraft.world.level.Level.NETHER) || d.equals(net.minecraft.world.level.Level.END);
+		// Players in the End are never touched (the ability does not work there at all).
+		return d.equals(net.minecraft.world.level.Level.OVERWORLD) || d.equals(net.minecraft.world.level.Level.NETHER);
 	}
 
 	public static boolean isBusy(ServerPlayer player) {
@@ -114,7 +115,7 @@ public final class PlanetDestruction {
 		MinecraftServer server = level.getServer();
 		Event event = new Event(nextId++, level, impact, activator.getUUID(), server.overworld().getGameTime(), fragments);
 
-		// The Earth itself is destroyed: every player of the server sees it, wherever they are (Overworld, Nether, End).
+		// The Earth itself is destroyed: every player of the server sees it, wherever they are (Overworld or Nether; the End is left alone).
 		List<ServerPlayer> candidates = cfg.planetDestructionAllPlayers ? new ArrayList<>(server.getPlayerList().getPlayers().stream().filter(PlanetDestruction::inVanillaDimension).toList())
 				: cfg.transferWholeDimension ? level.players() : level.getPlayers(p -> p.distanceToSqr(impact) <= cfg.participantRadius * cfg.participantRadius);
 		for (ServerPlayer p : candidates) {
