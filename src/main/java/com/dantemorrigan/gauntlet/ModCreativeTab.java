@@ -22,6 +22,8 @@ public final class ModCreativeTab {
 				output.accept(ModItems.POWER_ORB);
 				output.accept(ModItems.POWER_ORB_OPEN);
 				output.accept(ModItems.QUEST_SPACE_TESSERACT);
+				output.accept(ModItems.QUEST_SOUL_TEMPLE_MAP);
+				output.accept(ModBlocks.QUEST_SOUL_RITUAL_BASALT);
 				output.accept(ModBlocks.QUEST_SPACE_CARVED_ICE);
 				output.accept(ModBlocks.PURPLE_METEORITE);
 				output.accept(ModBlocks.PURPLE_METEORITE_CORE);

@@ -52,6 +52,10 @@ public final class ModBlocks {
 			BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_BLUE).strength(-1.0f, 3_600_000.0f).lightLevel(state -> 15)
 					.noLootTable().noOcclusion().sound(SoundType.AMETHYST).pushReaction(net.minecraft.world.level.material.PushReaction.BLOCK));
 
+	/** Carved basalt of the Temple of Soul. */
+	public static final Block QUEST_SOUL_RITUAL_BASALT = register("quest_soul_ritual_basalt", BlockBehaviour.Properties.of()
+			.mapColor(MapColor.COLOR_BLACK).instrument(NoteBlockInstrument.BASEDRUM).requiresCorrectToolForDrops().strength(3.0f, 9.0f).sound(SoundType.BASALT));
+
 	public static final ResourceKey<PlacedFeature> ORE_URU = ResourceKey.create(Registries.PLACED_FEATURE, InfinityGauntlet.id("ore_uru"));
 
 	private static Block register(String name, BlockBehaviour.Properties properties) {

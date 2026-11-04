@@ -21,6 +21,11 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public abstract class SkyRendererMixin {
 	@Inject(method = "extractRenderState", at = @At("RETURN"))
 	private void infinityGauntlet$tint(ClientLevel level, float partialTicks, Camera camera, SkyRenderState state, CallbackInfo ci) {
+        float amber = com.dantemorrigan.gauntlet.client.quest.SoulQuestClient.amber();
+        if (amber > 0) {
+            state.skyColor = ARGB.srgbLerp(amber, state.skyColor, 0xFFE07A22);
+            state.sunriseAndSunsetColor = ARGB.srgbLerp(amber, state.sunriseAndSunsetColor, 0xFFFF9A3C);
+        }
         float altitude = com.dantemorrigan.gauntlet.client.cosmos.CosmosClient.atmosphere();
         if (altitude > 0) {
             state.skyColor = ARGB.srgbLerp(altitude, state.skyColor, 0xFF000008);
@@ -68,6 +73,11 @@ public abstract class SkyRendererMixin {
 	/** Dead Space uses skybox "end" only to get a sky pass; we replace the End sky with the space cube-map. */
 	@Inject(method = "renderEndSky", at = @At("HEAD"), cancellable = true)
 	private void infinityGauntlet$deadSpaceSky(CallbackInfo ci) {
+		if (com.dantemorrigan.gauntlet.client.quest.SoulQuestClient.inSoulWorld()) {
+			com.dantemorrigan.gauntlet.client.quest.SoulQuestClient.drawSky();
+			ci.cancel();
+			return;
+		}
 		if (com.dantemorrigan.gauntlet.client.quest.SpaceQuestClient.onAsteroid()) {
 			com.dantemorrigan.gauntlet.client.quest.SpaceQuestClient.drawSky();
 			ci.cancel();
@@ -86,7 +96,7 @@ public abstract class SkyRendererMixin {
 	@Inject(method = "renderEndFlash", at = @At("HEAD"), cancellable = true)
 	private void infinityGauntlet$noEndFlash(PoseStack poseStack, float intensity, float xAngle, float yAngle, CallbackInfo ci) {
 		if (com.dantemorrigan.gauntlet.client.space.SpaceScene.active() || com.dantemorrigan.gauntlet.client.cosmos.CosmosClient.inCosmos()
-				|| com.dantemorrigan.gauntlet.client.quest.SpaceQuestClient.onAsteroid()) ci.cancel();
+				|| com.dantemorrigan.gauntlet.client.quest.SpaceQuestClient.onAsteroid() || com.dantemorrigan.gauntlet.client.quest.SoulQuestClient.inSoulWorld()) ci.cancel();
 	}
 }
 

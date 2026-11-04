@@ -412,5 +412,9 @@
   "subtitles.infinity_gauntlet.ability_time_shift": "Время кружится",
   "subtitles.infinity_gauntlet.ability_mind_grab": "Разум захватывает",
   "subtitles.infinity_gauntlet.ability_mind_tear": "Что-то разрывается",
-  "subtitles.infinity_gauntlet.ability_infinity_beam": "Луч Бесконечности"
+  "subtitles.infinity_gauntlet.ability_infinity_beam": "Луч Бесконечности",
+  "item.infinity_gauntlet.quest_soul_temple_map": "Карта Храма Души",
+  "block.infinity_gauntlet.quest_soul_ritual_basalt": "Ритуальный базальт",
+  "message.infinity_gauntlet.quest.soul.home": "Используй Камень Души, чтобы вернуться в храм",
+  "tooltip.infinity_gauntlet.soul_map": "ПКМ — развернуть"
 }

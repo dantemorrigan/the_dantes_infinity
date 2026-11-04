@@ -28,6 +28,11 @@ Requirements: **Java 25**. Build: `./gradlew build` → `build/libs/infinity_gau
 - In the Nether a player may be wrapped in **red mist** (checked once a minute, `realityFogChancePerMinute`); the Reality Stone darts through it and flees when approached. **Hit it in melee** to catch it, or **shoot it with an arrow**: the mist scatters and the stone falls next to the player. After `realityFogSeconds` it slips away. Once per world.
 - Art: pack `02_Reality_Quest` (layered fog density map, stone trail, arrow hit, fog dispel). Debug: `/gauntlet reality_fog`. Smoke test: `-PonlyTest=RealityFogTest`.
 
+## Finding the Soul Stone
+- Every world has a **Temple of Soul** (1000-1600 blocks from spawn): a lone snowy mountain in a flat snow waste, a stairway with fences and ruins winding to the summit, a ruined temple with a chasm. The terrain is reshaped as its chunks load. Maps to it (**Map to the Temple of Soul**, right-click to unroll into a real map with a red X) lie in igloo, shipwreck-map, stronghold-library, cartographer, dungeon and mineshaft chests, and cartographers / wandering traders sell them.
+- Jumping into the chasm just kills you. **Throw a tamed wolf in**: the sky turns amber, a beam strikes the clouds, darkness, and the owner wakes in the **soul world** (dark shallow sea, red sun). The Soul Stone rises from the water; picking it up shows *"Use the Soul Stone to return to the temple"*, using it brings you back to the summit. Once per world; leaving before taking the stone resets the quest.
+- Art: pack `05_Soul_Quest`. Debug: `/gauntlet soul_quest temple_here | locate | ritual`. Smoke test: `-PonlyTest=SoulQuestTest`.
+
 ## Language and field guide
 
 - **Language switcher**: Options or Pause menu → **Infinity Gauntlet** button (bottom left). Cards for Auto / English / Русский; the choice applies instantly to the whole mod (menus, HUD messages, tooltips, the book) and is saved as `language` in `config/infinity_gauntlet.json`. Auto follows Minecraft's language.

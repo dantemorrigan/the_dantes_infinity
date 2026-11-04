@@ -412,5 +412,9 @@
   "subtitles.infinity_gauntlet.ability_time_shift": "Time spins",
   "subtitles.infinity_gauntlet.ability_mind_grab": "The mind seizes",
   "subtitles.infinity_gauntlet.ability_mind_tear": "Something is torn apart",
-  "subtitles.infinity_gauntlet.ability_infinity_beam": "The Infinity Beam"
+  "subtitles.infinity_gauntlet.ability_infinity_beam": "The Infinity Beam",
+  "item.infinity_gauntlet.quest_soul_temple_map": "Map to the Temple of Soul",
+  "block.infinity_gauntlet.quest_soul_ritual_basalt": "Ritual Basalt",
+  "message.infinity_gauntlet.quest.soul.home": "Use the Soul Stone to return to the temple",
+  "tooltip.infinity_gauntlet.soul_map": "Right-click to unroll"
 }

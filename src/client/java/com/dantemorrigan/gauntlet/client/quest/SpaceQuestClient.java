@@ -24,6 +24,8 @@ public final class SpaceQuestClient {
 	private static final Identifier STARS = InfinityGauntlet.id("textures/environment/quest_space_extragalactic_stars.png");
 	private static final Identifier FROST = InfinityGauntlet.id("textures/gui/quest_space_frost.png");
 	private static final Identifier FRAME = InfinityGauntlet.id("textures/gui/quest_space_alert.png");
+	private static final Identifier SOUL_FRAME = InfinityGauntlet.id("textures/gui/quest_soul_alert.png");
+	private static int style;
 	private static final int ALERT_TICKS = 120;
 
 	private static Component alert;
@@ -31,7 +33,7 @@ public final class SpaceQuestClient {
 	private static float frost;
 
 	public static void init() {
-		ClientPlayNetworking.registerGlobalReceiver(ModNetwork.QuestAlert.TYPE, (packet, ctx) -> { alert = packet.text(); alertAge = 0; });
+		ClientPlayNetworking.registerGlobalReceiver(ModNetwork.QuestAlert.TYPE, (packet, ctx) -> { alert = packet.text(); style = packet.style(); alertAge = 0; });
 		ClientTickEvents.END_CLIENT_TICK.register(mc -> {
 			if (alert != null && ++alertAge > ALERT_TICKS) alert = null;
 			float target = 0;
@@ -68,11 +70,11 @@ public final class SpaceQuestClient {
 			int textW = mc.font.width(alert);
 			int fw = Math.min(w - 16, Math.max(256, cap + pad + textW + pad + end));
 			int x = (w - fw) / 2, y = h / 5, color = ARGB.color(a, 255, 255, 255);
-			g.blit(RenderPipelines.GUI_TEXTURED, FRAME, x, y, 0, 0, cap, fh, 24, 24, 128, 24, color);
-			g.blit(RenderPipelines.GUI_TEXTURED, FRAME, x + cap, y, 24, 0, fw - cap - end, fh, 96, 24, 128, 24, color);
-			g.blit(RenderPipelines.GUI_TEXTURED, FRAME, x + fw - end, y, 120, 0, end, fh, 8, 24, 128, 24, color);
+			g.blit(RenderPipelines.GUI_TEXTURED, style == 1 ? SOUL_FRAME : FRAME, x, y, 0, 0, cap, fh, 24, 24, 128, 24, color);
+			g.blit(RenderPipelines.GUI_TEXTURED, style == 1 ? SOUL_FRAME : FRAME, x + cap, y, 24, 0, fw - cap - end, fh, 96, 24, 128, 24, color);
+			g.blit(RenderPipelines.GUI_TEXTURED, style == 1 ? SOUL_FRAME : FRAME, x + fw - end, y, 120, 0, end, fh, 8, 24, 128, 24, color);
 			int left = x + cap + pad, right = x + fw - end - pad;
-			g.centeredText(mc.font, alert, (left + right) / 2, y + (fh - mc.font.lineHeight) / 2 + 1, ARGB.color(a, 210, 236, 255));
+			g.centeredText(mc.font, alert, (left + right) / 2, y + (fh - mc.font.lineHeight) / 2 + 1, style == 1 ? ARGB.color(a, 255, 214, 170) : ARGB.color(a, 210, 236, 255));
 		}
 	}
 

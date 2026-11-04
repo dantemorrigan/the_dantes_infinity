@@ -55,6 +55,20 @@ public final class GauntletCommand {
 						.then(Commands.literal("uru").executes(ctx -> uru(ctx.getSource())))
 						.then(Commands.literal("meteor").executes(ctx -> meteor(ctx.getSource())))
 						.then(Commands.literal("state").executes(ctx -> state(ctx.getSource())))
+						.then(Commands.literal("soul_quest")
+								.then(Commands.literal("temple_here").executes(ctx -> {
+									var p = ctx.getSource().getPlayerOrException();
+									var level = p.level().getServer().overworld();
+									com.dantemorrigan.gauntlet.stones.SoulTemple.relocate(level.getServer(), p.blockPosition().offset(0, -1, 0));
+									com.dantemorrigan.gauntlet.stones.SoulTemple.forceBuild(level);
+									return 1;
+								}))
+								.then(Commands.literal("locate").executes(ctx -> {
+									var site = com.dantemorrigan.gauntlet.stones.SoulTemple.site(ctx.getSource().getServer());
+									ctx.getSource().sendSuccess(() -> Component.literal("Temple of Soul: " + site.toShortString()), false);
+									return 1;
+								}))
+								.then(Commands.literal("ritual").executes(ctx -> com.dantemorrigan.gauntlet.stones.SoulQuest.sacrifice(ctx.getSource().getPlayerOrException(), null) ? 1 : 0)))
 						.then(Commands.literal("reality_fog").executes(ctx -> com.dantemorrigan.gauntlet.stones.RealityFog.start(ctx.getSource().getPlayerOrException()) ? 1 : 0))
 						.then(Commands.literal("space_quest")
 								.then(Commands.literal("rift").executes(ctx -> {

@@ -27,6 +27,11 @@ public final class ModParticleProviders {
 		billboard(ModParticles.SPACE_TELEPORT_FLASH, "space_teleport_flash");
 		billboard(ModParticles.QUEST_SPACE_PORTAL, "quest_space_portal");
 		billboard(ModParticles.QUEST_REALITY_FOG, "quest_reality_fog");
+		billboard(ModParticles.QUEST_SOUL_RITUAL_BEAM, "quest_soul_ritual_beam");
+		billboard(ModParticles.QUEST_SOUL_CLOUD_PULSE, "quest_soul_cloud_pulse");
+		flat(ModParticles.QUEST_SOUL_WATER_RIPPLE, "quest_soul_water_ripple");
+		billboard(ModParticles.QUEST_SOUL_STONE_RISE, "quest_soul_stone_rise");
+		billboard(ModParticles.QUEST_SOUL_RETURN_FLARE, "quest_soul_return_flare");
 		billboard(ModParticles.QUEST_REALITY_STONE_TRAIL, "quest_reality_stone_trail");
 		billboard(ModParticles.QUEST_REALITY_ARROW_HIT, "quest_reality_arrow_hit");
 		billboard(ModParticles.QUEST_REALITY_FOG_DISPEL, "quest_reality_fog_dispel");

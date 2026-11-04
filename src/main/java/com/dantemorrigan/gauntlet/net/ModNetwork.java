@@ -305,11 +305,21 @@ public final class ModNetwork {
 		@Override public Type<RealityFogFx> type() { return TYPE; }
 	}
 
+	/** S2C: Soul quest. kind 0 = the ritual at {@code pos} (summit height {@code top}, lasts {@code ticks}); kind 1 = arrival in the soul world (fade in). */
+	public record SoulRitualFx(int kind, net.minecraft.core.BlockPos pos, int top, int ticks) implements CustomPacketPayload {
+		public static final Type<SoulRitualFx> TYPE = newType("soul_ritual");
+		public static final StreamCodec<ByteBuf, SoulRitualFx> CODEC = StreamCodec.composite(ByteBufCodecs.VAR_INT, SoulRitualFx::kind,
+				net.minecraft.core.BlockPos.STREAM_CODEC, SoulRitualFx::pos, ByteBufCodecs.VAR_INT, SoulRitualFx::top, ByteBufCodecs.VAR_INT, SoulRitualFx::ticks, SoulRitualFx::new);
+		@Override public Type<SoulRitualFx> type() { return TYPE; }
+	}
+
 	/** S2C: a framed quest notice in the middle of the screen (Space Stone quest). */
-	public record QuestAlert(net.minecraft.network.chat.Component text) implements CustomPacketPayload {
+	public record QuestAlert(net.minecraft.network.chat.Component text, int style) implements CustomPacketPayload {
+		/** style: 0 = Space (blue frame), 1 = Soul (amber frame). */
+		public QuestAlert(net.minecraft.network.chat.Component text) { this(text, 0); }
 		public static final Type<QuestAlert> TYPE = newType("quest_alert");
 		public static final StreamCodec<RegistryFriendlyByteBuf, QuestAlert> CODEC = StreamCodec.composite(
-				net.minecraft.network.chat.ComponentSerialization.STREAM_CODEC, QuestAlert::text, QuestAlert::new);
+				net.minecraft.network.chat.ComponentSerialization.STREAM_CODEC, QuestAlert::text, ByteBufCodecs.VAR_INT, QuestAlert::style, QuestAlert::new);
 		@Override public Type<QuestAlert> type() { return TYPE; }
 	}
 
@@ -406,6 +416,7 @@ public final class ModNetwork {
 		PayloadTypeRegistry.clientboundPlay().register(RealityFx.TYPE, RealityFx.CODEC);
 		PayloadTypeRegistry.clientboundPlay().register(Status.TYPE, Status.CODEC);
 		PayloadTypeRegistry.clientboundPlay().register(QuestAlert.TYPE, QuestAlert.CODEC);
+		PayloadTypeRegistry.clientboundPlay().register(SoulRitualFx.TYPE, SoulRitualFx.CODEC);
 		PayloadTypeRegistry.clientboundPlay().register(RealityFogFx.TYPE, RealityFogFx.CODEC);
 		PayloadTypeRegistry.serverboundPlay().register(BeamAction.TYPE, BeamAction.CODEC);
 		PayloadTypeRegistry.clientboundPlay().register(BeamFx.TYPE, BeamFx.CODEC);

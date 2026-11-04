@@ -33,6 +33,12 @@ public abstract class FogRendererMixin {
 					fog.color.y + (n[1] + (d[1] - n[1]) * day - fog.color.y) * red,
 					fog.color.z + (n[2] + (d[2] - n[2]) * day - fog.color.z) * red, fog.color.w);
 		}
+		float amber = com.dantemorrigan.gauntlet.client.quest.SoulQuestClient.amber();
+		if (amber > 0) {
+			FogData fog = cir.getReturnValue();
+			fog.color.set(fog.color.x + (0.86f - fog.color.x) * amber, fog.color.y + (0.47f - fog.color.y) * amber,
+					fog.color.z + (0.16f - fog.color.z) * amber, fog.color.w);
+		}
 		float mist = com.dantemorrigan.gauntlet.client.quest.RealityFogClient.factor();
 		if (mist > 0) {
 			FogData fog = cir.getReturnValue();

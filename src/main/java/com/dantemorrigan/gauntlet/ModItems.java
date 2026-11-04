@@ -45,6 +45,10 @@ public final class ModItems {
 			epic().component(DataComponents.LORE, new net.minecraft.world.item.component.ItemLore(java.util.List.of(
 					net.minecraft.network.chat.Component.translatable("tooltip.infinity_gauntlet.tesseract")))));
 
+	/** Parchment that unrolls into a map to the Temple of Soul (chests, traders). */
+	public static final Item QUEST_SOUL_TEMPLE_MAP = register("quest_soul_temple_map", com.dantemorrigan.gauntlet.stones.SoulTempleMapItem::new,
+			new Item.Properties().stacksTo(1).rarity(Rarity.RARE));
+
 	/** Raw uru from the ore, smelted into uru ingots like iron. */
 	public static final Item RAW_URU = register("raw_uru", new Item.Properties().rarity(Rarity.UNCOMMON).fireResistant());
 	public static final Item URU_INGOT = register("uru_ingot", new Item.Properties().rarity(Rarity.RARE).fireResistant());

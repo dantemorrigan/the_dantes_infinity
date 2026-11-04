@@ -51,6 +51,10 @@ final class LooseStoneItem extends Item {
 			return true;
 		}
 		if (stone == Stone.SOUL) {
+			if (com.dantemorrigan.gauntlet.stones.SoulQuest.inSoulWorld(player)) {
+				com.dantemorrigan.gauntlet.stones.SoulQuest.returnHome(player);
+				return true;
+			}
 			if (!SoulStone.extractLoose(player)) return false;
 			player.getCooldowns().addCooldown(player.getItemInHand(hand), 400);
 			return true;

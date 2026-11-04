@@ -86,6 +86,13 @@ public final class ModParticles {
 	public static final SimpleParticleType QUEST_REALITY_ARROW_HIT = register("quest_reality_arrow_hit");
 	public static final SimpleParticleType QUEST_REALITY_FOG_DISPEL = register("quest_reality_fog_dispel");
 
+	// Soul Stone quest (pack: 05_Soul_Quest). xa = size; water_ripple: (xa,ya,za) = normal, length = size.
+	public static final SimpleParticleType QUEST_SOUL_RITUAL_BEAM = register("quest_soul_ritual_beam");
+	public static final SimpleParticleType QUEST_SOUL_CLOUD_PULSE = register("quest_soul_cloud_pulse");
+	public static final SimpleParticleType QUEST_SOUL_WATER_RIPPLE = register("quest_soul_water_ripple");
+	public static final SimpleParticleType QUEST_SOUL_STONE_RISE = register("quest_soul_stone_rise");
+	public static final SimpleParticleType QUEST_SOUL_RETURN_FLARE = register("quest_soul_return_flare");
+
 	private static SimpleParticleType register(String name) {
 		return Registry.register(BuiltInRegistries.PARTICLE_TYPE, InfinityGauntlet.id(name), FabricParticleTypes.simple(true));
 	}

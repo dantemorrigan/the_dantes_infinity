@@ -1,0 +1,26 @@
+{
+  "type": "infinity_gauntlet:soul_world",
+  "generator": {
+    "type": "minecraft:flat",
+    "settings": {
+      "layers": [
+        {
+          "block": "minecraft:bedrock",
+          "height": 1
+        },
+        {
+          "block": "minecraft:mud",
+          "height": 2
+        },
+        {
+          "block": "minecraft:water",
+          "height": 1
+        }
+      ],
+      "biome": "infinity_gauntlet:soul_world",
+      "lakes": false,
+      "features": false,
+      "structure_overrides": []
+    }
+  }
+}
