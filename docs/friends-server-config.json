@@ -1,13 +1,13 @@
 {
-  "_comment": "Мягкий пресет для сервера с друзьями: положи в config/infinity_gauntlet.json (остальные поля оставь по умолчанию)",
-  "abilityPvp": false,
+  "_comment": "Пресет для сервера с друзьями: ВСЁ включено (как и по умолчанию). Для способностей против игроков в server.properties нужен pvp=true. Хочешь мягче - ставь false нужным флагам.",
+  "abilityPvp": true,
   "abilityBlockChanges": true,
-  "allowPlanetDestruction": false,
-  "allowCelestialDestruction": false,
-  "allowInfinitySnap": false,
+  "allowPlanetDestruction": true,
+  "allowCelestialDestruction": true,
+  "allowInfinitySnap": true,
   "allowMeteorStream": true,
   "allowTimeShift": true,
-  "mindPlayerGrab": false,
-  "soulPlayerDrain": false,
-  "extractorPlayerTheft": false
+  "mindPlayerGrab": true,
+  "soulPlayerDrain": true,
+  "extractorPlayerTheft": true
 }
