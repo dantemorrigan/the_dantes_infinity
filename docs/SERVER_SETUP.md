@@ -3,7 +3,7 @@
 ## 1. Требования
 - **Java 25**, Minecraft **26.1.2**, Fabric Loader **≥ 0.20.1**
 - **Fabric API 0.155.3+26.1.2**
-- Мод: `build/libs/infinity_gauntlet-1.0.1.jar` (`./gradlew build`)
+- Мод: `build/libs/infinity_gauntlet-1.0.2.jar` (`./gradlew build`)
 - **Один и тот же jar** и у сервера, и у всех игроков (есть свои блоки и сущности).
 
 ## 2. Установка
@@ -19,12 +19,14 @@
 ## 3. server.properties
 | Параметр | Значение | Зачем |
 |---|---|---|
-| `pvp` | `true` | без него способности против игроков не работают |
 | `view-distance` | `8–10` | храмы и города генерируются при загрузке чанков |
 | `simulation-distance` | `6–8` | метеориты и квесты нагружают тики |
 | `white-list` | `true` | только свои |
 | `spawn-protection` | `0–16` | по вкусу; мод его уважает |
 | `online-mode` | `true` | оставить |
+| `allow-flight` | `true` | иначе сервер выкидывает за полёт Камнем Пространства |
+
+PvP в этой версии Minecraft — не параметр `server.properties`, а gamerule: `/gamerule pvp true` (по умолчанию включён). Без него способности против игроков не работают.
 
 ## 4. Конфиг мода
 Готовый пресет: [`friends-server-config.json`](friends-server-config.json) (всё включено).
@@ -65,5 +67,5 @@
 ## 9. Если что-то не так
 - **Вылет при входе** → разные версии jar/Fabric API.
 - **Лаги** → снизить `view-distance`, `maxActiveMeteors`, `meteorImpactsPerSecond`, `meteorRainSeconds`.
-- **Способности не бьют игроков** → проверь `pvp=true` и флаги конфига.
+- **Способности не бьют игроков** → проверь `/gamerule pvp` и флаги конфига.
 - **Мир сломан** → откат из бэкапа.

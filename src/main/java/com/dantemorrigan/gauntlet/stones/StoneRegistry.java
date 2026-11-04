@@ -36,6 +36,12 @@ public final class StoneRegistry {
 	static final AttachmentType<Long> NEXT_SHOWER = AttachmentRegistry.<Long>builder()
 			.persistent(Codec.LONG).buildAndRegister(InfinityGauntlet.id("power_next_shower"));
 
+	/**
+	 * Registers the persistent attachments at mod start. Left to lazy class loading, they were registered only after
+	 * the overworld had been read, so the saved stone records and shower timer were dropped on every restart.
+	 */
+	public static void init() {}
+
 	public static boolean found(MinecraftServer server, Stone stone) { return has(server.overworld(), FOUND, stone); }
 	public static boolean released(MinecraftServer server, Stone stone) { return has(server.overworld(), RELEASED, stone); }
 

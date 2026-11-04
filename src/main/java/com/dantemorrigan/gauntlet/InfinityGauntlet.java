@@ -29,6 +29,9 @@ public class InfinityGauntlet implements ModInitializer {
 		ModMenus.init();
 		GauntletCommand.init();
 		com.dantemorrigan.gauntlet.guide.GuideBook.init();
+		// Persistent attachments must be registered before any world is read.
+		com.dantemorrigan.gauntlet.stones.StoneRegistry.init();
+		com.dantemorrigan.gauntlet.stones.TimeQuest.init();
 		com.dantemorrigan.gauntlet.stones.PowerStoneFall.init();
 		com.dantemorrigan.gauntlet.stones.PowerStoneCurse.init();
 		com.dantemorrigan.gauntlet.stones.StoneKeeper.init();

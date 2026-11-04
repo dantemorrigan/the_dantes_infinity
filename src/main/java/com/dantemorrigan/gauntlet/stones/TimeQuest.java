@@ -39,6 +39,9 @@ public final class TimeQuest {
 	private static final AttachmentType<List<String>> INSERTED_GEARS = AttachmentRegistry.<List<String>>builder()
 			.persistent(Codec.STRING.listOf()).buildAndRegister(InfinityGauntlet.id("time_clock_gears"));
 
+	/** Registers the persistent attachment at mod start: a world saved with it must find the type known on load. */
+	public static void init() {}
+
 	public static boolean isGear(ItemStack stack) {
 		return gearId(stack) != null;
 	}
