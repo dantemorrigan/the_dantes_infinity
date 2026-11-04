@@ -29,7 +29,7 @@ import java.util.List;
  */
 public final class GuideBook {
 	/** Number of {@code guide.infinity_gauntlet.pageN} keys in the lang files. */
-	public static final int PAGE_COUNT = 15;
+	public static final int PAGE_COUNT = 16;
 
 	private static final List<Stone> STONE_CHAPTERS = List.of(
 			Stone.POWER, Stone.SPACE, Stone.REALITY, Stone.TIME, Stone.MIND, Stone.SOUL);

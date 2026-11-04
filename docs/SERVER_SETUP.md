@@ -3,7 +3,7 @@
 ## 1. Требования
 - **Java 25**, Minecraft **26.1.2**, Fabric Loader **≥ 0.20.1**
 - **Fabric API 0.155.3+26.1.2**
-- Мод: `build/libs/infinity_gauntlet-0.1.0.jar` (`./gradlew build`)
+- Мод: `build/libs/infinity_gauntlet-1.0.0.jar` (`./gradlew build`)
 - **Один и тот же jar** и у сервера, и у всех игроков (есть свои блоки и сущности).
 
 ## 2. Установка
@@ -32,6 +32,7 @@
 - `allowInfinitySnap`, `allowPlanetDestruction`, `allowCelestialDestruction` — самые разрушительные
 - `abilityPvp`, `mindPlayerGrab`, `soulPlayerDrain`, `extractorPlayerTheft` — против игроков
 - `abilityBlockChanges` — запрет менять блоки способностями
+- `thanosShipCrater`, `thanosShipWreck` — крушение корабля Таноса (кратер и ~40 тыс. блоков обломков остаются в мире; на слабом сервере можно выключить)
 
 Правки конфига применяются после перезапуска (или командой `/gauntlet reload_config`).
 

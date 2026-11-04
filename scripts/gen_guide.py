@@ -31,8 +31,8 @@ add('wheel',
  f"{H}Ability wheel{R}\nHold {B}V{R}, point at a stone, then an ability, release. {B}R{R} uses it; hold R for charged powers.\n\n{B}Esc{R} cancels. Pin with 1–6. Hold B for favorites.",
  f"{H}Колесо способностей{R}\nДержи {B}V{R}, наведи на камень, потом на способность, отпусти. {B}R{R} — применить, держи R для заряжаемых.\n\n{B}Esc{R} — отмена. 1–6 закрепляют способность. Держи B для избранного.")
 add('power',
- f"{H}Power Stone{R}\n{B}Power strike{R}: hold R, release.\n{B}Planet Destruction{R}: full charge, hit the ground.\n{B}Celestial Destruction{R}: aim at the sun or moon.\n{B}Meteor Stream{R}: lock on, aim a circle.\n\nHeld bare, it kills.",
- f"{H}Камень Силы{R}\n{B}Силовой удар{R}: держи R, отпусти.\n{B}Уничтожение планеты{R}: заряд и удар в землю.\n{B}Разрушение светил{R}: наведи на солнце или луну.\n{B}Поток метеоритов{R}: захват, круг.\n\nГолым он убивает.")
+ f"{H}Power Stone{R}\n{B}Power strike{R}: hold R, release.\n{B}Planet Destruction{R}: full charge, hit the ground. Not in the End.\n{B}Celestial Destruction{R}: aim at the sun or moon.\n{B}Meteor Stream{R}: lock on, aim a circle.\n\nHeld bare, it kills.",
+ f"{H}Камень Силы{R}\n{B}Силовой удар{R}: держи R, отпусти.\n{B}Уничтожение планеты{R}: заряд и удар в землю. Не в Энде.\n{B}Разрушение светил{R}: наведи на солнце или луну.\n{B}Поток метеоритов{R}: захват, круг.\nГолым он убивает.")
 add('space',
  f"{H}Space Stone{R}\n{B}Portal{R}: a door to the Nether, End or Overworld.\n{B}Blink{R}: teleport where you look.\n{B}Flight{R}: Ctrl boosts; beyond the sky lies the Solar System.\n{B}Warp{R}: jump to a planet.",
  f"{H}Камень Пространства{R}\n{B}Портал{R}: дверь в другое измерение.\n{B}Рывок{R}: телепорт туда, куда смотришь.\n{B}Полёт{R}: Ctrl ускоряет; за небом — Солнечная система.\n{B}Варп{R}: прыжок к планете.")
@@ -51,6 +51,9 @@ add('soul',
 add('beam',
  f"{H}All six stones{R}\n{B}Infinity Beam{R}: hold R. Drills tunnels, wounds the Ender Dragon.\n\n{B}Infinity Snap{R}: erases the universe and burns the gauntlet out. A loose Time Stone can undo it.",
  f"{H}Все шесть камней{R}\n{B}Луч Бесконечности{R}: держи R. Пробивает тоннели, ранит Дракона.\n\n{B}Щелчок{R}: стирает вселенную и сжигает перчатку. Вернуть может Камень Времени вне перчатки.")
+add('thanos',
+ f"{H}Thanos{R}\nGather {B}five stones{R}: after half a day of calm the Mad Titan comes for them.\n{B}Uru armor{R} is a must. Explosions, diamond and netherite swords and bare stones hurt him.\nBeaten once, he never returns.",
+ f"{H}Танос{R}\nСобери {B}пять камней{R}: через полсуток придёт Безумный Титан.\n{B}Броня Уру{R} обязательна. Ему больно от взрывов, алмазного и незеритового меча и камней без перчатки.\nПобеждённый, он не вернётся.")
 add('uru',
  f"{H}Uru{R}\nFind ore near Y=−32. Mine with diamond or netherite and smelt it.\n\n{B}Uru armor{R} uses iron recipes. A full set reduces full-gauntlet damage. Ingots also go into the gauntlet recipe.",
  f"{H}Уру{R}\nИщи около Y=−32. Добудь алмазной или незеритовой киркой и переплавь.\n\n{B}Броня из Уру{R} крафтится как железная. Полный комплект гасит урон полной перчатки. Слитки нужны и для перчатки.")
@@ -63,8 +66,8 @@ add('settings',
 # --- contents: built from the page order ---
 order = list(PAGES)
 def pn(k): return str(order.index(k) + 1)
-toc_en = [("Hints",'hints'),("Wheel",'wheel'),("Power",'power'),("Space",'space'),("Reality",'reality'),("Time",'time'),("Mind",'mind'),("Soul",'soul'),("Beam",'beam'),("Uru",'uru'),("Extractor",'extractor'),("Settings",'settings')]
-toc_ru = [("Наводки",'hints'),("Колесо",'wheel'),("Сила",'power'),("Пространство",'space'),("Реальность",'reality'),("Время",'time'),("Разум",'mind'),("Душа",'soul'),("Луч",'beam'),("Уру",'uru'),("Извлекатель",'extractor'),("Опции",'settings')]
+toc_en = [("Wheel",'wheel'),("Power",'power'),("Space",'space'),("Reality",'reality'),("Time",'time'),("Mind",'mind'),("Soul",'soul'),("Beam",'beam'),("Thanos",'thanos'),("Uru",'uru'),("Extractor",'extractor'),("Settings",'settings')]
+toc_ru = [("Колесо",'wheel'),("Сила",'power'),("Пространство",'space'),("Реальность",'reality'),("Время",'time'),("Разум",'mind'),("Душа",'soul'),("Луч",'beam'),("Танос",'thanos'),("Уру",'uru'),("Извлекатель",'extractor'),("Опции",'settings')]
 PAGES['contents'] = (
  f"{H}Contents{R}\n" + "\n".join(f"{n} {G}{pn(k)}{R}" for n,k in toc_en),
  f"{H}Содержание{R}\n" + "\n".join(f"{n} {G}{pn(k)}{R}" for n,k in toc_ru))

@@ -6,7 +6,7 @@
 
 🇬🇧 English · [🇷🇺 Русский](README.ru.md)
 
-Requirements: **Java 25**. Build: `./gradlew build` → `build/libs/infinity_gauntlet-0.1.0.jar` (+ Fabric API 0.155.3+26.1.2).
+Requirements: **Java 25**. Build: `./gradlew build` → `build/libs/infinity_gauntlet-1.0.0.jar` (+ Fabric API 0.155.3+26.1.2).
 
 ```
 ./gradlew runClient          # test client
@@ -23,7 +23,7 @@ Requirements: **Java 25**. Build: `./gradlew build` → `build/libs/infinity_gau
 
 ## Finding the Power Stone
 - Now and then (first after ~20 min, then every 20–50 min of world time) a **meteor shower** falls 60–110 blocks from a player in the Overworld; nearby players get a HUD + chat notice with the direction.
-- The last meteor is **purple**: it leaves a purple meteorite (diamond pickaxe) with **the Orb** in its core. Taking the Orb out stops the showers for good; right-click opens it and the Power Stone goes into the backpack. A second Orb opens empty.
+- The last meteor is **purple**: it leaves a purple meteorite (diamond pickaxe) with **the Orb** in its core. Taking the Orb out stops the showers for good; a meteorite you ignore **loses its Orb when the next shower starts** (so a stone is never duplicated). During a shower the sky and the sun take on a red cast. Right-click opens it and the Power Stone goes into the backpack. A second Orb opens empty.
 - A bare Power Stone in either hand **kills in 2 s** (creative is spared). In the gauntlet or the backpack it is safe.
 - Stones (loose, in a gauntlet or extractor, the sealed Orb) stay with the player on death and come back on respawn — **unless another player made the kill**. Dropped stones never despawn and can't be destroyed.
 - Config: `powerShower*`, `powerStoneHoldTicks`. Operator commands: `/gauntlet power_shower`, `/gauntlet stones`, `/gauntlet stones reset`. Test: `xvfb-run -a ./gradlew runClientGameTest -PonlyTest=PowerStoneTest`.
@@ -55,12 +55,12 @@ Requirements: **Java 25**. Build: `./gradlew build` → `build/libs/infinity_gau
 - Defeating each zombie releases its yellow essence; when the **10th zombie** is defeated, all ten essence streams converge in front of the player in a glowing animation and the **Mind Stone** appears directly in the player's hands. Debug: `/gauntlet mind_quest city_here | locate | map | complete`. Smoke test: `-PonlyTest=MindQuestTest`.
 
 ## Final boss: Thanos
-- Carry **5 different stones** (loose, in a gauntlet or extractor, the sealed Orb or the Tesseract count) and the Mad Titan comes for you from deep space. A warning comes first, ~10 s before he arrives.
+- Carry **5 different stones** (loose, in a gauntlet or extractor, the sealed Orb or the Tesseract count) and the Mad Titan comes for you from deep space. He comes only after a **breather of half a game day** (12000 ticks, `thanosDelayTicks`) from the moment you carry the stones; a warning comes ~10 s before he arrives.
 - **Overworld:** his ship Sanctuary II glides into the sky, the sky takes a dangerous red cast and the sun turns red; a blue beam lowers Thanos a dozen blocks from you. **Nether** (or deep underground): a rift in reality tears open and he steps out of it. **End:** the ship arrives and the End brightens; a living dragon is struck down by the ship's cannon first.
 - He speaks ("I came to pick up mine"; "Give me the stones!" if you have no gauntlet of your own), the boss bar **"Thanos – The Mad Titan"** and the battle theme start, and the fight begins.
 - He swings his double sword, hurls you away with a gauntlet backhand, leaps high and slams the ground, and throws the sword like a boomerang. Below half health he is enraged. A raised shield stops a swing but gets knocked aside.
 - His blows ignore most ordinary armor: **without full Uru armor he is almost unbeatable** (Uru takes only 30%). He takes heavy damage from **explosions**, **diamond and netherite swords** and **stones used bare in the hand** (Reality strike, Soul extraction); everything else barely scratches him.
-- Defeat: he falls to one knee, speaks, and **turns to dust**. He leaves his **empty Infinity Gauntlet** (only if you had not crafted one yourself; otherwise he came without his) and a lot of experience. He never returns.
+- Defeat: he falls to one knee, speaks, and **turns to dust**. He leaves his **empty Infinity Gauntlet** (only if you had not crafted one yourself; otherwise he came without his) and a lot of experience. He never returns (`/gauntlet thanos start | now | spawn` refuse a defeated Thanos until `/gauntlet thanos reset`).
 - **His ship falls.** Left without its master, Sanctuary II loses power: it tips nose down, burns and breaks apart in the air, then slams into the ground ~60 blocks away. A shockwave, a scorched crater with a heap of wreckage, the land around on fire, and a rain of **iron and netherite** (ingots, scrap, a few netherite ingots, iron blocks; they don't burn). Afterwards the ship is **built from real blocks** (~40k: blackstone, iron blocks, deepslate tiles, lights; hollow, with campfires smoking on it) where it lies and **stays in the world for good**, in whichever dimension it fell. Off: `thanosShipCrash`, `thanosShipCrater`, `thanosShipWreck`.
 - If you die, flee more than ~100 blocks or log out, he withdraws (the music fades) and returns in `thanosReturnMinutes` (5).
 - Config: `thanos*` (health, damage, multipliers, threshold). Commands: `/gauntlet thanos start | now | spawn | stop | reset`. Test: `-PonlyTest=ThanosTest`. Art and models: `art/thanos/`.
@@ -98,7 +98,7 @@ Testing the new controls: `xvfb-run -a ./gradlew runClientGameTest -PonlyTest=Ab
 - The gauntlet only works **in the offhand** (F). Right-clicking with the gauntlet in the main hand opens the stone menu.
 - **Hold R** with Power Strike selected — charge (purple aura at the fist), **release** — power strike (damage, knockback and cooldown are handled on the server).
 - Use the **V** wheel to select a mode: power strike → **Planet Destruction** → **Sun and Moon Destruction**.
-- Ultimate: "Planet Destruction" mode, full charge (2 s), strike the ground beneath you.
+- Ultimate: "Planet Destruction" mode, full charge (2 s), strike the ground beneath you. Works in the Overworld and the Nether only: **not in the End, and never while Thanos is here**.
 - The destruction ends the meteor rain, closes portals in the source world and interrupts its active beams/rewinds. The red sky and fog only apply in the Overworld.
 - In space: a large voxel Earth with simplified continents based on [NASA Blue Marble](https://science.nasa.gov/resource/blue-marble/), ocean, polar caps and clouds; current vanilla block textures are used.
 - Breakup: 14 uneven large fragments → 54–56 secondary fragments with flashes → 650 small shards. Another 280 particles and 60 debris pieces are spread across the scene. The geometry is deterministic; the Time Stone reassembles it.
@@ -159,6 +159,9 @@ Testing the new controls: `xvfb-run -a ./gradlew runClientGameTest -PonlyTest=Ab
 | `/gauntlet space return [player]` | return a player and reset the state |
 | `/gauntlet state` | current state: IDLE/CHARGING/STRIKE/DESTRUCTION/TRANSFER/SPACE |
 | `/gauntlet reload_config` | reload `config/infinity_gauntlet.json` |
+| `/gauntlet power_shower` | start a Power meteor shower now (Overworld) |
+| `/gauntlet reality_fog` | wrap you in the Reality Stone's red mist (Nether) |
+| `/gauntlet thanos start\|now\|spawn\|stop\|reset` | Thanos: with a warning / at once / already fighting / send away / allow him again |
 
 ## Settings
 `config/infinity_gauntlet.json`: strike damage/radius/knockback/cooldown, ultimate charge and cooldown,
