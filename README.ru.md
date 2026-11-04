@@ -6,7 +6,7 @@
 
 [🇬🇧 English](README.md) · 🇷🇺 Русский
 
-Требования: **Java 25**. Сборка: `./gradlew build` → `build/libs/infinity_gauntlet-1.0.2.jar` (+ Fabric API 0.155.3+26.1.2).
+Требования: **Java 25**. Сборка: `./gradlew build` → `build/libs/infinity_gauntlet-1.0.3.jar` (+ Fabric API 0.155.3+26.1.2).
 
 ```
 ./gradlew runClient          # тестовый клиент
