@@ -26,7 +26,7 @@ add('start',
  f"{H}Первые шаги{R}\nПерчатка работает в {B}левой руке{R}: нажми {B}F{R}. ПКМ с ней в правой руке открывает слоты камней.\n\nКамней шесть. Каждый есть в мире в {B}одном{R} экземпляре и не крафтится: его нужно найти.")
 add('hints',
  f"{H}Where to look{R}\n{B}Power{R}: follow the fallen stars.\n{B}Space{R}: when the dragon dies, the End opens a door. Dress warmly.\n{B}Reality{R}: red mist in the Nether. An arrow is faster than a hand.\n{B}Soul{R}: a lone snowy peak asks for a loyal friend.",
- f"{H}Где искать{R}\n{B}Сила{R}: иди за упавшими звёздами.\n{B}Пространство{R}: падёт дракон — Край откроет дверь. Одевайся тепло.\n{B}Реальность{R}: красный туман Незера. Стрела быстрее руки.\n{B}Душа{R}: снежная гора просит верного друга.")
+ f"{H}Где искать{R}\n{B}Сила{R}: иди за упавшими звёздами.\n{B}Пространство{R}: после дракона Край откроет дверь. Оденься тепло.\n{B}Реальность{R}: красный туман Незера. Стрела быстрее руки.\n{B}Душа{R}: гора просит верного друга.")
 add('wheel',
  f"{H}Ability wheel{R}\nHold {B}V{R}, point at a stone, then an ability, release. {B}R{R} uses it; hold R for charged powers.\n\n{B}Esc{R} cancels. A dimmed ability is unavailable.",
  f"{H}Колесо способностей{R}\nДержи {B}V{R}, наведи на камень, потом на способность, отпусти. {B}R{R} — применить, держи R для заряжаемых.\n\n{B}Esc{R} — отмена. Серая способность недоступна.")
