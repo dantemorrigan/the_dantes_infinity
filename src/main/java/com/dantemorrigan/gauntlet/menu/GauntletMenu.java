@@ -21,9 +21,9 @@ public class GauntletMenu extends AbstractContainerMenu {
 	/** Slot positions in the GUI, same order as {@link Stone}: four knuckles, back of hand, thumb. */
 	public static final int[][] STONE_POS = {
 			// Left hand seen from the back: thumb on the right.
-			{110, 18}, {90, 18}, {70, 18}, {50, 18}, // power, space, reality, soul
-			{80, 46},                               // mind (center)
-			{132, 46},                              // time (thumb)
+			{99, 18}, {79, 18}, {59, 18}, {39, 18}, // power, space, reality, soul
+			{69, 46},                               // mind (center)
+			{121, 46},                              // time (thumb)
 	};
 
 	private final Container stones;
