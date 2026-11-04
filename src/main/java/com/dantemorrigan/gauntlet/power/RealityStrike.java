@@ -81,7 +81,7 @@ public final class RealityStrike {
 	public static void strike(ServerPlayer player) {
 		ItemStack g = GauntletState.activeGauntlet(player);
 		if (g.isEmpty() || !GauntletState.inserted(g).contains(Stone.REALITY)) {
-			ModStatus.send(player, Component.literal("Нужна перчатка с Камнем Реальности в левой руке"));
+			ModStatus.send(player, Component.translatable("msg.infinity_gauntlet.need.reality"));
 			return;
 		}
 		if (SpaceManager.inSpace(player) || RealityStone.active(player)) return;

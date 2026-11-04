@@ -60,13 +60,13 @@ public final class InfinityBeam {
         if (active(p)) return;
         ItemStack g = GauntletState.activeGauntlet(p);
         if (!ready(p, g) || p.isUsingItem()) {
-            com.dantemorrigan.gauntlet.net.ModStatus.send(p, Component.literal("Нужна пробуждённая перчатка со всеми 6 камнями в левой руке"));
+            com.dantemorrigan.gauntlet.net.ModStatus.send(p, Component.translatable("msg.infinity_gauntlet.need.beam"));
             return;
         }
         long now = p.level().getServer().overworld().getGameTime();
         long until = COOLDOWNS.getOrDefault(p.getUUID(), 0L);
         if (!p.isCreative() && now < until) {
-            com.dantemorrigan.gauntlet.net.ModStatus.send(p, Component.literal("Луч: перезарядка " + ((until - now + 19) / 20) + " с"));
+            com.dantemorrigan.gauntlet.net.ModStatus.send(p, Component.translatable("msg.infinity_gauntlet.beam.cooldown", String.valueOf((until - now + 19) / 20)));
             return;
         }
         ACTIVE.put(p.getUUID(), new Cast(p, g));

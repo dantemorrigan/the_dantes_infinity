@@ -176,8 +176,9 @@ public final class SoulClient {
 			if (buffTicks > 0) buffTicks--;
 			if (p.tickCount % 30 == 0) ClientPower.spawn(ModParticles.SOUL_ABSORPTION, chest(p), 0.7, 0, 0);
 			GauntletConfig cfg = GauntletConfig.get();
-			StatusHud.persistent("soul", Component.literal(String.format(java.util.Locale.ROOT, "§6Души: %d · +%.0f ❤ · +%.1f ⚔ · %d с",
-					buffSouls, buffSouls * cfg.soulHealthPerSoul / 2, buffSouls * cfg.soulDamagePerSoul, Mth.ceil(buffTicks / 20f))));
+			StatusHud.persistent("soul", Component.translatable("msg.infinity_gauntlet.soul.hud", String.valueOf(buffSouls),
+					String.format(java.util.Locale.ROOT, "%.0f", buffSouls * cfg.soulHealthPerSoul / 2),
+					String.format(java.util.Locale.ROOT, "%.1f", buffSouls * cfg.soulDamagePerSoul), String.valueOf(Mth.ceil(buffTicks / 20f))));
 		}
 	}
 

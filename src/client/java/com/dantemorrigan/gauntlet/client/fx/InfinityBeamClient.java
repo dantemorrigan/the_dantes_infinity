@@ -71,9 +71,9 @@ public final class InfinityBeamClient {
                     float age = v.state.age() + Math.min(2, ticks - v.received);
                     boolean charging = age < v.state.charge();
                     float progress = charging ? age / v.state.charge() : (age - v.state.charge()) / v.state.duration();
-                    com.dantemorrigan.gauntlet.client.StatusHud.persistent("beam", net.minecraft.network.chat.Component.literal(
-                            charging ? "§eЛуч Бесконечности: заряд " + Math.min(100, (int)(progress * 100)) + "%"
-                                    : "§dЛуч Бесконечности: " + String.format(java.util.Locale.ROOT, "%.1f", Math.max(0, (v.state.duration() - age + v.state.charge()) / 20f)) + " с"));
+                    com.dantemorrigan.gauntlet.client.StatusHud.persistent("beam", charging
+                            ? net.minecraft.network.chat.Component.translatable("msg.infinity_gauntlet.beam.charging", String.valueOf(Math.min(100, (int)(progress * 100))))
+                            : net.minecraft.network.chat.Component.translatable("msg.infinity_gauntlet.beam.firing", String.format(java.util.Locale.ROOT, "%.1f", Math.max(0, (v.state.duration() - age + v.state.charge()) / 20f))));
                 } else com.dantemorrigan.gauntlet.client.StatusHud.persistent("beam", null);
             }
         });

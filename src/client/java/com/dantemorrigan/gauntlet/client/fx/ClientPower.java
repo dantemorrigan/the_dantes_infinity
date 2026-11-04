@@ -79,7 +79,7 @@ public final class ClientPower {
 		Minecraft mc = Minecraft.getInstance();
 		switch (effect) {
 			case "power_charge" -> {
-				if (mc.player != null) com.dantemorrigan.gauntlet.client.StatusHud.show(net.minecraft.network.chat.Component.literal("Аура видна только во время заряда: надень перчатку и держи ПКМ"));
+				if (mc.player != null) com.dantemorrigan.gauntlet.client.StatusHud.show(net.minecraft.network.chat.Component.translatable("msg.infinity_gauntlet.power.aura_hint"));
 			}
 			case "power_impact" -> spawn(ModParticles.POWER_IMPACT, pos.add(0, 0.5, 0), 1, 0, 0);
 			case "power_shockwave" -> spawn(ModParticles.POWER_SHOCKWAVE, pos.add(0, 0.06, 0), 0, 1, 0);

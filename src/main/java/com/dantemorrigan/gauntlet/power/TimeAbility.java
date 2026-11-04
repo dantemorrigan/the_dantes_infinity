@@ -118,14 +118,14 @@ public final class TimeAbility {
 		GauntletConfig cfg = GauntletConfig.get();
 		ItemStack gauntlet = GauntletState.activeGauntlet(player);
 		if (gauntlet.isEmpty() || !GauntletState.inserted(gauntlet).contains(Stone.TIME)) {
-			com.dantemorrigan.gauntlet.net.ModStatus.send(player, Component.literal("Нужна перчатка с Камнем Времени в левой руке"));
+			com.dantemorrigan.gauntlet.net.ModStatus.send(player, Component.translatable("msg.infinity_gauntlet.need.time"));
 			return;
 		}
 		if (ACTIVE.containsKey(player.getUUID()) || PlanetDestruction.isBusy(player) && !SpaceManager.inSpace(player)) return;
 		long now = player.level().getServer().overworld().getGameTime();
 		Long until = COOLDOWN.get(player.getUUID());
 		if (!canRestorePlanet(player) && until != null && now < until && !player.isCreative()) {
-			com.dantemorrigan.gauntlet.net.ModStatus.send(player, Component.literal("§2Камень Времени: " + (until - now) / 20 + " с"));
+			com.dantemorrigan.gauntlet.net.ModStatus.send(player, Component.translatable("msg.infinity_gauntlet.time.remaining", String.valueOf((until - now) / 20)));
 			return;
 		}
 		COOLDOWN.put(player.getUUID(), now + cfg.timeCooldownTicks);
@@ -155,7 +155,7 @@ public final class TimeAbility {
 			path.add(s);
 		}
 		if (path.size() < 3) {
-			com.dantemorrigan.gauntlet.net.ModStatus.send(player, Component.literal("§2Нечего отматывать"));
+			com.dantemorrigan.gauntlet.net.ModStatus.send(player, Component.translatable("msg.infinity_gauntlet.time.nothing_to_rewind"));
 			return;
 		}
 		ACTIVE.put(player.getUUID(), new Rewind(path, false, cfg.timeRewindPlaybackTicks));

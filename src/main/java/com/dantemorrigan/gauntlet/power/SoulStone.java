@@ -100,7 +100,7 @@ public final class SoulStone {
 	public static void action(ServerPlayer player, int action) {
 		ItemStack g = GauntletState.activeGauntlet(player);
 		if (g.isEmpty() || !GauntletState.inserted(g).contains(Stone.SOUL)) {
-			ModStatus.send(player, Component.literal("Нужна перчатка с Камнем Души в левой руке"));
+			ModStatus.send(player, Component.translatable("msg.infinity_gauntlet.need.soul"));
 			return;
 		}
 		if (SpaceManager.inSpace(player) || player.isSpectator()) return;
@@ -110,7 +110,7 @@ public final class SoulStone {
 		if (action == 1) {
 			Long cd = MASS_CD.get(player.getUUID());
 			if (cd != null && now < cd && !player.isCreative()) {
-				ModStatus.send(player, Component.literal("§6Массовое извлечение: " + (cd - now) / 20 + " с"));
+				ModStatus.send(player, Component.translatable("msg.infinity_gauntlet.soul.mass_cooldown", String.valueOf((cd - now) / 20)));
 				return;
 			}
 			mass(player, level, cfg);

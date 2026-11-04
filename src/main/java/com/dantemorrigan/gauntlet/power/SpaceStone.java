@@ -105,7 +105,7 @@ public final class SpaceStone {
 	private static ItemStack gauntletWithSpace(ServerPlayer player) {
 		ItemStack g = GauntletState.activeGauntlet(player);
 		if (g.isEmpty() || !GauntletState.inserted(g).contains(Stone.SPACE)) {
-			com.dantemorrigan.gauntlet.net.ModStatus.send(player, Component.literal("Нужна перчатка с Камнем Пространства в левой руке"));
+			com.dantemorrigan.gauntlet.net.ModStatus.send(player, Component.translatable("msg.infinity_gauntlet.need.space"));
 			return ItemStack.EMPTY;
 		}
 		return g;
@@ -127,7 +127,7 @@ public final class SpaceStone {
 				int next = (destination(g, player.level()) + 1) % DESTINATIONS.length;
 				if (DIMS.get(next).equals(player.level().dimension())) next = (next + 1) % DESTINATIONS.length;
 				g.set(ModComponents.PORTAL_DESTINATION, next);
-				com.dantemorrigan.gauntlet.net.ModStatus.send(player, Component.literal("§9Портал: " + name(next)));
+				com.dantemorrigan.gauntlet.net.ModStatus.send(player, Component.translatable("msg.infinity_gauntlet.portal.selected." + name(next)));
 				player.level().playSound(null, player.blockPosition(), SoundEvents.AMETHYST_BLOCK_CHIME, SoundSource.PLAYERS, 1f, 0.8f + next * 0.2f);
 			}
 			case 2 -> blink(player, g, GauntletConfig.get().blinkRange);
@@ -137,9 +137,9 @@ public final class SpaceStone {
 
 	private static String name(int dest) {
 		return switch (DESTINATIONS[dest]) {
-			case "nether" -> "НЕЗЕР";
-			case "end" -> "ЭНД";
-			default -> "ОБЫЧНЫЙ МИР";
+			case "nether" -> "nether";
+			case "end" -> "end";
+			default -> "overworld";
 		};
 	}
 
@@ -161,7 +161,7 @@ public final class SpaceStone {
 		Vec3 center = player.position().add(forward.scale(2.5)).add(0, PORTAL_SIZE / 2 - 0.1, 0);
 		open(player.level(), center, yaw + 180, dest, player.getUUID(), GauntletConfig.get().portalLifetimeSeconds * 20);
 		GauntletState.setInUse(g, EnumSet.of(Stone.SPACE));
-		com.dantemorrigan.gauntlet.net.ModStatus.send(player, Component.literal("§9Портал открыт: " + name(dest)));
+		com.dantemorrigan.gauntlet.net.ModStatus.send(player, Component.translatable("msg.infinity_gauntlet.portal.open." + name(dest)));
 		player.level().playSound(null, BlockPos.containing(center), SoundEvents.PORTAL_TRIGGER, SoundSource.PLAYERS, 0.8f, 1.6f);
 	}
 
@@ -322,12 +322,12 @@ public final class SpaceStone {
 		Vec3 end = eye.add(player.getLookAngle().scale(range));
 		BlockHitResult hit = player.level().clip(new ClipContext(eye, end, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, player));
 		if (hit.getType() != HitResult.Type.BLOCK) {
-			com.dantemorrigan.gauntlet.net.ModStatus.send(player, Component.literal("§9Слишком далеко (до " + range + " блоков)"));
+			com.dantemorrigan.gauntlet.net.ModStatus.send(player, Component.translatable("msg.infinity_gauntlet.blink.too_far", String.valueOf(range)));
 			return false;
 		}
 		Vec3 target = standingSpot(player.level(), hit);
 		if (target == null) {
-			com.dantemorrigan.gauntlet.net.ModStatus.send(player, Component.literal("§9Там негде встать"));
+			com.dantemorrigan.gauntlet.net.ModStatus.send(player, Component.translatable("msg.infinity_gauntlet.blink.no_space"));
 			return false;
 		}
 		BLINK_COOLDOWN.put(player.getUUID(), now + (g.isEmpty() ? 60 : cfg.blinkCooldownTicks));

@@ -55,19 +55,19 @@ public final class TimeShift {
 		GauntletConfig cfg = GauntletConfig.get();
 		ItemStack gauntlet = GauntletState.activeGauntlet(player);
 		if (gauntlet.isEmpty() || !GauntletState.inserted(gauntlet).contains(Stone.TIME)) {
-			ModStatus.send(player, Component.literal("Нужна перчатка с Камнем Времени в левой руке"));
+			ModStatus.send(player, Component.translatable("msg.infinity_gauntlet.need.time"));
 			return;
 		}
 		MinecraftServer server = player.level().getServer();
 		if (player.level().dimension() != Level.OVERWORLD || SpaceManager.inSpace(player)) {
-			ModStatus.send(player, Component.literal("§2Смена времени суток работает только в обычном мире"));
+			ModStatus.send(player, Component.translatable("msg.infinity_gauntlet.time.overworld_only"));
 			return;
 		}
 		if (active || TimeAbility.isRewinding(player)) return;
 		long now = server.overworld().getGameTime();
 		Long until = COOLDOWN.get(player.getUUID());
 		if (until != null && now < until && !player.isCreative()) {
-			ModStatus.send(player, Component.literal("§2Камень Времени: " + (until - now) / 20 + " с"));
+			ModStatus.send(player, Component.translatable("msg.infinity_gauntlet.time.remaining", String.valueOf((until - now) / 20)));
 			return;
 		}
 		var clock = server.registryAccess().get(net.minecraft.world.clock.WorldClocks.OVERWORLD);
@@ -75,7 +75,7 @@ public final class TimeShift {
 		long tod = Math.floorMod(server.clockManager().getTotalTicks(clock.get()), DAY);
 		boolean toNight = tod < DAY_END || tod >= DAY_START;
 		if (!toNight && CelestialApocalypse.isDestroyed(server, "sun")) {
-			ModStatus.send(player, Component.literal("§2Солнца больше нет — день не наступит"));
+			ModStatus.send(player, Component.translatable("msg.infinity_gauntlet.time.no_sun"));
 			return;
 		}
 		long target = toNight ? NIGHT_TARGET : DAY_TARGET;

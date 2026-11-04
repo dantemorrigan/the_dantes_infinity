@@ -41,7 +41,7 @@ public final class PowerAbility {
 	}
 
 	public static final int MODE_STRIKE = 0, MODE_PLANET = 1, MODE_CELESTIAL = 2;
-	private static final String[] MODE_NAMES = {"§dсиловой удар", "§5УНИЧТОЖЕНИЕ ПЛАНЕТЫ", "§cРАЗРУШЕНИЕ СОЛНЦА И ЛУНЫ"};
+	private static final int MODE_COUNT = 3;
 
 	public static int mode(ItemStack gauntlet) {
 		Integer m = gauntlet.get(ModComponents.POWER_MODE);
@@ -57,13 +57,13 @@ public final class PowerAbility {
 	public static void toggleMode(ServerPlayer player) {
 		ItemStack gauntlet = GauntletState.activeGauntlet(player);
 		if (gauntlet.isEmpty() || !GauntletState.inserted(gauntlet).contains(Stone.POWER)) {
-			com.dantemorrigan.gauntlet.net.ModStatus.send(player, Component.literal("Нужна перчатка с Камнем Силы в левой руке"));
+			com.dantemorrigan.gauntlet.net.ModStatus.send(player, Component.translatable("msg.infinity_gauntlet.need.power"));
 			return;
 		}
-		int mode = (mode(gauntlet) + 1) % MODE_NAMES.length;
+		int mode = (mode(gauntlet) + 1) % MODE_COUNT;
 		gauntlet.set(ModComponents.POWER_MODE, mode);
 		gauntlet.remove(ModComponents.ULTIMATE_MODE);
-		com.dantemorrigan.gauntlet.net.ModStatus.send(player, Component.literal("Камень Силы: " + MODE_NAMES[mode]));
+		com.dantemorrigan.gauntlet.net.ModStatus.send(player, Component.translatable("msg.infinity_gauntlet.power.mode." + mode));
 		player.level().playSound(null, player.blockPosition(), SoundEvents.BEACON_POWER_SELECT, SoundSource.PLAYERS, 0.6F, 1.4F - mode * 0.4F);
 	}
 
@@ -94,21 +94,21 @@ public final class PowerAbility {
 	private static void tryUltimate(ServerPlayer player, ItemStack gauntlet, int chargeTicks, HitResult hit) {
 		GauntletConfig cfg = GauntletConfig.get();
 		if (chargeTicks < cfg.ultimateChargeTicks) {
-			com.dantemorrigan.gauntlet.net.ModStatus.send(player, Component.literal("§5Недостаточно заряда (" + chargeTicks + "/" + cfg.ultimateChargeTicks + ")"));
+			com.dantemorrigan.gauntlet.net.ModStatus.send(player, Component.translatable("msg.infinity_gauntlet.power.not_charged", String.valueOf(chargeTicks), String.valueOf(cfg.ultimateChargeTicks)));
 			return;
 		}
 		if (!(hit instanceof BlockHitResult block) || hit.getType() != HitResult.Type.BLOCK || block.getDirection() != Direction.UP) {
-			com.dantemorrigan.gauntlet.net.ModStatus.send(player, Component.literal("§5Ударь по земле под собой"));
+			com.dantemorrigan.gauntlet.net.ModStatus.send(player, Component.translatable("msg.infinity_gauntlet.power.strike_ground"));
 			return;
 		}
 		if (SpaceManager.inSpace(player)) {
-			com.dantemorrigan.gauntlet.net.ModStatus.send(player, Component.literal("§5Здесь нечего разрушать"));
+			com.dantemorrigan.gauntlet.net.ModStatus.send(player, Component.translatable("msg.infinity_gauntlet.power.nothing_to_destroy"));
 			return;
 		}
 		long now = player.level().getServer().overworld().getGameTime();
 		Long until = ULTIMATE_COOLDOWN.get(player.getUUID());
 		if (until != null && now < until && !player.isCreative()) {
-			com.dantemorrigan.gauntlet.net.ModStatus.send(player, Component.literal("§5Перезарядка: " + (until - now) / 20 + " с"));
+			com.dantemorrigan.gauntlet.net.ModStatus.send(player, Component.translatable("msg.infinity_gauntlet.power.cooldown", String.valueOf((until - now) / 20)));
 			return;
 		}
 		Vec3 impact = block.getLocation();

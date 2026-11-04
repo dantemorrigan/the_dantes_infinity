@@ -94,7 +94,7 @@ public final class CelestialClient {
 			Minecraft mc = Minecraft.getInstance();
 			int ms = remainingMs();
 			com.dantemorrigan.gauntlet.client.StatusHud.persistent("meteor", phase == 2 && mc.level != null && mc.level.dimension().equals(Level.OVERWORLD)
-					? Component.literal("§cМетеоритный дождь: " + ms / 60000 + ":" + String.format("%02d", (ms / 1000) % 60)) : null);
+					? Component.translatable("msg.infinity_gauntlet.celestial.meteor_rain", ms / 60000 + ":" + String.format("%02d", (ms / 1000) % 60)) : null);
 		});
 	}
 

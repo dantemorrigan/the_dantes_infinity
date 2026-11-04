@@ -47,7 +47,7 @@ public final class GauntletCommand {
 								.executes(ctx -> {
 									String id = StringArgumentType.getString(ctx, "stone");
 									for (Stone st : Stone.values()) if (st.id.equals(id)) return giveStone(ctx.getSource(), st);
-									ctx.getSource().sendFailure(Component.literal("Неизвестный камень: " + id));
+									ctx.getSource().sendFailure(Component.translatable("command.infinity_gauntlet.unknown_stone", id));
 									return 0;
 								})))
 						.then(Commands.literal("doll").executes(ctx -> doll(ctx.getSource(), false))
@@ -57,7 +57,7 @@ public final class GauntletCommand {
 						.then(Commands.literal("state").executes(ctx -> state(ctx.getSource())))
 						.then(Commands.literal("reload_config").executes(ctx -> {
 							GauntletConfig.reload();
-							ctx.getSource().sendSuccess(() -> Component.literal("config/infinity_gauntlet.json перечитан"), false);
+							ctx.getSource().sendSuccess(() -> Component.translatable("command.infinity_gauntlet.reload"), false);
 							return 1;
 						}))
 						.then(Commands.literal("fx")
@@ -79,7 +79,7 @@ public final class GauntletCommand {
 								}))
 								.then(Commands.literal("restore").executes(ctx -> {
 									com.dantemorrigan.gauntlet.celestial.CelestialApocalypse.restoreBodies(ctx.getSource().getServer());
-									ctx.getSource().sendSuccess(() -> Component.literal("Солнце и луна восстановлены"), true);
+									ctx.getSource().sendSuccess(() -> Component.translatable("command.infinity_gauntlet.celestial_restored"), true);
 									return 1;
 								})))
 						.then(Commands.literal("space")
@@ -104,7 +104,7 @@ public final class GauntletCommand {
 		ItemStack old = player.getOffhandItem();
 		player.setItemInHand(InteractionHand.OFF_HAND, gauntlet);
 		if (!old.isEmpty() && !player.getInventory().add(old)) player.drop(old, false);
-		source.sendSuccess(() -> Component.literal("Перчатка с Камнем Силы надета. ПКМ (держать) — заряд, отпустить — удар. Смена режима — клавиша V."), false);
+		source.sendSuccess(() -> Component.translatable("command.infinity_gauntlet.give_power"), false);
 		return 1;
 	}
 
@@ -113,7 +113,7 @@ public final class GauntletCommand {
 		ServerPlayer player = source.getPlayerOrException();
 		ItemStack gauntlet = GauntletState.activeGauntlet(player);
 		if (gauntlet.isEmpty()) {
-			source.sendFailure(Component.literal("Сначала /gauntlet give_power"));
+			source.sendFailure(Component.translatable("command.infinity_gauntlet.need_give_power"));
 			return 0;
 		}
 		net.minecraft.core.NonNullList<ItemStack> items = net.minecraft.core.NonNullList.withSize(Stone.values().length, ItemStack.EMPTY);
@@ -121,7 +121,7 @@ public final class GauntletCommand {
 		items.set(stone.ordinal(), new ItemStack(stone.item()));
 		gauntlet.set(DataComponents.CONTAINER, ItemContainerContents.fromItems(items));
 		GauntletState.refresh(gauntlet);
-		source.sendSuccess(() -> Component.literal("Камень вставлен: " + stone.id), false);
+		source.sendSuccess(() -> Component.translatable("command.infinity_gauntlet.stone_inserted", stone.id), false);
 		return 1;
 	}
 
@@ -137,7 +137,7 @@ public final class GauntletCommand {
 			if (!old.isEmpty() && !player.getInventory().add(old.copy())) player.drop(old.copy(), false);
 			player.setItemSlot(slots[i], new ItemStack(items[i]));
 		}
-		source.sendSuccess(() -> Component.literal("Комплект брони из Уру надет."), false);
+		source.sendSuccess(() -> Component.translatable("command.infinity_gauntlet.uru_armor"), false);
 		return 1;
 	}
 
@@ -156,10 +156,10 @@ public final class GauntletCommand {
 					net.minecraft.world.entity.EquipmentSlot.LEGS, net.minecraft.world.entity.EquipmentSlot.FEET}) spawned.setDropChance(slot, 0f);
 		}
 		if (spawned == null) {
-			source.sendFailure(Component.literal("Не удалось призвать куклу"));
+			source.sendFailure(Component.translatable("command.infinity_gauntlet.doll_failed"));
 			return 0;
 		}
-		source.sendSuccess(() -> Component.literal("Кукла Стива с полной перчаткой призвана. Попробуй на ней Извлекатор Бесконечности."), false);
+		source.sendSuccess(() -> Component.translatable("command.infinity_gauntlet.doll_summoned"), false);
 		return 1;
 	}
 
@@ -170,14 +170,14 @@ public final class GauntletCommand {
 		net.minecraft.core.BlockPos column = net.minecraft.core.BlockPos.containing(player.getX() + look.x * 40, player.getY(), player.getZ() + look.z * 40);
 		net.minecraft.server.level.ServerLevel level = player.level();
 		if (!level.hasChunkAt(column)) {
-			source.sendFailure(Component.literal("Чанк не загружен"));
+			source.sendFailure(Component.translatable("command.infinity_gauntlet.chunk_not_loaded"));
 			return 0;
 		}
 		net.minecraft.world.phys.Vec3 center = net.minecraft.world.phys.Vec3.atBottomCenterOf(
 				level.getHeightmapPos(net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, column));
 		String body = com.dantemorrigan.gauntlet.celestial.CelestialApocalypse.bodyDirection(level, "sun").y > 0.1 ? "sun" : "moon";
 		if (!com.dantemorrigan.gauntlet.meteor.MeteorStream.startAt(player, body, center)) {
-			source.sendFailure(Component.literal("Поток метеоритов не удалось начать (только Верхний мир, правила сервера, лимит потоков)"));
+			source.sendFailure(Component.translatable("command.infinity_gauntlet.stream_failed"));
 			return 0;
 		}
 		return 1;
@@ -188,14 +188,14 @@ public final class GauntletCommand {
 		PlanetDestruction.Phase phase = PlanetDestruction.phaseOf(player);
 		ItemStack g = GauntletState.activeGauntlet(player);
 		String mode = g.isEmpty() ? "-" : PowerAbility.isUltimate(g) ? "ultimate" : "strike";
-		source.sendSuccess(() -> Component.literal("Состояние: " + phase + ", режим: " + mode + ", космос: " + player.hasAttached(SpaceManager.RECORD)), false);
+		source.sendSuccess(() -> Component.translatable("command.infinity_gauntlet.state", String.valueOf(phase), mode, String.valueOf(player.hasAttached(SpaceManager.RECORD))), false);
 		return 1;
 	}
 
 	private static int fx(CommandSourceStack source, String effect) throws CommandSyntaxException {
 		ServerPlayer player = source.getPlayerOrException();
 		if (!FX.contains(effect)) {
-			source.sendFailure(Component.literal("Эффекты: " + String.join(", ", FX)));
+			source.sendFailure(Component.translatable("command.infinity_gauntlet.effects", String.join(", ", FX)));
 			return 0;
 		}
 		Vec3 pos = PowerAbility.pick(player, 6.0).getLocation();
@@ -214,7 +214,7 @@ public final class GauntletCommand {
 	private static int celestial(CommandSourceStack source, String body) throws CommandSyntaxException {
 		ServerPlayer player = source.getPlayerOrException();
 		if (!com.dantemorrigan.gauntlet.celestial.CelestialApocalypse.start(player, body)) {
-			source.sendFailure(Component.literal("Событие уже идёт: /gauntlet celestial stop"));
+			source.sendFailure(Component.translatable("command.infinity_gauntlet.event_running"));
 			return 0;
 		}
 		return 1;
@@ -224,7 +224,7 @@ public final class GauntletCommand {
 	private static int spaceEnter(CommandSourceStack source) throws CommandSyntaxException {
 		ServerPlayer player = source.getPlayerOrException();
 		if (SpaceManager.inSpace(player)) {
-			source.sendFailure(Component.literal("Уже в космосе"));
+			source.sendFailure(Component.translatable("command.infinity_gauntlet.already_in_space"));
 			return 0;
 		}
 		long now = player.level().getServer().overworld().getGameTime();
@@ -236,7 +236,7 @@ public final class GauntletCommand {
 	private static int spaceReturn(CommandSourceStack source, ServerPlayer player) {
 		PlanetDestruction.cancelFor(player);
 		boolean had = SpaceManager.returnFromSpace(player);
-		source.sendSuccess(() -> Component.literal(had ? "Возврат выполнен, состояние сброшено" : "Игрок не был в космосе; перенесён на точку возрождения"), true);
+		source.sendSuccess(() -> Component.translatable(had ? "command.infinity_gauntlet.returned" : "command.infinity_gauntlet.not_in_space"), true);
 		return 1;
 	}
 
@@ -244,7 +244,7 @@ public final class GauntletCommand {
 		ServerPlayer player = source.getPlayerOrException();
 		ItemStack gauntlet = GauntletState.activeGauntlet(player);
 		if (gauntlet.isEmpty()) {
-			source.sendFailure(Component.literal("Возьми перчатку в левую руку (F)"));
+			source.sendFailure(Component.translatable("command.infinity_gauntlet.hold_gauntlet"));
 			return 0;
 		}
 		Set<Stone> stones = EnumSet.noneOf(Stone.class);
@@ -254,13 +254,13 @@ public final class GauntletCommand {
 			Stone match = null;
 			for (Stone s : Stone.values()) if (s.id.equals(word)) match = s;
 			if (match == null) {
-				source.sendFailure(Component.literal("Неизвестный камень: " + word));
+				source.sendFailure(Component.translatable("command.infinity_gauntlet.unknown_stone", word));
 				return 0;
 			}
 			stones.add(match);
 		}
 		GauntletState.setInUse(gauntlet, stones);
-		source.sendSuccess(() -> Component.literal("Используются: " + GauntletState.inUse(gauntlet)), false);
+		source.sendSuccess(() -> Component.translatable("command.infinity_gauntlet.in_use", String.valueOf(GauntletState.inUse(gauntlet))), false);
 		return 1;
 	}
 

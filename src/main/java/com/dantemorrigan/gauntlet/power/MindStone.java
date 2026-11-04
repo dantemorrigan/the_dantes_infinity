@@ -136,7 +136,7 @@ public final class MindStone {
 		if (action != 0) return;
 		ItemStack g = GauntletState.activeGauntlet(player);
 		if (g.isEmpty() || !GauntletState.inserted(g).contains(Stone.MIND)) {
-			ModStatus.send(player, Component.literal("Нужна перчатка с Камнем Разума в левой руке"));
+			ModStatus.send(player, Component.translatable("msg.infinity_gauntlet.need.mind"));
 			return;
 		}
 		if (SpaceManager.inSpace(player) || player.isSpectator()) return;
@@ -203,7 +203,7 @@ public final class MindStone {
 					if (grabbable(level, player, p)) cands.add(new Cand(p, d));
 				}
 		if (cands.isEmpty()) {
-			ModStatus.send(player, Component.literal("§eЭто не поднять"));
+			ModStatus.send(player, Component.translatable("msg.infinity_gauntlet.mind.too_heavy"));
 			return;
 		}
 		cands.sort(Comparator.comparingDouble(Cand::d));

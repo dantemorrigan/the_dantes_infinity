@@ -88,7 +88,7 @@ public final class PlanetDestruction {
 		if (!GauntletConfig.get().allowPlanetDestruction || !EVENTS.isEmpty()
 				|| activator.hasAttached(com.dantemorrigan.gauntlet.snap.InfinitySnap.RECORD)) return false;
 		if (isBusy(activator)) {
-			com.dantemorrigan.gauntlet.net.ModStatus.send(activator, Component.literal("Событие уже идёт"));
+			com.dantemorrigan.gauntlet.net.ModStatus.send(activator, Component.translatable("msg.infinity_gauntlet.event.in_progress"));
 			return false;
 		}
 		ServerLevel level = activator.level();
