@@ -31,8 +31,6 @@ public class MindQuestTest implements FabricClientGameTest {
 			server.runCommand("time set 6000");
 			server.runCommand("gamemode creative @p");
 			server.runCommand("gauntlet stones reset");
-			server.runCommand("execute as @p run gauntlet mind_quest city_here");
-			if (!server.computeOnServer(MindCity::built)) throw new AssertionError("Ruined City not built");
 
 			// Map unrolls into a filled map in hand.
 			server.runOnServer(s -> {
@@ -47,10 +45,14 @@ public class MindQuestTest implements FabricClientGameTest {
 				throw new AssertionError("Ruined City map did not unroll into a filled map");
 			}
 
+			// Teleport to the natural Ruined City site (without forceBuild) and verify chunks shape and build the city.
 			var site = server.computeOnServer(MindCity::site);
 			server.runCommand("tp @p " + (site.getX() + 0.5) + " " + (site.getY() + 10) + " " + (site.getZ() + 22.5) + " 180 18");
-			ctx.waitTicks(20);
+			ctx.waitTicks(45);
 			sp.getClientLevel().waitForChunksRender();
+			if (!server.computeOnServer(MindCity::built)) {
+				throw new AssertionError("Ruined City was not built naturally on chunk load");
+			}
 			ctx.takeScreenshot("mind_ruined_city");
 
 			// Verify 10 Mind Zombies are present in the city and do not burn in midday sunlight.

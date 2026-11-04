@@ -29,8 +29,6 @@ public class TimeQuestTest implements FabricClientGameTest {
 			server.runCommand("time set 6000");
 			server.runCommand("gamemode survival @p");
 			server.runCommand("gauntlet stones reset");
-			server.runCommand("execute as @p run gauntlet time_quest temple_here");
-			if (!server.computeOnServer(TimeTemple::built)) throw new AssertionError("Temple of Time not built");
 
 			// Map unrolls into a filled map in hand.
 			server.runOnServer(s -> {
@@ -45,10 +43,14 @@ public class TimeQuestTest implements FabricClientGameTest {
 				throw new AssertionError("Time Temple map did not unroll into a filled map");
 			}
 
+			// Teleport to the natural Temple of Time site (without forceBuild) and verify chunks shape and build the temple.
 			var site = server.computeOnServer(TimeTemple::site);
 			server.runCommand("tp @p " + (site.getX() + 0.5) + " " + (site.getY() + 8) + " " + (site.getZ() + 26.5) + " 180 8");
-			ctx.waitTicks(20);
+			ctx.waitTicks(45);
 			sp.getClientLevel().waitForChunksRender();
+			if (!server.computeOnServer(TimeTemple::built)) {
+				throw new AssertionError("Temple of Time was not built naturally on chunk load");
+			}
 			ctx.takeScreenshot("time_temple");
 
 			Vec3 stand = TimeTemple.sanctumStand(site);

@@ -64,8 +64,7 @@ public final class SoulTemple {
 			BlockPos site = level.getAttached(SITE);
 			if (site == null) return;
 			ChunkPos cp = chunk.getPos();
-			double dx = cp.getMiddleBlockX() - site.getX(), dz = cp.getMiddleBlockZ() - site.getZ();
-			if (dx * dx + dz * dz > (R_B + 12.0) * (R_B + 12.0)) return;
+			if (!inBlendRange(site, cp)) return;
 			long key = cp.pack();
 			if (!shaped(level).contains(key) && QUEUED.add(key)) QUEUE.add(key);
 		});
@@ -140,11 +139,17 @@ public final class SoulTemple {
 		return shapedCache;
 	}
 
+	private static boolean inBlendRange(BlockPos site, ChunkPos cp) {
+		int minX = (site.getX() - R_B) >> 4, maxX = (site.getX() + R_B) >> 4;
+		int minZ = (site.getZ() - R_B) >> 4, maxZ = (site.getZ() + R_B) >> 4;
+		return cp.x() >= minX && cp.x() <= maxX && cp.z() >= minZ && cp.z() <= maxZ;
+	}
+
 	private static void tick(MinecraftServer server) {
 		ServerLevel level = server.overworld();
 		BlockPos site = level.getAttached(SITE);
 		if (site == null) return;
-		for (int n = 0; n < 2 && !QUEUE.isEmpty(); n++) {
+		for (int n = 0; n < 4 && !QUEUE.isEmpty(); n++) {
 			long key = QUEUE.poll();
 			QUEUED.remove(key);
 			ChunkPos cp = ChunkPos.unpack(key);
@@ -152,17 +157,28 @@ public final class SoulTemple {
 			shapeChunk(level, site, cp);
 		}
 		if (level.getGameTime() % 40 == 0 && !built(server)) {
+			int minX = (site.getX() - R_B) >> 4, maxX = (site.getX() + R_B) >> 4;
+			int minZ = (site.getZ() - R_B) >> 4, maxZ = (site.getZ() + R_B) >> 4;
+			for (int x = minX; x <= maxX; x++) {
+				for (int z = minZ; z <= maxZ; z++) {
+					if (!level.hasChunk(x, z)) continue;
+					long key = new ChunkPos(x, z).pack();
+					if (!shaped(level).contains(key) && QUEUED.add(key)) QUEUE.add(key);
+				}
+			}
 			boolean ready = true;
-			for (ChunkPos cp : mountainChunks(site)) if (!shaped(level).contains(cp.pack())) { ready = false; break; }
+			for (ChunkPos cp : mountainChunks(site)) {
+				if (!level.hasChunk(cp.x(), cp.z()) || !shaped(level).contains(cp.pack())) { ready = false; break; }
+			}
 			if (ready) build(level, site);
 		}
 	}
 
 	private static List<ChunkPos> mountainChunks(BlockPos site) {
 		List<ChunkPos> out = new ArrayList<>();
-		int r = (R_M + 8) >> 4;
-		int cx = site.getX() >> 4, cz = site.getZ() >> 4;
-		for (int x = cx - r - 1; x <= cx + r + 1; x++) for (int z = cz - r - 1; z <= cz + r + 1; z++) out.add(new ChunkPos(x, z));
+		int minX = (site.getX() - R_M) >> 4, maxX = (site.getX() + R_M) >> 4;
+		int minZ = (site.getZ() - R_M) >> 4, maxZ = (site.getZ() + R_M) >> 4;
+		for (int x = minX; x <= maxX; x++) for (int z = minZ; z <= maxZ; z++) out.add(new ChunkPos(x, z));
 		return out;
 	}
 
