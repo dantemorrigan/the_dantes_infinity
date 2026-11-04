@@ -29,7 +29,7 @@ public class SoulQuestTest implements FabricClientGameTest {
 			if (!server.computeOnServer(SoulTemple::built)) throw new AssertionError("Temple not built");
 			var site = server.computeOnServer(SoulTemple::site);
 			int top = SoulTemple.summitY(site);
-			server.runCommand("tp @p " + (site.getX() + 0.5) + " " + (top + 10) + " " + (site.getZ() - 95.5) + " 0 8");
+			server.runCommand("tp @p " + (site.getX() + 0.5) + " " + (top - 25) + " " + (site.getZ() - 62.5) + " 0 -5");
 			ctx.waitTicks(20);
 			sp.getClientLevel().waitForChunksRender();
 			ctx.takeScreenshot("soul_mountain");

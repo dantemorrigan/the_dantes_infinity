@@ -63,6 +63,12 @@ public final class GauntletCommand {
 									com.dantemorrigan.gauntlet.stones.SoulTemple.forceBuild(level);
 									return 1;
 								}))
+								.then(Commands.literal("map").executes(ctx -> {
+									var p = ctx.getSource().getPlayerOrException();
+									var map = new net.minecraft.world.item.ItemStack(com.dantemorrigan.gauntlet.ModItems.QUEST_SOUL_TEMPLE_MAP);
+									if (!p.getInventory().add(map)) p.drop(map, false);
+									return 1;
+								}))
 								.then(Commands.literal("locate").executes(ctx -> {
 									var site = com.dantemorrigan.gauntlet.stones.SoulTemple.site(ctx.getSource().getServer());
 									ctx.getSource().sendSuccess(() -> Component.literal("Temple of Soul: " + site.toShortString()), false);

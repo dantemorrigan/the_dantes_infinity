@@ -262,14 +262,7 @@ public final class SoulTemple {
 				height.merge(key, y, Math::max);
 				facing.put(key, dir);
 			}
-			// Fence on the outer rim, lanterns now and then, ruins on the inner side.
-			if (i % 2 == 0) {
-				int fx = (int) Math.floor(cx + Math.cos(a) * 2.2), fz = (int) Math.floor(cz + Math.sin(a) * 2.2);
-				if (rnd.nextFloat() > 0.18f) {
-					set(level, new BlockPos(fx, y + 1, fz), fence);
-					if (i % 40 == 0) set(level, new BlockPos(fx, y + 2, fz), lantern);
-				}
-			}
+			// Ruins on the inner side now and then.
 			if (i % 70 == 35) {
 				int px = (int) Math.floor(cx - Math.cos(a) * 2.6), pz = (int) Math.floor(cz - Math.sin(a) * 2.6);
 				int hgt = 2 + rnd.nextInt(4);
@@ -296,6 +289,31 @@ public final class SoulTemple {
 			BlockState top = rnd.nextFloat() < 0.15f ? cracked : rnd.nextFloat() < 0.1f ? mossy : bricks;
 			if (hb != null && hb < y) top = Blocks.STONE_BRICK_STAIRS.defaultBlockState().setValue(StairBlock.FACING, dir);
 			set(level, new BlockPos(x, y, z), top);
+		}
+		// Fence: a continuous line on the outer edge of the stairway, one block above each edge step.
+		Map<Long, Integer> fenceAt = new HashMap<>();
+		List<Long> fenceOrder = new ArrayList<>();
+		for (long[] e : order) {
+			long key = e[0];
+			int x = BlockPos.getX(key), z = BlockPos.getZ(key), y = height.get(key);
+			double d = Math.hypot(x + 0.5 - site.getX() - 0.5, z + 0.5 - site.getZ() - 0.5);
+			for (Direction side : Direction.Plane.HORIZONTAL) {
+				int nx = x + side.getStepX(), nz = z + side.getStepZ();
+				long nk = BlockPos.asLong(nx, 0, nz);
+				if (height.containsKey(nk) || Math.hypot(nx + 0.5 - site.getX() - 0.5, nz + 0.5 - site.getZ() - 0.5) <= d) continue;
+				if (!fenceAt.containsKey(nk)) fenceOrder.add(nk);
+				fenceAt.merge(nk, y + 1, Math::max);
+			}
+		}
+		int n = 0;
+		for (long nk : fenceOrder) {
+			int x = BlockPos.getX(nk), z = BlockPos.getZ(nk), y = fenceAt.get(nk);
+			for (int k = 1; k <= 3; k++) {
+				BlockPos below = new BlockPos(x, y - k, z);
+				if (!level.getBlockState(below).isSolid()) set(level, below, bricks);
+			}
+			set(level, new BlockPos(x, y, z), fence);
+			set(level, new BlockPos(x, y + 1, z), n++ % 14 == 0 ? lantern : air);
 		}
 	}
 
