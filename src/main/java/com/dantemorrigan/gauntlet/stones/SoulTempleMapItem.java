@@ -30,9 +30,7 @@ public final class SoulTempleMapItem extends Item {
 		MapItem.renderBiomePreviewMap(overworld, map);
 		net.minecraft.world.level.saveddata.maps.MapItemSavedData.addTargetDecoration(map, site, "+", MapDecorationTypes.RED_X);
 		map.set(DataComponents.ITEM_NAME, Component.translatable("item.infinity_gauntlet.quest_soul_temple_map").withStyle(ChatFormatting.GOLD));
-		sp.getItemInHand(hand).shrink(1);
-		if (!sp.getInventory().add(map)) sp.drop(map, false);
 		level.playSound(null, sp.blockPosition(), SoundEvents.BOOK_PAGE_TURN, SoundSource.PLAYERS, 1.0F, 0.8F);
-		return InteractionResult.SUCCESS;
+		return InteractionResult.SUCCESS.heldItemTransformedTo(map);
 	}
 }
