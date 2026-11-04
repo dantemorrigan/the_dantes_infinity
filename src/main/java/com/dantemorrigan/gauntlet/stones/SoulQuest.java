@@ -70,7 +70,9 @@ public final class SoulQuest {
 		BlockPos site = SoulTemple.site(server);
 		AABB chasm = SoulTemple.chasm(site);
 		if (!level.hasChunkAt(BlockPos.containing(chasm.getCenter()))) return;
-		for (Wolf wolf : level.getEntitiesOfClass(Wolf.class, chasm, w -> w.isTame() && w.isAlive())) {
+		int sacrificeY = SoulTemple.summitY(site) - 15;
+		for (Wolf wolf : level.getEntitiesOfClass(Wolf.class, chasm,
+				w -> w.isTame() && w.isAlive() && w.getY() <= sacrificeY)) {
 			if (!(wolf.getOwner() instanceof ServerPlayer owner) || owner.level() != level || owner.distanceToSqr(wolf) > 80 * 80) continue;
 			sacrifice(owner, wolf);
 			return;
