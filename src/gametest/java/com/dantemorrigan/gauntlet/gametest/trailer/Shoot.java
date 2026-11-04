@@ -47,8 +47,9 @@ public class Shoot implements FabricClientGameTest {
 			if (which.contains("gauntlet")) Scenes.gauntletShot();
 			if (which.contains("power")) Scenes.power();
 			if (which.contains("beam")) Scenes.beam();
-			if (which.contains("snap")) Scenes.snap();
+			if (which.contains("abilities")) Scenes.abilities();
 			if (which.contains("thanos")) Scenes.thanosScenes();
+			if (which.contains("snap")) Scenes.snap();
 			if (which.contains("planet")) Scenes.planet();
 			Rig.off();
 		}

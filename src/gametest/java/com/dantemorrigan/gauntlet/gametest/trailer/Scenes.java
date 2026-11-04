@@ -101,9 +101,12 @@ final class Scenes {
 		var ctr = com.dantemorrigan.gauntlet.stones.PowerStoneFall.showerCenter();
 		Vec3 target = ctr == null ? c.add(0, 5, 60) : new Vec3(ctr.getX(), ctr.getY() + 12, ctr.getZ());
 		System.out.println("INTRO shower " + ctr);
-		ctx.runOnClient(mc -> mc.options.fov().set(100));
+		ctx.runOnClient(mc -> mc.options.fov().set(90));
+		Vec3 ctrV = ctr == null ? c.add(0, 0, 80) : new Vec3(ctr.getX() + .5, ctr.getY(), ctr.getZ() + .5);
+		Vec3 away = c.subtract(ctrV).multiply(1, 0, 1).normalize();
+		Vec3 camA = ctrV.add(away.scale(46)).add(0, 4, 0), camB = ctrV.add(away.scale(30)).add(0, 9, 0);
 		begin("intro");
-		Rig.set(Rig.track(c.add(0, 0.5, 0), c.add(0, 5, 0), target.add(0, 10, 0), target.add(0, 30, 0), 480, true));
+		Rig.set(Rig.track(camA, camB, ctrV.add(0, 26, 0), ctrV.add(0, 6, 0), 480, true));
 		ticks(500);
 		ctx.runOnClient(mc -> mc.options.fov().set(70));
 		ctx.takeScreenshot("trailer_intro");
@@ -134,7 +137,7 @@ final class Scenes {
 		aim(0, 28);
 		begin("power");
 		Vec3 c = eye(feet);
-		Rig.set(Rig.track(c.add(-3.5, 0.0, 6), c.add(3.5, 1.2, 6), c.add(0, -0.2, 0), c.add(0, -0.6, 1), 180, true));
+		Rig.set(Rig.track(c.add(-2.6, -0.2, 4.3), c.add(2.8, 0.9, 4.0), c.add(0, -0.4, 0.6), c.add(0, -0.9, 1.8), 180, true));
 		ticks(10);
 		cast("power_strike");
 		ticks(70);
@@ -203,7 +206,7 @@ final class Scenes {
 		ticks(100);
 		begin("snap");
 		Vec3 c = eye(feet);
-		Rig.set(Rig.track(c.add(0, -0.3, -4), c.add(0.4, 0.3, -1.8), c.add(0, -0.2, 0), c.add(0.3, -0.4, 0), 70, true));
+		Rig.set(Rig.track(c.add(1.6, 0.0, 3.6), c.add(0.9, 0.2, 2.2), c.add(0, -0.2, 0), c.add(-0.2, -0.3, 0), 90, true));
 		ticks(5);
 		cast("infinity_snap");
 		ticks(160);
@@ -273,6 +276,70 @@ final class Scenes {
 		Rig.set(Rig.track(pc.add(0, 3, -4), pc.add(-6, 8, -2), pc.add(0, 30, 65), pc.add(0, 4, 60), 360, true));
 		ticks(380);
 		ctx.takeScreenshot("trailer_crash");
+		end();
+	}
+
+	static void abilities() {
+		Vec3 feet = stage(-30, -420, 0, 0);
+		raw("time set 13200");
+		gauntlet();
+		ticks(100);
+		Vec3 c = eye(feet);
+
+		// reality inversion
+		aim(0, 0);
+		begin("reality");
+		Rig.set(Rig.track(c.add(-3, 0.3, 3.5), c.add(3, 1.0, 3.8), c.add(0, -0.2, 0.5), c.add(0, -0.2, 1), 170, true));
+		ticks(10);
+		cast("reality_inversion");
+		ticks(120);
+		release();
+		ticks(30);
+		end();
+
+		// meteor stream
+		aim(0, -42);
+		begin("meteors");
+		Rig.set(Rig.track(c.add(0, -0.4, -7), c.add(2, 4, -9), c.add(0, 30, 20), c.add(0, 38, 25), 200, true));
+		ticks(8);
+		cast("meteor_stream");
+		ticks(150);
+		release();
+		ticks(50);
+		end();
+
+		// mind: lift a zombie
+		aim(0, 0);
+		cmd("summon minecraft:zombie ^ ^ ^6 {NoAI:1b}");
+		ticks(20);
+		begin("mind");
+		Rig.set(Rig.track(c.add(-4, 0.2, 2.5), c.add(-3.2, 1.2, 4.5), c.add(0, 0.5, 4), c.add(0, 2.2, 6), 170, true));
+		ticks(10);
+		cast("mind_grab");
+		ticks(90);
+		cast("mind_release");
+		ticks(60);
+		end();
+
+		// soul
+		cmd("kill @e[type=minecraft:zombie]");
+		cmd("summon minecraft:zombie ^ ^ ^5 {NoAI:1b}");
+		ticks(20);
+		begin("soul");
+		Rig.set(Rig.track(c.add(3.5, 0.2, 2.2), c.add(2.8, 0.8, 3.5), c.add(0, 0.2, 4), c.add(0, 0.6, 5), 150, true));
+		ticks(10);
+		cast("soul_extract");
+		ticks(80);
+		release();
+		ticks(50);
+		end();
+
+		// time: day and night swap
+		begin("time");
+		Rig.set(Rig.track(c.add(0, -0.5, -5), c.add(0, 8, -14), c.add(0, 0.6, 3), c.add(0, 14, 30), 150, true));
+		ticks(10);
+		cast("time_shift");
+		ticks(120);
 		end();
 	}
 }
