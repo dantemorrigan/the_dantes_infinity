@@ -20,6 +20,7 @@ public class GauntletScreen extends AbstractContainerScreen<GauntletMenu> {
 	protected void init() {
 		super.init();
 		this.titleLabelX = (this.imageWidth - this.font.width(this.title)) / 2;
+		this.titleLabelY = 2;
 	}
 
 	@Override
