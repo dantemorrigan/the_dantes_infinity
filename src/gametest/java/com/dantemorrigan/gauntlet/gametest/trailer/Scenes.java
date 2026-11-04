@@ -101,9 +101,11 @@ final class Scenes {
 		var ctr = com.dantemorrigan.gauntlet.stones.PowerStoneFall.showerCenter();
 		Vec3 target = ctr == null ? c.add(0, 5, 60) : new Vec3(ctr.getX(), ctr.getY() + 12, ctr.getZ());
 		System.out.println("INTRO shower " + ctr);
+		ctx.runOnClient(mc -> mc.options.fov().set(100));
 		begin("intro");
-		Rig.set(Rig.track(c.add(0, 0.5, 0), c.add(0, 4, 0), target.add(0, 0, 0), target.add(0, 18, 0), 480, true));
+		Rig.set(Rig.track(c.add(0, 0.5, 0), c.add(0, 5, 0), target.add(0, 10, 0), target.add(0, 30, 0), 480, true));
 		ticks(500);
+		ctx.runOnClient(mc -> mc.options.fov().set(70));
 		ctx.takeScreenshot("trailer_intro");
 		end();
 	}
@@ -125,18 +127,19 @@ final class Scenes {
 	}
 
 	static void power() {
-		Vec3 feet = stage(-60, -390, 0, 8);
+		Vec3 feet = stage(-60, -390, 0, 28);
 		raw("time set 13500");
 		gauntlet();
 		ticks(100);
+		aim(0, 28);
 		begin("power");
 		Vec3 c = eye(feet);
-		Rig.set(Rig.track(c.add(-4, 0.2, 7), c.add(4, 1.5, 7), c.add(0, 0.2, 0), c.add(0, 0.2, 0), 130, true));
+		Rig.set(Rig.track(c.add(-3.5, 0.0, 6), c.add(3.5, 1.2, 6), c.add(0, -0.2, 0), c.add(0, -0.6, 1), 180, true));
 		ticks(10);
 		cast("power_strike");
-		ticks(45);
+		ticks(70);
 		release();
-		ticks(80);
+		ticks(90);
 		ctx.takeScreenshot("trailer_power");
 		end();
 	}
