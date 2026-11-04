@@ -42,7 +42,8 @@ public final class SpaceManager {
 			.persistent(Codec.STRING.listOf()).buildAndRegister(InfinityGauntlet.id("reversed_planets"));
 
 	private static String eventKey(SpaceRecord record) {
-		return record.returnDimension().toString() + "/" + record.eventStartTime() + "/" + record.seed();
+		// The event, not the place: players of one global event come from different dimensions (Overworld, Nether, End).
+		return record.eventStartTime() + "/" + record.seed();
 	}
 
 	public static boolean sameEvent(SpaceRecord first, SpaceRecord second) {

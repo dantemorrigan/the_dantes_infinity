@@ -42,6 +42,8 @@ public final class PlanetDestruction {
 		final Vec3 origin;
 		final UUID activator;
 		final Set<UUID> participants = new LinkedHashSet<>();
+		/** The dimension each participant was in when it began (leaving it before the transfer drops them). */
+		final Map<UUID, net.minecraft.resources.ResourceKey<net.minecraft.world.level.Level>> dims = new HashMap<>();
 		final long startTime;
 		final List<SpaceRecord.Fragment> fragments;
 		int age;
@@ -79,6 +81,11 @@ public final class PlanetDestruction {
 		return Phase.IDLE;
 	}
 
+	private static boolean inVanillaDimension(ServerPlayer p) {
+		var d = p.level().dimension();
+		return d.equals(net.minecraft.world.level.Level.OVERWORLD) || d.equals(net.minecraft.world.level.Level.NETHER) || d.equals(net.minecraft.world.level.Level.END);
+	}
+
 	public static boolean isBusy(ServerPlayer player) {
 		return PLAYER_EVENT.containsKey(player.getUUID()) || player.hasAttached(SpaceManager.RECORD);
 	}
@@ -107,7 +114,9 @@ public final class PlanetDestruction {
 		MinecraftServer server = level.getServer();
 		Event event = new Event(nextId++, level, impact, activator.getUUID(), server.overworld().getGameTime(), fragments);
 
-		List<ServerPlayer> candidates = cfg.transferWholeDimension ? level.players() : level.getPlayers(p -> p.distanceToSqr(impact) <= cfg.participantRadius * cfg.participantRadius);
+		// The Earth itself is destroyed: every player of the server sees it, wherever they are (Overworld, Nether, End).
+		List<ServerPlayer> candidates = cfg.planetDestructionAllPlayers ? new ArrayList<>(server.getPlayerList().getPlayers().stream().filter(PlanetDestruction::inVanillaDimension).toList())
+				: cfg.transferWholeDimension ? level.players() : level.getPlayers(p -> p.distanceToSqr(impact) <= cfg.participantRadius * cfg.participantRadius);
 		for (ServerPlayer p : candidates) {
 			if (p == activator || !isBusy(p) && !p.hasAttached(com.dantemorrigan.gauntlet.snap.InfinitySnap.RECORD) && !p.isSpectator() && p.isAlive()) event.participants.add(p.getUUID());
 		}
@@ -116,13 +125,25 @@ public final class PlanetDestruction {
 		// A destroyed planet cannot continue its meteor event or maintain spatial portals.
 		if (level.dimension().equals(net.minecraft.world.level.Level.OVERWORLD))
 			com.dantemorrigan.gauntlet.celestial.CelestialApocalypse.stop(server);
-		com.dantemorrigan.gauntlet.power.SpaceStone.cancelLevel(level);
-		com.dantemorrigan.gauntlet.power.TimeAbility.cancelLevel(level);
-		for (ServerPlayer p : level.players()) com.dantemorrigan.gauntlet.power.InfinityBeam.cancel(p);
+		Set<ServerLevel> levels = new LinkedHashSet<>();
+		levels.add(level);
+		for (UUID id : event.participants) {
+			ServerPlayer p = server.getPlayerList().getPlayer(id);
+			if (p != null) levels.add(p.level());
+		}
+		for (ServerLevel l : levels) {
+			com.dantemorrigan.gauntlet.power.SpaceStone.cancelLevel(l);
+			com.dantemorrigan.gauntlet.power.TimeAbility.cancelLevel(l);
+			for (ServerPlayer p : l.players()) com.dantemorrigan.gauntlet.power.InfinityBeam.cancel(p);
+		}
 		for (UUID id : event.participants) {
 			PLAYER_EVENT.put(id, event.id);
 			ServerPlayer p = server.getPlayerList().getPlayer(id);
-			if (p != null) ServerPlayNetworking.send(p, new ModNetwork.CutsceneStart(event.id, impact, 0, cfg.transferTick));
+			if (p == null) continue;
+			event.dims.put(id, p.level().dimension());
+			// Someone in another dimension has no ground at the impact point: the scene is staged around them.
+			Vec3 origin = p.level() == level ? impact : p.position();
+			ServerPlayNetworking.send(p, new ModNetwork.CutsceneStart(event.id, origin, 0, cfg.transferTick));
 		}
 		level.playSound(null, impact.x, impact.y, impact.z, SoundEvents.GENERIC_EXPLODE.value(), SoundSource.PLAYERS, 4.0F, 0.5F);
 		level.playSound(null, impact.x, impact.y, impact.z, SoundEvents.WARDEN_SONIC_BOOM, SoundSource.PLAYERS, 3.0F, 0.6F);
@@ -158,7 +179,7 @@ public final class PlanetDestruction {
 			for (Iterator<UUID> pit = e.participants.iterator(); pit.hasNext(); ) {
 				UUID id = pit.next();
 				ServerPlayer p = server.getPlayerList().getPlayer(id);
-				boolean gone = p == null || !p.isAlive() || p.level() != e.level;
+				boolean gone = p == null || !p.isAlive() || !p.level().dimension().equals(e.dims.getOrDefault(id, e.level.dimension()));
 				if (gone && !e.transferred) {
 					if (id.equals(e.activator)) {
 						cancel(e.id, "activator left the scene");

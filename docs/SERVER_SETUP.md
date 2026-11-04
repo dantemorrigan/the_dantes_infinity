@@ -29,7 +29,7 @@
 ## 4. Конфиг мода
 Готовый пресет: [`friends-server-config.json`](friends-server-config.json) (всё включено).
 Чтобы смягчить, ставь `false`:
-- `allowInfinitySnap`, `allowPlanetDestruction`, `allowCelestialDestruction` — самые разрушительные
+- `allowInfinitySnap`, `allowPlanetDestruction`, `allowCelestialDestruction` — самые разрушительные; `planetDestructionAllPlayers` — Уничтожение планеты видят и уносят в космос всех игроков сервера (если `false` — только тех, кто рядом)
 - `abilityPvp`, `mindPlayerGrab`, `soulPlayerDrain`, `extractorPlayerTheft` — против игроков
 - `abilityBlockChanges` — запрет менять блоки способностями
 - `thanosShipCrater`, `thanosShipWreck` — крушение корабля Таноса (кратер и ~40 тыс. блоков обломков остаются в мире; на слабом сервере можно выключить)

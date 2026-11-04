@@ -56,6 +56,8 @@ public final class GauntletConfig {
 	public double participantRadius = 32.0;
 	/** If true, every player in the activator's dimension is transferred. Off by default. */
 	public boolean transferWholeDimension = false;
+	/** Planet Destruction is seen by every player on the server, in any dimension (Overworld, Nether, End), and takes them all to Dead Space. */
+	public boolean planetDestructionAllPlayers = true;
 	/** Cutscene tick at which the server transfers participants (matches cinematic_timeline.json). */
 	public int transferTick = 68;
 	/** Max real blocks captured per fragment (ground, stone, building). */

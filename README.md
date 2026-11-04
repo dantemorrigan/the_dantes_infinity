@@ -98,7 +98,7 @@ Testing the new controls: `xvfb-run -a ./gradlew runClientGameTest -PonlyTest=Ab
 - The gauntlet only works **in the offhand** (F). Right-clicking with the gauntlet in the main hand opens the stone menu.
 - **Hold R** with Power Strike selected — charge (purple aura at the fist), **release** — power strike (damage, knockback and cooldown are handled on the server).
 - Use the **V** wheel to select a mode: power strike → **Planet Destruction** → **Sun and Moon Destruction**.
-- Ultimate: "Planet Destruction" mode, full charge (2 s), strike the ground beneath you. Works in the Overworld and the Nether only: **not in the End, and never while Thanos is here**.
+- Ultimate: "Planet Destruction" mode, full charge (2 s), strike the ground beneath you. Works in the Overworld and the Nether only: **not in the End, and never while Thanos is here**. The blocks of the world stay intact, but the destruction is seen by **every player on the server, in any dimension** (Overworld, Nether, End): they all go to Dead Space (`planetDestructionAllPlayers`; off = only players within `participantRadius`), and the Time Stone takes them all home.
 - The destruction ends the meteor rain, closes portals in the source world and interrupts its active beams/rewinds. The red sky and fog only apply in the Overworld.
 - In space: a large voxel Earth with simplified continents based on [NASA Blue Marble](https://science.nasa.gov/resource/blue-marble/), ocean, polar caps and clouds; current vanilla block textures are used.
 - Breakup: 14 uneven large fragments → 54–56 secondary fragments with flashes → 650 small shards. Another 280 particles and 60 debris pieces are spread across the scene. The geometry is deterministic; the Time Stone reassembles it.
