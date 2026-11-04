@@ -79,7 +79,7 @@ public final class RealityFog {
 		event = new Event(p.getUUID(), wisp, level.getGameTime() + GauntletConfig.get().realityFogSeconds * 20L);
 		ServerPlayNetworking.send(p, new ModNetwork.RealityFogFx(true));
 		level.playSound(null, p.blockPosition(), SoundEvents.AMBIENT_CRIMSON_FOREST_MOOD.value(), SoundSource.AMBIENT, 2.0F, 0.6F);
-		level.playSound(null, p.blockPosition(), SoundEvents.AMETHYST_BLOCK_RESONATE, SoundSource.AMBIENT, 1.5F, 0.5F);
+		level.playSound(null, p.blockPosition(), com.dantemorrigan.gauntlet.ModSounds.STONE_OMINOUS, SoundSource.AMBIENT, 1.5F, 1.0F);
 		ModStatus.send(p, Component.translatable("msg.infinity_gauntlet.reality.fog"));
 		return true;
 	}

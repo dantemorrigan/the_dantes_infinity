@@ -2,7 +2,56 @@
   "infinity_snap": {
     "subtitle": "subtitles.infinity_gauntlet.infinity_snap",
     "sounds": [
-      {"name": "infinity_gauntlet:infinity_snap", "volume": 1.0}
+      {
+        "name": "infinity_gauntlet:infinity_snap",
+        "volume": 1.0
+      }
+    ]
+  },
+  "stone_insert": {
+    "subtitle": "subtitles.infinity_gauntlet.stone_insert",
+    "sounds": [
+      {
+        "name": "infinity_gauntlet:stones/stone_insert_space"
+      },
+      {
+        "name": "infinity_gauntlet:stones/stone_insert_reality"
+      },
+      {
+        "name": "infinity_gauntlet:stones/stone_insert_time"
+      }
+    ]
+  },
+  "gauntlet_complete": {
+    "subtitle": "subtitles.infinity_gauntlet.gauntlet_complete",
+    "sounds": [
+      {
+        "name": "infinity_gauntlet:stones/gauntlet_complete"
+      }
+    ]
+  },
+  "stone_ominous": {
+    "subtitle": "subtitles.infinity_gauntlet.stone_ominous",
+    "sounds": [
+      {
+        "name": "infinity_gauntlet:stones/stone_ominous_1"
+      }
+    ]
+  },
+  "celestial_capture": {
+    "subtitle": "subtitles.infinity_gauntlet.celestial_capture",
+    "sounds": [
+      {
+        "name": "infinity_gauntlet:stones/celestial_capture"
+      }
+    ]
+  },
+  "celestial_shatter": {
+    "subtitle": "subtitles.infinity_gauntlet.celestial_shatter",
+    "sounds": [
+      {
+        "name": "infinity_gauntlet:stones/celestial_shatter"
+      }
     ]
   }
 }

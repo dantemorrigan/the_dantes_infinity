@@ -50,7 +50,7 @@ public final class PowerStoneCurse {
 			ServerLevel level = (ServerLevel) p.level();
 			if (t == 1) {
 				level.playSound(null, p.blockPosition(), SoundEvents.WARDEN_HEARTBEAT, SoundSource.PLAYERS, 2.0F, 1.6F);
-				level.playSound(null, p.blockPosition(), SoundEvents.BEACON_POWER_SELECT, SoundSource.PLAYERS, 1.5F, 0.5F);
+				level.playSound(null, p.blockPosition(), com.dantemorrigan.gauntlet.ModSounds.STONE_OMINOUS, SoundSource.PLAYERS, 1.5F, 1.0F);
 				ModStatus.send(p, Component.translatable("msg.infinity_gauntlet.power_curse"));
 			}
 			float k = t / (float) limit;

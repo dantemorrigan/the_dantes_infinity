@@ -393,5 +393,10 @@
   "guide.infinity_gauntlet.p15.6": ".\n\nКлавиши меняются в настройках управления. Потерял книгу? ",
   "guide.infinity_gauntlet.p15.7": "/gauntlet_guide",
   "guide.infinity_gauntlet.p15.8": ".\n\n",
-  "guide.infinity_gauntlet.p15.9": "Распоряжайся силой мудро."
+  "guide.infinity_gauntlet.p15.9": "Распоряжайся силой мудро.",
+  "subtitles.infinity_gauntlet.stone_insert": "Камень входит в перчатку",
+  "subtitles.infinity_gauntlet.gauntlet_complete": "Перчатка пробуждается",
+  "subtitles.infinity_gauntlet.stone_ominous": "Что-то тревожное",
+  "subtitles.infinity_gauntlet.celestial_capture": "Перчатка захватывает небо",
+  "subtitles.infinity_gauntlet.celestial_shatter": "Небо раскалывается"
 }

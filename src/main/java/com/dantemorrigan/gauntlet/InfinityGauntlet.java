@@ -21,6 +21,7 @@ public class InfinityGauntlet implements ModInitializer {
 		GauntletConfig.get();
 		ModComponents.init();
 		ModParticles.init();
+		ModSounds.init();
 		ModEntities.init();
 		ModBlocks.init();
 		ModItems.init();

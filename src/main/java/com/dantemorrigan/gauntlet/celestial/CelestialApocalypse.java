@@ -170,7 +170,7 @@ public final class CelestialApocalypse {
 		METEORS.clear();
 		ItemStack g = GauntletState.activeGauntlet(player);
 		if (!g.isEmpty()) GauntletState.setInUse(g, EnumSet.of(Stone.POWER));
-		overworld.playSound(null, player.blockPosition(), SoundEvents.WITHER_SPAWN, SoundSource.PLAYERS, 3.0F, 0.6F);
+		overworld.playSound(null, player.blockPosition(), com.dantemorrigan.gauntlet.ModSounds.CELESTIAL_CAPTURE, SoundSource.PLAYERS, 6.0F, 1.0F);
 		broadcast(server);
 		InfinityGauntlet.LOGGER.info("Celestial Apocalypse: {} by {}", body, player.getName().getString());
 		return true;
@@ -249,7 +249,7 @@ public final class CelestialApocalypse {
 			List<String> destroyed = new ArrayList<>(level.getAttachedOrElse(DESTROYED, List.of()));
 			if (!destroyed.contains(e.body())) destroyed.add(e.body());
 			level.setAttached(DESTROYED, destroyed);
-			level.playSound(null, BlockPos.containing(e.center()), SoundEvents.WITHER_DEATH, SoundSource.AMBIENT, 8.0F, 0.5F);
+			level.playSound(null, BlockPos.containing(e.center()), com.dantemorrigan.gauntlet.ModSounds.CELESTIAL_SHATTER, SoundSource.AMBIENT, 8.0F, 1.0F);
 			if (e.body().equals("sun")) startDusk(server);
 			broadcast(server);
 		}

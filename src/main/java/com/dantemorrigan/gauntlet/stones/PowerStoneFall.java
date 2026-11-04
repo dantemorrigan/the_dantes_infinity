@@ -126,6 +126,7 @@ public final class PowerStoneFall {
 			Vec3 sky = new Vec3(Math.cos(elevation) * Math.cos(azimuth), Math.sin(elevation), Math.cos(elevation) * Math.sin(azimuth));
 			shower = new Shower(top, sky, level.getGameTime() + cfg.powerShowerSeconds * 20L);
 			level.playSound(null, top, SoundEvents.LIGHTNING_BOLT_THUNDER, SoundSource.WEATHER, 12.0F, 0.6F);
+			level.playSound(null, near.blockPosition(), com.dantemorrigan.gauntlet.ModSounds.STONE_OMINOUS, SoundSource.AMBIENT, 1.5F, 1.0F);
 			for (ServerPlayer p : PlayerLookup.around(level, Vec3.atCenterOf(top), 600)) {
 				Component dir = direction(p, top);
 				ModStatus.send(p, Component.translatable("msg.infinity_gauntlet.shower.start", dir));

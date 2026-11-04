@@ -48,7 +48,7 @@ public class GauntletMenu extends AbstractContainerMenu {
 
 		Stone[] all = Stone.values();
 		for (int i = 0; i < all.length; i++) {
-			addSlot(new StoneSlot(stones, i, STONE_POS[i][0], STONE_POS[i][1], all[i]));
+			addSlot(new StoneSlot(stones, i, STONE_POS[i][0], STONE_POS[i][1], all[i], inventory.player));
 		}
 		for (int row = 0; row < 3; row++) {
 			for (int col = 0; col < 9; col++) {
@@ -106,10 +106,23 @@ public class GauntletMenu extends AbstractContainerMenu {
 	/** Accepts only its own stone. */
 	private static class StoneSlot extends Slot {
 		private final Stone stone;
+		private final Player player;
 
-		StoneSlot(Container container, int index, int x, int y, Stone stone) {
+		StoneSlot(Container container, int index, int x, int y, Stone stone, Player player) {
 			super(container, index, x, y);
 			this.stone = stone;
+			this.player = player;
+		}
+
+		/** Placing a stone by hand: the click and surge; the sixth stone wakes the gauntlet. */
+		@Override
+		public void setByPlayer(ItemStack stack, ItemStack previous) {
+			super.setByPlayer(stack, previous);
+			if (!(player instanceof net.minecraft.server.level.ServerPlayer sp) || stack.isEmpty() || !previous.isEmpty()) return;
+			int filled = 0;
+			for (int i = 0; i < container.getContainerSize(); i++) if (!container.getItem(i).isEmpty()) filled++;
+			com.dantemorrigan.gauntlet.ModSounds.play((net.minecraft.server.level.ServerLevel) sp.level(), sp.position(),
+					filled >= Stone.values().length ? com.dantemorrigan.gauntlet.ModSounds.GAUNTLET_COMPLETE : com.dantemorrigan.gauntlet.ModSounds.STONE_INSERT, 1.2f);
 		}
 
 		@Override

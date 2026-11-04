@@ -393,5 +393,10 @@
   "guide.infinity_gauntlet.p15.6": ".\n\nKeys can be rebound in Controls. Lost the book? ",
   "guide.infinity_gauntlet.p15.7": "/gauntlet_guide",
   "guide.infinity_gauntlet.p15.8": ".\n\n",
-  "guide.infinity_gauntlet.p15.9": "Use the power wisely."
+  "guide.infinity_gauntlet.p15.9": "Use the power wisely.",
+  "subtitles.infinity_gauntlet.stone_insert": "Stone clicks into the gauntlet",
+  "subtitles.infinity_gauntlet.gauntlet_complete": "The gauntlet awakens",
+  "subtitles.infinity_gauntlet.stone_ominous": "Something stirs",
+  "subtitles.infinity_gauntlet.celestial_capture": "The gauntlet seizes the sky",
+  "subtitles.infinity_gauntlet.celestial_shatter": "The sky breaks apart"
 }

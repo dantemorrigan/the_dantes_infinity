@@ -146,7 +146,10 @@ public final class SpaceStoneQuest {
 		BlockPos rift = base.above();
 		end.setAttached(END_RIFT, rift);
 		end.playSound(null, rift, SoundEvents.END_PORTAL_SPAWN, SoundSource.BLOCKS, 4.0F, 0.7F);
-		for (ServerPlayer p : end.players()) alert(p, Component.translatable("msg.infinity_gauntlet.space.rift_opened"));
+		for (ServerPlayer p : end.players()) {
+			alert(p, Component.translatable("msg.infinity_gauntlet.space.rift_opened"));
+			end.playSound(null, p.blockPosition(), com.dantemorrigan.gauntlet.ModSounds.STONE_OMINOUS, SoundSource.AMBIENT, 1.5F, 1.0F);
+		}
 		return rift;
 	}
 
