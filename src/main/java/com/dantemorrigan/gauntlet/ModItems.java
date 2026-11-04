@@ -27,9 +27,13 @@ public final class ModItems {
 	public static final Item GAUNTLET_DOLL_SPAWN_EGG = register("gauntlet_doll_spawn_egg", net.minecraft.world.item.SpawnEggItem::new,
 			new Item.Properties().spawnEgg(ModEntities.GAUNTLET_DOLL));
 
+	/** A loose stone: name and description in the stone's own colour (not the epic purple). */
 	private static Item.Properties stone(String name) {
-		return epic().component(DataComponents.LORE, new net.minecraft.world.item.component.ItemLore(
-				java.util.List.of(net.minecraft.network.chat.Component.translatable("tooltip.infinity_gauntlet.loose_" + name))));
+		int color = Stone.valueOf(name.toUpperCase(java.util.Locale.ROOT)).color;
+		return epic()
+				.component(DataComponents.ITEM_NAME, net.minecraft.network.chat.Component.translatable("item.infinity_gauntlet." + name + "_stone").withColor(color))
+				.component(DataComponents.LORE, new net.minecraft.world.item.component.ItemLore(java.util.List.of(
+						net.minecraft.network.chat.Component.translatable("tooltip.infinity_gauntlet.loose_" + name).withStyle(s -> s.withColor(color).withItalic(false)))));
 	}
 
 	/** The sealed Orb from the purple meteorite (holds the Power Stone) and the opened, empty one. */

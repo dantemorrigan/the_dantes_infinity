@@ -63,6 +63,28 @@ public final class StoneKeeper {
 		return false;
 	}
 
+	/** Stones in {@code old} that are not in {@code now} were deleted in the creative inventory. */
+	public static void creativeReplaced(ServerPlayer player, ItemStack old, ItemStack now) {
+		if (!precious(old)) return;
+		java.util.Set<Stone> before = stonesIn(old), after = stonesIn(now);
+		before.removeAll(after);
+		boolean orb = old.is(ModItems.POWER_ORB) && !now.is(ModItems.POWER_ORB);
+		boolean cube = old.is(ModItems.QUEST_SPACE_TESSERACT) && !now.is(ModItems.QUEST_SPACE_TESSERACT);
+		if (orb) before.add(Stone.POWER);
+		if (cube) before.add(Stone.SPACE);
+		for (Stone s : before) StoneRegistry.forget(player.level().getServer(), s);
+	}
+
+	private static java.util.Set<Stone> stonesIn(ItemStack stack) {
+		java.util.Set<Stone> out = new java.util.HashSet<>();
+		if (stack.isEmpty()) return out;
+		for (Stone s : Stone.values()) if (s.matches(stack)) out.add(s);
+		net.minecraft.core.NonNullList<ItemStack> items = net.minecraft.core.NonNullList.withSize(9, ItemStack.EMPTY);
+		stack.getOrDefault(DataComponents.CONTAINER, ItemContainerContents.EMPTY).copyInto(items);
+		for (ItemStack inside : items) for (Stone s : Stone.values()) if (s.matches(inside)) out.add(s);
+		return out;
+	}
+
 	/** Called right before a dead player's inventory is dropped (see PlayerMixin). */
 	public static void beforeDrop(ServerPlayer player) {
 		ServerLevel level = (ServerLevel) player.level();

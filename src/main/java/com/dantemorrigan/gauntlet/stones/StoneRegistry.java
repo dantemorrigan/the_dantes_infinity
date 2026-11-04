@@ -44,6 +44,26 @@ public final class StoneRegistry {
 		return add(server.overworld(), RELEASED, stone);
 	}
 
+	/** Last place the Power meteorite's Orb lay (kept after the Orb is taken so it can be restored). */
+	static final AttachmentType<BlockPos> POWER_ORB_SITE = AttachmentRegistry.<BlockPos>builder()
+			.persistent(BlockPos.CODEC).buildAndRegister(InfinityGauntlet.id("power_orb_site"));
+
+	/** The stone was destroyed (e.g. deleted in creative): the world forgets it and its source starts over. */
+	public static void forget(MinecraftServer server, Stone stone) {
+		ServerLevel level = server.overworld();
+		remove(level, FOUND, stone);
+		remove(level, RELEASED, stone);
+		StoneSources.restore(server, stone);
+	}
+
+	private static void remove(ServerLevel level, AttachmentType<List<String>> type, Stone stone) {
+		List<String> list = level.getAttached(type);
+		if (list == null || !list.contains(stone.id)) return;
+		List<String> next = new ArrayList<>(list);
+		next.remove(stone.id);
+		level.setAttached(type, next);
+	}
+
 	/** Debug: forget everything (stones already in inventories stay where they are). */
 	public static void reset(MinecraftServer server) {
 		ServerLevel level = server.overworld();

@@ -74,6 +74,15 @@ public final class SpaceStoneQuest {
 	private static final AttachmentType<BlockPos> TESSERACT_POS = AttachmentRegistry.<BlockPos>builder()
 			.persistent(BlockPos.CODEC).buildAndRegister(InfinityGauntlet.id("tesseract_pos"));
 
+	/** Puts the Tesseract back on its pedestal (the stone was destroyed, the quest starts over). */
+	static void restoreTesseract(MinecraftServer server) {
+		ServerLevel frost = server.getLevel(FROST);
+		BlockPos pos = frost == null ? null : frost.getAttached(TESSERACT_POS);
+		if (pos == null) return; // the asteroid was never visited: it builds the cube itself
+		frost.getChunk(pos.getX() >> 4, pos.getZ() >> 4);
+		frost.setBlock(pos, ModBlocks.TESSERACT.defaultBlockState(), Block.UPDATE_ALL);
+	}
+
 	/** Where the Tesseract was placed on the asteroid (tests, debug). */
 	public static BlockPos tesseractPos(ServerLevel frost) { return frost.getAttached(TESSERACT_POS); }
 

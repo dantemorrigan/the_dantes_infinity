@@ -26,7 +26,8 @@
       "com.dantemorrigan.gauntlet.gametest.GuideLangTest",
       "com.dantemorrigan.gauntlet.gametest.PowerStoneTest",
       "com.dantemorrigan.gauntlet.gametest.SpaceQuestTest",
-      "com.dantemorrigan.gauntlet.gametest.RealityFogTest"
+      "com.dantemorrigan.gauntlet.gametest.RealityFogTest",
+      "com.dantemorrigan.gauntlet.gametest.StoneForgetTest"
     ]
   },
   "depends": {

@@ -6,6 +6,7 @@
 		"FallingBlockEntityAccessor",
 		"LivingEntityMixin",
 		"MobMixin",
+		"CreativeSlotMixin",
 		"PlayerMixin"
 	],
 	"injectors": {

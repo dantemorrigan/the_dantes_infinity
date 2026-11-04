@@ -213,6 +213,7 @@ public final class PowerStoneFall {
 		BlockPos floor = level.getHeightmapPos(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, at);
 		BlockPos core = buildMeteorite(level, floor);
 		level.setAttached(StoneRegistry.POWER_SITE, core);
+		level.setAttached(StoneRegistry.POWER_ORB_SITE, core);
 		level.playSound(null, core, SoundEvents.GENERIC_EXPLODE.value(), SoundSource.AMBIENT, 8.0F, 0.4F);
 		ModNetwork.MeteorImpact packet = new ModNetwork.MeteorImpact(m.id(), m.to(), PURPLE, Block.getId(ground));
 		for (ServerPlayer p : PlayerLookup.around(level, m.to(), 300)) ServerPlayNetworking.send(p, packet);
