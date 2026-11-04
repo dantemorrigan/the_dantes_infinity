@@ -29,6 +29,9 @@ public final class StoneRegistry {
 	/** Where the purple meteorite with the Orb lies while nobody has taken it. */
 	static final AttachmentType<BlockPos> POWER_SITE = AttachmentRegistry.<BlockPos>builder()
 			.persistent(BlockPos.CODEC).buildAndRegister(InfinityGauntlet.id("power_meteorite_site"));
+	/** Meteorites of showers the player missed: their Orb is gone, and must also vanish where the chunk was not loaded. */
+	static final AttachmentType<List<BlockPos>> STALE_ORBS = AttachmentRegistry.<List<BlockPos>>builder()
+			.persistent(BlockPos.CODEC.listOf()).buildAndRegister(InfinityGauntlet.id("power_stale_orbs"));
 	/** Game time of the next Power meteor shower attempt. */
 	static final AttachmentType<Long> NEXT_SHOWER = AttachmentRegistry.<Long>builder()
 			.persistent(Codec.LONG).buildAndRegister(InfinityGauntlet.id("power_next_shower"));
@@ -71,6 +74,7 @@ public final class StoneRegistry {
 		level.removeAttached(RELEASED);
 		level.removeAttached(POWER_SITE);
 		level.removeAttached(NEXT_SHOWER);
+		level.removeAttached(STALE_ORBS);
 		TimeQuest.resetClock(server);
 		MindQuest.reset(server);
 	}

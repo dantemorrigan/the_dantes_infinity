@@ -257,8 +257,15 @@ public final class ThanosClient {
 		return Mth.lerp(partial, tintO, tint);
 	}
 
+	/** 0..1: how red the sun is: Sanctuary II overhead, or a Power meteor shower somewhere near. */
+	private static float sunRed(float partial) {
+		Minecraft mc = Minecraft.getInstance();
+		if (mc.level == null || !mc.level.dimension().equals(Level.OVERWORLD)) return 0;
+		return Math.max(skyTint(partial), com.dantemorrigan.gauntlet.client.fx.MeteorStreamClient.showerTint(mc.gameRenderer.getMainCamera().position()));
+	}
+
 	public static boolean hideSun() {
-		return skyTint(0) > 0.45f;
+		return sunRed(0) > 0.45f;
 	}
 
 	public static float shakeYaw(float partial) {
@@ -275,7 +282,7 @@ public final class ThanosClient {
 
 	/** Red sun, drawn at the end of the vanilla sun/moon pass (same transform as vanilla). */
 	public static void drawRedSun(PoseStack pose, float sunAngle, float rainBrightness, float partial) {
-		float f = skyTint(partial);
+		float f = sunRed(partial);
 		if (f <= 0.01f) return;
 		Quaternionf q = new Quaternionf().rotateY(-Mth.HALF_PI).rotateX(sunAngle);
 		float size = 38;

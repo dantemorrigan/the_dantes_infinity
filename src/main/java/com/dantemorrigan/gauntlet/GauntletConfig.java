@@ -94,6 +94,8 @@ public final class GauntletConfig {
 	/** Thanos comes for a player who carries this many different stones (loose, in a gauntlet or extractor, Orb, Tesseract). */
 	public boolean thanosEnabled = true;
 	public int thanosStoneThreshold = 5;
+	/** Breather: Thanos comes only this long (game ticks; 12000 = half a day) after the player has gathered the stones. */
+	public int thanosDelayTicks = 12000;
 	/** Once beaten, Thanos never returns in this world. */
 	public boolean thanosOnce = true;
 	/** Seconds of warning ("something approaches from deep space") before the arrival scene. */

@@ -458,5 +458,6 @@
   "msg.infinity_gauntlet.thanos.defeated": "Танос повержен. Вселенная твоя.",
   "death.attack.infinityGauntlet.thanos": "%1$s пал от меча Таноса",
   "death.attack.infinityGauntlet.thanos.player": "%1$s пал от меча Таноса в бою с %2$s",
-  "death.attack.infinityGauntlet.thanos.item": "%1$s пал от меча Таноса"
+  "death.attack.infinityGauntlet.thanos.item": "%1$s пал от меча Таноса",
+  "msg.infinity_gauntlet.thanos.sensed": "Среди звёзд что-то шевельнулось. Камни тяжелеют в руках... Он идёт."
 }

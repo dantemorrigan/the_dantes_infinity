@@ -9,6 +9,7 @@ import com.dantemorrigan.gauntlet.ModParticles;
 import com.dantemorrigan.gauntlet.ModSounds;
 import com.dantemorrigan.gauntlet.Stone;
 import com.dantemorrigan.gauntlet.net.ModNetwork;
+import com.dantemorrigan.gauntlet.net.ModStatus;
 import com.dantemorrigan.gauntlet.stones.StoneKeeper;
 import com.mojang.serialization.Codec;
 import net.fabricmc.fabric.api.attachment.v1.AttachmentRegistry;
@@ -71,6 +72,10 @@ public final class ThanosEncounter {
 
 	private static final AttachmentType<Boolean> DEFEATED = AttachmentRegistry.<Boolean>builder()
 			.persistent(Codec.BOOL).buildAndRegister(InfinityGauntlet.id("thanos_defeated"));
+
+	/** Game time at which this player first carried enough stones (cleared when they no longer do): the breather timer. */
+	private static final AttachmentType<Long> ARMED_AT = AttachmentRegistry.<Long>builder()
+			.persistent(Codec.LONG).copyOnDeath().buildAndRegister(InfinityGauntlet.id("thanos_armed_at"));
 
 	private enum Mode { SKY, RIFT }
 
@@ -174,6 +179,7 @@ public final class ThanosEncounter {
 
 	public static void reset(MinecraftServer server) {
 		server.overworld().removeAttached(DEFEATED);
+		for (ServerPlayer p : server.getPlayerList().getPlayers()) p.removeAttached(ARMED_AT);
 		RETURN_AT.clear();
 		// A scene still running (fight, falling ship...) is cut short.
 		if (active != null) {
@@ -203,10 +209,21 @@ public final class ThanosEncounter {
 		long now = server.overworld().getGameTime();
 		for (ServerPlayer p : server.getPlayerList().getPlayers()) {
 			if (p.isCreative() || p.isSpectator() || !p.isAlive() || p.isSleeping()) continue;
+			if (carried(p).size() < cfg.thanosStoneThreshold) {
+				p.removeAttached(ARMED_AT);
+				continue;
+			}
+			// The breather: he comes only after the player has had the stones for a while (half a day by default).
+			Long armed = p.getAttached(ARMED_AT);
+			if (armed == null || armed > now) {
+				p.setAttached(ARMED_AT, now);
+				ModStatus.send(p, Component.translatable("msg.infinity_gauntlet.thanos.sensed"));
+				continue;
+			}
+			if (now - armed < cfg.thanosDelayTicks) continue;
 			if (!arena(p.level())) continue;
 			Long back = RETURN_AT.get(p.getUUID());
 			if (back != null && now < back) continue;
-			if (carried(p).size() < cfg.thanosStoneThreshold) continue;
 			RETURN_AT.remove(p.getUUID());
 			start(p, false);
 			return;

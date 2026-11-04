@@ -415,7 +415,16 @@ public final class ModNetwork {
 		@Override public Type<ThanosFx> type() { return TYPE; }
 	}
 
+	/** S2C: a Power meteor shower starts around {@code center}: the sky and the sun redden for {@code ticks}. */
+	public record PowerShowerFx(BlockPos center, int ticks) implements CustomPacketPayload {
+		public static final Type<PowerShowerFx> TYPE = newType("power_shower");
+		public static final StreamCodec<ByteBuf, PowerShowerFx> CODEC = StreamCodec.composite(BlockPos.STREAM_CODEC, PowerShowerFx::center,
+				ByteBufCodecs.VAR_INT, PowerShowerFx::ticks, PowerShowerFx::new);
+		@Override public Type<PowerShowerFx> type() { return TYPE; }
+	}
+
 	public static void init() {
+		PayloadTypeRegistry.clientboundPlay().register(PowerShowerFx.TYPE, PowerShowerFx.CODEC);
         PayloadTypeRegistry.serverboundPlay().register(AbilitySelect.TYPE,AbilitySelect.CODEC);
         PayloadTypeRegistry.serverboundPlay().register(AbilityAction.TYPE,AbilityAction.CODEC);
         PayloadTypeRegistry.clientboundPlay().register(AbilityState.TYPE,AbilityState.CODEC);

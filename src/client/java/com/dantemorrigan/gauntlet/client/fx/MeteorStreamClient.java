@@ -30,6 +30,10 @@ public final class MeteorStreamClient {
 		long startTick, endTick;
 	}
 
+	/** A Power meteor shower: the sky (and the sun) take on a red cast around it. */
+	private record Shower(Vec3 center, long start, long end) {}
+
+	private static final List<Shower> SHOWERS = new ArrayList<>();
 	private static final List<Marker> MARKERS = new ArrayList<>();
 	private static long clientTicks;
 	/** Aim marker of the local player (valid = the ground point can be used), refreshed by the server every few ticks. */
@@ -40,7 +44,9 @@ public final class MeteorStreamClient {
 
 	public static void init() {
 		ClientPlayNetworking.registerGlobalReceiver(ModNetwork.MeteorStreamFx.TYPE, (fx, ctx) -> onFx(fx));
-		ClientPlayConnectionEvents.DISCONNECT.register((h, mc) -> {MARKERS.clear(); aimCenter = null; aimUntil = 0;});
+		ClientPlayNetworking.registerGlobalReceiver(ModNetwork.PowerShowerFx.TYPE, (fx, ctx) ->
+				SHOWERS.add(new Shower(net.minecraft.world.phys.Vec3.atCenterOf(fx.center()), clientTicks, clientTicks + fx.ticks())));
+		ClientPlayConnectionEvents.DISCONNECT.register((h, mc) -> {MARKERS.clear(); SHOWERS.clear(); aimCenter = null; aimUntil = 0;});
 		ClientTickEvents.END_CLIENT_TICK.register(MeteorStreamClient::tick);
 	}
 
@@ -78,6 +84,19 @@ public final class MeteorStreamClient {
 		return null;
 	}
 
+	/** 0..1: how strongly a Power meteor shower reddens the sky for a viewer at {@code pos} (ramps in, holds, fades out). */
+	public static float showerTint(Vec3 pos) {
+		float best = 0;
+		for (Shower s : SHOWERS) {
+			double d = Math.sqrt(Math.pow(pos.x - s.center.x, 2) + Math.pow(pos.z - s.center.z, 2));
+			float radial = (float) Mth.clamp(1 - (d - 260) / 240.0, 0, 1);
+			float in = Mth.clamp((clientTicks - s.start) / 70f, 0, 1);
+			float out = Mth.clamp((s.end - clientTicks) / 160f, 0, 1);
+			best = Math.max(best, radial * Math.min(in, out));
+		}
+		return best;
+	}
+
 	/** 0..1 red-sky strength this stream adds at a position: grows when it starts, fades as it ends, only near the circle. */
 	public static float redFactor(Vec3 pos) {
 		float best = 0;
@@ -88,15 +107,18 @@ public final class MeteorStreamClient {
 			float out = Mth.clamp((m.endTick - clientTicks) / 100f, 0, 1);
 			best = Math.max(best, 0.55f * radial * Math.min(in, out));
 		}
-		return best;
+		// A Power shower reddens the sky, softly: less than the Apocalypse, more than a hint.
+		return Math.max(best, 0.4f * showerTint(pos));
 	}
 
 	private static void tick(Minecraft mc) {
 		clientTicks++;
 		if (mc.level == null || mc.player == null || !mc.level.dimension().equals(Level.OVERWORLD)) {
 			MARKERS.clear();
+			SHOWERS.clear();
 			return;
 		}
+		SHOWERS.removeIf(s -> clientTicks >= s.end);
 		for (Iterator<Marker> it = MARKERS.iterator(); it.hasNext(); ) {
 			Marker m = it.next();
 			if (clientTicks >= m.endTick) {

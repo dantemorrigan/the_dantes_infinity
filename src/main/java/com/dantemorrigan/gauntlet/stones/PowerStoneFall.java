@@ -63,7 +63,16 @@ public final class PowerStoneFall {
 
 	public static void init() {
 		ServerTickEvents.END_SERVER_TICK.register(PowerStoneFall::tick);
+		ServerTickEvents.END_SERVER_TICK.register(s -> { if (s.getTickCount() % 20 == 0) clearStaleOrbs(s.overworld()); });
 		ServerLifecycleEvents.SERVER_STOPPED.register(s -> { shower = null; METEORS.clear(); });
+		// An Orb of a missed shower can't be taken even if its chunk was not loaded when the shower came.
+		PlayerBlockBreakEvents.BEFORE.register((level, player, pos, state, blockEntity) -> {
+			if (!state.is(ModBlocks.POWER_ORB) || !(level instanceof ServerLevel sl)) return true;
+			List<BlockPos> stale = sl.getServer().overworld().getAttached(StoneRegistry.STALE_ORBS);
+			if (stale == null || !stale.contains(pos)) return true;
+			clearStaleOrbs(sl.getServer().overworld());
+			return false;
+		});
 		PlayerBlockBreakEvents.AFTER.register((level, player, pos, state, blockEntity) -> {
 			if (!state.is(ModBlocks.POWER_ORB) || !(player instanceof ServerPlayer sp)) return;
 			MinecraftServer server = sp.level().getServer();
@@ -83,6 +92,36 @@ public final class PowerStoneFall {
 	/** Where the meteorite with the unclaimed Orb lies, or null. */
 	public static BlockPos site(MinecraftServer server) { return server.overworld().getAttached(StoneRegistry.POWER_SITE); }
 
+	// ------------------------------------------------------------------ missed showers
+
+	/** The previous meteorite's Orb disappears: replaced by dead rock now, or as soon as its chunk loads. */
+	private static void retireSite(ServerLevel level) {
+		BlockPos site = level.getAttached(StoneRegistry.POWER_SITE);
+		if (site == null) return;
+		level.removeAttached(StoneRegistry.POWER_SITE);
+		List<BlockPos> stale = new ArrayList<>(level.getAttachedOrElse(StoneRegistry.STALE_ORBS, List.of()));
+		if (!stale.contains(site)) stale.add(site);
+		level.setAttached(StoneRegistry.STALE_ORBS, stale);
+		clearStaleOrbs(level);
+	}
+
+	public static void clearStaleOrbs(ServerLevel level) {
+		List<BlockPos> stale = level.getAttached(StoneRegistry.STALE_ORBS);
+		if (stale == null || stale.isEmpty()) return;
+		List<BlockPos> left = new ArrayList<>();
+		for (BlockPos p : stale) {
+			if (!level.hasChunkAt(p)) { left.add(p); continue; }
+			if (level.getBlockState(p).is(ModBlocks.POWER_ORB)) {
+				level.setBlock(p, ModBlocks.PURPLE_METEORITE_CORE.defaultBlockState(), Block.UPDATE_ALL);
+				level.playSound(null, p, SoundEvents.AMETHYST_BLOCK_BREAK, SoundSource.AMBIENT, 1.5F, 0.5F);
+			}
+		}
+		if (left.size() != stale.size()) {
+			if (left.isEmpty()) level.removeAttached(StoneRegistry.STALE_ORBS);
+			else level.setAttached(StoneRegistry.STALE_ORBS, left);
+		}
+	}
+
 	// ------------------------------------------------------------------ scheduling
 
 	private static void tick(MinecraftServer server) {
@@ -93,7 +132,7 @@ public final class PowerStoneFall {
 			return;
 		}
 		GauntletConfig cfg = GauntletConfig.get();
-		if (!cfg.powerShowerEnabled || StoneRegistry.found(server, Stone.POWER) || level.getAttached(StoneRegistry.POWER_SITE) != null) return;
+		if (!cfg.powerShowerEnabled || StoneRegistry.found(server, Stone.POWER)) return;
 		Long next = level.getAttached(StoneRegistry.NEXT_SHOWER);
 		if (next == null) {
 			level.setAttached(StoneRegistry.NEXT_SHOWER, now + cfg.powerShowerFirstMinutes * 1200L);
@@ -111,8 +150,7 @@ public final class PowerStoneFall {
 	/** Starts a shower some distance from the player. Returns false when no dry, loaded ground was found. */
 	public static boolean start(ServerLevel level, ServerPlayer near) {
 		MinecraftServer server = level.getServer();
-		if (shower != null || !near.level().dimension().equals(Level.OVERWORLD) || StoneRegistry.found(server, Stone.POWER)
-				|| level.getAttached(StoneRegistry.POWER_SITE) != null) return false;
+		if (shower != null || !near.level().dimension().equals(Level.OVERWORLD) || StoneRegistry.found(server, Stone.POWER)) return false;
 		GauntletConfig cfg = GauntletConfig.get();
 		RandomSource rnd = level.getRandom();
 		for (int attempt = 0; attempt < 16; attempt++) {
@@ -124,7 +162,11 @@ public final class PowerStoneFall {
 			if (!level.getBlockState(top.below()).getFluidState().isEmpty() || top.getY() <= level.getMinY() + 1) continue;
 			double azimuth = rnd.nextDouble() * Math.PI * 2, elevation = Math.toRadians(48 + rnd.nextInt(18));
 			Vec3 sky = new Vec3(Math.cos(elevation) * Math.cos(azimuth), Math.sin(elevation), Math.cos(elevation) * Math.sin(azimuth));
+			// A meteorite the player left alone loses its Orb now: this shower brings the stone, never a second copy.
+			retireSite(level);
 			shower = new Shower(top, sky, level.getGameTime() + cfg.powerShowerSeconds * 20L);
+			ModNetwork.PowerShowerFx tint = new ModNetwork.PowerShowerFx(top, cfg.powerShowerSeconds * 20 + 260);
+			for (ServerPlayer p : PlayerLookup.around(level, Vec3.atCenterOf(top), 700)) ServerPlayNetworking.send(p, tint);
 			level.playSound(null, top, SoundEvents.LIGHTNING_BOLT_THUNDER, SoundSource.WEATHER, 12.0F, 0.6F);
 			level.playSound(null, near.blockPosition(), com.dantemorrigan.gauntlet.ModSounds.STONE_OMINOUS, SoundSource.AMBIENT, 1.5F, 1.0F);
 			for (ServerPlayer p : PlayerLookup.around(level, Vec3.atCenterOf(top), 600)) {
