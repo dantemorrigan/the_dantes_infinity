@@ -7,7 +7,8 @@
 		"LivingEntityMixin",
 		"MobMixin",
 		"CreativeSlotMixin",
-		"PlayerMixin"
+		"PlayerMixin",
+		"TamableAnimalMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1
