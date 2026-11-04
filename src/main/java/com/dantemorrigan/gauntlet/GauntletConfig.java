@@ -116,11 +116,17 @@ public final class GauntletConfig {
 	public float thanosUruFactor = 0.3f;
 	/** Damage he takes: explosions, diamond / netherite swords, loose stones (no gauntlet), a gauntlet, everything else. */
 	public float thanosExplosionTaken = 2.0f;
-	public float thanosDiamondSwordTaken = 1.6f;
-	public float thanosNetheriteSwordTaken = 1.9f;
-	public float thanosLooseStoneTaken = 2.5f;
-	public float thanosGauntletTaken = 0.5f;
+	/** Swords hurt him less than the gauntlet does: the gauntlet is the strongest thing against him. */
+	public float thanosDiamondSwordMult = 0.8f;
+	public float thanosNetheriteSwordMult = 1.0f;
+	/** A bare stone in the hand (no gauntlet worn): stronger than a sword, weaker than the gauntlet. */
+	public float thanosLooseStoneMult = 1.5f;
 	public float thanosOtherTaken = 0.35f;
+	/** Abilities of a worn gauntlet (power strike, reality strike, mind throw...): partial gauntlet / all six stones. */
+	public float thanosGauntletMult = 3.0f;
+	public float thanosFullGauntletMult = 5.0f;
+	/** The Infinity Beam takes this share of his maximum health when it hits for its full length. */
+	public float thanosBeamShare = 0.45f;
 	/** Experience dropped on defeat. */
 	public int thanosExperience = 3000;
 	/** After his defeat his ship falls and burns (iron and netherite rain down); with the crater it digs one where it lands. */

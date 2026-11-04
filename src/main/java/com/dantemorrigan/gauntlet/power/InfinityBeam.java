@@ -151,7 +151,8 @@ public final class InfinityBeam {
             }
             if (!hit) continue;
             boolean dragon = target instanceof EnderDragon;
-            float cap = dragon ? target.getMaxHealth() * .70f : Math.max(0, GauntletConfig.get().beamDamage);
+            boolean thanos = target instanceof com.dantemorrigan.gauntlet.boss.Thanos;
+            float cap = dragon ? target.getMaxHealth() * .70f : thanos ? target.getMaxHealth() * Math.max(0, GauntletConfig.get().thanosBeamShare) : Math.max(0, GauntletConfig.get().beamDamage);
             float spent = c.damage.getOrDefault(target.getUUID(), 0f);
             float amount = Math.min(cap - spent, cap / c.duration);
             if (amount <= 0) continue;
@@ -161,6 +162,12 @@ public final class InfinityBeam {
                 float before = target.getHealth();
                 target.setHealth(Math.max(0, before - amount));
                 c.damage.put(target.getUUID(), spent + Math.min(amount, before));
+            } else if (thanos) {
+                // A full connected beam takes thanosBeamShare of his health; each slice lands (no hurt-immunity gaps).
+                if ((c.age - c.charge) % 4 == 0) {
+                    float pulse = Math.min(cap - spent, amount * 4);
+                    if (((com.dantemorrigan.gauntlet.boss.Thanos) target).hurtByBeam(c.level, c.owner, pulse)) c.damage.put(target.getUUID(), spent + pulse);
+                }
             } else if ((c.age - c.charge) % 4 == 0) {
                 float pulse = Math.min(cap - spent, amount * 4);
                 if (com.dantemorrigan.gauntlet.uru.GauntletDamage.hurt(c.level, target, c.owner, c.owner.damageSources().playerAttack(c.owner), pulse)) {

@@ -48,6 +48,16 @@ public final class MindQuest {
 			{0, 11}, {0, -11}
 	};
 
+	/**
+	 * The zombies of the city that are still to be defeated, by UUID. Respawning used to depend on how many zombies stood
+	 * near the city, so any that wandered off or vanished (reality strike, discarded) were replaced: they came back.
+	 * Now only a zombie lost without being counted as defeated is ever replaced.
+	 */
+	private static final AttachmentType<java.util.List<String>> ALIVE = AttachmentRegistry.<java.util.List<String>>builder()
+			.persistent(Codec.STRING.listOf()).buildAndRegister(InfinityGauntlet.id("mind_zombies_alive"));
+	/** True while the quest itself clears its zombies (reset): that is not a defeat. */
+	private static boolean clearing;
+
 	private record Convergence(UUID playerId, long startTick) {}
 
 	private static Convergence convergence;
@@ -55,6 +65,13 @@ public final class MindQuest {
 	public static void init() {
 		ServerLifecycleEvents.SERVER_STOPPED.register(s -> convergence = null);
 		ServerTickEvents.END_SERVER_TICK.register(MindQuest::tick);
+		// A zombie removed without dying (the Reality Stone's wave turns mobs into butterflies, and so on) is a defeated zombie too.
+		net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents.ENTITY_UNLOAD.register((entity, world) -> {
+			if (clearing || !(entity instanceof MindZombie z) || !(world instanceof ServerLevel level)) return;
+			if (z.getRemovalReason() == net.minecraft.world.entity.Entity.RemovalReason.DISCARDED && !z.isDeadOrDying()) {
+				onMindZombieKilled(level, z, null);
+			}
+		});
 		ServerLivingEntityEvents.AFTER_DEATH.register((entity, source) -> {
 			if (!(entity instanceof MindZombie zombie) || !(entity.level() instanceof ServerLevel level)) return;
 			onMindZombieKilled(level, zombie, source.getEntity() instanceof ServerPlayer sp ? sp : null);
@@ -73,6 +90,7 @@ public final class MindQuest {
 
 	private static void onMindZombieKilled(ServerLevel level, MindZombie zombie, ServerPlayer killer) {
 		MinecraftServer server = level.getServer();
+		forget(server, zombie.getUUID());
 		// Always show yellow essence rising from the defeated zombie.
 		level.sendParticles(ModParticles.QUEST_MIND_ESSENCE, zombie.getX(), zombie.getY() + 1.0, zombie.getZ(), 2, 0.25, 0.35, 0.25, 0);
 		level.playSound(null, zombie.blockPosition(), SoundEvents.AMETHYST_BLOCK_CHIME, SoundSource.HOSTILE, 1.5F, 1.1F);
@@ -180,18 +198,40 @@ public final class MindQuest {
 		player.setItemInHand(InteractionHand.MAIN_HAND, stone);
 	}
 
-	/** Ensures the remaining undefeated Mind Zombies are present in the Ruined City. */
+	private static void forget(MinecraftServer server, UUID id) {
+		ServerLevel overworld = server.overworld();
+		java.util.List<String> ids = overworld.getAttached(ALIVE);
+		if (ids == null || !ids.contains(id.toString())) return;
+		java.util.List<String> next = new java.util.ArrayList<>(ids);
+		next.remove(id.toString());
+		overworld.setAttached(ALIVE, next);
+	}
+
+	/** Ensures the remaining undefeated Mind Zombies exist: only those lost without being defeated are ever replaced. */
 	public static void ensureZombies(ServerLevel level, BlockPos site) {
 		MinecraftServer server = level.getServer();
 		if (StoneRegistry.released(server, Stone.MIND) || convergence != null) return;
 		int needed = remainingCount(server);
 		if (needed <= 0) return;
 
-		List<MindZombie> existing = level.getEntitiesOfClass(MindZombie.class,
-				new AABB(site).inflate(MindCity.R_BLEND + 24.0), MindZombie::isAlive);
-		int toSpawn = needed - existing.size();
+		java.util.List<String> ids = level.getAttached(ALIVE);
+		if (ids == null) {
+			// First time (or a world from before): the zombies that already stand around the city are the quest's zombies.
+			ids = new java.util.ArrayList<>();
+			for (MindZombie z : level.getEntitiesOfClass(MindZombie.class, new AABB(site).inflate(MindCity.R_BLEND + 64.0), MindZombie::isAlive)) {
+				if (ids.size() < needed) ids.add(z.getUUID().toString());
+			}
+		} else {
+			ids = new java.util.ArrayList<>(ids);
+			// A tracked zombie that is loaded and gone (dead or removed some other way) is no longer tracked.
+			ids.removeIf(s -> {
+				var e = level.getEntity(UUID.fromString(s));
+				return e != null && (!e.isAlive() || e.isRemoved());
+			});
+		}
+		int toSpawn = needed - ids.size();
 		for (int i = 0; i < toSpawn; i++) {
-			int idx = (existing.size() + i) % SPAWN_OFFSETS.length;
+			int idx = (ids.size()) % SPAWN_OFFSETS.length;
 			int sx = site.getX() + SPAWN_OFFSETS[idx][0];
 			int sz = site.getZ() + SPAWN_OFFSETS[idx][1];
 			int sy = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, sx, sz);
@@ -201,19 +241,27 @@ public final class MindQuest {
 			zombie.snapTo(spawnPos.getX() + 0.5, spawnPos.getY(), spawnPos.getZ() + 0.5, (idx * 36.0f) % 360.0f, 0.0f);
 			zombie.setHomeTo(site, MindCity.R_FLAT - 2);
 			level.addFreshEntity(zombie);
+			ids.add(zombie.getUUID().toString());
 		}
+		level.setAttached(ALIVE, ids);
 	}
 
 	/** Resets the Mind Stone quest when the Mind Stone is forgotten or stones are reset. */
 	public static void reset(MinecraftServer server) {
 		ServerLevel overworld = server.overworld();
 		overworld.removeAttached(DEFEATED);
+		overworld.removeAttached(ALIVE);
 		convergence = null;
 		if (!MindCity.built(server)) return;
 		BlockPos site = MindCity.site(server);
 		if (overworld.hasChunkAt(site)) {
-			for (MindZombie z : overworld.getEntitiesOfClass(MindZombie.class, new AABB(site).inflate(MindCity.R_BLEND + 32.0), e -> true)) {
-				z.discard();
+			clearing = true;
+			try {
+				for (MindZombie z : overworld.getEntitiesOfClass(MindZombie.class, new AABB(site).inflate(MindCity.R_BLEND + 64.0), e -> true)) {
+					z.discard();
+				}
+			} finally {
+				clearing = false;
 			}
 			ensureZombies(overworld, site);
 		}

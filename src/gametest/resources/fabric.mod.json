@@ -8,6 +8,8 @@
     "fabric-client-gametest": [
       "com.dantemorrigan.gauntlet.gametest.VisualTest",
       "com.dantemorrigan.gauntlet.gametest.ThanosTest",
+      "com.dantemorrigan.gauntlet.gametest.ThanosCombatTest",
+      "com.dantemorrigan.gauntlet.gametest.MindZombieRespawnTest",
       "com.dantemorrigan.gauntlet.gametest.PlanetNetherTest",
       "com.dantemorrigan.gauntlet.gametest.DedicatedServerTest",
       "com.dantemorrigan.gauntlet.gametest.PlanetRestrictionTest",

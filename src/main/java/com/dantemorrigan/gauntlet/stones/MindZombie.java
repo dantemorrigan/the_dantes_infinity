@@ -47,7 +47,9 @@ public class MindZombie extends Zombie {
 				.add(Attributes.ATTACK_DAMAGE, 5.0)
 				.add(Attributes.FOLLOW_RANGE, 48.0)
 				.add(Attributes.STEP_HEIGHT, 1.0)
-				.add(Attributes.ARMOR, 4.0);
+				.add(Attributes.ARMOR, 4.0)
+				// No vanilla reinforcements: zombies that call for help look like the quest's zombies coming back.
+				.add(Attributes.SPAWN_REINFORCEMENTS_CHANCE, 0.0);
 	}
 
 	@Override

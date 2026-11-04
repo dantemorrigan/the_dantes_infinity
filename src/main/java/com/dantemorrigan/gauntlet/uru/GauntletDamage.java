@@ -33,6 +33,10 @@ public final class GauntletDamage {
 	private static final float LETHAL = 1000f;
 
 	public static boolean hurt(ServerLevel level, Entity target, ServerPlayer attacker, DamageSource normal, float amount) {
+		// Thanos fears the gauntlet above all else: every ability of a worn gauntlet hits him hard (see Thanos#hurtByGauntlet).
+		if (target instanceof com.dantemorrigan.gauntlet.boss.Thanos thanos && attacker != null && !GauntletState.activeGauntlet(attacker).isEmpty()) {
+			return thanos.hurtByGauntlet(level, attacker, amount, fullGauntlet(attacker));
+		}
 		if (!(target instanceof LivingEntity living) || attacker == null || !fullGauntlet(attacker)
 				|| !(living instanceof Player || UruArmor.fullSet(living))) {
 			return target.hurtServer(level, normal, amount);

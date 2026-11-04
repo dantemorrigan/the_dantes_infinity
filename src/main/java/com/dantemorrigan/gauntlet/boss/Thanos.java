@@ -91,6 +91,9 @@ public class Thanos extends Monster {
 		super(type, level);
 		this.setPersistenceRequired();
 		this.xpReward = 0;
+		// He wades through water like on land (a Titan does not stop at a pond).
+		this.setPathfindingMalus(net.minecraft.world.level.pathfinder.PathType.WATER, 0f);
+		this.setPathfindingMalus(net.minecraft.world.level.pathfinder.PathType.WATER_BORDER, 0f);
 	}
 
 	public static AttributeSupplier.Builder createAttributes() {
@@ -263,7 +266,25 @@ public class Thanos extends Monster {
 		}
 	}
 
+	/** Water never holds him: he walks along the bottom toward the target and heaves himself out at the edge. */
+	private void wade(ServerPlayer target) {
+		if (!this.isInWater()) { stuckInWater = 0; return; }
+		Vec3 to = horizontal(target.position().subtract(this.position()));
+		Vec3 v = this.getDeltaMovement();
+		boolean deep = this.isEyeInFluid(net.minecraft.tags.FluidTags.WATER);
+		stuckInWater++;
+		double up = deep ? 0.16 : this.horizontalCollision ? 0.5 : 0.1;
+		// Held in the water for long (a pit, a steep bank): a great leap out.
+		if (stuckInWater > 60) up = 0.9;
+		this.setDeltaMovement(v.x * 0.75 + to.x * 0.12, Math.max(v.y, up), v.z * 0.75 + to.z * 0.12);
+		this.hurtMarked = true;
+		if (stuckInWater > 60) stuckInWater = 0;
+	}
+
+	private int stuckInWater;
+
 	private void tickChase(ServerLevel level, ServerPlayer target, boolean enraged) {
+		wade(target);
 		double d = this.distanceTo(target);
 		double dy = target.getY() - this.getY();
 		if (cooldown > 0) cooldown--;
@@ -515,8 +536,8 @@ public class Thanos extends Monster {
 				|| source.is(DamageTypes.SWEET_BERRY_BUSH) || source.is(DamageTypes.HOT_FLOOR) || source.is(DamageTypes.WITHER)) {
 			return false;
 		}
-		float scaled = amount * takenMultiplier(source);
-		if (amount >= 1000f) scaled = Math.min(scaled, looseStone(source) ? 120f : 60f);
+		float scaled = rawDamage ? amount : amount * takenMultiplier(source);
+		if (!rawDamage && amount >= 1000f) scaled = Math.min(scaled, looseStone(source) ? 90f : 60f);
 		boolean hurt = super.hurtServer(level, source, scaled);
 		if (hurt) {
 			Vec3 p = this.position().add(0, 1.6, 0);
@@ -530,21 +551,44 @@ public class Thanos extends Monster {
 		return hurt;
 	}
 
+	/** True while {@link #hurtByGauntlet} applies a blow whose size is already final (no sword / stone multiplier on top). */
+	private boolean rawDamage;
+
+	/**
+	 * A blow of a worn gauntlet (every ability goes through {@code GauntletDamage}): multiplied by the gauntlet's strength
+	 * (all six stones: more), and it always lands: his hurt-immunity frames would otherwise swallow quick or repeated hits.
+	 */
+	public boolean hurtByGauntlet(ServerLevel level, ServerPlayer attacker, float amount, boolean fullGauntlet) {
+		GauntletConfig cfg = GauntletConfig.get();
+		float base = amount >= 1000f ? 40f : amount;
+		return rawBlow(level, attacker, Math.min(220f, base * (fullGauntlet ? cfg.thanosFullGauntletMult : cfg.thanosGauntletMult)));
+	}
+
+	/** A slice of the Infinity Beam: already the final size. */
+	public boolean hurtByBeam(ServerLevel level, ServerPlayer attacker, float amount) {
+		return rawBlow(level, attacker, amount);
+	}
+
+	private boolean rawBlow(ServerLevel level, ServerPlayer attacker, float amount) {
+		this.invulnerableTime = 0;
+		this.rawDamage = true;
+		try {
+			return this.hurtServer(level, level.damageSources().playerAttack(attacker), amount);
+		} finally {
+			this.rawDamage = false;
+		}
+	}
+
 	private float takenMultiplier(DamageSource source) {
 		GauntletConfig cfg = GauntletConfig.get();
 		if (source.is(DamageTypeTags.IS_EXPLOSION)) return cfg.thanosExplosionTaken;
-		if (looseStone(source)) return cfg.thanosLooseStoneTaken;
+		if (looseStone(source)) return cfg.thanosLooseStoneMult;
 		Entity attacker = source.getEntity();
-		if (attacker instanceof ServerPlayer p && !GauntletState.activeGauntlet(p).isEmpty() && source.getDirectEntity() == p
-				&& !source.is(DamageTypes.PLAYER_ATTACK)) {
-			return cfg.thanosGauntletTaken;
-		}
 		boolean melee = source.is(DamageTypes.PLAYER_ATTACK) || source.is(DamageTypes.MOB_ATTACK);
 		if (melee && attacker instanceof LivingEntity l && source.getDirectEntity() == l) {
 			ItemStack weapon = l.getMainHandItem();
-			if (weapon.is(Items.NETHERITE_SWORD)) return cfg.thanosNetheriteSwordTaken;
-			if (weapon.is(Items.DIAMOND_SWORD)) return cfg.thanosDiamondSwordTaken;
-			if (attacker instanceof ServerPlayer p && !GauntletState.activeGauntlet(p).isEmpty() && weapon.isEmpty()) return cfg.thanosGauntletTaken;
+			if (weapon.is(Items.NETHERITE_SWORD)) return cfg.thanosNetheriteSwordMult;
+			if (weapon.is(Items.DIAMOND_SWORD)) return cfg.thanosDiamondSwordMult;
 		}
 		return cfg.thanosOtherTaken;
 	}

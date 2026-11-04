@@ -84,7 +84,7 @@ public class ThanosTest implements FabricClientGameTest {
 			// ---- Damage rules: a netherite sword cuts far deeper than an iron one.
 			float iron = hitWith(server, Items.IRON_SWORD);
 			float netherite = hitWith(server, Items.NETHERITE_SWORD);
-			if (!(netherite > iron * 3)) throw new AssertionError("Netherite " + netherite + " should hurt much more than iron " + iron);
+			if (!(netherite > iron * 2)) throw new AssertionError("Netherite " + netherite + " should hurt much more than iron " + iron);
 
 			// ---- Defeat: kneel, dust, the empty gauntlet.
 			server.runOnServer(s -> {
