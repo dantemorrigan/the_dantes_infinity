@@ -73,6 +73,13 @@ public final class ModParticles {
 	/** Uru: rune ring opening from the chest when the armor absorbs a full-gauntlet hit. xa = wearer entity id (follows it). */
 	public static final SimpleParticleType URU_GUARD = register("uru_guard");
 
+	// Space Stone quest (pack: 01_Space_Quest). xa = size multiplier; obsidian_wave: (xa,ya,za) = normal, length = size.
+	public static final SimpleParticleType QUEST_SPACE_PORTAL = register("quest_space_portal");
+	public static final SimpleParticleType QUEST_SPACE_FROST_SHARD = register("quest_space_frost_shard");
+	public static final SimpleParticleType QUEST_SPACE_RETURN_FOLD = register("quest_space_return_fold");
+	public static final SimpleParticleType QUEST_SPACE_LAVA_RELEASE = register("quest_space_lava_release");
+	public static final SimpleParticleType QUEST_SPACE_OBSIDIAN_WAVE = register("quest_space_obsidian_wave");
+
 	private static SimpleParticleType register(String name) {
 		return Registry.register(BuiltInRegistries.PARTICLE_TYPE, InfinityGauntlet.id(name), FabricParticleTypes.simple(true));
 	}

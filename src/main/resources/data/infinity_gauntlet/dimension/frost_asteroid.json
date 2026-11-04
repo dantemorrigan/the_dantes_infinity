@@ -1,0 +1,18 @@
+{
+  "type": "infinity_gauntlet:frost_asteroid",
+  "generator": {
+    "type": "minecraft:flat",
+    "settings": {
+      "layers": [
+        {
+          "block": "minecraft:air",
+          "height": 1
+        }
+      ],
+      "biome": "infinity_gauntlet:frost_asteroid",
+      "lakes": false,
+      "features": false,
+      "structure_overrides": []
+    }
+  }
+}

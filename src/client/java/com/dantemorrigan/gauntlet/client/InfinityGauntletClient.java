@@ -35,6 +35,7 @@ public class InfinityGauntletClient implements ClientModInitializer {
 		com.dantemorrigan.gauntlet.client.celestial.CelestialClient.init();
 		com.dantemorrigan.gauntlet.client.fx.InfinityBeamClient.init();
 		StatusHud.init();
+		com.dantemorrigan.gauntlet.client.quest.SpaceQuestClient.init();
 		com.dantemorrigan.gauntlet.client.screen.SettingsButtons.init();
 		WornGauntlet.init();
 		com.dantemorrigan.gauntlet.client.render.GauntletGestureClient.init();

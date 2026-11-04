@@ -55,6 +55,18 @@ public final class GauntletCommand {
 						.then(Commands.literal("uru").executes(ctx -> uru(ctx.getSource())))
 						.then(Commands.literal("meteor").executes(ctx -> meteor(ctx.getSource())))
 						.then(Commands.literal("state").executes(ctx -> state(ctx.getSource())))
+						.then(Commands.literal("space_quest")
+								.then(Commands.literal("rift").executes(ctx -> {
+									var end = ctx.getSource().getServer().getLevel(net.minecraft.world.level.Level.END);
+									if (end == null) return 0;
+									var pos = com.dantemorrigan.gauntlet.stones.SpaceStoneQuest.buildEndRift(end);
+									ctx.getSource().sendSuccess(() -> Component.literal("End rift: " + pos.toShortString()), false);
+									return 1;
+								}))
+								.then(Commands.literal("asteroid").executes(ctx -> {
+									com.dantemorrigan.gauntlet.stones.SpaceStoneQuest.goToAsteroid(ctx.getSource().getPlayerOrException());
+									return 1;
+								})))
 						.then(Commands.literal("power_shower").executes(ctx -> {
 							ServerPlayer p = ctx.getSource().getPlayerOrException();
 							if (!com.dantemorrigan.gauntlet.stones.PowerStoneFall.start(p.level().getServer().overworld(), p)) {

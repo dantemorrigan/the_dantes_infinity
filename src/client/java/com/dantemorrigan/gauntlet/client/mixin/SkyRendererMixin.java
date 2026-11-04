@@ -68,6 +68,11 @@ public abstract class SkyRendererMixin {
 	/** Dead Space uses skybox "end" only to get a sky pass; we replace the End sky with the space cube-map. */
 	@Inject(method = "renderEndSky", at = @At("HEAD"), cancellable = true)
 	private void infinityGauntlet$deadSpaceSky(CallbackInfo ci) {
+		if (com.dantemorrigan.gauntlet.client.quest.SpaceQuestClient.onAsteroid()) {
+			com.dantemorrigan.gauntlet.client.quest.SpaceQuestClient.drawSky();
+			ci.cancel();
+			return;
+		}
         if (com.dantemorrigan.gauntlet.client.cosmos.CosmosClient.inCosmos()) {
             com.dantemorrigan.gauntlet.client.cosmos.CosmosRenderer.sky(1);
             ci.cancel(); return;
@@ -80,7 +85,8 @@ public abstract class SkyRendererMixin {
 
 	@Inject(method = "renderEndFlash", at = @At("HEAD"), cancellable = true)
 	private void infinityGauntlet$noEndFlash(PoseStack poseStack, float intensity, float xAngle, float yAngle, CallbackInfo ci) {
-		if (com.dantemorrigan.gauntlet.client.space.SpaceScene.active() || com.dantemorrigan.gauntlet.client.cosmos.CosmosClient.inCosmos()) ci.cancel();
+		if (com.dantemorrigan.gauntlet.client.space.SpaceScene.active() || com.dantemorrigan.gauntlet.client.cosmos.CosmosClient.inCosmos()
+				|| com.dantemorrigan.gauntlet.client.quest.SpaceQuestClient.onAsteroid()) ci.cancel();
 	}
 }
 

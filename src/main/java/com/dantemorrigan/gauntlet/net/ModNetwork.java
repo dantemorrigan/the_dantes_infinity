@@ -298,6 +298,14 @@ public final class ModNetwork {
 	}
 
 	/** A HUD notice. It travels as a component so translations are resolved by the CLIENT (dedicated servers have no mod lang files). */
+	/** S2C: a framed quest notice in the middle of the screen (Space Stone quest). */
+	public record QuestAlert(net.minecraft.network.chat.Component text) implements CustomPacketPayload {
+		public static final Type<QuestAlert> TYPE = newType("quest_alert");
+		public static final StreamCodec<RegistryFriendlyByteBuf, QuestAlert> CODEC = StreamCodec.composite(
+				net.minecraft.network.chat.ComponentSerialization.STREAM_CODEC, QuestAlert::text, QuestAlert::new);
+		@Override public Type<QuestAlert> type() { return TYPE; }
+	}
+
 	public record Status(net.minecraft.network.chat.Component text) implements CustomPacketPayload {
 		public static final Type<Status> TYPE = newType("status");
 		public static final StreamCodec<RegistryFriendlyByteBuf, Status> CODEC = StreamCodec.composite(
@@ -390,6 +398,7 @@ public final class ModNetwork {
 		PayloadTypeRegistry.clientboundPlay().register(RealityState.TYPE, RealityState.CODEC);
 		PayloadTypeRegistry.clientboundPlay().register(RealityFx.TYPE, RealityFx.CODEC);
 		PayloadTypeRegistry.clientboundPlay().register(Status.TYPE, Status.CODEC);
+		PayloadTypeRegistry.clientboundPlay().register(QuestAlert.TYPE, QuestAlert.CODEC);
 		PayloadTypeRegistry.serverboundPlay().register(BeamAction.TYPE, BeamAction.CODEC);
 		PayloadTypeRegistry.clientboundPlay().register(BeamFx.TYPE, BeamFx.CODEC);
 		PayloadTypeRegistry.serverboundPlay().register(SpaceAction.TYPE, SpaceAction.CODEC);

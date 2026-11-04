@@ -17,7 +17,7 @@ public class GuideLangTest implements FabricClientGameTest {
 		ctx.waitFor(mc -> mc.screen instanceof BookViewScreen, 100);
 		ctx.waitTicks(4);
 		ctx.takeScreenshot(name + "_cover");
-		for (int page : new int[]{pages, 2, 5, 12, 15, 22, 23, 24}) {
+		for (int page : new int[]{pages, 3, 8}) {
 			ctx.runOnClient(mc -> ((BookViewScreen) mc.screen).setPage(page));
 			ctx.waitTicks(2);
 			ctx.takeScreenshot(name + "_p" + (page + 1));

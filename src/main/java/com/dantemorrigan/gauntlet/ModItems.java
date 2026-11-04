@@ -36,6 +36,11 @@ public final class ModItems {
 	public static final Item POWER_ORB = register("power_orb", com.dantemorrigan.gauntlet.stones.OrbItem::new, epic());
 	public static final Item POWER_ORB_OPEN = register("power_orb_open", new Item.Properties().stacksTo(1).rarity(Rarity.RARE).fireResistant());
 
+	/** The Tesseract with the Space Stone inside: right-click goes home, lava breaks it open. */
+	public static final Item QUEST_SPACE_TESSERACT = register("quest_space_tesseract", com.dantemorrigan.gauntlet.stones.TesseractItem::new,
+			epic().component(DataComponents.LORE, new net.minecraft.world.item.component.ItemLore(java.util.List.of(
+					net.minecraft.network.chat.Component.translatable("tooltip.infinity_gauntlet.tesseract")))));
+
 	/** Raw uru from the ore, smelted into uru ingots like iron. */
 	public static final Item RAW_URU = register("raw_uru", new Item.Properties().rarity(Rarity.UNCOMMON).fireResistant());
 	public static final Item URU_INGOT = register("uru_ingot", new Item.Properties().rarity(Rarity.RARE).fireResistant());

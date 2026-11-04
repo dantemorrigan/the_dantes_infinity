@@ -24,7 +24,8 @@
       "com.dantemorrigan.gauntlet.gametest.UruArmorTest",
       "com.dantemorrigan.gauntlet.gametest.UruOreTest",
       "com.dantemorrigan.gauntlet.gametest.GuideLangTest",
-      "com.dantemorrigan.gauntlet.gametest.PowerStoneTest"
+      "com.dantemorrigan.gauntlet.gametest.PowerStoneTest",
+      "com.dantemorrigan.gauntlet.gametest.SpaceQuestTest"
     ]
   },
   "depends": {

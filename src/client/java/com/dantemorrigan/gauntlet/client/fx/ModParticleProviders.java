@@ -25,6 +25,11 @@ public final class ModParticleProviders {
 		billboard(ModParticles.VOID_DISSOLVE, "void_dissolve");
 		billboard(ModParticles.CELESTIAL_METEOR_IMPACT, "celestial_meteor_impact");
 		billboard(ModParticles.SPACE_TELEPORT_FLASH, "space_teleport_flash");
+		billboard(ModParticles.QUEST_SPACE_PORTAL, "quest_space_portal");
+		billboard(ModParticles.QUEST_SPACE_FROST_SHARD, "quest_space_frost_shard");
+		billboard(ModParticles.QUEST_SPACE_RETURN_FOLD, "quest_space_return_fold");
+		billboard(ModParticles.QUEST_SPACE_LAVA_RELEASE, "quest_space_lava_release");
+		flat(ModParticles.QUEST_SPACE_OBSIDIAN_WAVE, "quest_space_obsidian_wave");
 		// Reality stone
 		ParticleProviderRegistry.getInstance().register(ModParticles.REALITY_CHARGE, sprites -> (t, level, x, y, z, xa, ya, za, random) ->
 				new FxParticle(level, x, y, z, sprites, VfxPresets.get("reality_charge"), 1f, null, (int) xa,

@@ -42,6 +42,16 @@ public final class ModBlocks {
 					.sound(SoundType.NETHERITE_BLOCK).noOcclusion()
 					.pushReaction(net.minecraft.world.level.material.PushReaction.BLOCK));
 
+	// Space Stone quest: the ancient ice tower, the rift portal, the Tesseract on its pedestal.
+	public static final Block QUEST_SPACE_CARVED_ICE = register("quest_space_carved_ice", BlockBehaviour.Properties.of()
+			.mapColor(MapColor.ICE).strength(2.8f, 9.0f).sound(SoundType.GLASS).requiresCorrectToolForDrops());
+	public static final Block FROST_PORTAL = registerNoItem("frost_portal", p -> new com.dantemorrigan.gauntlet.stones.FrostPortalBlock(p),
+			BlockBehaviour.Properties.of().mapColor(MapColor.ICE).noCollision().strength(-1.0f, 3_600_000.0f).lightLevel(state -> 12)
+					.noLootTable().sound(SoundType.GLASS).pushReaction(net.minecraft.world.level.material.PushReaction.BLOCK));
+	public static final Block TESSERACT = registerNoItem("tesseract", p -> new com.dantemorrigan.gauntlet.stones.TesseractBlock(p),
+			BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_BLUE).strength(-1.0f, 3_600_000.0f).lightLevel(state -> 15)
+					.noLootTable().noOcclusion().sound(SoundType.AMETHYST).pushReaction(net.minecraft.world.level.material.PushReaction.BLOCK));
+
 	public static final ResourceKey<PlacedFeature> ORE_URU = ResourceKey.create(Registries.PLACED_FEATURE, InfinityGauntlet.id("ore_uru"));
 
 	private static Block register(String name, BlockBehaviour.Properties properties) {

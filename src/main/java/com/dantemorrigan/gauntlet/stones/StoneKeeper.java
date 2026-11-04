@@ -51,7 +51,7 @@ public final class StoneKeeper {
 
 	public static boolean precious(ItemStack stack) {
 		if (stack.isEmpty()) return false;
-		if (stack.is(ModItems.POWER_ORB)) return true;
+		if (stack.is(ModItems.POWER_ORB) || stack.is(ModItems.QUEST_SPACE_TESSERACT)) return true;
 		for (Stone s : Stone.values()) if (s.matches(stack)) return true;
 		if (stack.is(ModItems.GAUNTLET) || stack.is(ModItems.INFINITY_EXTRACTOR)) {
 			net.minecraft.core.NonNullList<ItemStack> items = net.minecraft.core.NonNullList.withSize(9, ItemStack.EMPTY);

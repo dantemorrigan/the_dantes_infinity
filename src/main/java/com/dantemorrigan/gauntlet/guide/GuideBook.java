@@ -28,7 +28,7 @@ import java.util.List;
  */
 public final class GuideBook {
 	/** Number of {@code guide.infinity_gauntlet.pageN} keys in the lang files. */
-	public static final int PAGE_COUNT = 34;
+	public static final int PAGE_COUNT = 15;
 
 	/** Set once a player has received the book, so it is handed out only on their first join. */
 	private static final AttachmentType<Boolean> GIVEN = AttachmentRegistry.<Boolean>builder()
