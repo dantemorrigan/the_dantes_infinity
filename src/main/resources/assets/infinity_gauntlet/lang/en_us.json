@@ -439,5 +439,20 @@
   "guide.infinity_gauntlet.p15.6": ".\n\nKeys can be rebound in Controls. Lost the book? ",
   "guide.infinity_gauntlet.p15.7": "/gauntlet_guide",
   "guide.infinity_gauntlet.p15.8": ".\n\n",
-  "guide.infinity_gauntlet.p15.9": "Use the power wisely."
+  "guide.infinity_gauntlet.p15.9": "Use the power wisely.",
+  "entity.infinity_gauntlet.thanos": "Thanos",
+  "entity.infinity_gauntlet.thanos.title": "Thanos – The Mad Titan",
+  "entity.infinity_gauntlet.thanos_sword": "Thanos's Double Sword",
+  "thanos.infinity_gauntlet.line.0": "I've come to take what is mine.",
+  "thanos.infinity_gauntlet.line.1": "Give me the stones!",
+  "thanos.infinity_gauntlet.line.2": "The universe is mine, and mine alone!",
+  "thanos.infinity_gauntlet.line.3": "You will die!",
+  "thanos.infinity_gauntlet.line.4": "It can't be... I lost?",
+  "thanos.infinity_gauntlet.line.5": "This is my end.",
+  "subtitles.infinity_gauntlet.thanos.voice": "Thanos speaks",
+  "msg.infinity_gauntlet.thanos.warning": "Something is coming from the depths of space... The stones have called the Mad Titan.",
+  "msg.infinity_gauntlet.thanos.defeated": "Thanos has fallen. The universe is yours.",
+  "death.attack.infinityGauntlet.thanos": "%1$s was cut down by Thanos",
+  "death.attack.infinityGauntlet.thanos.player": "%1$s was cut down by Thanos while fighting %2$s",
+  "death.attack.infinityGauntlet.thanos.item": "%1$s was cut down by Thanos"
 }

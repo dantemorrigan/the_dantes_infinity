@@ -111,6 +111,22 @@ public final class ModParticleProviders {
 		ParticleProviderRegistry.getInstance().register(ModParticles.URU_GUARD, sprites -> (t, level, x, y, z, xa, ya, za, random) ->
 				new FxParticle(level, x, y, z, sprites, VfxPresets.get("uru_guard"), 1f, null, (int) xa,
 						e -> e.isAlive() ? e.position().add(0, e.getBbHeight() * 0.62, 0) : null, 1f));
+		// Thanos
+		flat(ModParticles.THANOS_ARRIVAL_RING, "thanos/arrival_ring");
+		flat(ModParticles.THANOS_SLAM_WAVE, "thanos/slam_wave");
+		billboard(ModParticles.THANOS_ARRIVAL_FLASH, "thanos/arrival_flash");
+		billboard(ModParticles.THANOS_ARRIVAL_STREAK, "thanos/arrival_streak");
+		billboard(ModParticles.THANOS_SHIP_MIST, "thanos/ship_mist");
+		billboard(ModParticles.THANOS_RIFT_SPARKS, "thanos/rift_sparks");
+		billboard(ModParticles.THANOS_RIFT_CLOSE, "thanos/rift_close");
+		billboard(ModParticles.THANOS_DRAGON_CHARGE, "thanos/dragon_charge");
+		billboard(ModParticles.THANOS_DRAGON_IMPACT, "thanos/dragon_impact");
+		billboard(ModParticles.THANOS_DRAGON_SHOCKWAVE, "thanos/dragon_shockwave");
+		billboard(ModParticles.THANOS_END_HULL_HALO, "thanos/end_hull_halo");
+		billboard(ModParticles.THANOS_SWORD_ARC, "thanos/sword_arc");
+		billboard(ModParticles.THANOS_SWORD_SPARKS, "thanos/sword_sparks");
+		billboard(ModParticles.THANOS_SLAM_DUST, "thanos/slam_dust");
+		billboard(ModParticles.THANOS_ARMOR_HIT, "thanos/armor_hit");
 		// Infinity Extractor
 		aligned(ModParticles.EXTRACTOR_TETHER, "extractor_tether", 5);
 		billboard(ModParticles.EXTRACTOR_GATHER, "extractor_gather");

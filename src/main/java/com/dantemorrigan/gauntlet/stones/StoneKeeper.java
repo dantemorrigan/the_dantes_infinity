@@ -107,7 +107,7 @@ public final class StoneKeeper {
 		return false;
 	}
 
-	private static java.util.Set<Stone> stonesIn(ItemStack stack) {
+	public static java.util.Set<Stone> stonesIn(ItemStack stack) {
 		java.util.Set<Stone> out = new java.util.HashSet<>();
 		if (stack.isEmpty()) return out;
 		for (Stone s : Stone.values()) if (s.matches(stack)) out.add(s);

@@ -158,7 +158,7 @@ public final class RealityStone {
 			if (s.tick % 5 == 0) {
 				for (Mob mob : s.level.getEntitiesOfClass(Mob.class, box, m -> m.isAlive() && !m.entityTags().contains(TAG)
 						&& !MindStone.holdsEntity(m) && !SoulStone.isExtracting(m)
-						&& !(m instanceof EnderDragon) && !(m instanceof WitherBoss) && m.position().distanceTo(s.center) <= r)) {
+						&& !(m instanceof EnderDragon) && !(m instanceof WitherBoss) && !(m instanceof com.dantemorrigan.gauntlet.boss.Thanos) && m.position().distanceTo(s.center) <= r)) {
 					int flags = (mob.isInvisible() ? 1 : 0) | (mob.isNoAi() ? 2 : 0)
 							| (mob.isInvulnerable() ? 4 : 0) | (mob.isNoGravity() ? 8 : 0);
 					mob.addTag(ORIGINAL_FLAGS + flags);

@@ -36,6 +36,15 @@ public final class ModSounds {
 	public static final SoundEvent ABILITY_MIND_TEAR = register("ability_mind_tear");
 	public static final SoundEvent ABILITY_INFINITY_BEAM = register("ability_infinity_beam");
 
+	// Thanos (voiced lines and the battle theme).
+	public static final SoundEvent THANOS_ARRIVAL = register("thanos.arrival");
+	public static final SoundEvent THANOS_GIVE_STONES = register("thanos.give_stones");
+	public static final SoundEvent THANOS_UNIVERSE = register("thanos.universe");
+	public static final SoundEvent THANOS_YOU_WILL_DIE = register("thanos.you_will_die");
+	public static final SoundEvent THANOS_DEFEAT_1 = register("thanos.defeat_1");
+	public static final SoundEvent THANOS_DEFEAT_2 = register("thanos.defeat_2");
+	public static final SoundEvent THANOS_MUSIC = register("thanos.battle_music");
+
 	/** The cue for an ability that starts on key press, or null if it has none (power abilities are cued elsewhere). */
 	public static SoundEvent cue(com.dantemorrigan.gauntlet.ability.Ability a) {
 		return switch (a) {

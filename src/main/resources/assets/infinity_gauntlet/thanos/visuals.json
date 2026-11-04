@@ -1,0 +1,36 @@
+{
+  "target": "Minecraft Java 26.1.2 / Fabric",
+  "units_per_block": 16,
+  "thanos": {
+    "height_blocks": 2.75,
+    "sword_socket": "sword_socket",
+    "gauntlet_variant": "thanos_gauntlet",
+    "no_gauntlet_variant": "thanos_unarmed_left"
+  },
+  "sanctuary_ii": {
+    "raw_width_blocks": 17.9,
+    "suggested_scale": 13,
+    "drop_socket": "drop_emitter",
+    "cannon_socket": "dragon_cannon"
+  },
+  "scene_palette": {
+    "overworld_sky_tint": "#972f38",
+    "overworld_tint_blend": 0.27,
+    "end_light_tint": "#acb9ed",
+    "end_tint_blend": 0.2
+  },
+  "timing_seconds": {
+    "ship_approach": 6,
+    "blue_beam": 2.4,
+    "nether_rift": 2.3,
+    "dragon_charge": 1.35,
+    "dragon_ray": 0.28,
+    "dragon_impact": 0.55,
+    "sword_detach": 0.63,
+    "slam_contact": 0.94
+  },
+  "title": {
+    "en_us": "Thanos – The Mad Titan",
+    "ru_ru": "Танос – Безумный Титан"
+  }
+}

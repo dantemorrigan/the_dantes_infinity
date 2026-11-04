@@ -165,5 +165,67 @@
         "name": "infinity_gauntlet:stones/infinity_beam"
       }
     ]
+  },
+  "thanos.arrival": {
+    "subtitle": "subtitles.infinity_gauntlet.thanos.voice",
+    "sounds": [
+      {
+        "name": "infinity_gauntlet:thanos/arrival",
+        "attenuation_distance": 96
+      }
+    ]
+  },
+  "thanos.give_stones": {
+    "subtitle": "subtitles.infinity_gauntlet.thanos.voice",
+    "sounds": [
+      {
+        "name": "infinity_gauntlet:thanos/give_stones",
+        "attenuation_distance": 96
+      }
+    ]
+  },
+  "thanos.universe": {
+    "subtitle": "subtitles.infinity_gauntlet.thanos.voice",
+    "sounds": [
+      {
+        "name": "infinity_gauntlet:thanos/universe",
+        "attenuation_distance": 96
+      }
+    ]
+  },
+  "thanos.you_will_die": {
+    "subtitle": "subtitles.infinity_gauntlet.thanos.voice",
+    "sounds": [
+      {
+        "name": "infinity_gauntlet:thanos/you_will_die",
+        "attenuation_distance": 96
+      }
+    ]
+  },
+  "thanos.defeat_1": {
+    "subtitle": "subtitles.infinity_gauntlet.thanos.voice",
+    "sounds": [
+      {
+        "name": "infinity_gauntlet:thanos/defeat_1",
+        "attenuation_distance": 96
+      }
+    ]
+  },
+  "thanos.defeat_2": {
+    "subtitle": "subtitles.infinity_gauntlet.thanos.voice",
+    "sounds": [
+      {
+        "name": "infinity_gauntlet:thanos/defeat_2",
+        "attenuation_distance": 96
+      }
+    ]
+  },
+  "thanos.battle_music": {
+    "sounds": [
+      {
+        "name": "infinity_gauntlet:thanos/battle_music",
+        "stream": true
+      }
+    ]
   }
 }

@@ -403,6 +403,18 @@ public final class ModNetwork {
         @Override public Type<AbilityState> type() { return TYPE; }
     }
 
+	/**
+	 * S2C: Thanos scene effects. kind: see {@code ThanosEncounter.FX_*}. a/b = positions, f = yaw / scale, ticks = duration,
+	 * id = entity id or line index or dimension kind, depending on the kind.
+	 */
+	public record ThanosFx(int kind, int id, Vec3 a, Vec3 b, float f, int ticks) implements CustomPacketPayload {
+		public static final Type<ThanosFx> TYPE = newType("thanos_fx");
+		public static final StreamCodec<ByteBuf, ThanosFx> CODEC = StreamCodec.composite(ByteBufCodecs.VAR_INT, ThanosFx::kind,
+				ByteBufCodecs.VAR_INT, ThanosFx::id, Vec3.STREAM_CODEC, ThanosFx::a, Vec3.STREAM_CODEC, ThanosFx::b,
+				ByteBufCodecs.FLOAT, ThanosFx::f, ByteBufCodecs.VAR_INT, ThanosFx::ticks, ThanosFx::new);
+		@Override public Type<ThanosFx> type() { return TYPE; }
+	}
+
 	public static void init() {
         PayloadTypeRegistry.serverboundPlay().register(AbilitySelect.TYPE,AbilitySelect.CODEC);
         PayloadTypeRegistry.serverboundPlay().register(AbilityAction.TYPE,AbilityAction.CODEC);
@@ -417,6 +429,7 @@ public final class ModNetwork {
 		PayloadTypeRegistry.clientboundPlay().register(Status.TYPE, Status.CODEC);
 		PayloadTypeRegistry.clientboundPlay().register(QuestAlert.TYPE, QuestAlert.CODEC);
 		PayloadTypeRegistry.clientboundPlay().register(SoulRitualFx.TYPE, SoulRitualFx.CODEC);
+		PayloadTypeRegistry.clientboundPlay().register(ThanosFx.TYPE, ThanosFx.CODEC);
 		PayloadTypeRegistry.clientboundPlay().register(RealityFogFx.TYPE, RealityFogFx.CODEC);
 		PayloadTypeRegistry.serverboundPlay().register(BeamAction.TYPE, BeamAction.CODEC);
 		PayloadTypeRegistry.clientboundPlay().register(BeamFx.TYPE, BeamFx.CODEC);

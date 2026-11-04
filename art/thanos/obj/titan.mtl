@@ -1,0 +1,3 @@
+newmtl titan
+Kd 1 1 1
+map_Kd ../../assets/infinity_gauntlet/textures/entity/thanos/titan_atlas.png

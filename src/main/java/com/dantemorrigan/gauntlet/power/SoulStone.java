@@ -134,6 +134,17 @@ public final class SoulStone {
 
 	public static boolean extractLoose(ServerPlayer player) {
 		if (SpaceManager.inSpace(player) || player.isSpectator()) return false;
+		// Thanos's soul can't be torn out, but the bare stone burns it: a heavy blow instead.
+		Vec3 look = player.getViewVector(1f);
+		for (com.dantemorrigan.gauntlet.boss.Thanos thanos : player.level().getEntitiesOfClass(com.dantemorrigan.gauntlet.boss.Thanos.class,
+				player.getBoundingBox().inflate(10), t -> t.isAlive() && player.hasLineOfSight(t))) {
+			Vec3 to = thanos.position().add(0, 1.6, 0).subtract(player.getEyePosition());
+			if (to.length() > 10 || to.normalize().dot(look) < 0.94) continue;
+			if (!thanos.hurtServer(player.level(), player.damageSources().playerAttack(player), 40f)) return false;
+			player.level().sendParticles(net.minecraft.core.particles.ParticleTypes.SOUL, thanos.getX(), thanos.getY() + 1.6, thanos.getZ(), 40, 0.6, 0.9, 0.6, 0.05);
+			player.level().playSound(null, thanos.blockPosition(), SoundEvents.SOUL_ESCAPE.value(), SoundSource.PLAYERS, 2.0F, 0.5F);
+			return true;
+		}
 		LivingEntity target = MindStone.lookTarget(player, 8);
 		if (target == null || busy(target) || !player.hasLineOfSight(target)) return false;
 		start(player, target, 0, POINT_EXTRACT, POINT_FLIGHT);

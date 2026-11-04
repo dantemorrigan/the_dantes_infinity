@@ -33,6 +33,15 @@ public abstract class FogRendererMixin {
 					fog.color.y + (n[1] + (d[1] - n[1]) * day - fog.color.y) * red,
 					fog.color.z + (n[2] + (d[2] - n[2]) * day - fog.color.z) * red, fog.color.w);
 		}
+		float partialFog = deltaTracker.getGameTimeDeltaPartialTick(false);
+		float thanosRed = com.dantemorrigan.gauntlet.client.boss.ThanosClient.skyTint(partialFog) * 0.27f;
+		float thanosEnd = com.dantemorrigan.gauntlet.client.boss.ThanosClient.endLight(partialFog) * 0.2f;
+		if (thanosRed > 0 || thanosEnd > 0) {
+			FogData fog = cir.getReturnValue();
+			float k = thanosRed > 0 ? thanosRed : thanosEnd;
+			float r = thanosRed > 0 ? 0.59f : 0.67f, g = thanosRed > 0 ? 0.18f : 0.73f, b = thanosRed > 0 ? 0.22f : 0.93f;
+			fog.color.set(fog.color.x + (r - fog.color.x) * k, fog.color.y + (g - fog.color.y) * k, fog.color.z + (b - fog.color.z) * k, fog.color.w);
+		}
 		float amber = com.dantemorrigan.gauntlet.client.quest.SoulQuestClient.amber();
 		if (amber > 0) {
 			FogData fog = cir.getReturnValue();

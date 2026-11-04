@@ -439,5 +439,20 @@
   "guide.infinity_gauntlet.p15.6": ".\n\nКлавиши меняются в настройках управления. Потерял книгу? ",
   "guide.infinity_gauntlet.p15.7": "/gauntlet_guide",
   "guide.infinity_gauntlet.p15.8": ".\n\n",
-  "guide.infinity_gauntlet.p15.9": "Распоряжайся силой мудро."
+  "guide.infinity_gauntlet.p15.9": "Распоряжайся силой мудро.",
+  "entity.infinity_gauntlet.thanos": "Танос",
+  "entity.infinity_gauntlet.thanos.title": "Танос – Безумный Титан",
+  "entity.infinity_gauntlet.thanos_sword": "Двойной меч Таноса",
+  "thanos.infinity_gauntlet.line.0": "Пришёл забрать своё.",
+  "thanos.infinity_gauntlet.line.1": "Отдай мне камни!",
+  "thanos.infinity_gauntlet.line.2": "Вселенная моя, и только моя!",
+  "thanos.infinity_gauntlet.line.3": "Ты умрёшь!",
+  "thanos.infinity_gauntlet.line.4": "Не может быть... я проиграл?",
+  "thanos.infinity_gauntlet.line.5": "Мне конец.",
+  "subtitles.infinity_gauntlet.thanos.voice": "Танос говорит",
+  "msg.infinity_gauntlet.thanos.warning": "Что-то приближается из глубин космоса... Камни призвали Безумного Титана.",
+  "msg.infinity_gauntlet.thanos.defeated": "Танос повержен. Вселенная твоя.",
+  "death.attack.infinityGauntlet.thanos": "%1$s пал от меча Таноса",
+  "death.attack.infinityGauntlet.thanos.player": "%1$s пал от меча Таноса в бою с %2$s",
+  "death.attack.infinityGauntlet.thanos.item": "%1$s пал от меча Таноса"
 }

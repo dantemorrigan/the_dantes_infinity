@@ -71,6 +71,23 @@ public final class ModParticles {
 	public static final SimpleParticleType METEOR_RETICLE = register("meteor_reticle");
 
 	/** Uru: rune ring opening from the chest when the armor absorbs a full-gauntlet hit. xa = wearer entity id (follows it). */
+	// Thanos (pack: The_Dantes_Infinity_Thanos_Visual_Pack). xa = size multiplier; flat ones: (xa,ya,za) = normal, length = size.
+	public static final SimpleParticleType THANOS_ARRIVAL_RING = register("thanos/arrival_ring");
+	public static final SimpleParticleType THANOS_ARRIVAL_FLASH = register("thanos/arrival_flash");
+	public static final SimpleParticleType THANOS_ARRIVAL_STREAK = register("thanos/arrival_streak");
+	public static final SimpleParticleType THANOS_SHIP_MIST = register("thanos/ship_mist");
+	public static final SimpleParticleType THANOS_RIFT_SPARKS = register("thanos/rift_sparks");
+	public static final SimpleParticleType THANOS_DRAGON_CHARGE = register("thanos/dragon_charge");
+	public static final SimpleParticleType THANOS_DRAGON_IMPACT = register("thanos/dragon_impact");
+	public static final SimpleParticleType THANOS_DRAGON_SHOCKWAVE = register("thanos/dragon_shockwave");
+	public static final SimpleParticleType THANOS_END_HULL_HALO = register("thanos/end_hull_halo");
+	public static final SimpleParticleType THANOS_SWORD_ARC = register("thanos/sword_arc");
+	public static final SimpleParticleType THANOS_SWORD_SPARKS = register("thanos/sword_sparks");
+	public static final SimpleParticleType THANOS_SLAM_WAVE = register("thanos/slam_wave");
+	public static final SimpleParticleType THANOS_SLAM_DUST = register("thanos/slam_dust");
+	public static final SimpleParticleType THANOS_ARMOR_HIT = register("thanos/armor_hit");
+	public static final SimpleParticleType THANOS_RIFT_CLOSE = register("thanos/rift_close");
+
 	public static final SimpleParticleType URU_GUARD = register("uru_guard");
 
 	// Space Stone quest (pack: 01_Space_Quest). xa = size multiplier; obsidian_wave: (xa,ya,za) = normal, length = size.

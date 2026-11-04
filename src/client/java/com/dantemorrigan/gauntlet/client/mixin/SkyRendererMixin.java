@@ -32,6 +32,12 @@ public abstract class SkyRendererMixin {
             state.sunriseAndSunsetColor = ARGB.srgbLerp(altitude,state.sunriseAndSunsetColor,0);
             state.starBrightness = Math.max(state.starBrightness,altitude);
         }
+		float thanos = com.dantemorrigan.gauntlet.client.boss.ThanosClient.skyTint(partialTicks);
+		if (thanos > 0) {
+			// Sanctuary II overhead: a dangerous red cast over the sky, not a full red sky.
+			state.skyColor = ARGB.srgbLerp(0.32f * thanos, state.skyColor, 0xFF972F38);
+			state.sunriseAndSunsetColor = ARGB.srgbLerp(0.5f * thanos, state.sunriseAndSunsetColor, ARGB.color(ARGB.alpha(state.sunriseAndSunsetColor), 200, 40, 30));
+		}
 		float f = CelestialClient.redFactor(camera.position(), partialTicks);
 		if (f <= 0) return;
 		float day = CelestialClientAccess.daylight(partialTicks);
@@ -58,11 +64,13 @@ public abstract class SkyRendererMixin {
 			float rainBrightness, float starBrightness, CallbackInfo ci) {
 		CelestialSky.drawBody(poseStack, sunAngle, moonAngle, moonPhase, rainBrightness,
 				Minecraft.getInstance().getDeltaTracker().getGameTimeDeltaPartialTick(false));
+		if (!CelestialSky.hideVanilla("sun")) com.dantemorrigan.gauntlet.client.boss.ThanosClient.drawRedSun(poseStack, sunAngle, rainBrightness,
+				Minecraft.getInstance().getDeltaTracker().getGameTimeDeltaPartialTick(false));
 	}
 
 	@Inject(method = "renderSun", at = @At("HEAD"), cancellable = true)
 	private void infinityGauntlet$hideSun(float rainBrightness, PoseStack poseStack, CallbackInfo ci) {
-		if (CelestialSky.hideVanilla("sun")) ci.cancel();
+		if (CelestialSky.hideVanilla("sun") || com.dantemorrigan.gauntlet.client.boss.ThanosClient.hideSun()) ci.cancel();
 	}
 
 	@Inject(method = "renderMoon", at = @At("HEAD"), cancellable = true)

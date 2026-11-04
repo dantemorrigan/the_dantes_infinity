@@ -82,7 +82,22 @@ public final class VfxPresets {
 			Map.entry("extractor_gather", new Spec(2, 1, 14, false, 1.1f, true, Orientation.CAMERA)),
 			Map.entry("extractor_success", new Spec(2, 1, 10, false, 0.45f, true, Orientation.CAMERA)),
 			Map.entry("extractor_seal", new Spec(2, 1, 16, false, 0.5f, true, Orientation.CAMERA)),
-			Map.entry("extractor_mote", new Spec(2, 1, 12, false, 0.45f, true, Orientation.CAMERA)));
+			Map.entry("extractor_mote", new Spec(2, 1, 12, false, 0.45f, true, Orientation.CAMERA)),
+			Map.entry("thanos/arrival_ring", new Spec(8, 2, 16, false, 7.0f, true, Orientation.FLAT)),
+			Map.entry("thanos/arrival_flash", new Spec(8, 2, 16, false, 5.0f, true, Orientation.CAMERA)),
+			Map.entry("thanos/arrival_streak", new Spec(8, 1, 8, false, 0.7f, true, Orientation.CAMERA)),
+			Map.entry("thanos/ship_mist", new Spec(8, 5, 40, false, 9.0f, false, Orientation.CAMERA)),
+			Map.entry("thanos/rift_sparks", new Spec(8, 2, 16, false, 1.4f, true, Orientation.CAMERA)),
+			Map.entry("thanos/rift_close", new Spec(8, 2, 16, false, 1.4f, true, Orientation.CAMERA)),
+			Map.entry("thanos/dragon_charge", new Spec(8, 1, 8, false, 1.0f, true, Orientation.CAMERA)),
+			Map.entry("thanos/dragon_impact", new Spec(8, 3, 24, false, 1.2f, true, Orientation.CAMERA)),
+			Map.entry("thanos/dragon_shockwave", new Spec(8, 3, 24, false, 1.4f, true, Orientation.CAMERA)),
+			Map.entry("thanos/end_hull_halo", new Spec(8, 4, 32, false, 4.0f, true, Orientation.CAMERA)),
+			Map.entry("thanos/sword_arc", new Spec(8, 1, 8, false, 4.6f, true, Orientation.CAMERA)),
+			Map.entry("thanos/sword_sparks", new Spec(8, 1, 8, false, 1.7f, true, Orientation.CAMERA)),
+			Map.entry("thanos/slam_wave", new Spec(8, 2, 16, false, 6.0f, true, Orientation.FLAT)),
+			Map.entry("thanos/slam_dust", new Spec(8, 3, 24, false, 4.0f, false, Orientation.CAMERA)),
+			Map.entry("thanos/armor_hit", new Spec(8, 1, 8, false, 1.5f, true, Orientation.CAMERA)));
 
 	private static Map<String, Spec> loaded;
 

@@ -115,6 +115,17 @@ public final class GauntletCommand {
 									}
 									return 1;
 								})))
+						.then(Commands.literal("thanos")
+								// start: the full scene with the warning; now: the scene without the warning; spawn: a fighting Thanos here.
+								.then(Commands.literal("start").executes(ctx -> com.dantemorrigan.gauntlet.boss.ThanosEncounter.start(ctx.getSource().getPlayerOrException(), false) ? 1 : 0))
+								.then(Commands.literal("now").executes(ctx -> com.dantemorrigan.gauntlet.boss.ThanosEncounter.start(ctx.getSource().getPlayerOrException(), true) ? 1 : 0))
+								.then(Commands.literal("spawn").executes(ctx -> com.dantemorrigan.gauntlet.boss.ThanosEncounter.spawnNow(ctx.getSource().getPlayerOrException()) != null ? 1 : 0))
+								.then(Commands.literal("stop").executes(ctx -> { com.dantemorrigan.gauntlet.boss.ThanosEncounter.stop(); return 1; }))
+								.then(Commands.literal("reset").executes(ctx -> {
+									com.dantemorrigan.gauntlet.boss.ThanosEncounter.reset(ctx.getSource().getServer());
+									ctx.getSource().sendSuccess(() -> Component.literal("Thanos can come again"), true);
+									return 1;
+								})))
 						.then(Commands.literal("mind_quest")
 								.then(Commands.literal("tp").executes(ctx -> tpTrial(ctx.getSource(), "mind")))
 								.then(Commands.literal("city_here").executes(ctx -> {

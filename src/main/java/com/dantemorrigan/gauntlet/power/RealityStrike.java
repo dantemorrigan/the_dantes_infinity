@@ -194,7 +194,7 @@ public final class RealityStrike {
 					double distance = mob.position().distanceTo(w.center);
 					if (!mob.isAlive() || mob.level() != w.level || distance > LOOSE_RADIUS) return true;
 					if (distance > front) return false;
-					com.dantemorrigan.gauntlet.uru.GauntletDamage.hurt(w.level, mob, caster, caster.damageSources().playerAttack(caster), LOOSE_DAMAGE);
+					com.dantemorrigan.gauntlet.uru.GauntletDamage.hurt(w.level, mob, caster, caster.damageSources().playerAttack(caster), mob instanceof com.dantemorrigan.gauntlet.boss.Thanos ? LOOSE_DAMAGE * 6 : LOOSE_DAMAGE);
 					return true;
 				});
 				if (w.mobs.isEmpty() && w.columns.isEmpty()) it.remove();
@@ -204,6 +204,11 @@ public final class RealityStrike {
 			while (!w.mobs.isEmpty() && w.mobs.getFirst().position().distanceTo(w.center) <= front + 0.5) {
 				Mob mob = w.mobs.removeFirst();
 				if (!mob.isAlive() || mob.level() != w.level) continue;
+				if (mob instanceof com.dantemorrigan.gauntlet.boss.Thanos) {
+					// Too real to be unmade: the wave only burns him.
+					com.dantemorrigan.gauntlet.uru.GauntletDamage.hurt(w.level, mob, owner, owner.damageSources().playerAttack(owner), LOOSE_DAMAGE * 4);
+					continue;
+				}
 				Vec3 at = mob.position().add(0, mob.getBbHeight() / 2, 0);
 				send(w.level, at, new ModNetwork.RealityFx(3, at, new Vec3(mob.getBbWidth(), mob.getBbHeight(), 0)));
 				w.level.playSound(null, mob.blockPosition(), SoundEvents.AMETHYST_CLUSTER_BREAK, SoundSource.HOSTILE, 1.0F, 1.4F);

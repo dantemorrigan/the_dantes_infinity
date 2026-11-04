@@ -90,6 +90,36 @@ public final class GauntletConfig {
 	/** Max durability each piece loses per absorbed hit. */
 	public int uruMaxWearPerHit = 12;
 
+	// ---- Thanos, the final boss (server) ----
+	/** Thanos comes for a player who carries this many different stones (loose, in a gauntlet or extractor, Orb, Tesseract). */
+	public boolean thanosEnabled = true;
+	public int thanosStoneThreshold = 5;
+	/** Once beaten, Thanos never returns in this world. */
+	public boolean thanosOnce = true;
+	/** Seconds of warning ("something approaches from deep space") before the arrival scene. */
+	public int thanosWarningSeconds = 10;
+	/** Minutes before Thanos comes back after the player died, ran away or left. */
+	public int thanosReturnMinutes = 5;
+	public float thanosHealth = 600f;
+	/** Base damage of his attacks before armor: sword swing, leap slam, thrown sword, gauntlet backhand. */
+	public float thanosSwingDamage = 22f;
+	public float thanosSlamDamage = 18f;
+	public float thanosThrowDamage = 16f;
+	public float thanosBackhandDamage = 12f;
+	/** Ordinary armor softens his blows by at most this share (at 20 armor points). */
+	public float thanosArmorShare = 0.35f;
+	/** A complete Uru set takes only this share of his blows. */
+	public float thanosUruFactor = 0.3f;
+	/** Damage he takes: explosions, diamond / netherite swords, loose stones (no gauntlet), a gauntlet, everything else. */
+	public float thanosExplosionTaken = 2.0f;
+	public float thanosDiamondSwordTaken = 1.6f;
+	public float thanosNetheriteSwordTaken = 1.9f;
+	public float thanosLooseStoneTaken = 2.5f;
+	public float thanosGauntletTaken = 0.5f;
+	public float thanosOtherTaken = 0.35f;
+	/** Experience dropped on defeat. */
+	public int thanosExperience = 3000;
+
 	// ---- Finding the Power Stone (server) ----
 	/** Meteor showers that bring the Power Stone; they stop once it is found. */
 	public boolean powerShowerEnabled = true;

@@ -28,7 +28,19 @@ public final class ModEntities {
 			EntityType.Builder.<com.dantemorrigan.gauntlet.stones.MindZombie>of(com.dantemorrigan.gauntlet.stones.MindZombie::new, MobCategory.MONSTER)
 					.sized(0.6f, 1.95f).eyeHeight(1.74f).passengerAttachments(2.0125f).ridingOffset(-0.7f).clientTrackingRange(10).build(MIND_ZOMBIE_KEY));
 
+	private static final ResourceKey<EntityType<?>> THANOS_KEY = ResourceKey.create(Registries.ENTITY_TYPE, InfinityGauntlet.id("thanos"));
+	/** The final boss. Never saved: the encounter lives in memory and simply starts again after a restart. */
+	public static final EntityType<com.dantemorrigan.gauntlet.boss.Thanos> THANOS = Registry.register(BuiltInRegistries.ENTITY_TYPE, THANOS_KEY,
+			EntityType.Builder.<com.dantemorrigan.gauntlet.boss.Thanos>of(com.dantemorrigan.gauntlet.boss.Thanos::new, MobCategory.MONSTER)
+					.sized(1.3f, 2.75f).eyeHeight(2.45f).fireImmune().clientTrackingRange(16).updateInterval(1).noSave().noLootTable().build(THANOS_KEY));
+
+	private static final ResourceKey<EntityType<?>> THANOS_SWORD_KEY = ResourceKey.create(Registries.ENTITY_TYPE, InfinityGauntlet.id("thanos_sword"));
+	public static final EntityType<com.dantemorrigan.gauntlet.boss.ThanosSword> THANOS_SWORD = Registry.register(BuiltInRegistries.ENTITY_TYPE, THANOS_SWORD_KEY,
+			EntityType.Builder.<com.dantemorrigan.gauntlet.boss.ThanosSword>of(com.dantemorrigan.gauntlet.boss.ThanosSword::new, MobCategory.MISC)
+					.sized(1.4f, 0.5f).clientTrackingRange(10).updateInterval(1).noSave().noSummon().noLootTable().build(THANOS_SWORD_KEY));
+
 	public static void init() {
+		FabricDefaultAttributeRegistry.register(THANOS, com.dantemorrigan.gauntlet.boss.Thanos.createAttributes());
 		FabricDefaultAttributeRegistry.register(GAUNTLET_DOLL, GauntletDoll.createAttributes());
 		FabricDefaultAttributeRegistry.register(MIND_ZOMBIE, com.dantemorrigan.gauntlet.stones.MindZombie.createAttributes());
 	}

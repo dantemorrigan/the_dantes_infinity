@@ -54,6 +54,16 @@ Requirements: **Java 25**. Build: `./gradlew build` → `build/libs/infinity_gau
 - The city is overgrown with vines and moss, filled with crumbling stone ruins and **10 loot chests** with varied treasure. Roaming its streets are **10 smart Mind Zombies** glowing with yellow Mind Stone essence — they do not burn in sunlight, move fast, coordinate telepathically, and leap over rubble.
 - Defeating each zombie releases its yellow essence; when the **10th zombie** is defeated, all ten essence streams converge in front of the player in a glowing animation and the **Mind Stone** appears directly in the player's hands. Debug: `/gauntlet mind_quest city_here | locate | map | complete`. Smoke test: `-PonlyTest=MindQuestTest`.
 
+## Final boss: Thanos
+- Carry **5 different stones** (loose, in a gauntlet or extractor, the sealed Orb or the Tesseract count) and the Mad Titan comes for you from deep space. A warning comes first, ~10 s before he arrives.
+- **Overworld:** his ship Sanctuary II glides into the sky, the sky takes a dangerous red cast and the sun turns red; a blue beam lowers Thanos a dozen blocks from you. **Nether** (or deep underground): a rift in reality tears open and he steps out of it. **End:** the ship arrives and the End brightens; a living dragon is struck down by the ship's cannon first.
+- He speaks ("I've come to take what is mine"; "Give me the stones!" if you have no gauntlet of your own), the boss bar **"Thanos – The Mad Titan"** and the battle theme start, and the fight begins.
+- He swings his double sword, hurls you away with a gauntlet backhand, leaps high and slams the ground, and throws the sword like a boomerang. Below half health he is enraged. A raised shield stops a swing but gets knocked aside.
+- His blows ignore most ordinary armor: **without full Uru armor he is almost unbeatable** (Uru takes only 30%). He takes heavy damage from **explosions**, **diamond and netherite swords** and **stones used bare in the hand** (Reality strike, Soul extraction); everything else barely scratches him.
+- Defeat: he falls to one knee, speaks, and **turns to dust**. He leaves his **empty Infinity Gauntlet** (only if you had not crafted one yourself; otherwise he came without his) and a lot of experience. He never returns.
+- If you die, flee more than ~100 blocks or log out, he withdraws (the music fades) and returns in `thanosReturnMinutes` (5).
+- Config: `thanos*` (health, damage, multipliers, threshold). Commands: `/gauntlet thanos start | now | spawn | stop | reset`. Test: `-PonlyTest=ThanosTest`. Art and models: `art/thanos/`.
+
 ## Language and field guide
 
 - **Language switcher**: Options or Pause menu → **Infinity Gauntlet** button (bottom left). Cards for Auto / English / Русский; the choice applies instantly to the whole mod (menus, HUD messages, tooltips, the book) and is saved as `language` in `config/infinity_gauntlet.json`. Auto follows Minecraft's language.

@@ -180,7 +180,7 @@ public final class MindStone {
 	}
 
 	public static boolean isBoss(Entity e) {
-		return e instanceof EnderDragon || e instanceof WitherBoss;
+		return e instanceof EnderDragon || e instanceof WitherBoss || e instanceof com.dantemorrigan.gauntlet.boss.Thanos;
 	}
 
 	// ------------------------------------------------------------------ grab
