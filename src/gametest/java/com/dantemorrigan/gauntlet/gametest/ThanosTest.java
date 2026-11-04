@@ -100,7 +100,30 @@ public class ThanosTest implements FabricClientGameTest {
 					player(s).getBoundingBox().inflate(40), e -> e.getItem().is(ModItems.GAUNTLET)).isEmpty());
 			if (!dropped) throw new AssertionError("Thanos did not leave his gauntlet");
 			ctx.takeScreenshot("thanos_gauntlet_drop");
-			ctx.waitTicks(150);
+
+			// ---- His ship falls and burns.
+			server.runCommand("execute as @p at @s run tp @s ~ ~ ~ 0 -22");
+			ctx.waitTicks(30);
+			ctx.takeScreenshot("thanos_ship_falling_1");
+			ctx.waitTicks(35);
+			ctx.takeScreenshot("thanos_ship_falling_2");
+			server.runCommand("execute as @p at @s run tp @s ~ ~ ~ 0 -8");
+			ctx.waitTicks(32);
+			ctx.takeScreenshot("thanos_ship_almost_down");
+			ctx.waitTicks(16);
+			ctx.takeScreenshot("thanos_ship_impact");
+			ctx.waitTicks(45);
+			ctx.takeScreenshot("thanos_ship_wreck");
+			int ironDrops = server.computeOnServer(s -> ((ServerLevel) player(s).level()).getEntitiesOfClass(ItemEntity.class,
+					player(s).getBoundingBox().inflate(220), e -> e.getItem().is(Items.IRON_INGOT)).size());
+			int netheriteDrops = server.computeOnServer(s -> ((ServerLevel) player(s).level()).getEntitiesOfClass(ItemEntity.class,
+					player(s).getBoundingBox().inflate(220), e -> e.getItem().is(Items.NETHERITE_SCRAP) || e.getItem().is(Items.NETHERITE_INGOT)).size());
+			System.out.println("SHIP-CRASH iron=" + ironDrops + " netherite=" + netheriteDrops);
+			if (ironDrops < 20 || netheriteDrops < 5) throw new AssertionError("The ship should spill iron and netherite: iron " + ironDrops + ", netherite " + netheriteDrops);
+			server.runCommand("execute as @p at @s run tp @s ~ ~30 ~20 0 25");
+			ctx.waitTicks(40);
+			sp.getClientLevel().waitForChunksRender();
+			ctx.takeScreenshot("thanos_ship_crater");
 
 			// ---- Nether: the rift.
 			server.runCommand("gauntlet thanos reset");

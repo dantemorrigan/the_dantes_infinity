@@ -61,6 +61,7 @@ Requirements: **Java 25**. Build: `./gradlew build` → `build/libs/infinity_gau
 - He swings his double sword, hurls you away with a gauntlet backhand, leaps high and slams the ground, and throws the sword like a boomerang. Below half health he is enraged. A raised shield stops a swing but gets knocked aside.
 - His blows ignore most ordinary armor: **without full Uru armor he is almost unbeatable** (Uru takes only 30%). He takes heavy damage from **explosions**, **diamond and netherite swords** and **stones used bare in the hand** (Reality strike, Soul extraction); everything else barely scratches him.
 - Defeat: he falls to one knee, speaks, and **turns to dust**. He leaves his **empty Infinity Gauntlet** (only if you had not crafted one yourself; otherwise he came without his) and a lot of experience. He never returns.
+- **His ship falls.** Left without its master, Sanctuary II loses power: it tips nose down, burns and breaks apart in the air, then slams into the ground ~60 blocks away. A shockwave, a scorched crater with a heap of wreckage, the land around on fire, and a rain of **iron and netherite** (ingots, scrap, a few netherite ingots, iron blocks; they don't burn). Off: `thanosShipCrash`, `thanosShipCrater`.
 - If you die, flee more than ~100 blocks or log out, he withdraws (the music fades) and returns in `thanosReturnMinutes` (5).
 - Config: `thanos*` (health, damage, multipliers, threshold). Commands: `/gauntlet thanos start | now | spawn | stop | reset`. Test: `-PonlyTest=ThanosTest`. Art and models: `art/thanos/`.
 

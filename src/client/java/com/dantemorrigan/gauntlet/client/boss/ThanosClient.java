@@ -70,6 +70,12 @@ public final class ThanosClient {
 		boolean end;
 		long arrive, leave = -1;
 		int approach, leaveTicks;
+		/** Crash after Thanos's defeat: start tick, where it hits, fall length; voidFall = no ground (the End's void). */
+		long crash = -1;
+		Vec3 site;
+		int crashTicks;
+		boolean voidFall;
+		float crashSpin;
 	}
 
 	private record Beam(Vec3 ground, long start, int ticks, boolean up) {}
@@ -140,6 +146,15 @@ public final class ThanosClient {
 				if (ship != null && ship.leave < 0) {
 					ship.leave = ticks;
 					ship.leaveTicks = Math.max(1, fx.ticks());
+				}
+			}
+			case ThanosEncounter.FX_SHIP_CRASH -> {
+				if (ship != null && ship.crash < 0) {
+					ship.crash = ticks;
+					ship.site = fx.b();
+					ship.crashTicks = Math.max(20, fx.ticks());
+					ship.voidFall = fx.id() == 1;
+					ship.crashSpin = mc.level.getRandom().nextBoolean() ? 1 : -1;
 				}
 			}
 			case ThanosEncounter.FX_BEAM -> {
@@ -274,13 +289,16 @@ public final class ThanosClient {
 		if (ship != null) {
 			float in = Mth.clamp((ticks - ship.arrive) / (float) ship.approach, 0, 1);
 			float out = ship.leave < 0 ? 1 : 1 - Mth.clamp((ticks - ship.leave) / (float) ship.leaveTicks, 0, 1);
+			if (ship.crash >= 0) out = 1 - Mth.clamp((ticks - ship.crash) / (float) ship.crashTicks, 0, 1);
 			target = Math.min(in, out);
 			if (ship.leave >= 0 && ticks - ship.leave > ship.leaveTicks + 10) ship = null;
+			else if (ship.crash >= 0 && ticks - ship.crash > ship.crashTicks + (ship.voidFall ? 30 : ThanosEncounter.WRECK_TICKS + 60)) ship = null;
 		}
 		tint += Mth.clamp(target - tint, -0.02f, 0.02f);
 
 		RandomSource rnd = mc.level.getRandom();
-		if (ship != null) {
+		if (ship != null && ship.crash >= 0) crashTick(mc, rnd);
+		if (ship != null && ship.crash < 0) {
 			Vec3 emitter = emitter(0);
 			if (ticks % 6 == 0 && ship.leave < 0) {
 				mc.level.addParticle(ModParticles.THANOS_SHIP_MIST, true, true, emitter.x + rnd.nextGaussian() * 6, emitter.y - 2, emitter.z + rnd.nextGaussian() * 6, 3.5, 0, 0);
@@ -346,6 +364,131 @@ public final class ThanosClient {
 		}
 	}
 
+	// ------------------------------------------------------------------ the crash
+
+	/** A random point on the hull (model units), weighted to the core and the wing roots. */
+	private static Vec3 hullPoint(RandomSource r, float partial) {
+		float x = (float) (r.nextGaussian() * 45), y = -10 + r.nextFloat() * 20, z = -30 + r.nextFloat() * 70;
+		return local(partial, Mth.clamp(x, -130, 130), y, z);
+	}
+
+	private static void crashTick(Minecraft mc, RandomSource r) {
+		long age = ticks - ship.crash;
+		var level = mc.level;
+		if (age < ship.crashTicks) {
+			float k = age / (float) ship.crashTicks;
+			// Burning, smoking, coming apart: more of everything the lower it gets.
+			int smoke = 6 + (int) (k * 10);
+			for (int i = 0; i < smoke; i++) {
+				Vec3 p = hullPoint(r, 0);
+				level.addParticle(i % 3 == 0 ? ParticleTypes.CAMPFIRE_SIGNAL_SMOKE : ParticleTypes.LARGE_SMOKE, true, true, p.x, p.y, p.z,
+						(r.nextDouble() - 0.5) * 0.2, 0.15 + r.nextDouble() * 0.2, (r.nextDouble() - 0.5) * 0.2);
+			}
+			for (int i = 0; i < 4 + (int) (k * 8); i++) {
+				Vec3 p = hullPoint(r, 0);
+				level.addParticle(ParticleTypes.FLAME, true, true, p.x, p.y, p.z, (r.nextDouble() - 0.5) * 0.3, r.nextDouble() * 0.2, (r.nextDouble() - 0.5) * 0.3);
+				if (i % 2 == 0) level.addParticle(ParticleTypes.LAVA, true, true, p.x, p.y, p.z, 0, 0, 0);
+			}
+			// Big enough to read from far away: fire bursts and black smoke trailing behind the hull.
+			for (int i = 0; i < 2 + (int) (k * 3); i++) {
+				Vec3 p = hullPoint(r, 0);
+				level.addParticle(ModParticles.THANOS_DRAGON_IMPACT, true, true, p.x, p.y, p.z, 2.5 + r.nextFloat() * 3, 0, 0);
+				Vec3 q = hullPoint(r, 0);
+				level.addParticle(ModParticles.THANOS_SLAM_DUST, true, true, q.x, q.y + 3, q.z, 2.5 + r.nextFloat() * 2.5, 0, 0);
+			}
+			if (age % 3 == 0) {
+				Vec3 p = hullPoint(r, 0);
+				level.addParticle(ParticleTypes.EXPLOSION, true, true, p.x, p.y, p.z, 0, 0, 0);
+			}
+			if (age % 12 == 0) {
+				Vec3 p = hullPoint(r, 0);
+				level.addParticle(ParticleTypes.EXPLOSION_EMITTER, true, true, p.x, p.y, p.z, 0, 0, 0);
+				level.addParticle(ModParticles.THANOS_DRAGON_IMPACT, true, true, p.x, p.y, p.z, 6, 0, 0);
+			}
+			if (age == 1) {
+				// The first blast: the engines die.
+				Vec3 c = shipPos(0);
+				level.addParticle(ModParticles.THANOS_DRAGON_IMPACT, true, true, c.x, c.y, c.z, 18, 0, 0);
+				level.addParticle(ModParticles.THANOS_DRAGON_SHOCKWAVE, true, true, c.x, c.y, c.z, 26, 0, 0);
+				shake(0.5f, 20);
+			}
+			return;
+		}
+		if (ship.voidFall) return;
+		Vec3 c = ship.site;
+		if (age == ship.crashTicks) {
+			// Impact.
+			level.addParticle(ModParticles.THANOS_DRAGON_IMPACT, true, true, c.x, c.y + 8, c.z, 34, 0, 0);
+			level.addParticle(ModParticles.THANOS_DRAGON_SHOCKWAVE, true, true, c.x, c.y + 6, c.z, 48, 0, 0);
+			level.addParticle(ModParticles.THANOS_SLAM_WAVE, true, true, c.x, c.y + 0.5, c.z, 0, 12, 0);
+			level.addParticle(ModParticles.THANOS_ARRIVAL_FLASH, true, true, c.x, c.y + 10, c.z, 12, 0, 0);
+			for (int i = 0; i < 24; i++) {
+				double a = r.nextDouble() * Mth.TWO_PI, d = r.nextDouble() * 30;
+				level.addParticle(ParticleTypes.EXPLOSION_EMITTER, true, true, c.x + Math.cos(a) * d, c.y + r.nextDouble() * 10, c.z + Math.sin(a) * d, 0, 0, 0);
+			}
+			for (int i = 0; i < 120; i++) {
+				level.addParticle(ParticleTypes.LAVA, true, true, c.x + r.nextGaussian() * 10, c.y + 4, c.z + r.nextGaussian() * 10, 0, 0, 0);
+			}
+		}
+		// The wreck burns: tall smoke columns and flames over the crater.
+		if (age < ship.crashTicks + ThanosEncounter.WRECK_TICKS + 40) {
+			if (age % 3 == 0) {
+				Vec3 p = hullPoint(r, 0);
+				level.addParticle(ModParticles.THANOS_SLAM_DUST, true, true, p.x, p.y + 5, p.z, 3 + r.nextFloat() * 2, 0, 0);
+				if (age % 6 == 0) level.addParticle(ModParticles.THANOS_DRAGON_IMPACT, true, true, p.x, p.y + 2, p.z, 2 + r.nextFloat() * 2, 0, 0);
+			}
+			for (int i = 0; i < 4; i++) {
+				Vec3 p = hullPoint(r, 0);
+				level.addParticle(ParticleTypes.CAMPFIRE_SIGNAL_SMOKE, true, true, p.x, p.y + 4, p.z, 0, 0.12, 0);
+				if (i % 2 == 0) level.addParticle(ParticleTypes.FLAME, true, true, p.x, p.y + 2, p.z, 0, 0.05, 0);
+			}
+			if (age % 9 == 0) {
+				Vec3 p = hullPoint(r, 0);
+				level.addParticle(ParticleTypes.EXPLOSION, true, true, p.x, p.y + 2, p.z, 0, 0, 0);
+			}
+		}
+	}
+
+	/** 0..1 visibility of the ship (the wreck fades away at the end; the burnt crater stays). */
+	private static float shipAlpha(float partial) {
+		if (ship == null || ship.crash < 0) return 1;
+		float age = ticks - ship.crash + partial;
+		if (ship.voidFall) return Mth.clamp(1 - (age - ship.crashTicks + 10) / 30f, 0, 1);
+		return Mth.clamp(1 - (age - ship.crashTicks - ThanosEncounter.WRECK_TICKS) / 60f, 0, 1);
+	}
+
+	/** Falling: nose down, a wing dropping, a slow turn; resting at an angle in the crater afterwards. */
+	private static Quaternionf shipRotation(float partial) {
+		Quaternionf q = new Quaternionf();
+		float yaw = ship.yaw, pitch = shipPitch(partial), roll = 0;
+		if (ship.crash >= 0) {
+			float k = Mth.clamp((ticks - ship.crash + partial) / ship.crashTicks, 0, 1);
+			yaw += ship.crashSpin * 28 * k * k;
+			pitch = Mth.lerp(Math.min(1, k * 1.4f), pitch, -27);
+			roll = ship.crashSpin * 19 * k;
+		}
+		return q.rotateY(yaw * Mth.DEG_TO_RAD).rotateX(pitch * Mth.DEG_TO_RAD).rotateZ(roll * Mth.DEG_TO_RAD);
+	}
+
+	/** Wings tearing off the hull while it falls; they stay scattered in the wreck. */
+	private static void breakWings(java.util.Map<String, GeoModel.BonePose> poses, float partial) {
+		if (ship.crash < 0) return;
+		float k = Mth.clamp((ticks - ship.crash + partial) / ship.crashTicks, 0, 1);
+		float b = Mth.clamp((k - 0.25f) / 0.75f, 0, 1);
+		b = b * b;
+		String[] wings = {"port_wing_1", "port_wing_2", "starboard_wing_1", "starboard_wing_2"};
+		float[][] how = {{1, 1, 1}, {1, -1, 0.6f}, {-1, 1, 0.8f}, {-1, -1, 1.2f}};
+		for (int i = 0; i < 4; i++) {
+			float side = how[i][0], fore = how[i][1], m = how[i][2];
+			GeoModel.BonePose p = poses.computeIfAbsent(wings[i], n -> new GeoModel.BonePose());
+			p.ox += -side * 22 * b * m;
+			p.oy += -14 * b * m;
+			p.oz += -fore * 8 * b;
+			p.rz += side * 24 * b * m;
+			p.rx += fore * 9 * b;
+		}
+	}
+
 	// ------------------------------------------------------------------ ship geometry
 
 	private static Vec3 shipPos(float partial) {
@@ -355,6 +498,16 @@ public final class ThanosClient {
 		float e = 1 - (1 - in) * (1 - in) * (1 - in);
 		Vec3 back = ship.dir.scale(-360 * (1 - e)).add(0, 110 * (1 - e), 0);
 		Vec3 p = ship.hover.add(back).add(0, Mth.sin(t * 0.045f) * 0.7f, 0);
+		if (ship.crash >= 0) {
+			float k = Mth.clamp((t - ship.crash) / ship.crashTicks, 0, 1);
+			p = ThanosEncounter.crashPos(ship.hover, ship.site, k);
+			if (k >= 1) {
+				// Slammed in, half buried; it settles with a last jolt.
+				float after = t - ship.crash - ship.crashTicks;
+				p = ship.voidFall ? p.add(0, -after * 1.5, 0) : p.add(0, -5 - 1.5 * Math.max(0, 1 - after / 8f) * Mth.sin(after * 1.7f), 0);
+			}
+			return p;
+		}
 		if (ship.leave >= 0) {
 			float k = Mth.clamp((t - ship.leave) / ship.leaveTicks, 0, 1);
 			float l = k * k;
@@ -374,9 +527,7 @@ public final class ThanosClient {
 	}
 
 	private static Vec3 local(float partial, float x, float y, float z) {
-		Vector3f v = new Vector3f(x, y, z).mul(SHIP_SCALE / 16f);
-		v.rotateX(shipPitch(partial) * Mth.DEG_TO_RAD);
-		v.rotateY(ship.yaw * Mth.DEG_TO_RAD);
+		Vector3f v = new Vector3f(x, y, z).mul(SHIP_SCALE / 16f).rotate(shipRotation(partial));
 		return shipPos(partial).add(v.x, v.y, v.z);
 	}
 
@@ -413,9 +564,10 @@ public final class ThanosClient {
 		Vec3 p = shipPos(partial);
 		pose.pushPose();
 		pose.translate(p.x - cam.x, p.y - cam.y, p.z - cam.z);
-		pose.mulPose(Axis.YP.rotationDegrees(ship.yaw));
-		pose.mulPose(Axis.XP.rotationDegrees(shipPitch(partial)));
+		pose.mulPose(shipRotation(partial));
 		pose.scale(SHIP_SCALE, SHIP_SCALE, SHIP_SCALE);
+		float alpha = shipAlpha(partial);
+		if (alpha <= 0.01f) { pose.popPose(); return; }
 		int light = LightCoordsUtil.pack(4, 15);
 		var poses = new java.util.HashMap<String, GeoModel.BonePose>();
 		// Recoil after the shot at the dragon.
@@ -423,10 +575,25 @@ public final class ThanosClient {
 			GeoAnimation recoil = ThanosModels.shipAnim("recoil");
 			if (recoil != null) recoil.apply(poses, (ticks - ray.start + partial) / 20f, 1);
 		}
-		ctx.submitNodeCollector().submitCustomGeometry(pose, RenderTypes.entityCutout(ThanosRenderer.ATLAS), (pp, out) ->
-				model.render(ThanosRenderer.stack(pp), out, poses, light, OverlayTexture.NO_OVERLAY, null));
-		ctx.submitNodeCollector().order(1).submitCustomGeometry(pose, RenderTypes.entityTranslucentEmissive(ThanosRenderer.EMISSIVE), (pp, out) ->
-				model.render(ThanosRenderer.stack(pp), out, poses, LightCoordsUtil.FULL_BRIGHT, OverlayTexture.NO_OVERLAY, null));
+		breakWings(poses, partial);
+		boolean burning = ship.crash >= 0;
+		if (alpha >= 0.999f) {
+			// Scorched while it burns.
+			int tint = burning ? ARGB.color(255, 150, 130, 120) : -1;
+			ctx.submitNodeCollector().submitCustomGeometry(pose, RenderTypes.entityCutout(ThanosRenderer.ATLAS), (pp, out) ->
+					model.render(ThanosRenderer.stack(pp), out, poses, light, OverlayTexture.NO_OVERLAY, (b, c) -> tint));
+		} else {
+			int tint = ARGB.color((int) (alpha * 255), 150, 130, 120);
+			ctx.submitNodeCollector().submitCustomGeometry(pose, RenderTypes.entityTranslucent(ThanosRenderer.ATLAS), (pp, out) ->
+					model.render(ThanosRenderer.stack(pp), out, poses, light, OverlayTexture.NO_OVERLAY, (b, c) -> tint));
+		}
+		// Its lights flicker and die as it falls.
+		float lights = burning ? Math.max(0, 1 - (ticks - ship.crash + partial) / (ship.crashTicks * 0.7f)) * (0.5f + 0.5f * Mth.sin((ticks + partial) * 1.9f)) : 1;
+		if (lights > 0.02f) {
+			int glow = ARGB.color((int) (lights * alpha * 255), 255, 255, 255);
+			ctx.submitNodeCollector().order(1).submitCustomGeometry(pose, RenderTypes.entityTranslucentEmissive(ThanosRenderer.EMISSIVE), (pp, out) ->
+					model.render(ThanosRenderer.stack(pp), out, poses, LightCoordsUtil.FULL_BRIGHT, OverlayTexture.NO_OVERLAY, (b, c) -> glow));
+		}
 		pose.popPose();
 	}
 

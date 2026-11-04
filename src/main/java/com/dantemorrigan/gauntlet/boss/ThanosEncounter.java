@@ -471,10 +471,10 @@ public final class ThanosEncounter {
 
 	// ------------------------------------------------------------------ the ship goes down
 
-	/** Where the ship falls: beyond its hover point, away from the player, on loaded ground. */
+	/** Where the ship falls: about under its hover point (~60 blocks from the player), on loaded ground. */
 	private static Vec3 crashSite(Encounter e) {
 		Vec3 away = new Vec3(-e.shipDir.x, 0, -e.shipDir.z);
-		for (double d : new double[]{30, 15, 0, -20}) {
+		for (double d : new double[]{-8, 4, 14, -18}) {
 			Vec3 c = e.ship.add(away.scale(d));
 			BlockPos column = BlockPos.containing(c.x, 0, c.z);
 			if (!e.level.hasChunkAt(column)) continue;
