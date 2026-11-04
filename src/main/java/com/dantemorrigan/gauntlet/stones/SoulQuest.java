@@ -6,11 +6,13 @@ import com.dantemorrigan.gauntlet.ModParticles;
 import com.dantemorrigan.gauntlet.ModSounds;
 import com.dantemorrigan.gauntlet.Stone;
 import com.dantemorrigan.gauntlet.net.ModNetwork;
+import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.networking.v1.PlayerLookup;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
@@ -31,13 +33,15 @@ import net.minecraft.world.level.portal.TeleportTransition;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 /**
- * Soul Stone: bring a tamed animal to the Temple of Soul and let it fall into the chasm. The sky turns amber, a beam
+ * Soul Stone: bring a tamed animal to the Temple of Soul and let it fall into the chasm, or knock another player into it. The sky turns amber, a beam
  * strikes the clouds, everything darkens and the owner wakes in the soul world: a dark shallow sea under a red sun.
  * The Soul Stone rises from the water; taking it shows "Use the Soul Stone to return to the temple", and using it
- * brings the player back to the summit. Jumping in yourself just kills you.
+ * brings the player back to the summit. An unattributed fall does not start the ritual.
  */
 public final class SoulQuest {
 	public static final ResourceKey<Level> SOUL_WORLD = ResourceKey.create(Registries.DIMENSION, InfinityGauntlet.id("soul_world"));
@@ -45,9 +49,14 @@ public final class SoulQuest {
 	private static final Vec3 ARRIVAL = new Vec3(0.5, 3.0, 0.5);
 	private static final Vec3 STONE_AT = new Vec3(0.5, 2.6, 7.5);
 	private static final double STONE_TOP = 4.4;
+	private static final int SACRIFICE_DEPTH = 15;
+	private static final int PUSH_WINDOW = 60;
 
 	private record Ritual(UUID owner, long start, BlockPos beam) {}
 
+	private record Push(UUID attacker, long expires) {}
+
+	private static final Map<UUID, Push> PUSHES = new HashMap<>();
 	private static Ritual ritual;
 	private static ItemEntity rising;
 	private static UUID seeker;
@@ -56,15 +65,53 @@ public final class SoulQuest {
 
 	public static void init() {
 		ServerTickEvents.END_SERVER_TICK.register(SoulQuest::tick);
-		ServerLifecycleEvents.SERVER_STOPPED.register(s -> { ritual = null; rising = null; seeker = null; });
+		ServerLifecycleEvents.SERVER_STOPPED.register(s -> {
+			ritual = null;
+			rising = null;
+			seeker = null;
+			PUSHES.clear();
+		});
+		ServerLivingEntityEvents.AFTER_DAMAGE.register((entity, source, baseDamage, damage, blocked) -> {
+			if (blocked || !(entity instanceof ServerPlayer victim)
+					|| !(source.getEntity() instanceof ServerPlayer attacker) || victim == attacker) return;
+			MinecraftServer server = victim.level().getServer();
+			ServerLevel level = server.overworld();
+			if (victim.level() != level || attacker.level() != level || !SoulTemple.built(server)
+					|| ritual != null || seeker != null || StoneRegistry.found(server, Stone.SOUL)) return;
+
+			BlockPos site = SoulTemple.site(server);
+			AABB rim = SoulTemple.chasm(site).inflate(4, 9, 4);
+			if (victim.getY() > SoulTemple.summitY(site) - SACRIFICE_DEPTH && rim.contains(victim.position())) {
+				PUSHES.put(victim.getUUID(), new Push(attacker.getUUID(), level.getGameTime() + PUSH_WINDOW));
+			}
+		});
 	}
 
 	private static void tick(MinecraftServer server) {
 		ServerLevel overworld = server.overworld();
 		long now = overworld.getGameTime();
-		if (ritual == null && now % 2 == 0 && SoulTemple.built(server) && !StoneRegistry.found(server, Stone.SOUL)) watchChasm(server);
+		PUSHES.values().removeIf(push -> push.expires() < now);
+		if (SoulTemple.built(server)) {
+			if (now % 8 == 0) fogChasm(server);
+			if (ritual == null && seeker == null && now % 2 == 0 && !StoneRegistry.found(server, Stone.SOUL)) {
+				watchChasm(server);
+			}
+		}
 		if (ritual != null) runRitual(server, now);
 		if (seeker != null) runSoulWorld(server, now);
+	}
+
+	/** Slow, layered mist inside the cleft, below the ledge. */
+	private static void fogChasm(MinecraftServer server) {
+		ServerLevel level = server.overworld();
+		BlockPos site = SoulTemple.site(server);
+		Vec3 center = SoulTemple.chasm(site).getCenter();
+		int top = SoulTemple.summitY(site);
+		if (level.getNearestPlayer(center.x, top, center.z, 64, false) == null) return;
+		for (int depth = 12; depth <= 28; depth += 8) {
+			level.sendParticles(ParticleTypes.CAMPFIRE_COSY_SMOKE, center.x, top - depth, center.z,
+					18, 2.9, 0.7, 0.75, 0.008);
+		}
 	}
 
 	// ------------------------------------------------------------------ the sacrifice
@@ -74,7 +121,21 @@ public final class SoulQuest {
 		BlockPos site = SoulTemple.site(server);
 		AABB chasm = SoulTemple.chasm(site);
 		if (!level.hasChunkAt(BlockPos.containing(chasm.getCenter()))) return;
-		int sacrificeY = SoulTemple.summitY(site) - 15;
+		int sacrificeY = SoulTemple.summitY(site) - SACRIFICE_DEPTH;
+		for (ServerPlayer victim : level.players()) {
+			if (!victim.isAlive() || victim.isSpectator() || victim.onGround()
+					|| victim.getAbilities().flying || victim.getY() > sacrificeY
+					|| !chasm.contains(victim.position())) continue;
+			Push push = PUSHES.remove(victim.getUUID());
+			if (push == null) continue;
+			ServerPlayer attacker = server.getPlayerList().getPlayer(push.attacker());
+			if (attacker == null || !attacker.isAlive() || attacker.isSpectator() || attacker.level() != level
+					|| attacker.distanceToSqr(victim) > 80 * 80 || chasm.contains(attacker.position())) continue;
+			if (sacrifice(attacker, null)) {
+				victim.kill(level);
+				return;
+			}
+		}
 		for (Animal animal : level.getEntitiesOfClass(Animal.class, chasm,
 				a -> a.isAlive() && a.getY() <= sacrificeY)) {
 			if (!isTamed(animal) || !(animal instanceof OwnableEntity pet)) continue;
@@ -104,6 +165,7 @@ public final class SoulQuest {
 			level.sendParticles(ModParticles.SOUL_ABSORPTION, animal.getX(), animal.getY() + 0.5, animal.getZ(), 1, 0, 0, 0, 0);
 			animal.discard();
 		}
+		PUSHES.clear();
 		StoneRegistry.markFound(server, Stone.SOUL);
 		ritual = new Ritual(owner.getUUID(), level.getGameTime(), beam);
 		ModNetwork.SoulRitualFx fx = new ModNetwork.SoulRitualFx(0, beam, SoulTemple.summitY(site), RITUAL_TICKS);
