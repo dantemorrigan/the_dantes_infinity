@@ -76,6 +76,8 @@ public final class ThanosClient {
 		int crashTicks;
 		boolean voidFall;
 		float crashSpin;
+		/** Client tick when the server finished building the real wreck (the model then fades away). */
+		long wreckDone = -1;
 	}
 
 	private record Beam(Vec3 ground, long start, int ticks, boolean up) {}
@@ -153,10 +155,11 @@ public final class ThanosClient {
 					ship.crash = ticks;
 					ship.site = fx.b();
 					ship.crashTicks = Math.max(20, fx.ticks());
-					ship.voidFall = fx.id() == 1;
-					ship.crashSpin = mc.level.getRandom().nextBoolean() ? 1 : -1;
+					ship.voidFall = (fx.id() & 1) != 0;
+					ship.crashSpin = (fx.id() & 2) != 0 ? 1 : -1;
 				}
 			}
+			case ThanosEncounter.FX_WRECK_DONE -> { if (ship != null) ship.wreckDone = ticks; }
 			case ThanosEncounter.FX_BEAM -> {
 				BEAMS.add(new Beam(fx.a(), ticks, fx.ticks(), false));
 				shake(0.35f, 20);
@@ -313,7 +316,8 @@ public final class ThanosClient {
 			if (ship.crash >= 0) out = 1 - Mth.clamp((ticks - ship.crash) / (float) ship.crashTicks, 0, 1);
 			target = Math.min(in, out);
 			if (ship.leave >= 0 && ticks - ship.leave > ship.leaveTicks + 10) ship = null;
-			else if (ship.crash >= 0 && ticks - ship.crash > ship.crashTicks + (ship.voidFall ? 30 : ThanosEncounter.WRECK_TICKS + 60)) ship = null;
+			else if (ship.crash >= 0 && (ship.voidFall ? ticks - ship.crash > ship.crashTicks + 30
+					: ship.wreckDone >= 0 ? ticks - ship.wreckDone > 80 : ticks - ship.crash > ship.crashTicks + 1700)) ship = null;
 		}
 		tint += Mth.clamp(target - tint, -0.02f, 0.02f);
 
@@ -455,7 +459,7 @@ public final class ThanosClient {
 			}
 		}
 		// The wreck burns: tall smoke columns and flames over the crater.
-		if (age < ship.crashTicks + ThanosEncounter.WRECK_TICKS + 40) {
+		if (ship.wreckDone < 0 && age < ship.crashTicks + 1500) {
 			if (age % 3 == 0) {
 				Vec3 p = hullPoint(r, 0);
 				level.addParticle(ModParticles.THANOS_SLAM_DUST, true, true, p.x, p.y + 5, p.z, 3 + r.nextFloat() * 2, 0, 0);
@@ -478,7 +482,9 @@ public final class ThanosClient {
 		if (ship == null || ship.crash < 0) return 1;
 		float age = ticks - ship.crash + partial;
 		if (ship.voidFall) return Mth.clamp(1 - (age - ship.crashTicks + 10) / 30f, 0, 1);
-		return Mth.clamp(1 - (age - ship.crashTicks - ThanosEncounter.WRECK_TICKS) / 60f, 0, 1);
+		// The real blocks are in place: the model dissolves into them.
+		if (ship.wreckDone < 0) return 1;
+		return Mth.clamp(1 - (ticks + partial - ship.wreckDone - 10) / 60f, 0, 1);
 	}
 
 	/** Falling: nose down, a wing dropping, a slow turn; resting at an angle in the crater afterwards. */

@@ -124,6 +124,8 @@ public final class GauntletConfig {
 	/** After his defeat his ship falls and burns (iron and netherite rain down); with the crater it digs one where it lands. */
 	public boolean thanosShipCrash = true;
 	public boolean thanosShipCrater = true;
+	/** The fallen ship is built from real blocks (about 50-100k, placed over a few seconds) and stays in the world for good. */
+	public boolean thanosShipWreck = true;
 
 	// ---- Finding the Power Stone (server) ----
 	/** Meteor showers that bring the Power Stone; they stop once it is found. */

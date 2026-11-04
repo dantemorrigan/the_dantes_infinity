@@ -9,6 +9,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.item.ItemEntity;
+import com.dantemorrigan.gauntlet.boss.ThanosEncounter;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.phys.AABB;
@@ -115,16 +116,39 @@ public class ThanosTest implements FabricClientGameTest {
 			ctx.takeScreenshot("thanos_ship_impact");
 			ctx.waitTicks(45);
 			ctx.takeScreenshot("thanos_ship_wreck");
+			// The real wreck is built from blocks and stays: wait for it, then the scene ends and the ship is still there.
+			for (int i = 0; i < 200 && server.computeOnServer(sv -> ThanosEncounter.running()); i++) ctx.waitTicks(10);
+			if (server.computeOnServer(sv -> ThanosEncounter.running())) throw new AssertionError("The crash scene never ended");
+			int wreckBlocks = ThanosEncounter.wreckBlocks;
+			System.out.println("SHIP-WRECK blocks=" + wreckBlocks + " site=" + ThanosEncounter.wreckSite);
+			if (wreckBlocks < 5000) throw new AssertionError("The wreck should be a real build of thousands of blocks, got " + wreckBlocks);
+			ctx.waitTicks(100);
+			sp.getClientLevel().waitForChunksRender();
+			ctx.takeScreenshot("thanos_wreck_after_scene");
 			int ironDrops = server.computeOnServer(s -> ((ServerLevel) player(s).level()).getEntitiesOfClass(ItemEntity.class,
 					player(s).getBoundingBox().inflate(220), e -> e.getItem().is(Items.IRON_INGOT)).size());
 			int netheriteDrops = server.computeOnServer(s -> ((ServerLevel) player(s).level()).getEntitiesOfClass(ItemEntity.class,
 					player(s).getBoundingBox().inflate(220), e -> e.getItem().is(Items.NETHERITE_SCRAP) || e.getItem().is(Items.NETHERITE_INGOT)).size());
 			System.out.println("SHIP-CRASH iron=" + ironDrops + " netherite=" + netheriteDrops);
 			if (ironDrops < 20 || netheriteDrops < 5) throw new AssertionError("The ship should spill iron and netherite: iron " + ironDrops + ", netherite " + netheriteDrops);
-			server.runCommand("execute as @p at @s run tp @s ~ ~30 ~20 0 25");
-			ctx.waitTicks(40);
+			server.runOnServer(sv -> {
+				var site = ThanosEncounter.wreckSite;
+				var p = player(sv);
+				if (site != null) p.teleportTo(site.getX() + 0.5, site.getY() + 40, site.getZ() + 150.5);
+			});
+			server.runCommand("execute as @p at @s run tp @s ~ ~ ~ 180 4");
+			ctx.waitTicks(60);
 			sp.getClientLevel().waitForChunksRender();
-			ctx.takeScreenshot("thanos_ship_crater");
+			ctx.takeScreenshot("thanos_wreck_far");
+			server.runOnServer(sv -> {
+				var site = ThanosEncounter.wreckSite;
+				var p = player(sv);
+				if (site != null) p.teleportTo(site.getX() + 0.5, site.getY() + 22, site.getZ() + 70.5);
+			});
+			server.runCommand("execute as @p at @s run tp @s ~ ~ ~ 180 8");
+			ctx.waitTicks(60);
+			sp.getClientLevel().waitForChunksRender();
+			ctx.takeScreenshot("thanos_wreck_close");
 
 			// ---- Nether: the rift.
 			server.runCommand("gauntlet thanos reset");

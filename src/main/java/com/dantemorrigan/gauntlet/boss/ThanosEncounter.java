@@ -60,7 +60,7 @@ import java.util.UUID;
 public final class ThanosEncounter {
 	public static final int FX_SHIP_ARRIVE = 0, FX_SHIP_LEAVE = 1, FX_BEAM = 2, FX_DRAGON_CHARGE = 3, FX_DRAGON_RAY = 4,
 			FX_RIFT_OPEN = 5, FX_RIFT_CLOSE = 6, FX_LINE = 7, FX_MUSIC_START = 8, FX_MUSIC_STOP = 9, FX_IMPACT = 10,
-			FX_SHAKE = 11, FX_END = 12, FX_BEAM_UP = 13, FX_SHIP_CRASH = 14;
+			FX_SHAKE = 11, FX_END = 12, FX_BEAM_UP = 13, FX_SHIP_CRASH = 14, FX_WRECK_DONE = 15;
 	public static final int LINE_ARRIVAL = 0, LINE_GIVE_STONES = 1, LINE_UNIVERSE = 2, LINE_DIE = 3, LINE_DEFEAT_1 = 4, LINE_DEFEAT_2 = 5;
 	/** Length of each line in ticks (the recordings). */
 	public static final int[] LINE_TICKS = {50, 46, 75, 52, 75, 43};
@@ -98,7 +98,16 @@ public final class ThanosEncounter {
 		boolean shipShown;
 		Vec3 site;
 		int carveX = Integer.MIN_VALUE;
+		int spin = 1;
+		java.util.concurrent.CompletableFuture<java.util.List<ShipWreck.Part>> plan;
+		ShipWreck.Build build;
+		int builtAt = -1;
+		boolean firesLit;
 	}
+
+	/** Where the last fallen ship lies and how many blocks it was built from (for tests and the debug command). */
+	public static BlockPos wreckSite;
+	public static int wreckBlocks;
 
 	private static Encounter active;
 	private static final Map<UUID, Long> RETURN_AT = new HashMap<>();
@@ -438,7 +447,13 @@ public final class ThanosEncounter {
 			// His ship, left without its master, goes down: it falls beyond the battlefield and burns.
 			setStage(e, Stage.CRASH);
 			e.site = crashSite(e);
-			sendAll(e, FX_SHIP_CRASH, e.site == null ? 1 : 0, e.ship, e.site != null ? e.site : e.ship.add(0, -160, 0), e.shipYaw, CRASH_TICKS);
+			e.spin = e.level.getRandom().nextBoolean() ? 1 : -1;
+			if (e.site != null && GauntletConfig.get().thanosShipWreck) {
+				// Voxelize the wreck while the ship is still falling (pure math, off the server thread).
+				float yaw = e.shipYaw + e.spin * 28f, roll = e.spin * 19f;
+				e.plan = java.util.concurrent.CompletableFuture.supplyAsync(() -> ShipWreck.plan(yaw, -27f, roll));
+			}
+			sendAll(e, FX_SHIP_CRASH, (e.site == null ? 1 : 0) | (e.spin > 0 ? 2 : 0), e.ship, e.site != null ? e.site : e.ship.add(0, -160, 0), e.shipYaw, CRASH_TICKS);
 			e.level.playSound(null, BlockPos.containing(e.ship), SoundEvents.WITHER_DEATH, SoundSource.HOSTILE, 8f, 0.4f);
 		} else {
 			setStage(e, Stage.DEPARTING);
@@ -545,12 +560,30 @@ public final class ThanosEncounter {
 			if (e.site == null) return;
 			impact(e);
 		}
-		// Carve the crater one slice per tick, then the wreck heap and the fires.
-		if (e.site != null && GauntletConfig.get().thanosShipCrater && e.carveX <= CRATER_R) {
+		// Carve the crater one slice per tick, then the fires; then the ship itself is built where it lies.
+		boolean carving = e.site != null && GauntletConfig.get().thanosShipCrater && e.carveX <= CRATER_R;
+		if (carving) {
 			carveSlice(e);
-			if (e.carveX > CRATER_R) wreck(e);
+			if (e.carveX > CRATER_R) fires(e);
 		}
-		if (age >= CRASH_TICKS + WRECK_TICKS + 80) {
+		if (e.site != null && !carving && !e.firesLit) { e.firesLit = true; fires(e); }
+		if (e.plan != null && !carving && e.build == null && e.plan.isDone() && !e.plan.isCompletedExceptionally()) {
+			e.build = new ShipWreck.Build(level, BlockPos.containing(e.site), e.plan.join());
+			InfinityGauntlet.LOGGER.info("Thanos ship wreck: {} blocks to place at {}", e.build.total(), BlockPos.containing(e.site).toShortString());
+		}
+		if (e.build != null && !e.build.done()) e.build.step(2500);
+		boolean noWreck = e.plan == null || e.plan.isCompletedExceptionally() || (e.plan.isDone() && e.build == null && !carving && age > CRASH_TICKS + 600);
+		if (e.builtAt < 0 && ((e.build != null && e.build.done()) || noWreck || age > CRASH_TICKS + 1500)) {
+			e.builtAt = age;
+			// The model on the clients can fade now: the real thing lies there.
+			sendAll(e, FX_WRECK_DONE, 0, e.site == null ? Vec3.ZERO : e.site, Vec3.ZERO, 0, 0);
+			if (e.build != null) {
+				InfinityGauntlet.LOGGER.info("Thanos ship wreck built: {} blocks", e.build.placed());
+				wreckSite = BlockPos.containing(e.site);
+				wreckBlocks = e.build.placed();
+			}
+		}
+		if (e.builtAt >= 0 && age >= e.builtAt + 120) {
 			sendAll(e, FX_END, 0, Vec3.ZERO, Vec3.ZERO, 0, 0);
 			active = null;
 		}
@@ -635,32 +668,10 @@ public final class ThanosEncounter {
 		}
 	}
 
-	/** The broken hull: a heap of iron and dark metal in the middle of the crater, and the land around on fire. */
-	private static void wreck(Encounter e) {
+	/** The land around the crater is on fire. */
+	private static void fires(Encounter e) {
 		ServerLevel level = e.level;
 		var r = level.getRandom();
-		BlockPos c = BlockPos.containing(e.site).below(CRATER_D - 1);
-		int R = 7;
-		for (int dx = -R; dx <= R; dx++) {
-			for (int dz = -R; dz <= R; dz++) {
-				double d = Math.sqrt(dx * dx + dz * dz);
-				if (d > R) continue;
-				int h = (int) Math.round((1 - d / R) * 6 + r.nextInt(2));
-				for (int y = 0; y < h; y++) {
-					BlockPos p = c.offset(dx, y, dz);
-					if (!level.getBlockState(p).isAir() && !level.getBlockState(p).is(net.minecraft.world.level.block.Blocks.FIRE)) continue;
-					int k = r.nextInt(12);
-					var b = k < 3 ? net.minecraft.world.level.block.Blocks.IRON_BLOCK
-							: k < 6 ? net.minecraft.world.level.block.Blocks.POLISHED_BLACKSTONE_BRICKS
-							: k < 8 ? net.minecraft.world.level.block.Blocks.BLACKSTONE
-							: k < 9 ? net.minecraft.world.level.block.Blocks.IRON_BARS
-							: k < 10 ? net.minecraft.world.level.block.Blocks.IRON_CHAIN
-							: k < 11 ? net.minecraft.world.level.block.Blocks.MAGMA_BLOCK
-							: net.minecraft.world.level.block.Blocks.ANCIENT_DEBRIS;
-					level.setBlock(p, b.defaultBlockState(), 3);
-				}
-			}
-		}
 		// Fires all around the crater.
 		BlockPos s = BlockPos.containing(e.site);
 		for (int i = 0; i < 260; i++) {
