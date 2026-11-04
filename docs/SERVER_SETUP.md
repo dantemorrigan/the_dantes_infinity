@@ -33,7 +33,7 @@
 - `abilityPvp`, `mindPlayerGrab`, `soulPlayerDrain`, `extractorPlayerTheft` — против игроков
 - `abilityBlockChanges` — запрет менять блоки способностями
 
-Правки конфига применяются после перезапуска (или `reload`, если есть в `/gauntlet`).
+Правки конфига применяются после перезапуска (или командой `/gauntlet reload_config`).
 
 ## 5. Права и команды
 - `/gauntlet ...` — только операторам (гейммастер).
