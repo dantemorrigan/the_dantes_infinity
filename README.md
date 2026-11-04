@@ -1,105 +1,106 @@
 # Infinity Gauntlet (Fabric, Minecraft 26.1.2)
 
-Требования: **Java 25**. Сборка: `./gradlew build` → `build/libs/infinity_gauntlet-0.1.0.jar` (+ Fabric API 0.155.3+26.1.2).
+🇬🇧 English · [🇷🇺 Русский](README.ru.md)
+
+Requirements: **Java 25**. Build: `./gradlew build` → `build/libs/infinity_gauntlet-0.1.0.jar` (+ Fabric API 0.155.3+26.1.2).
 
 ```
-./gradlew runClient          # тестовый клиент
-./gradlew runClientGameTest  # визуальный прогон со скриншотами (build/run/clientGameTest/screenshots)
-./gradlew runClientGameTest -PonlyTest=MindSoulTest  # только один тест (Linux без экрана: xvfb-run -a)
+./gradlew runClient          # test client
+./gradlew runClientGameTest  # visual run with screenshots (build/run/clientGameTest/screenshots)
+./gradlew runClientGameTest -PonlyTest=MindSoulTest  # a single test (headless Linux: xvfb-run -a)
 ```
 
-## Управление колесом способностей
+## Ability wheel controls
 
-- Надеть перчатку в левую руку. Удерживать **V** — открыть колесо; навести на камень, затем на способность и отпустить **V**, чтобы выбрать.
-- **R** — применить выбранное действие; удерживать и отпускать для заряженных ударов, луча и Изнанки реальности. Открытие колеса отменяет заряд без атаки.
-- **Esc** отменяет выбор. **PgUp/PgDn** переключают камень, стрелки/Tab — действие, Enter подтверждает. `abilityWheelToggle: true` в конфиге включает открытие нажатием вместо удержания.
-- ЛКМ по центру — установка камней. Выбор Портала или Направлений открывает отдельное меню измерения/маршрута; ЛКМ/Enter подтверждает, применение по R отдельное. **Shift+R** с выбранным порталом быстро меняет измерение; цель видна в статусе.
-- Телекинез: R захватывает/бросает; «Разорвать» и безопасное «Отпустить» — отдельные подписанные пункты. **Shift+R** при захваченном мобе сразу запускает разрыв. Переключение на другой камень безопасно отпускает цель.
-- Полёт остаётся активным при выборе другого камня. **Ctrl** ускоряет; для выключения выбрать Полёт и нажать R. В космосе этот пункт возвращает в атмосферу возле Земли, сохраняя ручной полёт.
-- Иконки камней и перчатки отображают существующие предметы мода и активного ресурс-пака. Карточка выбранной способности — в верхней левой панели.
+- Equip the gauntlet in your offhand. Hold **V** to open the wheel; point at a stone, then at an ability, and release **V** to select.
+- **R** — use the selected action; hold and release for charged strikes, the beam and Reality Inversion. Opening the wheel cancels a charge without attacking.
+- **Esc** cancels the selection. **PgUp/PgDn** switch stones, arrows/Tab switch actions, Enter confirms. `abilityWheelToggle: true` in the config makes the wheel open on press instead of hold.
+- Left-click the center — insert stones. Selecting Portal or Destinations opens a separate dimension/route menu; left-click/Enter confirms, using it with R is separate. **Shift+R** with a portal selected quickly switches the dimension; the target is shown in the status.
+- Telekinesis: R grabs/throws; "Tear apart" and the safe "Release" are separate labeled entries. **Shift+R** with a grabbed mob tears it apart immediately. Switching to another stone safely releases the target.
+- Flight stays active when you select another stone. **Ctrl** boosts; to turn it off, select Flight and press R. In space this entry returns you to the atmosphere near Earth, keeping manual flight.
+- Stone and gauntlet icons show the mod's existing items and the active resource pack. The selected ability card is in the top-left panel.
 
-Старые быстрые клавиши из описаний ниже теперь **не назначены по умолчанию**, но доступны в настройках управления. Исторические заводские назначения снимаются один раз; пользовательские сохраняются. Старый заряд ПКМ в левой руке включается отдельно через `legacyRightClickPower: true`.
+The old quick keys described below are now **unbound by default** but still available in the controls settings. Historical factory bindings are cleared once; custom ones are kept. The old right-click charge with the gauntlet in the offhand is enabled separately via `legacyRightClickPower: true`.
 
-Проверка нового управления: `xvfb-run -a ./gradlew runClientGameTest -PonlyTest=AbilityWheelTest`. Старые тесты сами временно включают прежнюю схему ввода.
+Testing the new controls: `xvfb-run -a ./gradlew runClientGameTest -PonlyTest=AbilityWheelTest`. The old tests temporarily switch back to the previous input scheme on their own.
 
-## Луч Бесконечности — все шесть камней
-- Надеть перчатку со всеми камнями в левую руку, дождаться пробуждения и **удерживать H**: 2 с заряд, затем 6 с луч. Отпускание прерывает атаку.
-- Дальность 72 блока; полный контакт с драконом снимает 70% его максимального здоровья (140 HP). Промахи снижают урон; лечение кристаллами независимо.
-- Луч бурит тоннель диаметром до 9 блоков без выпадения предметов; бедрок сохраняется, новые чанки не загружаются.
-- Перезарядка 45 с (в творческом режиме отключена). Параметры: `beamChargeTicks`, `beamFireTicks`, `beamCooldownTicks`, `beamRange`, `beamDamage`, `beamHitRadius`, `beamBreakBlocks`, `beamDrillRadius`, `beamBlocksPerTick`.
-- Статусы способностей и таймер дождя выводятся в отдельной панели слева сверху жирным шрифтом.
-- Анимации заряда, ствола луча, вспышки и попадания взяты из приложенного Infinity Beam Ultimate Basic; шесть цветных спиралей формируются при отрисовке.
+## Infinity Beam — all six stones
+- Equip a gauntlet holding all stones in your offhand, wait for it to awaken and **hold H**: 2 s charge, then a 6 s beam. Releasing interrupts the attack.
+- Range 72 blocks; full contact with the dragon removes 70% of its max health (140 HP). Misses reduce the damage; crystal healing is independent.
+- The beam drills a tunnel up to 9 blocks wide with no item drops; bedrock is preserved and no new chunks are loaded.
+- Cooldown 45 s (disabled in creative mode). Parameters: `beamChargeTicks`, `beamFireTicks`, `beamCooldownTicks`, `beamRange`, `beamDamage`, `beamHitRadius`, `beamBreakBlocks`, `beamDrillRadius`, `beamBlocksPerTick`.
+- Ability statuses and the rain timer are shown in a separate top-left panel in bold.
+- The charge, beam barrel, flash and impact animations come from the supplied Infinity Beam Ultimate Basic; the six colored spirals are built at render time.
 
-## Камень Силы
-- Перчатка работает только **в левой руке** (F). ПКМ с перчаткой в правой руке — меню камней.
-- **Держать ПКМ** — заряд (фиолетовая аура у кулака), **отпустить** — силовой удар (урон, отбрасывание, перезарядка — на сервере).
-- **V** — переключить режим: силовой удар → **Уничтожение планеты** → **Разрушение солнца и луны**.
-- Ультимейт: режим «Уничтожение планеты», полный заряд (2 с), удар по земле под собой.
-- Уничтожение завершает дождь метеоритов, закрывает порталы в исходном мире и прерывает его активные лучи/перемотки. Красное небо и туман действуют только в обычном мире.
-- В космосе: крупная воксельная Земля с упрощёнными материками по [NASA Blue Marble](https://science.nasa.gov/resource/blue-marble/), океаном, полярными шапками и облаками; используются текущие ванильные текстуры блоков.
-- Распад: 14 неравных крупных фрагментов → 54–56 вторичных фрагментов со вспышками → 650 мелких осколков. Ещё 280 частиц и 60 обломков распределены по всей сцене. Геометрия детерминирована, Камень Времени собирает её обратно.
+## Power Stone
+- The gauntlet only works **in the offhand** (F). Right-clicking with the gauntlet in the main hand opens the stone menu.
+- **Hold right-click** — charge (purple aura at the fist), **release** — power strike (damage, knockback and cooldown are handled on the server).
+- **V** — switch mode: power strike → **Planet Destruction** → **Sun and Moon Destruction**.
+- Ultimate: "Planet Destruction" mode, full charge (2 s), strike the ground beneath you.
+- The destruction ends the meteor rain, closes portals in the source world and interrupts its active beams/rewinds. The red sky and fog only apply in the Overworld.
+- In space: a large voxel Earth with simplified continents based on [NASA Blue Marble](https://science.nasa.gov/resource/blue-marble/), ocean, polar caps and clouds; current vanilla block textures are used.
+- Breakup: 14 uneven large fragments → 54–56 secondary fragments with flashes → 650 small shards. Another 280 particles and 60 debris pieces are spread across the scene. The geometry is deterministic; the Time Stone reassembles it.
 
-## Разрушение солнца и луны (Камень Силы, 3-й режим)
-- Режим «Разрушение солнца и луны», **навести перчатку на солнце/луну и держать ПКМ 3 с** — захват (фиолетовая нить к светилу).
-- Светило трескается в 4 стадии (оригинальная текстура + трещины пака), раскалывается на 16 кусков, они падают вниз,
-  небо в радиусе 256 блоков краснеет (днём красно-оранжевое, ночью тёмно-бордовое).
-- **Метеоритный дождь 5 минут реального времени** (переживает лаги и перезапуск): кратеры, взрывы, пожары, урон.
-- Разрушенное светило остаётся разрушенным (хранится отдельно от неба).
-- **Солнце разрушено → вечная ночь с луной**: тьма наступает за ~5 с, на рассвете время возвращается к началу ночи (фазы луны идут дальше).
-  **Луна разрушена** → дни как обычно, ночью только звёзды.
+## Sun and Moon Destruction (Power Stone, 3rd mode)
+- In "Sun and Moon Destruction" mode, **aim the gauntlet at the sun/moon and hold right-click for 3 s** — lock-on (a purple thread to the luminary).
+- The luminary cracks in 4 stages (original texture + pack cracks), splits into 16 pieces that fall down,
+  and the sky within 256 blocks turns red (red-orange by day, dark crimson at night).
+- **A 5-minute real-time meteor shower** (survives lag and restarts): craters, explosions, fires, damage.
+- A destroyed luminary stays destroyed (stored separately from the sky).
+- **Sun destroyed → eternal night with the moon**: darkness falls in ~5 s, and at dawn the time returns to the start of the night (moon phases keep advancing).
+  **Moon destroyed** → days as usual, only stars at night.
 
-## Камень Реальности — «Изнанка реальности»
-- **Держи G** (сжатый кулак): заряд у кулака → красные трещины → мир рассыпается кубическими фрагментами и
-  выворачивается. Земля по обе стороны от взгляда складывается стенами, постройки закручиваются, вода зависает
-  в воздухе. **Поворачивай голову**: разлом идёт за рукой. Мобы превращаются в красных бабочек, летящие стрелы
-  в лепестки. **Отпусти G** (разжатый кулак): всё стекается обратно, мобы возвращаются.
-- Мир на сервере не меняется: это настоящие блоки текущего ресурспака, временно снятые только на твоём клиенте.
-  Мобы всегда возвращаются (отпускание, смерть, выход, смена измерения, даже перезапуск сервера).
-- Пока держишь, ходить нельзя: управляешь «рукой», то есть взглядом. Радиус и лимит блоков в конфиге (`reality*`).
-- **Коротко нажать G** — удар камнем по земле: от кулака расходится красная волна. Все мобы, до которых она дошла (кроме боссов, твоих питомцев и мобов с именем), превращаются в красных бабочек и растворяются в воздухе, без дропа. Земля в радиусе `realityStrikeRadius` (10) становится блоками красного камня, местами горит огонь. Это изменение **настоящее**, оно остаётся. Перезарядка `realityStrikeCooldownTicks`.
+## Reality Stone — "Reality Inversion"
+- **Hold G** (closed fist): charge at the fist → red cracks → the world crumbles into cubic fragments and
+  turns inside out. The ground on both sides of your gaze folds into walls, buildings twist, water hangs
+  in the air. **Turn your head**: the rift follows your hand. Mobs turn into red butterflies, flying arrows
+  into petals. **Release G** (open fist): everything flows back, mobs return.
+- The world on the server does not change: these are real blocks of the current resource pack, temporarily removed only on your client.
+  Mobs always return (release, death, logout, dimension change, even a server restart).
+- You can't walk while holding: you control the "hand", i.e. your gaze. Radius and block limit are in the config (`reality*`).
+- **Tap G** — a stone strike on the ground: a red wave spreads from the fist. All mobs it reaches (except bosses, your pets and named mobs) turn into red butterflies and dissolve into the air, with no drops. The ground within `realityStrikeRadius` (10) becomes redstone blocks, with fire in places. This change is **real** and stays. Cooldown `realityStrikeCooldownTicks`.
 
-## Камень Пространства
-- **B** — открыть портал перед собой (ещё раз B — закрыть). **Shift+B** — выбрать измерение: Незер / Энд / обычный мир
-  (текущее измерение пропускается). Шагни в портал — окажешься там; живёт 30 с.
-  Незер — координаты /8 и безопасная площадка, Энд — главный остров, обычный мир — поверхность.
-- **N** — телепорт туда, куда смотришь (до 96 блоков), с синей вспышкой и следом завихрений.
+## Space Stone
+- **B** — open a portal in front of you (B again — close). **Shift+B** — choose the dimension: Nether / End / Overworld
+  (the current dimension is skipped). Step into the portal to arrive there; it lasts 30 s.
+  Nether — coordinates /8 and a safe platform, End — the main island, Overworld — the surface.
+- **N** — teleport where you look (up to 96 blocks), with a blue flash and a trail of swirls.
 
-## Камень Времени
-- **Y** — сменить время суток (только обычный мир): часы разгоняются плавно за ~6 с, солнце стремительно уходит за горизонт и поднимается Луна (и наоборот). Перезарядка 30 с; после разрушения солнца день не наступит. Параметры: `timeShiftTicks`, `timeShiftCooldownTicks`.
-- **R** — отмотать время: игрок «проигрывается» назад по своему пути за последние 5 с, здоровье и голод возвращаются к тому моменту.
-- В Мёртвом космосе **R** отменяет разрушение: планета и обломки собираются обратно, зелёная вспышка, все участники того же события возвращаются домой.
+## Time Stone
+- **Y** — change the time of day (Overworld only): the clock speeds up smoothly over ~6 s, the sun rushes below the horizon and the Moon rises (and vice versa). Cooldown 30 s; after the sun is destroyed, day will not come. Parameters: `timeShiftTicks`, `timeShiftCooldownTicks`.
+- **R** — rewind time: the player is "played back" along their path over the last 5 s, health and hunger return to that moment.
+- In Dead Space **R** undoes the destruction: the planet and debris reassemble, a green flash, and all participants of the same event return home.
 
-## Камень Разума — телекинез
-- **Z** по земле — вырвать кусок настоящих блоков (радиус `mindGrabRadius`, до `mindMaxBlocks`): любые блоки, кроме неразрушимых (бедрок и т. п.) и блоков с содержимым (сундуки, печи). Скопление висит перед тобой и плавно следует за взглядом.
-- **Z** ещё раз — бросить: скопление летит по дуге, на ударе бьёт всех вокруг (`mindThrowDamage`, растёт с размером), отбрасывает и рассыпается обратно в настоящие падающие блоки.
-- **Z** по мобу — поднять и держать (боссы и игроки не поднимаются). **Z** — бросить его, **Shift+Z** — **разорвать**: моб дрожит, наливается красным и разлетается на части собственной модели (лут и опыт выпадают).
-- **Shift+Z** с блоками — просто отпустить. При выходе, смерти или снятии перчатки блоки падают, не теряются.
+## Mind Stone — telekinesis
+- **Z** on the ground — tear out a chunk of real blocks (radius `mindGrabRadius`, up to `mindMaxBlocks`): any blocks except unbreakable ones (bedrock etc.) and blocks with contents (chests, furnaces). The cluster hangs in front of you and smoothly follows your gaze.
+- **Z** again — throw: the cluster flies in an arc, hits everything around on impact (`mindThrowDamage`, grows with size), knocks back and crumbles back into real falling blocks.
+- **Z** on a mob — lift and hold (bosses and players can't be lifted). **Z** — throw it, **Shift+Z** — **tear apart**: the mob trembles, turns red and bursts into pieces of its own model (loot and XP drop).
+- **Shift+Z** with blocks — just release. On logout, death or removing the gauntlet the blocks fall and are not lost.
 
-## Камень Души — извлечение души
-- **O** по мобу — душа вытягивается из тела (оно зависает), моб умирает, душа по дуге летит в тебя и поглощается.
-  Каждая душа: **+1 ❤ макс. здоровья и +0.5 урона**, лечение; копятся до `soulMaxStacks` (20), держатся `soulBuffTicks` (60 с), каждая новая душа продлевает. Статус слева сверху.
-- **Shift+O** — массовое извлечение: волна в радиусе `soulMassRadius` (24) вытягивает души всех врагов (до `soulMassMaxTargets`), убивая их; все души летят в тебя. Перезарядка `soulMassCooldownTicks` (45 с).
-- Боссы, мирные мобы (для массового) и мобы с именем не трогаются. Бонус не сохраняется в данные игрока.
+## Soul Stone — soul extraction
+- **O** on a mob — the soul is pulled out of the body (it hovers), the mob dies, the soul flies to you in an arc and is absorbed.
+  Each soul: **+1 ❤ max health and +0.5 damage**, healing; they stack up to `soulMaxStacks` (20), last `soulBuffTicks` (60 s), each new soul extends the timer. Status in the top left.
+- **Shift+O** — mass extraction: a wave within `soulMassRadius` (24) pulls out the souls of all enemies (up to `soulMassMaxTargets`), killing them; all souls fly to you. Cooldown `soulMassCooldownTicks` (45 s).
+- Bosses, peaceful mobs (for mass extraction) and named mobs are not affected. The bonus is not saved to player data.
 
-## Отладочные команды (уровень оператора)
-| Команда | Что делает |
+## Debug commands (operator level)
+| Command | What it does |
 |---|---|
-| `/gauntlet give_power` | перчатка с Камнем Силы в левую руку |
-| `/gauntlet give_time` | вставить Камень Времени в надетую перчатку |
-| `/gauntlet give_stone <камень>` | вставить любой камень (power, space, reality, soul, mind, time) |
-| `/gauntlet fx <эффект>` | показать один эффект: power_strike, power_impact, power_shockwave, power_sparks_smoke, ground_fracture, planet_rift, detonation_flash, void_dissolve, camera_shake, white_flash, lift_debris |
-| `/gauntlet cutscene` / `cutscene stop` | запустить/прервать катсцену разрушения без проверок |
-| `/gauntlet celestial sun\|moon` | разрушить светило без прицеливания |
-| `/gauntlet celestial stop` / `restore` | прервать дождь / вернуть солнце и луну |
-| `/gauntlet space enter` | сразу в Мёртвый космос |
-| `/gauntlet space return [игрок]` | вернуть игрока и сбросить состояние |
-| `/gauntlet state` | текущее состояние: IDLE/CHARGING/STRIKE/DESTRUCTION/TRANSFER/SPACE |
-| `/gauntlet reload_config` | перечитать `config/infinity_gauntlet.json` |
+| `/gauntlet give_power` | gauntlet with the Power Stone in the offhand |
+| `/gauntlet give_time` | insert the Time Stone into the worn gauntlet |
+| `/gauntlet give_stone <stone>` | insert any stone (power, space, reality, soul, mind, time) |
+| `/gauntlet fx <effect>` | show a single effect: power_strike, power_impact, power_shockwave, power_sparks_smoke, ground_fracture, planet_rift, detonation_flash, void_dissolve, camera_shake, white_flash, lift_debris |
+| `/gauntlet cutscene` / `cutscene stop` | start/abort the destruction cutscene without checks |
+| `/gauntlet celestial sun\|moon` | destroy a luminary without aiming |
+| `/gauntlet celestial stop` / `restore` | stop the rain / restore the sun and moon |
+| `/gauntlet space enter` | go straight to Dead Space |
+| `/gauntlet space return [player]` | return a player and reset the state |
+| `/gauntlet state` | current state: IDLE/CHARGING/STRIKE/DESTRUCTION/TRANSFER/SPACE |
+| `/gauntlet reload_config` | reload `config/infinity_gauntlet.json` |
 
-## Настройки
-`config/infinity_gauntlet.json`: урон/радиус/отбрасывание/перезарядка удара, заряд и перезарядка ультимейта,
-радиус участников (`participantRadius`), перенос всего измерения (`transferWholeDimension`, выкл.), тик переноса,
-сила дрожи камеры и вспышки, параметры полёта в космосе, лимит частиц.
+## Settings
+`config/infinity_gauntlet.json`: strike damage/radius/knockback/cooldown, ultimate charge and cooldown,
+participant radius (`participantRadius`), whole-dimension transfer (`transferWholeDimension`, off), transfer tick,
+camera shake and flash strength, space flight parameters, particle limit.
 
-Идеи: [IDEAS.md](IDEAS.md) · Заметки по API: [docs/DEV_NOTES.md](docs/DEV_NOTES.md) · Ресурсы паков: `art/vfx/`, `art/mind_stone/`, `art/soul_stone/`
-
+Ideas: [IDEAS.md](IDEAS.md) · API notes: [docs/DEV_NOTES.md](docs/DEV_NOTES.md) · Pack resources: `art/vfx/`, `art/mind_stone/`, `art/soul_stone/`
