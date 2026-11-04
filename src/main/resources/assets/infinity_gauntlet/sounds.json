@@ -53,5 +53,117 @@
         "name": "infinity_gauntlet:stones/celestial_shatter"
       }
     ]
+  },
+  "ability_power_strike": {
+    "subtitle": "subtitles.infinity_gauntlet.ability_power_strike",
+    "sounds": [
+      {
+        "name": "infinity_gauntlet:stones/power_strike"
+      }
+    ]
+  },
+  "ability_power_charge": {
+    "subtitle": "subtitles.infinity_gauntlet.ability_power_charge",
+    "sounds": [
+      {
+        "name": "infinity_gauntlet:stones/power_charge"
+      }
+    ]
+  },
+  "ability_planet_destruction": {
+    "subtitle": "subtitles.infinity_gauntlet.ability_planet_destruction",
+    "sounds": [
+      {
+        "name": "infinity_gauntlet:stones/planet_destruction"
+      }
+    ]
+  },
+  "ability_meteor_stream": {
+    "subtitle": "subtitles.infinity_gauntlet.ability_meteor_stream",
+    "sounds": [
+      {
+        "name": "infinity_gauntlet:stones/meteor_stream"
+      }
+    ]
+  },
+  "ability_space_portal": {
+    "subtitle": "subtitles.infinity_gauntlet.ability_space_portal",
+    "sounds": [
+      {
+        "name": "infinity_gauntlet:stones/space_portal"
+      }
+    ]
+  },
+  "ability_space_blink": {
+    "subtitle": "subtitles.infinity_gauntlet.ability_space_blink",
+    "sounds": [
+      {
+        "name": "infinity_gauntlet:stones/space_blink"
+      }
+    ]
+  },
+  "ability_reality_strike": {
+    "subtitle": "subtitles.infinity_gauntlet.ability_reality_strike",
+    "sounds": [
+      {
+        "name": "infinity_gauntlet:stones/reality_strike"
+      }
+    ]
+  },
+  "ability_reality_inversion": {
+    "subtitle": "subtitles.infinity_gauntlet.ability_reality_inversion",
+    "sounds": [
+      {
+        "name": "infinity_gauntlet:stones/reality_inversion"
+      }
+    ]
+  },
+  "ability_time_rewind": {
+    "subtitle": "subtitles.infinity_gauntlet.ability_time_rewind",
+    "sounds": [
+      {
+        "name": "infinity_gauntlet:stones/time_rewind"
+      }
+    ]
+  },
+  "ability_time_world_rewind": {
+    "subtitle": "subtitles.infinity_gauntlet.ability_time_world_rewind",
+    "sounds": [
+      {
+        "name": "infinity_gauntlet:stones/time_world_rewind"
+      }
+    ]
+  },
+  "ability_time_shift": {
+    "subtitle": "subtitles.infinity_gauntlet.ability_time_shift",
+    "sounds": [
+      {
+        "name": "infinity_gauntlet:stones/time_shift"
+      }
+    ]
+  },
+  "ability_mind_grab": {
+    "subtitle": "subtitles.infinity_gauntlet.ability_mind_grab",
+    "sounds": [
+      {
+        "name": "infinity_gauntlet:stones/mind_grab"
+      }
+    ]
+  },
+  "ability_mind_tear": {
+    "subtitle": "subtitles.infinity_gauntlet.ability_mind_tear",
+    "sounds": [
+      {
+        "name": "infinity_gauntlet:stones/mind_tear"
+      }
+    ]
+  },
+  "ability_infinity_beam": {
+    "subtitle": "subtitles.infinity_gauntlet.ability_infinity_beam",
+    "sounds": [
+      {
+        "name": "infinity_gauntlet:stones/infinity_beam"
+      }
+    ]
   }
 }

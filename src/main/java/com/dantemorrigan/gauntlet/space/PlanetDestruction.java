@@ -115,6 +115,7 @@ public final class PlanetDestruction {
 			ServerPlayer p = server.getPlayerList().getPlayer(id);
 			if (p != null) ServerPlayNetworking.send(p, new ModNetwork.CutsceneStart(event.id, impact, 0, cfg.transferTick));
 		}
+		level.playSound(null, impact.x, impact.y, impact.z, com.dantemorrigan.gauntlet.ModSounds.ABILITY_PLANET_DESTRUCTION, SoundSource.PLAYERS, 6.0F, 1.0F);
 		level.playSound(null, impact.x, impact.y, impact.z, SoundEvents.GENERIC_EXPLODE.value(), SoundSource.PLAYERS, 4.0F, 0.5F);
 		level.playSound(null, impact.x, impact.y, impact.z, SoundEvents.WARDEN_SONIC_BOOM, SoundSource.PLAYERS, 3.0F, 0.6F);
 		InfinityGauntlet.LOGGER.info("Planet Destruction #{} by {} at {} with {} participant(s)", event.id, activator.getName().getString(), impact, event.participants.size());

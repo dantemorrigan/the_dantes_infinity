@@ -125,6 +125,7 @@ public final class PowerAbility {
 		GauntletConfig cfg = GauntletConfig.get();
 		ServerLevel level = player.level();
 		Vec3 impact = hit.getLocation();
+		level.playSound(null, impact.x, impact.y, impact.z, com.dantemorrigan.gauntlet.ModSounds.ABILITY_POWER_STRIKE, net.minecraft.sounds.SoundSource.PLAYERS, 1.0F + charge, 1.0F);
 		Vec3 normal = hit instanceof BlockHitResult b && hit.getType() == HitResult.Type.BLOCK
 				? Vec3.atLowerCornerOf(b.getDirection().getUnitVec3i())
 				: player.getLookAngle().reverse();

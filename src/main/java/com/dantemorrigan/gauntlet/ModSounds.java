@@ -20,6 +20,41 @@ public final class ModSounds {
 	public static final SoundEvent CELESTIAL_CAPTURE = register("celestial_capture");
 	public static final SoundEvent CELESTIAL_SHATTER = register("celestial_shatter");
 
+	// Ability cues (cut from the film): played when the ability fires.
+	public static final SoundEvent ABILITY_POWER_STRIKE = register("ability_power_strike");
+	public static final SoundEvent ABILITY_POWER_CHARGE = register("ability_power_charge");
+	public static final SoundEvent ABILITY_PLANET_DESTRUCTION = register("ability_planet_destruction");
+	public static final SoundEvent ABILITY_METEOR_STREAM = register("ability_meteor_stream");
+	public static final SoundEvent ABILITY_SPACE_PORTAL = register("ability_space_portal");
+	public static final SoundEvent ABILITY_SPACE_BLINK = register("ability_space_blink");
+	public static final SoundEvent ABILITY_REALITY_STRIKE = register("ability_reality_strike");
+	public static final SoundEvent ABILITY_REALITY_INVERSION = register("ability_reality_inversion");
+	public static final SoundEvent ABILITY_TIME_REWIND = register("ability_time_rewind");
+	public static final SoundEvent ABILITY_TIME_WORLD_REWIND = register("ability_time_world_rewind");
+	public static final SoundEvent ABILITY_TIME_SHIFT = register("ability_time_shift");
+	public static final SoundEvent ABILITY_MIND_GRAB = register("ability_mind_grab");
+	public static final SoundEvent ABILITY_MIND_TEAR = register("ability_mind_tear");
+	public static final SoundEvent ABILITY_INFINITY_BEAM = register("ability_infinity_beam");
+
+	/** The cue for an ability that starts on key press, or null if it has none (power abilities are cued elsewhere). */
+	public static SoundEvent cue(com.dantemorrigan.gauntlet.ability.Ability a) {
+		return switch (a) {
+			case STRIKE, PLANET -> ABILITY_POWER_CHARGE;
+			case METEOR_STREAM -> ABILITY_METEOR_STREAM;
+			case PORTAL -> ABILITY_SPACE_PORTAL;
+			case BLINK -> ABILITY_SPACE_BLINK;
+			case REALITY_STRIKE -> ABILITY_REALITY_STRIKE;
+			case INVERSION -> ABILITY_REALITY_INVERSION;
+			case REWIND -> ABILITY_TIME_REWIND;
+			case DAY_NIGHT -> ABILITY_TIME_SHIFT;
+			case GRAB -> ABILITY_MIND_GRAB;
+			case TEAR -> ABILITY_MIND_TEAR;
+			case SOUL, SOUL_MASS -> STONE_OMINOUS;
+			case BEAM -> ABILITY_INFINITY_BEAM;
+			default -> null;
+		};
+	}
+
 	private static SoundEvent register(String name) {
 		Identifier id = InfinityGauntlet.id(name);
 		return Registry.register(BuiltInRegistries.SOUND_EVENT, id, SoundEvent.createVariableRangeEvent(id));

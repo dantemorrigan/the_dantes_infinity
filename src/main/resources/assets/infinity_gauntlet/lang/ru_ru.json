@@ -398,5 +398,19 @@
   "subtitles.infinity_gauntlet.gauntlet_complete": "Перчатка пробуждается",
   "subtitles.infinity_gauntlet.stone_ominous": "Что-то тревожное",
   "subtitles.infinity_gauntlet.celestial_capture": "Перчатка захватывает небо",
-  "subtitles.infinity_gauntlet.celestial_shatter": "Небо раскалывается"
+  "subtitles.infinity_gauntlet.celestial_shatter": "Небо раскалывается",
+  "subtitles.infinity_gauntlet.ability_power_strike": "Силовой удар",
+  "subtitles.infinity_gauntlet.ability_power_charge": "Камень Силы заряжается",
+  "subtitles.infinity_gauntlet.ability_planet_destruction": "Планета разрушена",
+  "subtitles.infinity_gauntlet.ability_meteor_stream": "Метеориты призваны",
+  "subtitles.infinity_gauntlet.ability_space_portal": "Открывается портал",
+  "subtitles.infinity_gauntlet.ability_space_blink": "Пространство складывается",
+  "subtitles.infinity_gauntlet.ability_reality_strike": "Реальность гнётся",
+  "subtitles.infinity_gauntlet.ability_reality_inversion": "Реальность распадается",
+  "subtitles.infinity_gauntlet.ability_time_rewind": "Время идёт вспять",
+  "subtitles.infinity_gauntlet.ability_time_world_rewind": "Мир отматывается",
+  "subtitles.infinity_gauntlet.ability_time_shift": "Время кружится",
+  "subtitles.infinity_gauntlet.ability_mind_grab": "Разум захватывает",
+  "subtitles.infinity_gauntlet.ability_mind_tear": "Что-то разрывается",
+  "subtitles.infinity_gauntlet.ability_infinity_beam": "Луч Бесконечности"
 }

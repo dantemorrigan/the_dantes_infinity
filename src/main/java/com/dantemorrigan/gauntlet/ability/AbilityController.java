@@ -133,6 +133,8 @@ public final class AbilityController {
         Ability a=selected(p);String why=reason(p,a);
         if(!why.isEmpty()) {ModStatus.send(p,Component.translatable("ability.infinity_gauntlet.reason."+why));sync(p);return;}
         cancel(p);
+        net.minecraft.sounds.SoundEvent cue=com.dantemorrigan.gauntlet.ModSounds.cue(a);
+        if(cue!=null) p.level().playSound(null,p.getX(),p.getY(),p.getZ(),cue,net.minecraft.sounds.SoundSource.PLAYERS,a==Ability.INVERSION || a==Ability.BEAM?1.5f:1.2f,1.0f);
         ItemStack g=GauntletState.activeGauntlet(p);
         if(p.isUsingItem()) p.stopUsingItem();
         if(a.power()) {
