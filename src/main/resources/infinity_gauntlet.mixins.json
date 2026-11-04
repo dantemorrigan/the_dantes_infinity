@@ -5,7 +5,6 @@
 	"mixins": [
 		"FallingBlockEntityAccessor",
 		"LivingEntityMixin",
-		"MobMixin",
 		"CreativeSlotMixin",
 		"PlayerMixin",
 		"TamableAnimalMixin"

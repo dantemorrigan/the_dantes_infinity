@@ -175,6 +175,13 @@ public final class ThanosEncounter {
 	public static void reset(MinecraftServer server) {
 		server.overworld().removeAttached(DEFEATED);
 		RETURN_AT.clear();
+		// A scene still running (fight, falling ship...) is cut short.
+		if (active != null) {
+			if (active.boss != null && !active.boss.isRemoved()) active.boss.discard();
+			sendAll(active, FX_MUSIC_STOP, 0, Vec3.ZERO, Vec3.ZERO, 0, 20);
+			sendAll(active, FX_END, 0, Vec3.ZERO, Vec3.ZERO, 0, 0);
+			active = null;
+		}
 	}
 
 	// ------------------------------------------------------------------ triggering
@@ -374,6 +381,8 @@ public final class ThanosEncounter {
 		if (boss == null || boss.isRemoved()) { withdraw(false); return; }
 		if (p == null) { withdraw(false); return; }
 		boolean away = p.level() != boss.level() || p.distanceTo(boss) > 96;
+		// Left the arena (another dimension stops every sound on the client): cut the theme for them explicitly.
+		if (away && e.awayTicks == 0) send(p, FX_MUSIC_STOP, 0, Vec3.ZERO, Vec3.ZERO, 0, 40);
 		// Keep the battle theme alive for everyone near the fight (clients ignore it while the track already plays).
 		if ((e.t - e.stageStart) % 100 == 0) sendNear(e, boss.position(), 128, FX_MUSIC_START, 0, Vec3.ZERO, Vec3.ZERO, 0, 0);
 		e.awayTicks = away ? e.awayTicks + 1 : 0;
@@ -433,6 +442,8 @@ public final class ThanosEncounter {
 			RETURN_AT.put(e.playerId, back);
 		}
 		sendAll(e, FX_MUSIC_STOP, 0, Vec3.ZERO, Vec3.ZERO, 0, 60);
+		ServerPlayer owner = player(e);
+		if (owner != null && owner.level() != e.level) send(owner, FX_MUSIC_STOP, 0, Vec3.ZERO, Vec3.ZERO, 0, 60);
 		if (e.boss != null && !e.boss.isRemoved() && !e.boss.isDeadOrDying()) {
 			setStage(e, Stage.LEAVING);
 			Vec3 c = e.boss.position();

@@ -64,6 +64,20 @@ public final class ModSounds {
 		};
 	}
 
+	/** Cues that play at the key press and the sound that ends them (the charge dies when the strike lands). */
+	public static void playCue(ServerLevel level, net.minecraft.world.entity.player.Player who, SoundEvent cue, float volume) {
+		stop(level, who.position(), cue);
+		level.playSound(null, who.getX(), who.getY(), who.getZ(), cue, SoundSource.PLAYERS, volume, 1.0f);
+	}
+
+	/** Cuts a sound for everyone who could hear it, so a cue never stacks on itself or on the sound that replaces it. */
+	public static void stop(ServerLevel level, Vec3 near, SoundEvent sound) {
+		var packet = new net.minecraft.network.protocol.game.ClientboundStopSoundPacket(sound.location(), SoundSource.PLAYERS);
+		for (net.minecraft.server.level.ServerPlayer p : level.players()) {
+			if (p.position().distanceToSqr(near) < 96 * 96) p.connection.send(packet);
+		}
+	}
+
 	private static SoundEvent register(String name) {
 		Identifier id = InfinityGauntlet.id(name);
 		return Registry.register(BuiltInRegistries.SOUND_EVENT, id, SoundEvent.createVariableRangeEvent(id));

@@ -125,6 +125,8 @@ public final class PowerAbility {
 		GauntletConfig cfg = GauntletConfig.get();
 		ServerLevel level = player.level();
 		Vec3 impact = hit.getLocation();
+		com.dantemorrigan.gauntlet.ModSounds.stop(level, impact, com.dantemorrigan.gauntlet.ModSounds.ABILITY_POWER_CHARGE);
+		com.dantemorrigan.gauntlet.ModSounds.stop(level, impact, com.dantemorrigan.gauntlet.ModSounds.ABILITY_POWER_STRIKE);
 		level.playSound(null, impact.x, impact.y, impact.z, com.dantemorrigan.gauntlet.ModSounds.ABILITY_POWER_STRIKE, net.minecraft.sounds.SoundSource.PLAYERS, 1.0F + charge, 1.0F);
 		Vec3 normal = hit instanceof BlockHitResult b && hit.getType() == HitResult.Type.BLOCK
 				? Vec3.atLowerCornerOf(b.getDirection().getUnitVec3i())
@@ -147,8 +149,6 @@ public final class PowerAbility {
 			e.hurtMarked = true;
 		}
 		player.getCooldowns().addCooldown(gauntlet, cfg.strikeCooldownTicks);
-		level.playSound(null, impact.x, impact.y, impact.z, SoundEvents.GENERIC_EXPLODE.value(), SoundSource.PLAYERS, 0.8F + charge, 1.3F - 0.4F * charge);
-		level.playSound(null, impact.x, impact.y, impact.z, SoundEvents.MACE_SMASH_GROUND_HEAVY, SoundSource.PLAYERS, 1.0F, 0.8F);
 		sendFx(level, impact, normal, 0.6f + charge);
 	}
 

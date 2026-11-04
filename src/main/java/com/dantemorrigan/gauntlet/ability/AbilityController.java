@@ -134,7 +134,7 @@ public final class AbilityController {
         if(!why.isEmpty()) {ModStatus.send(p,Component.translatable("ability.infinity_gauntlet.reason."+why));sync(p);return;}
         cancel(p);
         net.minecraft.sounds.SoundEvent cue=com.dantemorrigan.gauntlet.ModSounds.cue(a);
-        if(cue!=null) p.level().playSound(null,p.getX(),p.getY(),p.getZ(),cue,net.minecraft.sounds.SoundSource.PLAYERS,a==Ability.INVERSION || a==Ability.BEAM?1.5f:1.2f,1.0f);
+        if(cue!=null) com.dantemorrigan.gauntlet.ModSounds.playCue(p.level(),p,cue,a==Ability.INVERSION || a==Ability.BEAM?1.5f:1.2f);
         ItemStack g=GauntletState.activeGauntlet(p);
         if(p.isUsingItem()) p.stopUsingItem();
         if(a.power()) {
@@ -166,6 +166,8 @@ public final class AbilityController {
     private static void release(ServerPlayer p) {
         Charge c=CHARGES.remove(p.getUUID());
         if(c!=null) {
+            // A released charge ends its charging sound; the strike brings its own.
+            com.dantemorrigan.gauntlet.ModSounds.stop(p.level(),p.position(),com.dantemorrigan.gauntlet.ModSounds.ABILITY_POWER_CHARGE);
             CelestialApocalypse.resetAim(p);
             if(p.isAlive() && c.level()==p.level() && GauntletState.activeGauntlet(p)==c.gauntlet())
                 PowerAbility.release(p,c.gauntlet(),Math.max(0,p.tickCount-c.started()));
@@ -178,7 +180,7 @@ public final class AbilityController {
     }
     public static void cancel(ServerPlayer p) {
         Charge c=CHARGES.remove(p.getUUID());
-        if(c!=null) GauntletState.setInUse(c.gauntlet(),EnumSet.noneOf(Stone.class));
+        if(c!=null) {GauntletState.setInUse(c.gauntlet(),EnumSet.noneOf(Stone.class));com.dantemorrigan.gauntlet.ModSounds.stop(p.level(),p.position(),com.dantemorrigan.gauntlet.ModSounds.ABILITY_POWER_CHARGE);}
         HELD.remove(p.getUUID());CelestialApocalypse.resetAim(p);
         InfinityBeam.cancel(p);RealityStone.stop(p);com.dantemorrigan.gauntlet.meteor.MeteorStream.cancel(p);
         if(p.isUsingItem() && p.getUseItem().is(ModItems.GAUNTLET)) p.stopUsingItem();

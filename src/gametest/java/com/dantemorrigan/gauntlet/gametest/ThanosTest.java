@@ -69,6 +69,7 @@ public class ThanosTest implements FabricClientGameTest {
 			});
 			ctx.waitTicks(30);
 			ctx.takeScreenshot("thanos_intro_line");
+			assertMusic(ctx, "overworld");
 			ctx.waitTicks(80);
 			if (!server.computeOnServer(s -> thanos(s).fighting())) throw new AssertionError("Thanos did not start the fight");
 			if (!server.computeOnServer(s -> thanos(s).hasGauntlet())) throw new AssertionError("Thanos should carry his gauntlet when the player has none");
@@ -139,6 +140,8 @@ public class ThanosTest implements FabricClientGameTest {
 			ctx.takeScreenshot("thanos_nether_rift");
 			ctx.waitTicks(30);
 			ctx.takeScreenshot("thanos_nether_step_out");
+			ctx.waitTicks(40);
+			assertMusic(ctx, "nether");
 			server.runCommand("gauntlet thanos stop");
 			ctx.waitTicks(80);
 
@@ -162,9 +165,17 @@ public class ThanosTest implements FabricClientGameTest {
 			server.runCommand("execute as @p at @s run tp @s ~ ~ ~ ~ 20");
 			ctx.waitTicks(40);
 			ctx.takeScreenshot("thanos_end_beam");
+			ctx.waitTicks(100);
+			assertMusic(ctx, "end");
 			server.runCommand("gauntlet thanos stop");
 			ctx.waitTicks(40);
 		}
+	}
+
+	private static void assertMusic(ClientGameTestContext ctx, String where) {
+		boolean playing = ctx.computeOnClient(mc -> com.dantemorrigan.gauntlet.client.boss.ThanosClient.musicPlaying());
+		System.out.println("THANOS-MUSIC " + where + " playing=" + playing);
+		if (!playing) throw new AssertionError("The battle theme is not playing in the " + where);
 	}
 
 	/** Health Thanos loses to one fresh hit from the player holding this weapon. */

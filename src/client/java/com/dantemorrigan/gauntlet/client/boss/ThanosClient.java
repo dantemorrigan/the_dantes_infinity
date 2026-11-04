@@ -197,11 +197,15 @@ public final class ThanosClient {
 				// Sent at the start and again every few seconds of the fight: (re)start unless it is really playing.
 				if (mc.player == null || !mc.player.isAlive()) break;
 				boolean playing = music != null && !music.isStopped() && !music.fading() && mc.getSoundManager().isActive(music);
-				if (!playing) {
-					if (music != null && !music.isStopped() && !music.fading() && music.age < 40) break; // just queued, give it a moment
+				// Just queued (the sound engine needs a moment to start it): do not stack a second one on top.
+				boolean starting = music != null && !music.isStopped() && !music.fading() && ticks - music.created < 30;
+				if (!playing && !starting) {
+					// Not playing: never started, or the engine dropped it (a dimension change stops every sound). Start over.
 					if (music != null) music.halt();
 					music = new Music();
-					mc.getSoundManager().play(music);
+					music.created = ticks;
+					var result = mc.getSoundManager().play(music);
+					InfinityGauntlet.LOGGER.info("Thanos battle theme: {}", result);
 				}
 				mc.getMusicManager().stopPlaying();
 			}
@@ -225,6 +229,16 @@ public final class ThanosClient {
 			shake = amount;
 			shakeTicks = t;
 		}
+	}
+
+	/** True while the battle theme is really playing in the sound engine (used by the tests and the debug command). */
+	public static boolean musicPlaying() {
+		Minecraft mc = Minecraft.getInstance();
+		return music != null && !music.isStopped() && !music.fading() && mc.getSoundManager().isActive(music);
+	}
+
+	public static float musicVolume() {
+		return music == null ? 0 : music.volumeNow();
 	}
 
 	// ------------------------------------------------------------------ queries for mixins
@@ -357,7 +371,10 @@ public final class ThanosClient {
 		// Battle theme: keep vanilla music out while it plays; it fades when the player dies.
 		if (music != null) {
 			if (music.isStopped()) music = null;
-			else {
+			else if (ticks - music.created > 30 && !mc.getSoundManager().isActive(music)) {
+				// The sound engine no longer has it (dimension change, device change): forget it; the server re-sends the cue.
+				music = null;
+			} else {
 				mc.getMusicManager().stopPlaying();
 				if (!mc.player.isAlive()) music.fadeOut(60);
 			}
@@ -739,7 +756,8 @@ public final class ThanosClient {
 		private static final float LEVEL = 0.42f;
 		private float step = LEVEL / 40f;
 		private boolean out;
-		int age;
+		/** Client tick when it was created (the sound engine only ticks it once it really plays). */
+		long created;
 
 		Music() {
 			super(ModSounds.THANOS_MUSIC, SoundSource.RECORDS, SoundInstance.createUnseededRandom());
@@ -758,11 +776,12 @@ public final class ThanosClient {
 
 		boolean fading() { return out; }
 
+		float volumeNow() { return this.volume; }
+
 		void halt() { this.stop(); }
 
 		@Override
 		public void tick() {
-			age++;
 			if (out) {
 				this.volume -= step;
 				if (this.volume <= 0.001f) this.stop();

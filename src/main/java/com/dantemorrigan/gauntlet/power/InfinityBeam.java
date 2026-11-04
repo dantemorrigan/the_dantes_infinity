@@ -71,7 +71,6 @@ public final class InfinityBeam {
         }
         ACTIVE.put(p.getUUID(), new Cast(p, g));
         GauntletState.setInUse(g, EnumSet.allOf(Stone.class));
-        p.level().playSound(null, p.blockPosition(), SoundEvents.BEACON_ACTIVATE, SoundSource.PLAYERS, 1.4f, .6f);
     }
     public static void cancel(ServerPlayer p) {
         Cast cast = ACTIVE.remove(p.getUUID());
