@@ -87,6 +87,15 @@ public final class PlanetDestruction {
 	public static boolean start(ServerPlayer activator, Vec3 impact) {
 		if (!GauntletConfig.get().allowPlanetDestruction || !EVENTS.isEmpty()
 				|| activator.hasAttached(com.dantemorrigan.gauntlet.snap.InfinitySnap.RECORD)) return false;
+		// Never during Thanos's visit, and not in the End (the server decides, whatever the client asked).
+		if (com.dantemorrigan.gauntlet.boss.ThanosEncounter.running()) {
+			com.dantemorrigan.gauntlet.net.ModStatus.send(activator, Component.translatable("ability.infinity_gauntlet.reason.thanos"));
+			return false;
+		}
+		if (activator.level().dimension().equals(net.minecraft.world.level.Level.END)) {
+			com.dantemorrigan.gauntlet.net.ModStatus.send(activator, Component.translatable("ability.infinity_gauntlet.reason.planet_end"));
+			return false;
+		}
 		if (isBusy(activator)) {
 			com.dantemorrigan.gauntlet.net.ModStatus.send(activator, Component.translatable("msg.infinity_gauntlet.event.in_progress"));
 			return false;

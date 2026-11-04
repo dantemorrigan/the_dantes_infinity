@@ -8,6 +8,15 @@ import net.fabricmc.fabric.api.client.gametest.v1.context.ClientGameTestContext;
 public class ThanosMusicTest implements FabricClientGameTest {
 	@Override
 	public void runTest(ClientGameTestContext ctx) {
+		// Minecraft's decoder only reads plain Vorbis: a cover-art (Theora video) stream inside the .ogg means silence.
+		try (var in = ThanosMusicTest.class.getResourceAsStream("/assets/infinity_gauntlet/sounds/thanos/battle_music.ogg")) {
+			byte[] head = in.readNBytes(200_000);
+			String text = new String(head, java.nio.charset.StandardCharsets.ISO_8859_1);
+			if (text.contains("theora")) throw new AssertionError("battle_music.ogg contains a video stream: Minecraft can't play it");
+			if (!text.contains("vorbis")) throw new AssertionError("battle_music.ogg is not Vorbis");
+		} catch (java.io.IOException e) {
+			throw new AssertionError(e);
+		}
 		try (var sp = ctx.worldBuilder().create()) {
 			sp.getClientLevel().waitForChunksRender();
 			var server = sp.getServer();

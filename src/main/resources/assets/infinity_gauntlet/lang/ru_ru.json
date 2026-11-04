@@ -445,5 +445,7 @@
   "death.attack.infinityGauntlet.thanos": "%1$s пал от меча Таноса",
   "death.attack.infinityGauntlet.thanos.player": "%1$s пал от меча Таноса в бою с %2$s",
   "death.attack.infinityGauntlet.thanos.item": "%1$s пал от меча Таноса",
-  "msg.infinity_gauntlet.thanos.sensed": "Среди звёзд что-то шевельнулось. Камни тяжелеют в руках... Он идёт."
+  "msg.infinity_gauntlet.thanos.sensed": "Среди звёзд что-то шевельнулось. Камни тяжелеют в руках... Он идёт.",
+  "ability.infinity_gauntlet.reason.thanos": "Не сейчас: Танос здесь",
+  "ability.infinity_gauntlet.reason.planet_end": "Разрушение планеты не работает в Энде"
 }

@@ -70,6 +70,11 @@ public final class AbilityController {
                 || a == Ability.SNAP && !config.allowInfinitySnap
                 || a == Ability.METEOR_STREAM && !config.allowMeteorStream
                 || a == Ability.DAY_NIGHT && !config.allowTimeShift) return "disabled";
+        if(a==Ability.PLANET) {
+            // Planet Destruction: Overworld and Nether only, and never while Thanos is here (his scene, fight and fall).
+            if(com.dantemorrigan.gauntlet.boss.ThanosEncounter.running()) return "thanos";
+            if(p.level().dimension().equals(Level.END)) return "planet_end";
+        }
         if(p.containerMenu!=p.inventoryMenu) return "busy";
         if(com.dantemorrigan.gauntlet.snap.InfinitySnap.snapped(GauntletState.wornGauntlet(p))) return "broken";
         ItemStack g=GauntletState.activeGauntlet(p);

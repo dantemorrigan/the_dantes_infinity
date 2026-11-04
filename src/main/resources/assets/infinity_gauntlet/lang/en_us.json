@@ -445,5 +445,7 @@
   "death.attack.infinityGauntlet.thanos": "%1$s was cut down by Thanos",
   "death.attack.infinityGauntlet.thanos.player": "%1$s was cut down by Thanos while fighting %2$s",
   "death.attack.infinityGauntlet.thanos.item": "%1$s was cut down by Thanos",
-  "msg.infinity_gauntlet.thanos.sensed": "Something stirs among the stars. The stones are heavy in your hands... He is coming."
+  "msg.infinity_gauntlet.thanos.sensed": "Something stirs among the stars. The stones are heavy in your hands... He is coming.",
+  "ability.infinity_gauntlet.reason.thanos": "Not while Thanos is here",
+  "ability.infinity_gauntlet.reason.planet_end": "Planet Destruction does not work in the End"
 }
