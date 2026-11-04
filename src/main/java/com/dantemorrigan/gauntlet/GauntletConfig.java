@@ -105,6 +105,13 @@ public final class GauntletConfig {
 	/** Ticks a bare Power Stone can be held in a hand before it kills (creative is spared). */
 	public int powerStoneHoldTicks = 40;
 
+	// ---- Finding the Reality Stone (server) ----
+	public boolean realityFogEnabled = true;
+	/** Chance, checked once a minute per player in the Nether, that the red mist comes. */
+	public float realityFogChancePerMinute = 0.08f;
+	/** How long the stone stays in the mist before it slips away. */
+	public int realityFogSeconds = 75;
+
 	// ---- Meteor Stream (Power stone, server) ----
 	/** Ticks the gauntlet must stay on the sun/moon to lock on. */
 	public int streamLockTicks = 30;

@@ -24,6 +24,10 @@ Requirements: **Java 25**. Build: `./gradlew build` → `build/libs/infinity_gau
 - **Throw the Tesseract into lava**: it explodes, lava around turns to obsidian and the glowing Space Stone appears (once per world; a second cube breaks open empty).
 - Art: pack `01_Space_Quest`. Test: `xvfb-run -a ./gradlew runClientGameTest -PonlyTest=SpaceQuestTest`.
 
+## Finding the Reality Stone
+- In the Nether a player may be wrapped in **red mist** (checked once a minute, `realityFogChancePerMinute`); the Reality Stone darts through it and flees when approached. **Hit it in melee** to catch it, or **shoot it with an arrow**: the mist scatters and the stone falls next to the player. After `realityFogSeconds` it slips away. Once per world.
+- Art: pack `02_Reality_Quest` (layered fog density map, stone trail, arrow hit, fog dispel). Debug: `/gauntlet reality_fog`. Smoke test: `-PonlyTest=RealityFogTest`.
+
 ## Language and field guide
 
 - **Language switcher**: Options or Pause menu → **Infinity Gauntlet** button (bottom left). Cards for Auto / English / Русский; the choice applies instantly to the whole mod (menus, HUD messages, tooltips, the book) and is saved as `language` in `config/infinity_gauntlet.json`. Auto follows Minecraft's language.

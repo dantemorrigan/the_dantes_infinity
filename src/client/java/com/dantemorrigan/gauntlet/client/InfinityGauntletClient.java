@@ -36,6 +36,8 @@ public class InfinityGauntletClient implements ClientModInitializer {
 		com.dantemorrigan.gauntlet.client.fx.InfinityBeamClient.init();
 		StatusHud.init();
 		com.dantemorrigan.gauntlet.client.quest.SpaceQuestClient.init();
+		com.dantemorrigan.gauntlet.client.quest.RealityFogClient.init();
+		net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry.register(com.dantemorrigan.gauntlet.ModEntities.REALITY_WISP, com.dantemorrigan.gauntlet.client.quest.RealityWispRenderer::new);
 		com.dantemorrigan.gauntlet.client.screen.SettingsButtons.init();
 		WornGauntlet.init();
 		com.dantemorrigan.gauntlet.client.render.GauntletGestureClient.init();

@@ -80,6 +80,12 @@ public final class ModParticles {
 	public static final SimpleParticleType QUEST_SPACE_LAVA_RELEASE = register("quest_space_lava_release");
 	public static final SimpleParticleType QUEST_SPACE_OBSIDIAN_WAVE = register("quest_space_obsidian_wave");
 
+	// Reality Stone quest (pack: 02_Reality_Quest). xa = size multiplier.
+	public static final SimpleParticleType QUEST_REALITY_FOG = register("quest_reality_fog");
+	public static final SimpleParticleType QUEST_REALITY_STONE_TRAIL = register("quest_reality_stone_trail");
+	public static final SimpleParticleType QUEST_REALITY_ARROW_HIT = register("quest_reality_arrow_hit");
+	public static final SimpleParticleType QUEST_REALITY_FOG_DISPEL = register("quest_reality_fog_dispel");
+
 	private static SimpleParticleType register(String name) {
 		return Registry.register(BuiltInRegistries.PARTICLE_TYPE, InfinityGauntlet.id(name), FabricParticleTypes.simple(true));
 	}

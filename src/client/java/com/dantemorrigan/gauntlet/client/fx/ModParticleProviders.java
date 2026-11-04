@@ -26,6 +26,10 @@ public final class ModParticleProviders {
 		billboard(ModParticles.CELESTIAL_METEOR_IMPACT, "celestial_meteor_impact");
 		billboard(ModParticles.SPACE_TELEPORT_FLASH, "space_teleport_flash");
 		billboard(ModParticles.QUEST_SPACE_PORTAL, "quest_space_portal");
+		billboard(ModParticles.QUEST_REALITY_FOG, "quest_reality_fog");
+		billboard(ModParticles.QUEST_REALITY_STONE_TRAIL, "quest_reality_stone_trail");
+		billboard(ModParticles.QUEST_REALITY_ARROW_HIT, "quest_reality_arrow_hit");
+		billboard(ModParticles.QUEST_REALITY_FOG_DISPEL, "quest_reality_fog_dispel");
 		billboard(ModParticles.QUEST_SPACE_FROST_SHARD, "quest_space_frost_shard");
 		billboard(ModParticles.QUEST_SPACE_RETURN_FOLD, "quest_space_return_fold");
 		billboard(ModParticles.QUEST_SPACE_LAVA_RELEASE, "quest_space_lava_release");

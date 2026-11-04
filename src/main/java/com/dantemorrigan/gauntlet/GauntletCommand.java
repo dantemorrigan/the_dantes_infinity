@@ -55,6 +55,7 @@ public final class GauntletCommand {
 						.then(Commands.literal("uru").executes(ctx -> uru(ctx.getSource())))
 						.then(Commands.literal("meteor").executes(ctx -> meteor(ctx.getSource())))
 						.then(Commands.literal("state").executes(ctx -> state(ctx.getSource())))
+						.then(Commands.literal("reality_fog").executes(ctx -> com.dantemorrigan.gauntlet.stones.RealityFog.start(ctx.getSource().getPlayerOrException()) ? 1 : 0))
 						.then(Commands.literal("space_quest")
 								.then(Commands.literal("rift").executes(ctx -> {
 									var end = ctx.getSource().getServer().getLevel(net.minecraft.world.level.Level.END);

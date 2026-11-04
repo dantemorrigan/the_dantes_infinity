@@ -33,6 +33,16 @@ public abstract class FogRendererMixin {
 					fog.color.y + (n[1] + (d[1] - n[1]) * day - fog.color.y) * red,
 					fog.color.z + (n[2] + (d[2] - n[2]) * day - fog.color.z) * red, fog.color.w);
 		}
+		float mist = com.dantemorrigan.gauntlet.client.quest.RealityFogClient.factor();
+		if (mist > 0) {
+			FogData fog = cir.getReturnValue();
+			fog.color.set(fog.color.x + (0.55f - fog.color.x) * mist, fog.color.y + (0.03f - fog.color.y) * mist,
+					fog.color.z + (0.06f - fog.color.z) * mist, fog.color.w);
+			fog.environmentalStart = fog.environmentalStart + (0f - fog.environmentalStart) * mist;
+			fog.environmentalEnd = fog.environmentalEnd + (20f - fog.environmentalEnd) * mist;
+			fog.renderDistanceStart = Math.min(fog.renderDistanceStart, fog.renderDistanceStart + (0f - fog.renderDistanceStart) * mist);
+			fog.renderDistanceEnd = Math.min(fog.renderDistanceEnd, fog.renderDistanceEnd + (24f - fog.renderDistanceEnd) * mist);
+		}
         float altitude = com.dantemorrigan.gauntlet.client.cosmos.CosmosClient.atmosphere();
         if (altitude > 0) {
             FogData fog=cir.getReturnValue();

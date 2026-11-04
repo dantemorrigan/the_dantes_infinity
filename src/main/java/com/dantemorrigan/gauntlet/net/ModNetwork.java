@@ -298,6 +298,13 @@ public final class ModNetwork {
 	}
 
 	/** A HUD notice. It travels as a component so translations are resolved by the CLIENT (dedicated servers have no mod lang files). */
+	/** S2C: the red mist of the Reality Stone quest wraps (true) or leaves (false) this player. */
+	public record RealityFogFx(boolean on) implements CustomPacketPayload {
+		public static final Type<RealityFogFx> TYPE = newType("reality_fog");
+		public static final StreamCodec<ByteBuf, RealityFogFx> CODEC = StreamCodec.composite(ByteBufCodecs.BOOL, RealityFogFx::on, RealityFogFx::new);
+		@Override public Type<RealityFogFx> type() { return TYPE; }
+	}
+
 	/** S2C: a framed quest notice in the middle of the screen (Space Stone quest). */
 	public record QuestAlert(net.minecraft.network.chat.Component text) implements CustomPacketPayload {
 		public static final Type<QuestAlert> TYPE = newType("quest_alert");
@@ -399,6 +406,7 @@ public final class ModNetwork {
 		PayloadTypeRegistry.clientboundPlay().register(RealityFx.TYPE, RealityFx.CODEC);
 		PayloadTypeRegistry.clientboundPlay().register(Status.TYPE, Status.CODEC);
 		PayloadTypeRegistry.clientboundPlay().register(QuestAlert.TYPE, QuestAlert.CODEC);
+		PayloadTypeRegistry.clientboundPlay().register(RealityFogFx.TYPE, RealityFogFx.CODEC);
 		PayloadTypeRegistry.serverboundPlay().register(BeamAction.TYPE, BeamAction.CODEC);
 		PayloadTypeRegistry.clientboundPlay().register(BeamFx.TYPE, BeamFx.CODEC);
 		PayloadTypeRegistry.serverboundPlay().register(SpaceAction.TYPE, SpaceAction.CODEC);
