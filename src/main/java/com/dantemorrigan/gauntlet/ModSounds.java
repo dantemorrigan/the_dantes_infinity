@@ -34,6 +34,16 @@ public final class ModSounds {
 		return Registry.register(BuiltInRegistries.SOUND_EVENT, id, SoundEvent.createVariableRangeEvent(id));
 	}
 
+	/** Cuts these sounds for everyone who can hear them, so a new one never stacks on the tail of the last. */
+	public static void stopNearby(ServerLevel level, Vec3 at, SoundEvent... sounds) {
+		for (net.minecraft.server.level.ServerPlayer p : level.players()) {
+			if (p.position().distanceToSqr(at) > 96 * 96) continue;
+			for (SoundEvent s : sounds) {
+				p.connection.send(new net.minecraft.network.protocol.game.ClientboundStopSoundPacket(s.location(), SoundSource.PLAYERS));
+			}
+		}
+	}
+
 	public static void play(ServerLevel level, Vec3 at, SoundEvent sound, float volume) {
 		level.playSound(null, at.x, at.y, at.z, sound, SoundSource.PLAYERS, volume, 1.0f);
 	}

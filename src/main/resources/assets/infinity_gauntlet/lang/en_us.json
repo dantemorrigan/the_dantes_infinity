@@ -447,5 +447,7 @@
   "death.attack.infinityGauntlet.thanos.item": "%1$s was cut down by Thanos",
   "msg.infinity_gauntlet.thanos.sensed": "Something stirs among the stars. The stones are heavy in your hands... He is coming.",
   "ability.infinity_gauntlet.reason.thanos": "Not while Thanos is here",
-  "ability.infinity_gauntlet.reason.planet_end": "Planet Destruction does not work in the End"
+  "ability.infinity_gauntlet.reason.planet_end": "Planet Destruction does not work in the End",
+  "command.infinity_gauntlet.thanos_beaten": "Thanos has already been defeated in this world. Use /gauntlet thanos reset to let him come again.",
+  "command.infinity_gauntlet.thanos_running": "Thanos is already here."
 }

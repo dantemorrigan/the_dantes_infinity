@@ -125,6 +125,12 @@ public class ThanosTest implements FabricClientGameTest {
 			ctx.waitTicks(100);
 			sp.getClientLevel().waitForChunksRender();
 			ctx.takeScreenshot("thanos_wreck_after_scene");
+			// Beaten: the commands refuse until a reset.
+			for (String cmd : new String[]{"now", "start", "spawn"}) {
+				server.runCommand("execute as @p at @s run gauntlet thanos " + cmd);
+				ctx.waitTicks(30);
+				if (server.computeOnServer(sv -> ThanosEncounter.running())) throw new AssertionError("/gauntlet thanos " + cmd + " brought back a defeated Thanos");
+			}
 			int ironDrops = server.computeOnServer(s -> ((ServerLevel) player(s).level()).getEntitiesOfClass(ItemEntity.class,
 					player(s).getBoundingBox().inflate(220), e -> e.getItem().is(Items.IRON_INGOT)).size());
 			int netheriteDrops = server.computeOnServer(s -> ((ServerLevel) player(s).level()).getEntitiesOfClass(ItemEntity.class,

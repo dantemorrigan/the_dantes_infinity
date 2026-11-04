@@ -134,6 +134,11 @@ public final class ThanosEncounter {
 
 	public static boolean running() { return active != null; }
 
+	/** He was already defeated in this world (and comes back only after {@code /gauntlet thanos reset}). */
+	public static boolean beaten(MinecraftServer server) {
+		return GauntletConfig.get().thanosOnce && defeatedForever(server);
+	}
+
 	/** The stones a player carries anywhere in the inventory (loose, gauntlet, extractor, the Orb, the Tesseract). */
 	public static Set<Stone> carried(ServerPlayer player) {
 		Set<Stone> set = EnumSet.noneOf(Stone.class);
@@ -162,7 +167,7 @@ public final class ThanosEncounter {
 
 	/** Starts the encounter for this player now (command or trigger). Returns false if one is already running. */
 	public static boolean start(ServerPlayer player, boolean skipWarning) {
-		if (active != null) return false;
+		if (active != null || beaten(player.level().getServer())) return false;
 		Encounter e = new Encounter();
 		e.playerId = player.getUUID();
 		e.level = (ServerLevel) player.level();
@@ -776,7 +781,7 @@ public final class ThanosEncounter {
 
 	/** Debug: a Thanos right here, already fighting (no scene). */
 	public static Thanos spawnNow(ServerPlayer p) {
-		if (active != null) return null;
+		if (active != null || beaten(p.level().getServer())) return null;
 		Encounter e = new Encounter();
 		e.playerId = p.getUUID();
 		e.level = (ServerLevel) p.level();

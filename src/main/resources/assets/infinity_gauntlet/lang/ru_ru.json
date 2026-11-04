@@ -447,5 +447,7 @@
   "death.attack.infinityGauntlet.thanos.item": "%1$s пал от меча Таноса",
   "msg.infinity_gauntlet.thanos.sensed": "Среди звёзд что-то шевельнулось. Камни тяжелеют в руках... Он идёт.",
   "ability.infinity_gauntlet.reason.thanos": "Не сейчас: Танос здесь",
-  "ability.infinity_gauntlet.reason.planet_end": "Разрушение планеты не работает в Энде"
+  "ability.infinity_gauntlet.reason.planet_end": "Разрушение планеты не работает в Энде",
+  "command.infinity_gauntlet.thanos_beaten": "Танос уже побеждён в этом мире. Команда /gauntlet thanos reset разрешит ему прилететь снова.",
+  "command.infinity_gauntlet.thanos_running": "Танос уже здесь."
 }

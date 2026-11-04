@@ -121,6 +121,9 @@ public class GauntletMenu extends AbstractContainerMenu {
 			if (!(player instanceof net.minecraft.server.level.ServerPlayer sp) || stack.isEmpty() || !previous.isEmpty()) return;
 			int filled = 0;
 			for (int i = 0; i < container.getContainerSize(); i++) if (!container.getItem(i).isEmpty()) filled++;
+			// Quick successive stones: the previous click is cut, so they don't pile up into a doubled sound.
+			com.dantemorrigan.gauntlet.ModSounds.stopNearby((net.minecraft.server.level.ServerLevel) sp.level(), sp.position(),
+					com.dantemorrigan.gauntlet.ModSounds.STONE_INSERT, com.dantemorrigan.gauntlet.ModSounds.GAUNTLET_COMPLETE);
 			com.dantemorrigan.gauntlet.ModSounds.play((net.minecraft.server.level.ServerLevel) sp.level(), sp.position(),
 					filled >= Stone.values().length ? com.dantemorrigan.gauntlet.ModSounds.GAUNTLET_COMPLETE : com.dantemorrigan.gauntlet.ModSounds.STONE_INSERT, 1.2f);
 		}

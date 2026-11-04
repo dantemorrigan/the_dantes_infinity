@@ -117,9 +117,9 @@ public final class GauntletCommand {
 								})))
 						.then(Commands.literal("thanos")
 								// start: the full scene with the warning; now: the scene without the warning; spawn: a fighting Thanos here.
-								.then(Commands.literal("start").executes(ctx -> com.dantemorrigan.gauntlet.boss.ThanosEncounter.start(ctx.getSource().getPlayerOrException(), false) ? 1 : 0))
-								.then(Commands.literal("now").executes(ctx -> com.dantemorrigan.gauntlet.boss.ThanosEncounter.start(ctx.getSource().getPlayerOrException(), true) ? 1 : 0))
-								.then(Commands.literal("spawn").executes(ctx -> com.dantemorrigan.gauntlet.boss.ThanosEncounter.spawnNow(ctx.getSource().getPlayerOrException()) != null ? 1 : 0))
+								.then(Commands.literal("start").executes(ctx -> thanosCommand(ctx.getSource(), 0)))
+								.then(Commands.literal("now").executes(ctx -> thanosCommand(ctx.getSource(), 1)))
+								.then(Commands.literal("spawn").executes(ctx -> thanosCommand(ctx.getSource(), 2)))
 								.then(Commands.literal("stop").executes(ctx -> { com.dantemorrigan.gauntlet.boss.ThanosEncounter.stop(); return 1; }))
 								.then(Commands.literal("reset").executes(ctx -> {
 									com.dantemorrigan.gauntlet.boss.ThanosEncounter.reset(ctx.getSource().getServer());
@@ -476,6 +476,22 @@ public final class GauntletCommand {
 		GauntletState.setInUse(gauntlet, stones);
 		source.sendSuccess(() -> Component.translatable("command.infinity_gauntlet.in_use", String.valueOf(GauntletState.inUse(gauntlet))), false);
 		return 1;
+	}
+
+	/** /gauntlet thanos start | now | spawn: refused while he is here or after he was beaten (until reset). */
+	private static int thanosCommand(net.minecraft.commands.CommandSourceStack source, int mode) throws com.mojang.brigadier.exceptions.CommandSyntaxException {
+		ServerPlayer p = source.getPlayerOrException();
+		if (com.dantemorrigan.gauntlet.boss.ThanosEncounter.beaten(source.getServer())) {
+			source.sendFailure(Component.translatable("command.infinity_gauntlet.thanos_beaten"));
+			return 0;
+		}
+		if (com.dantemorrigan.gauntlet.boss.ThanosEncounter.running()) {
+			source.sendFailure(Component.translatable("command.infinity_gauntlet.thanos_running"));
+			return 0;
+		}
+		boolean ok = mode == 2 ? com.dantemorrigan.gauntlet.boss.ThanosEncounter.spawnNow(p) != null
+				: com.dantemorrigan.gauntlet.boss.ThanosEncounter.start(p, mode == 1);
+		return ok ? 1 : 0;
 	}
 
 	private GauntletCommand() {}
