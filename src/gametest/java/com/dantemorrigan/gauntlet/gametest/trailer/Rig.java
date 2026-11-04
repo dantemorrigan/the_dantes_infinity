@@ -2,6 +2,8 @@ package com.dantemorrigan.gauntlet.gametest.trailer;
 
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.player.RemotePlayer;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.Marker;
 import net.minecraft.world.phys.Vec3;
@@ -20,6 +22,33 @@ final class Rig {
 	private static Marker cam;
 	private static boolean installed;
 	private static boolean fresh;
+	private static RemotePlayer body;
+	static volatile boolean showBody = true;
+
+	/** The local player is never drawn when the camera is elsewhere, so a client-side twin stands in for it. */
+	private static void syncBody(Minecraft mc) {
+		var pl = mc.player;
+		if (pl == null) return;
+		if (!showBody) { if (body != null) { body.discard(); body = null; } return; }
+		if (body == null || body.level() != mc.level || body.isRemoved()) {
+			body = new RemotePlayer(mc.level, pl.getGameProfile());
+			body.setPos(pl.getX(), pl.getY(), pl.getZ());
+			mc.level.addEntity(body);
+			body.setOldPosAndRot();
+		}
+		body.setOldPosAndRot();
+		body.setPos(pl.getX(), pl.getY(), pl.getZ());
+		body.setYRot(pl.getYRot());
+		body.setXRot(pl.getXRot());
+		body.yBodyRot = pl.yBodyRot;
+		body.yHeadRot = pl.yHeadRot;
+		body.setPose(pl.getPose());
+		body.setItemSlot(EquipmentSlot.MAINHAND, pl.getMainHandItem().copy());
+		body.setItemSlot(EquipmentSlot.OFFHAND, pl.getOffhandItem().copy());
+		for (EquipmentSlot es : new EquipmentSlot[]{EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS, EquipmentSlot.FEET})
+			body.setItemSlot(es, pl.getItemBySlot(es).copy());
+		body.walkAnimation.update(pl.walkAnimation.speed(), 1f, 1f);
+	}
 
 	static void install() {
 		if (installed) return;
@@ -39,7 +68,11 @@ final class Rig {
 			release = false;
 			if (mc.player != null) mc.setCameraEntity(mc.player);
 		}
-		if (p == null || mc.level == null) return;
+		if (p == null || mc.level == null) {
+			if (body != null) { body.discard(); body = null; }
+			return;
+		}
+		syncBody(mc);
 		if (cam == null || cam.level() != mc.level || cam.isRemoved()) {
 			cam = new Marker(EntityType.MARKER, mc.level);
 			double[] a = p.at(0);

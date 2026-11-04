@@ -17,8 +17,36 @@ final class Scenes {
 		return server.computeOnServer(s -> s.overworld().getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, (int) Math.floor(x), (int) Math.floor(z)));
 	}
 
+	/** Nearest dry, flat, solid ground to (x,z). */
+	static double[] land(double x0, double z0) {
+		return server.computeOnServer(s -> {
+			var lvl = s.overworld();
+			for (int r = 0; r < 400; r += 6) {
+				for (int k = 0; k < Math.max(1, r / 3); k++) {
+					double a = k * Math.PI * 2 / Math.max(1, r / 3);
+					int x = (int) (x0 + Math.cos(a) * r), z = (int) (z0 + Math.sin(a) * r);
+					lvl.getChunk(x >> 4, z >> 4);
+					int g = lvl.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z);
+					var below = lvl.getBlockState(new net.minecraft.core.BlockPos(x, g - 1, z));
+					if (!below.getFluidState().isEmpty() || below.is(net.minecraft.world.level.block.Blocks.ICE) || below.is(net.minecraft.world.level.block.Blocks.PACKED_ICE)
+							|| below.is(net.minecraft.world.level.block.Blocks.BLUE_ICE) || below.isAir()) continue;
+					boolean flat = true;
+					for (int dx = -6; dx <= 6 && flat; dx += 6) for (int dz = -6; dz <= 6; dz += 6) {
+						lvl.getChunk((x + dx) >> 4, (z + dz) >> 4);
+						int h = lvl.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x + dx, z + dz);
+						if (Math.abs(h - g) > 2 || !lvl.getBlockState(new net.minecraft.core.BlockPos(x + dx, h - 1, z + dz)).getFluidState().isEmpty()) { flat = false; break; }
+					}
+					if (flat) return new double[]{x + .5, z + .5};
+				}
+			}
+			return new double[]{x0, z0};
+		});
+	}
+
 	/** Stand the player on the ground at (x,z), looking along yaw/pitch. Returns the feet position. */
 	static Vec3 stage(double x, double z, float yaw, float pitch) {
+		double[] l = land(x, z);
+		x = l[0]; z = l[1];
 		raw("forceload add " + (int) x + " " + (int) z);
 		raw("tp @p " + x + " " + (ground(x, z) + 60) + " " + z);
 		ticks(30);
@@ -63,15 +91,19 @@ final class Scenes {
 	/** Night, meteors streaking across the sky. */
 	static void intro() {
 		Vec3 feet = stage(0, -380, 0, -5);
-		raw("time set 15500");
-		gauntlet();
-		ticks(60);
+		raw("time set 15000");
+		com.dantemorrigan.gauntlet.GauntletConfig.get().powerShowerSeconds = 24;
+		com.dantemorrigan.gauntlet.GauntletConfig.get().powerShowerMeteorsPerSecond = 4f;
+		cmd("gauntlet stones reset");
 		cmd("gauntlet power_shower");
-		ticks(120);
-		begin("intro");
+		ticks(20);
 		Vec3 c = eye(feet);
-		Rig.set(Rig.track(c.add(0, -0.5, 12), c.add(0, 3, 4), c.add(0, 40, -40), c.add(0, 70, -40), 220, true));
-		ticks(230);
+		var ctr = com.dantemorrigan.gauntlet.stones.PowerStoneFall.showerCenter();
+		Vec3 target = ctr == null ? c.add(0, 5, 60) : new Vec3(ctr.getX(), ctr.getY() + 12, ctr.getZ());
+		System.out.println("INTRO shower " + ctr);
+		begin("intro");
+		Rig.set(Rig.track(c.add(0, 0.5, 0), c.add(0, 4, 0), target.add(0, 0, 0), target.add(0, 18, 0), 480, true));
+		ticks(500);
 		ctx.takeScreenshot("trailer_intro");
 		end();
 	}
@@ -84,7 +116,7 @@ final class Scenes {
 		ticks(40);
 		begin("gauntlet");
 		Vec3 c = eye(feet);
-		Rig.set(Rig.orbit(c.add(0, -0.3, 0), 1.6, 1.1, 0.2, 0.1, 120, 20, c.add(0, -0.45, 0), 100, true));
+		Rig.set(Rig.orbit(c.add(0, -0.3, 0), 2.4, 1.4, 0.3, 0.1, 200, 130, c.add(0, -0.35, 0), 100, true));
 		ticks(20);
 		for (String s : new String[]{"space", "reality", "soul", "mind", "time"}) { cmd("gauntlet give_stone " + s); ticks(14); }
 		ticks(60);
@@ -99,7 +131,7 @@ final class Scenes {
 		ticks(100);
 		begin("power");
 		Vec3 c = eye(feet);
-		Rig.set(Rig.track(c.add(7, 0.5, 8), c.add(-5, 2, 9), c.add(0, 0.5, 0), c.add(0, 0.5, 0), 130, true));
+		Rig.set(Rig.track(c.add(-4, 0.2, 7), c.add(4, 1.5, 7), c.add(0, 0.2, 0), c.add(0, 0.2, 0), 130, true));
 		ticks(10);
 		cast("power_strike");
 		ticks(45);
@@ -116,7 +148,7 @@ final class Scenes {
 		ticks(100);
 		begin("beam");
 		Vec3 c = eye(feet);
-		Rig.set(Rig.track(c.add(-6, 0.2, -8), c.add(6, 2.5, -9), c.add(0, 0.5, 0), c.add(0, 0.8, 6), 170, true));
+		Rig.set(Rig.track(c.add(-5, 0.2, -6), c.add(5, 1.6, -6), c.add(0, 0.2, 0), c.add(0, 0.6, 8), 170, true));
 		ticks(10);
 		cast("infinity_beam");
 		ticks(150);
