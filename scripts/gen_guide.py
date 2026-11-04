@@ -22,11 +22,11 @@ add('cover',
  f"\n{H}   ПЕРЧАТКА\n   БЕСКОНЕЧНОСТИ{R}\n\n{G}Путеводитель{R}\n\nШесть камней, одна перчатка и сила, способная стирать миры.\n\n{G}Листай дальше ▶")
 add('contents', None, None)  # built below
 add('start',
- f"{H}First steps{R}\nThe gauntlet works in your {B}offhand{R}: press {B}F{R}. Right-click it in your main hand to open the stone slots.\n\nFive stones have {B}survival sources{R}. Mind is available in Creative.",
- f"{H}Первые шаги{R}\nПерчатка работает в {B}левой руке{R}: нажми {B}F{R}. ПКМ с ней в правой руке открывает слоты камней.\n\nПять камней доступны в {B}выживании{R}. Разум есть в творческом режиме.")
+ f"{H}First steps{R}\nThe gauntlet works in your {B}offhand{R}: press {B}F{R}. Right-click it in your main hand to open the stone slots.\n\nAll six stones have {B}survival sources{R}.",
+ f"{H}Первые шаги{R}\nПерчатка работает в {B}левой руке{R}: нажми {B}F{R}. ПКМ с ней в правой руке открывает слоты камней.\n\nВсе шесть камней доступны в {B}выживании{R}.")
 add('hints',
- f"{H}Where to look{R}\n{B}Power{R}: follow the fallen stars.\n{B}Space{R}: beat the dragon. Wear iron.\n{B}Reality{R}: shoot the Nether mist wisp.\n{B}Time{R}: 3 gears for the Time Temple.\n{B}Soul{R}: temple map. Offer a sacrifice.",
- f"{H}Где искать{R}\n{B}Сила{R}: иди за упавшими звёздами.\n{B}Пространство{R}: дракон и броня.\n{B}Реальность{R}: выстрел в тумане Незера.\n{B}Время{R}: 3 шестерни в Храме Времени.\n{B}Душа{R}: карта храма и жертва.")
+ f"{H}Where to look{R}\n{B}Power{R}: follow the fallen stars.\n{B}Space{R}: beat the dragon. Wear iron.\n{B}Reality{R}: shoot the Nether mist wisp.\n{B}Time{R}: 3 gears in the Time Temple.\n{B}Mind{R}: map to the Ruined City.\n{B}Soul{R}: temple map. Offer a sacrifice.",
+ f"{H}Где искать{R}\n{B}Сила{R}: упавшие звёзды.\n{B}Пространство{R}: дракон и броня.\n{B}Реальность{R}: туман в Незере.\n{B}Время{R}: 3 шестерни в Храме.\n{B}Разум{R}: Разрушенный город.\n{B}Душа{R}: карта храма и жертва.")
 add('wheel',
  f"{H}Ability wheel{R}\nHold {B}V{R}, point at a stone, then an ability, release. {B}R{R} uses it; hold R for charged powers.\n\n{B}Esc{R} cancels. Pin with 1–6. Hold B for favorites.",
  f"{H}Колесо способностей{R}\nДержи {B}V{R}, наведи на камень, потом на способность, отпусти. {B}R{R} — применить, держи R для заряжаемых.\n\n{B}Esc{R} — отмена. 1–6 закрепляют способность. Держи B для избранного.")

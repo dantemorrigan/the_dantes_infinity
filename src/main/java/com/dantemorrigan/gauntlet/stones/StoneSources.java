@@ -23,6 +23,7 @@ final class StoneSources {
 			}
 			case SPACE -> SpaceStoneQuest.restoreTesseract(server);
 			case TIME -> TimeQuest.resetClock(server);
+			case MIND -> MindQuest.reset(server);
 			default -> {} // Reality's mist simply comes back once the stone is no longer found
 		}
 	}

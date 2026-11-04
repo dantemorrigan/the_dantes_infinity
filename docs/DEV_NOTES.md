@@ -159,7 +159,7 @@ networking, key-mapping, rendering, particles, dimensions, data-attachment, item
 
 ## Квесты на камни и смоук
 
-Серверные источники реализованы для Силы (`PowerStoneFall`), Пространства (`SpaceStoneQuest`), Реальности (`RealityFog`), Времени (`TimeQuest`, `TimeTemple`, `TimeLoot`) и Души (`SoulQuest`, `SoulTemple`, `SoulLoot`). Камень Разума пока доступен через выдачу. `StoneRegistry` хранит прогресс добычи на мир.
+Серверные источники реализованы для всех шести камней: Силы (`PowerStoneFall`), Пространства (`SpaceStoneQuest`), Реальности (`RealityFog`), Времени (`TimeQuest`, `TimeTemple`, `TimeLoot`), Разума (`MindQuest`, `MindCity`, `MindZombie`, `MindLoot`) и Души (`SoulQuest`, `SoulTemple`, `SoulLoot`). `StoneRegistry` хранит прогресс добычи на мир.
 
 Ритуал Души срабатывает на 15 блоков ниже вершины. Для питомца используется владелец, для приручённой лошади-скелета без владельца — ближайший игрок. Для игрока засчитывается последний подходящий удар у края за 60 тиков. Пропасть заполнена дымовыми частицами, а телепорт питомца к хозяину блокируется в полёте внутри пропасти.
 

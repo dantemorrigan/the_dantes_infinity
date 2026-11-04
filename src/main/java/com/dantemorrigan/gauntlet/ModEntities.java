@@ -22,8 +22,15 @@ public final class ModEntities {
 			EntityType.Builder.<com.dantemorrigan.gauntlet.stones.RealityWisp>of(com.dantemorrigan.gauntlet.stones.RealityWisp::new, MobCategory.MISC)
 					.sized(0.6f, 0.6f).clientTrackingRange(8).updateInterval(1).noLootTable().build(WISP_KEY));
 
+	private static final ResourceKey<EntityType<?>> MIND_ZOMBIE_KEY = ResourceKey.create(Registries.ENTITY_TYPE, InfinityGauntlet.id("mind_zombie"));
+	/** Smart, sun-immune zombie infused with Mind Stone essence roaming the Ruined City. */
+	public static final EntityType<com.dantemorrigan.gauntlet.stones.MindZombie> MIND_ZOMBIE = Registry.register(BuiltInRegistries.ENTITY_TYPE, MIND_ZOMBIE_KEY,
+			EntityType.Builder.<com.dantemorrigan.gauntlet.stones.MindZombie>of(com.dantemorrigan.gauntlet.stones.MindZombie::new, MobCategory.MONSTER)
+					.sized(0.6f, 1.95f).eyeHeight(1.74f).passengerAttachments(2.0125f).ridingOffset(-0.7f).clientTrackingRange(10).build(MIND_ZOMBIE_KEY));
+
 	public static void init() {
 		FabricDefaultAttributeRegistry.register(GAUNTLET_DOLL, GauntletDoll.createAttributes());
+		FabricDefaultAttributeRegistry.register(MIND_ZOMBIE, com.dantemorrigan.gauntlet.stones.MindZombie.createAttributes());
 	}
 
 	private ModEntities() {}

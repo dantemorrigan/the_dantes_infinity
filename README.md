@@ -19,7 +19,7 @@ Requirements: **Java 25**. Build: `./gradlew build` → `build/libs/infinity_gau
 - **Uru ore** generates in new Overworld chunks from the bottom of the world up to Y=0. Look around Y=−32 and use a diamond or netherite pickaxe. Smelt raw Uru in a furnace or blast furnace. Fortune increases the drop, and Silk Touch preserves the ore block.
 - **Gauntlet crafting** uses a 3×3 grid. From top to bottom: Uru / gold / diamond, gold / redstone / gold, diamond / gold / Uru. Use ingots for both metals. Right-click with the gauntlet in your main hand to open the stone slots, then press F to move it to your offhand.
 - **Uru armor** follows iron armor recipes and is repaired with Uru ingots. A complete set reduces damage from a full gauntlet and loses durability when absorbing a hit.
-- Survival currently has the five stone sources below. **Mind** has usable abilities, with survival acquisition still pending.
+- All six Infinity Stones have survival sources below.
 
 ## Finding the Power Stone
 - Now and then (first after ~20 min, then every 20–50 min of world time) a **meteor shower** falls 60–110 blocks from a player in the Overworld; nearby players get a HUD + chat notice with the direction.
@@ -48,6 +48,11 @@ Requirements: **Java 25**. Build: `./gradlew build` → `build/libs/infinity_gau
 - In villages, from cartographers and wandering traders, and in chests across ruins, temples, dungeons and mineshafts you can find the **Map to the Temple of Time** (right-click to unroll). It marks the single **Temple of Time** in the world.
 - Inside the temple stands a broken **clock mechanism**. To start it, insert (right-click) **three Ancient Gears from the three dimensions**: **Ancient Overworld Gear**, **Ancient Nether Gear**, and **Ancient End Gear**. They drop from mobs in their respective dimensions and appear in stronghold, dungeon, fortress, bastion and End city chests.
 - Locking all three gears into the clockwork starts the mechanism and grants the **Time Stone**. Debug: `/gauntlet time_quest temple_here | locate | map | gears`. Smoke test: `-PonlyTest=TimeQuestTest`.
+
+## Finding the Mind Stone
+- Across villages, ruins, temples, dungeons, mineshafts, and from cartographers and wandering traders, you can find the **Map to the Ruined City** (right-click to unroll). It marks the single **Ruined City** in the world.
+- The city is overgrown with vines and moss, filled with crumbling stone ruins and **10 loot chests** with varied treasure. Roaming its streets are **10 smart Mind Zombies** glowing with yellow Mind Stone essence — they do not burn in sunlight, move fast, coordinate telepathically, and leap over rubble.
+- Defeating each zombie releases its yellow essence; when the **10th zombie** is defeated, all ten essence streams converge in front of the player in a glowing animation and the **Mind Stone** appears directly in the player's hands. Debug: `/gauntlet mind_quest city_here | locate | map | complete`. Smoke test: `-PonlyTest=MindQuestTest`.
 
 ## Language and field guide
 

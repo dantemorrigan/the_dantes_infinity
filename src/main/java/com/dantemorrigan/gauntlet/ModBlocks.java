@@ -64,6 +64,10 @@ public final class ModBlocks {
 					.lightLevel(state -> state.getValue(com.dantemorrigan.gauntlet.stones.TimeClockBlock.GEARS) * 4)
 					.noLootTable().sound(SoundType.COPPER).pushReaction(net.minecraft.world.level.material.PushReaction.BLOCK));
 
+	/** Mossy carved relief of the Ruined City (Mind Stone quest). */
+	public static final Block QUEST_MIND_MOSSY_RELIEF = register("quest_mind_mossy_relief", BlockBehaviour.Properties.of()
+			.mapColor(MapColor.TERRACOTTA_GREEN).instrument(NoteBlockInstrument.BASEDRUM).requiresCorrectToolForDrops().strength(3.0f, 9.0f).sound(SoundType.STONE));
+
 	public static final ResourceKey<PlacedFeature> ORE_URU = ResourceKey.create(Registries.PLACED_FEATURE, InfinityGauntlet.id("ore_uru"));
 
 	private static Block register(String name, BlockBehaviour.Properties properties) {

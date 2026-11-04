@@ -38,7 +38,9 @@ public class InfinityGauntletClient implements ClientModInitializer {
 		com.dantemorrigan.gauntlet.client.quest.SpaceQuestClient.init();
 		com.dantemorrigan.gauntlet.client.quest.RealityFogClient.init();
 		com.dantemorrigan.gauntlet.client.quest.SoulQuestClient.init();
+		com.dantemorrigan.gauntlet.client.quest.MindZombieRenderer.init();
 		net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry.register(com.dantemorrigan.gauntlet.ModEntities.REALITY_WISP, com.dantemorrigan.gauntlet.client.quest.RealityWispRenderer::new);
+		net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry.register(com.dantemorrigan.gauntlet.ModEntities.MIND_ZOMBIE, com.dantemorrigan.gauntlet.client.quest.MindZombieRenderer::new);
 		com.dantemorrigan.gauntlet.client.screen.SettingsButtons.init();
 		WornGauntlet.init();
 		com.dantemorrigan.gauntlet.client.render.GauntletGestureClient.init();

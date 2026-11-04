@@ -35,6 +35,14 @@ public final class ModParticleProviders {
 		billboard(ModParticles.QUEST_TIME_GEAR_LOCK, "quest_time_gear_lock");
 		billboard(ModParticles.QUEST_TIME_CLOCK_START, "quest_time_clock_start");
 		billboard(ModParticles.QUEST_TIME_REWARD_SPIRAL, "quest_time_reward_spiral");
+		ParticleProviderRegistry.getInstance().register(ModParticles.QUEST_MIND_ZOMBIE_AURA, sprites -> (t, level, x, y, z, xa, ya, za, random) -> {
+			int owner = xa >= 1 ? (int) xa : -1;
+			return new FxParticle(level, x, y, z, sprites, VfxPresets.get("quest_mind_zombie_aura"), 1f, null, owner,
+					e -> e.isAlive() ? e.position().add(0, e.getBbHeight() * 0.55, 0) : null, 0.42f);
+		});
+		billboard(ModParticles.QUEST_MIND_ESSENCE, "quest_mind_essence");
+		billboard(ModParticles.QUEST_MIND_CONVERGENCE, "quest_mind_convergence");
+		billboard(ModParticles.QUEST_MIND_REWARD_BURST, "quest_mind_reward_burst");
 		billboard(ModParticles.QUEST_REALITY_STONE_TRAIL, "quest_reality_stone_trail");
 		billboard(ModParticles.QUEST_REALITY_ARROW_HIT, "quest_reality_arrow_hit");
 		billboard(ModParticles.QUEST_REALITY_FOG_DISPEL, "quest_reality_fog_dispel");

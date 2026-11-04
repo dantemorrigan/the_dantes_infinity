@@ -29,6 +29,8 @@ public final class ModCreativeTab {
 				output.accept(ModItems.QUEST_TIME_GEAR_NETHER);
 				output.accept(ModItems.QUEST_TIME_GEAR_END);
 				output.accept(ModBlocks.QUEST_TIME_CARVED_STONE);
+				output.accept(ModItems.QUEST_MIND_CITY_MAP);
+				output.accept(ModBlocks.QUEST_MIND_MOSSY_RELIEF);
 				output.accept(ModBlocks.QUEST_SPACE_CARVED_ICE);
 				output.accept(ModBlocks.PURPLE_METEORITE);
 				output.accept(ModBlocks.PURPLE_METEORITE_CORE);

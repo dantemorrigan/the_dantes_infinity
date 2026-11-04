@@ -29,7 +29,8 @@
       "com.dantemorrigan.gauntlet.gametest.RealityFogTest",
       "com.dantemorrigan.gauntlet.gametest.StoneForgetTest",
       "com.dantemorrigan.gauntlet.gametest.SoulQuestTest",
-      "com.dantemorrigan.gauntlet.gametest.TimeQuestTest"
+      "com.dantemorrigan.gauntlet.gametest.TimeQuestTest",
+      "com.dantemorrigan.gauntlet.gametest.MindQuestTest"
     ]
   },
   "depends": {

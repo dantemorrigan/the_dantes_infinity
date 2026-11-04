@@ -58,6 +58,10 @@ public final class ModItems {
 	public static final Item QUEST_TIME_GEAR_NETHER = register("quest_time_gear_nether", gear());
 	public static final Item QUEST_TIME_GEAR_END = register("quest_time_gear_end", gear());
 
+	/** Map that unrolls to reveal the single overgrown Ruined City (Mind Stone quest). */
+	public static final Item QUEST_MIND_CITY_MAP = register("quest_mind_city_map", com.dantemorrigan.gauntlet.stones.MindCityMapItem::new,
+			new Item.Properties().stacksTo(1).rarity(Rarity.RARE));
+
 	private static Item.Properties gear() {
 		return new Item.Properties().rarity(Rarity.RARE).fireResistant()
 				.component(DataComponents.LORE, new net.minecraft.world.item.component.ItemLore(java.util.List.of(

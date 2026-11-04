@@ -98,6 +98,12 @@ public final class ModParticles {
 	public static final SimpleParticleType QUEST_TIME_CLOCK_START = register("quest_time_clock_start");
 	public static final SimpleParticleType QUEST_TIME_REWARD_SPIRAL = register("quest_time_reward_spiral");
 
+	// Mind Stone quest (pack: 04_Mind_Quest).
+	public static final SimpleParticleType QUEST_MIND_ZOMBIE_AURA = register("quest_mind_zombie_aura");
+	public static final SimpleParticleType QUEST_MIND_ESSENCE = register("quest_mind_essence");
+	public static final SimpleParticleType QUEST_MIND_CONVERGENCE = register("quest_mind_convergence");
+	public static final SimpleParticleType QUEST_MIND_REWARD_BURST = register("quest_mind_reward_burst");
+
 	private static SimpleParticleType register(String name) {
 		return Registry.register(BuiltInRegistries.PARTICLE_TYPE, InfinityGauntlet.id(name), FabricParticleTypes.simple(true));
 	}

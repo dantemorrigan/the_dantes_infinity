@@ -77,8 +77,7 @@ public final class GuideBook {
 		if (page == 2 && segment >= 6 && segment <= 16 && segment % 2 == 0) {
 			return STONE_CHAPTERS.get((segment - 6) / 2);
 		}
-		if (page == 4 && segment == 11) return Stone.SOUL;
-		if (page == 4 && (segment == 3 || segment == 5 || segment == 7 || segment == 9)) {
+		if (page == 4 && segment >= 3 && segment <= 13 && segment % 2 == 1) {
 			return STONE_CHAPTERS.get((segment - 3) / 2);
 		}
 		if (page >= 6 && page <= 11 && segment == 1) {

@@ -72,6 +72,7 @@ public final class StoneRegistry {
 		level.removeAttached(POWER_SITE);
 		level.removeAttached(NEXT_SHOWER);
 		TimeQuest.resetClock(server);
+		MindQuest.reset(server);
 	}
 
 	private static boolean has(ServerLevel level, AttachmentType<List<String>> type, Stone stone) {

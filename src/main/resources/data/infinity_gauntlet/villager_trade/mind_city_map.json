@@ -1,0 +1,14 @@
+{
+  "gives": {
+    "id": "infinity_gauntlet:quest_mind_city_map"
+  },
+  "max_uses": 1.0,
+  "reputation_discount": 0.05,
+  "wants": {
+    "count": 20.0,
+    "id": "minecraft:emerald"
+  },
+  "additional_wants": {
+    "id": "minecraft:compass"
+  }
+}

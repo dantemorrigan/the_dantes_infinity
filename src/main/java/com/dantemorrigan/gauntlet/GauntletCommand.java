@@ -105,6 +105,30 @@ public final class GauntletCommand {
 									}
 									return 1;
 								})))
+						.then(Commands.literal("mind_quest")
+								.then(Commands.literal("city_here").executes(ctx -> {
+									var p = ctx.getSource().getPlayerOrException();
+									var level = p.level().getServer().overworld();
+									com.dantemorrigan.gauntlet.stones.MindCity.relocate(level.getServer(), p.blockPosition().offset(0, -1, 0));
+									com.dantemorrigan.gauntlet.stones.MindCity.forceBuild(level);
+									return 1;
+								}))
+								.then(Commands.literal("map").executes(ctx -> {
+									var p = ctx.getSource().getPlayerOrException();
+									var map = new net.minecraft.world.item.ItemStack(com.dantemorrigan.gauntlet.ModItems.QUEST_MIND_CITY_MAP);
+									if (!p.getInventory().add(map)) p.drop(map, false);
+									return 1;
+								}))
+								.then(Commands.literal("locate").executes(ctx -> {
+									var site = com.dantemorrigan.gauntlet.stones.MindCity.site(ctx.getSource().getServer());
+									ctx.getSource().sendSuccess(() -> Component.literal("Ruined City: " + site.toShortString()), false);
+									return 1;
+								}))
+								.then(Commands.literal("complete").executes(ctx -> {
+									var p = ctx.getSource().getPlayerOrException();
+									com.dantemorrigan.gauntlet.stones.MindQuest.startConvergence(p);
+									return 1;
+								})))
 						.then(Commands.literal("reality_fog").executes(ctx -> com.dantemorrigan.gauntlet.stones.RealityFog.start(ctx.getSource().getPlayerOrException()) ? 1 : 0))
 						.then(Commands.literal("space_quest")
 								.then(Commands.literal("rift").executes(ctx -> {
