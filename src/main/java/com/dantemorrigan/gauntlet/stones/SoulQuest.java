@@ -19,7 +19,11 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
-import net.minecraft.world.entity.animal.wolf.Wolf;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.OwnableEntity;
+import net.minecraft.world.entity.TamableAnimal;
+import net.minecraft.world.entity.animal.Animal;
+import net.minecraft.world.entity.animal.equine.AbstractHorse;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
@@ -30,7 +34,7 @@ import net.minecraft.world.phys.Vec3;
 import java.util.UUID;
 
 /**
- * Soul Stone: bring a tamed wolf to the Temple of Soul and let it fall into the chasm. The sky turns amber, a beam
+ * Soul Stone: bring a tamed animal to the Temple of Soul and let it fall into the chasm. The sky turns amber, a beam
  * strikes the clouds, everything darkens and the owner wakes in the soul world: a dark shallow sea under a red sun.
  * The Soul Stone rises from the water; taking it shows "Use the Soul Stone to return to the temple", and using it
  * brings the player back to the summit. Jumping in yourself just kills you.
@@ -71,24 +75,34 @@ public final class SoulQuest {
 		AABB chasm = SoulTemple.chasm(site);
 		if (!level.hasChunkAt(BlockPos.containing(chasm.getCenter()))) return;
 		int sacrificeY = SoulTemple.summitY(site) - 15;
-		for (Wolf wolf : level.getEntitiesOfClass(Wolf.class, chasm,
-				w -> w.isTame() && w.isAlive() && w.getY() <= sacrificeY)) {
-			if (!(wolf.getOwner() instanceof ServerPlayer owner) || owner.level() != level || owner.distanceToSqr(wolf) > 80 * 80) continue;
-			sacrifice(owner, wolf);
-			return;
+		for (Animal animal : level.getEntitiesOfClass(Animal.class, chasm,
+				a -> a.isAlive() && a.getY() <= sacrificeY)) {
+			if (!isTamed(animal) || !(animal instanceof OwnableEntity pet)) continue;
+			var owner = pet.getOwner();
+			// A skeleton trap can leave a tame horse without an assigned owner.
+			if (animal.getType() == EntityType.SKELETON_HORSE && pet.getOwnerReference() == null) {
+				owner = level.getNearestPlayer(animal, 80);
+			}
+			if (!(owner instanceof ServerPlayer player) || player.level() != level || player.distanceToSqr(animal) > 80 * 80) continue;
+			if (sacrifice(player, animal)) return;
 		}
 	}
 
-	/** Starts the ritual (also the debug command without a wolf). */
-	public static boolean sacrifice(ServerPlayer owner, Wolf wolf) {
+	private static boolean isTamed(Animal animal) {
+		return animal instanceof TamableAnimal pet && pet.isTame()
+				|| animal instanceof AbstractHorse horse && horse.isTamed();
+	}
+
+	/** Starts the ritual (also the debug command without an animal). */
+	public static boolean sacrifice(ServerPlayer owner, Animal animal) {
 		if (ritual != null || seeker != null) return false;
 		MinecraftServer server = owner.level().getServer();
 		ServerLevel level = server.overworld();
 		BlockPos site = SoulTemple.site(server);
 		BlockPos beam = BlockPos.containing(SoulTemple.chasm(site).getCenter().x, site.getY() - 20, SoulTemple.chasm(site).getCenter().z);
-		if (wolf != null) {
-			level.sendParticles(ModParticles.SOUL_ABSORPTION, wolf.getX(), wolf.getY() + 0.5, wolf.getZ(), 1, 0, 0, 0, 0);
-			wolf.discard();
+		if (animal != null) {
+			level.sendParticles(ModParticles.SOUL_ABSORPTION, animal.getX(), animal.getY() + 0.5, animal.getZ(), 1, 0, 0, 0, 0);
+			animal.discard();
 		}
 		StoneRegistry.markFound(server, Stone.SOUL);
 		ritual = new Ritual(owner.getUUID(), level.getGameTime(), beam);
