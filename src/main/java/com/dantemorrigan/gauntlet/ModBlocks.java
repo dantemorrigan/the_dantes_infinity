@@ -29,6 +29,19 @@ public final class ModBlocks {
 			.mapColor(MapColor.DEEPSLATE).instrument(NoteBlockInstrument.BASEDRUM).requiresCorrectToolForDrops()
 			.strength(6.5f, 6.0f).lightLevel(state -> 3).sound(SoundType.DEEPSLATE));
 
+	// The purple meteorite the Power Stone falls in (see stones/PowerStoneFall). Tough, glows, resists blasts.
+	public static final Block PURPLE_METEORITE = register("purple_meteorite", BlockBehaviour.Properties.of()
+			.mapColor(MapColor.COLOR_PURPLE).instrument(NoteBlockInstrument.BASEDRUM).requiresCorrectToolForDrops()
+			.strength(25.0f, 1200.0f).lightLevel(state -> 4).sound(SoundType.ANCIENT_DEBRIS));
+	public static final Block PURPLE_METEORITE_CORE = register("purple_meteorite_core", BlockBehaviour.Properties.of()
+			.mapColor(MapColor.COLOR_MAGENTA).instrument(NoteBlockInstrument.BASEDRUM).requiresCorrectToolForDrops()
+			.strength(30.0f, 1200.0f).lightLevel(state -> 9).sound(SoundType.ANCIENT_DEBRIS));
+	/** The sealed Orb inside the meteorite: drops the Orb item, can't be blown up or pushed. No block item. */
+	public static final Block POWER_ORB = registerNoItem("power_orb", p -> new com.dantemorrigan.gauntlet.stones.PowerOrbBlock(p),
+			BlockBehaviour.Properties.of().mapColor(MapColor.METAL).strength(3.0f, 3_600_000.0f).lightLevel(state -> 11)
+					.sound(SoundType.NETHERITE_BLOCK).noOcclusion()
+					.pushReaction(net.minecraft.world.level.material.PushReaction.BLOCK));
+
 	public static final ResourceKey<PlacedFeature> ORE_URU = ResourceKey.create(Registries.PLACED_FEATURE, InfinityGauntlet.id("ore_uru"));
 
 	private static Block register(String name, BlockBehaviour.Properties properties) {
@@ -37,6 +50,11 @@ public final class ModBlocks {
 		ResourceKey<Item> itemKey = ResourceKey.create(Registries.ITEM, InfinityGauntlet.id(name));
 		Registry.register(BuiltInRegistries.ITEM, itemKey, new BlockItem(block, new Item.Properties().setId(itemKey).useBlockDescriptionPrefix()));
 		return block;
+	}
+
+	private static Block registerNoItem(String name, java.util.function.Function<BlockBehaviour.Properties, Block> factory, BlockBehaviour.Properties properties) {
+		ResourceKey<Block> key = ResourceKey.create(Registries.BLOCK, InfinityGauntlet.id(name));
+		return Registry.register(BuiltInRegistries.BLOCK, key, factory.apply(properties.setId(key)));
 	}
 
 	public static void init() {

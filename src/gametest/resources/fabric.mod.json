@@ -23,7 +23,8 @@
       "com.dantemorrigan.gauntlet.gametest.MeteorStreamTest",
       "com.dantemorrigan.gauntlet.gametest.UruArmorTest",
       "com.dantemorrigan.gauntlet.gametest.UruOreTest",
-      "com.dantemorrigan.gauntlet.gametest.GuideLangTest"
+      "com.dantemorrigan.gauntlet.gametest.GuideLangTest",
+      "com.dantemorrigan.gauntlet.gametest.PowerStoneTest"
     ]
   },
   "depends": {

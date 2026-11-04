@@ -28,6 +28,9 @@ public class InfinityGauntlet implements ModInitializer {
 		ModMenus.init();
 		GauntletCommand.init();
 		com.dantemorrigan.gauntlet.guide.GuideBook.init();
+		com.dantemorrigan.gauntlet.stones.PowerStoneFall.init();
+		com.dantemorrigan.gauntlet.stones.PowerStoneCurse.init();
+		com.dantemorrigan.gauntlet.stones.StoneKeeper.init();
 		GauntletEffects.init();
 		ModNetwork.init();
 		com.dantemorrigan.gauntlet.power.InfinityBeam.init();

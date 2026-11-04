@@ -5,7 +5,8 @@
 	"mixins": [
 		"FallingBlockEntityAccessor",
 		"LivingEntityMixin",
-		"MobMixin"
+		"MobMixin",
+		"PlayerMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1

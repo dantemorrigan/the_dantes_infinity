@@ -55,6 +55,27 @@ public final class GauntletCommand {
 						.then(Commands.literal("uru").executes(ctx -> uru(ctx.getSource())))
 						.then(Commands.literal("meteor").executes(ctx -> meteor(ctx.getSource())))
 						.then(Commands.literal("state").executes(ctx -> state(ctx.getSource())))
+						.then(Commands.literal("power_shower").executes(ctx -> {
+							ServerPlayer p = ctx.getSource().getPlayerOrException();
+							if (!com.dantemorrigan.gauntlet.stones.PowerStoneFall.start(p.level().getServer().overworld(), p)) {
+								ctx.getSource().sendFailure(Component.translatable("command.infinity_gauntlet.shower_failed"));
+								return 0;
+							}
+							return 1;
+						}))
+						.then(Commands.literal("stones").executes(ctx -> {
+							var server = ctx.getSource().getServer();
+							for (Stone st : Stone.values()) {
+								String state = com.dantemorrigan.gauntlet.stones.StoneRegistry.released(server, st) ? "released"
+										: com.dantemorrigan.gauntlet.stones.StoneRegistry.found(server, st) ? "found" : "-";
+								ctx.getSource().sendSuccess(() -> Component.literal(st.id + ": " + state), false);
+							}
+							return 1;
+						}).then(Commands.literal("reset").executes(ctx -> {
+							com.dantemorrigan.gauntlet.stones.StoneRegistry.reset(ctx.getSource().getServer());
+							ctx.getSource().sendSuccess(() -> Component.translatable("command.infinity_gauntlet.stones_reset"), true);
+							return 1;
+						})))
 						.then(Commands.literal("reload_config").executes(ctx -> {
 							GauntletConfig.reload();
 							ctx.getSource().sendSuccess(() -> Component.translatable("command.infinity_gauntlet.reload"), false);
@@ -104,6 +125,7 @@ public final class GauntletCommand {
 		ItemStack old = player.getOffhandItem();
 		player.setItemInHand(InteractionHand.OFF_HAND, gauntlet);
 		if (!old.isEmpty() && !player.getInventory().add(old)) player.drop(old, false);
+		com.dantemorrigan.gauntlet.stones.StoneRegistry.markReleased(source.getServer(), Stone.POWER);
 		source.sendSuccess(() -> Component.translatable("command.infinity_gauntlet.give_power"), false);
 		return 1;
 	}
@@ -121,6 +143,7 @@ public final class GauntletCommand {
 		items.set(stone.ordinal(), new ItemStack(stone.item()));
 		gauntlet.set(DataComponents.CONTAINER, ItemContainerContents.fromItems(items));
 		GauntletState.refresh(gauntlet);
+		com.dantemorrigan.gauntlet.stones.StoneRegistry.markReleased(source.getServer(), stone); // the world now has this stone
 		source.sendSuccess(() -> Component.translatable("command.infinity_gauntlet.stone_inserted", stone.id), false);
 		return 1;
 	}

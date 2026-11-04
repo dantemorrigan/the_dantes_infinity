@@ -32,6 +32,10 @@ public final class ModItems {
 				java.util.List.of(net.minecraft.network.chat.Component.translatable("tooltip.infinity_gauntlet.loose_" + name))));
 	}
 
+	/** The sealed Orb from the purple meteorite (holds the Power Stone) and the opened, empty one. */
+	public static final Item POWER_ORB = register("power_orb", com.dantemorrigan.gauntlet.stones.OrbItem::new, epic());
+	public static final Item POWER_ORB_OPEN = register("power_orb_open", new Item.Properties().stacksTo(1).rarity(Rarity.RARE).fireResistant());
+
 	/** Raw uru from the ore, smelted into uru ingots like iron. */
 	public static final Item RAW_URU = register("raw_uru", new Item.Properties().rarity(Rarity.UNCOMMON).fireResistant());
 	public static final Item URU_INGOT = register("uru_ingot", new Item.Properties().rarity(Rarity.RARE).fireResistant());
@@ -59,16 +63,7 @@ public final class ModItems {
 		return Registry.register(BuiltInRegistries.ITEM, key, factory.apply(properties.setId(key)));
 	}
 
-	public static void init() {
-		net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents.END_SERVER_TICK.register(server -> {
-			for (var player : server.getPlayerList().getPlayers()) {
-				if (player.isAlive() && !player.isSpectator()
-						&& (player.getMainHandItem().is(POWER_STONE) || player.getOffhandItem().is(POWER_STONE))) {
-					player.kill(player.level());
-				}
-			}
-		});
-	}
+	public static void init() {}
 
 	private ModItems() {}
 }

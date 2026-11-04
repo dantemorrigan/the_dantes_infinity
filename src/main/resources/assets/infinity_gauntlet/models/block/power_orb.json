@@ -1,0 +1,145 @@
+{
+  "parent": "minecraft:block/block",
+  "textures": {
+    "orb": "infinity_gauntlet:block/power_orb",
+    "particle": "infinity_gauntlet:block/power_orb"
+  },
+  "elements": [
+    {
+      "from": [
+        3,
+        3,
+        3
+      ],
+      "to": [
+        13,
+        13,
+        13
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            3,
+            3,
+            13,
+            13
+          ],
+          "texture": "#orb"
+        },
+        "south": {
+          "uv": [
+            3,
+            3,
+            13,
+            13
+          ],
+          "texture": "#orb"
+        },
+        "east": {
+          "uv": [
+            3,
+            3,
+            13,
+            13
+          ],
+          "texture": "#orb"
+        },
+        "west": {
+          "uv": [
+            3,
+            3,
+            13,
+            13
+          ],
+          "texture": "#orb"
+        },
+        "up": {
+          "uv": [
+            3,
+            3,
+            13,
+            13
+          ],
+          "texture": "#orb"
+        },
+        "down": {
+          "uv": [
+            3,
+            3,
+            13,
+            13
+          ],
+          "texture": "#orb"
+        }
+      }
+    },
+    {
+      "from": [
+        2,
+        7.5,
+        2
+      ],
+      "to": [
+        14,
+        8.5,
+        14
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            2,
+            7,
+            14,
+            8
+          ],
+          "texture": "#orb"
+        },
+        "south": {
+          "uv": [
+            2,
+            7,
+            14,
+            8
+          ],
+          "texture": "#orb"
+        },
+        "east": {
+          "uv": [
+            2,
+            7,
+            14,
+            8
+          ],
+          "texture": "#orb"
+        },
+        "west": {
+          "uv": [
+            2,
+            7,
+            14,
+            8
+          ],
+          "texture": "#orb"
+        },
+        "up": {
+          "uv": [
+            2,
+            2,
+            14,
+            14
+          ],
+          "texture": "#orb"
+        },
+        "down": {
+          "uv": [
+            2,
+            2,
+            14,
+            14
+          ],
+          "texture": "#orb"
+        }
+      }
+    }
+  ]
+}

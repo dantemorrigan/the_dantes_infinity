@@ -90,6 +90,21 @@ public final class GauntletConfig {
 	/** Max durability each piece loses per absorbed hit. */
 	public int uruMaxWearPerHit = 12;
 
+	// ---- Finding the Power Stone (server) ----
+	/** Meteor showers that bring the Power Stone; they stop once it is found. */
+	public boolean powerShowerEnabled = true;
+	/** Minutes of world time before the first possible shower, then a random gap between min and max. */
+	public int powerShowerFirstMinutes = 20;
+	public int powerShowerMinMinutes = 20;
+	public int powerShowerMaxMinutes = 50;
+	/** How far from the chosen player the shower falls (blocks). */
+	public int powerShowerMinDistance = 60;
+	public int powerShowerMaxDistance = 110;
+	public int powerShowerSeconds = 25;
+	public float powerShowerMeteorsPerSecond = 1.5f;
+	/** Ticks a bare Power Stone can be held in a hand before it kills (creative is spared). */
+	public int powerStoneHoldTicks = 40;
+
 	// ---- Meteor Stream (Power stone, server) ----
 	/** Ticks the gauntlet must stay on the sun/moon to lock on. */
 	public int streamLockTicks = 30;

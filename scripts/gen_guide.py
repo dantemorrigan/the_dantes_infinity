@@ -25,8 +25,17 @@ add('start1',
  f"{H}First steps{R}\nThe gauntlet works only in your {B}offhand{R}: press {B}F{R} with it in hand.\n\nRight-click it in your main hand to open the stone slots.",
  f"{H}Первые шаги{R}\nПерчатка работает только в {B}левой руке{R}: возьми её и нажми {B}F{R}.\n\nПКМ с перчаткой в правой руке открывает слоты камней.")
 add('start2',
- f"{H}The six stones{R}\n{B}Power, Space, Reality, Mind, Time, Soul.{R}\n\nStones can't be crafted yet: take them from the Infinity Gauntlet creative tab or use {B}/gauntlet give_stone{R}.",
- f"{H}Шесть камней{R}\n{B}Сила, Пространство, Реальность, Разум, Время, Душа.{R}\n\nКамни пока не крафтятся: бери их в креативе (вкладка мода) или командой {B}/gauntlet give_stone{R}.")
+ f"{H}The six stones{R}\nEach stone exists only {B}once{R} per world and can't be crafted: it must be found.\n\nYou keep your stones when you die, unless {B}another player{R} kills you.",
+ f"{H}Шесть камней{R}\nКаждый камень есть в мире в {B}одном{R} экземпляре и не крафтится: его надо найти.\n\nПосле смерти камни остаются у тебя, если не убил {B}другой игрок{R}.")
+add('find_power1',
+ f"{H}Finding Power{R}\nSometimes a {B}meteor shower{R} falls near a player. A message tells you where.\n\nThe last meteor is {B}purple{R}. Its core hides {B}the Orb{R}.",
+ f"{H}Поиск Силы{R}\nИногда рядом с игроком проходит {B}метеоритный дождь{R}. Сообщение подскажет, где.\n\nПоследний метеорит — {B}фиолетовый{R}. В его ядре спрятана {B}Сфера{R}.")
+add('find_power2',
+ f"{H}The Orb{R}\nDig through the meteorite with a {B}diamond pickaxe{R} and take the Orb. Right-click it to open.\n\nOnce the Orb is taken, the showers stop for good.",
+ f"{H}Сфера{R}\nПробейся сквозь метеорит {B}алмазной киркой{R} и забери Сферу. ПКМ — открыть.\n\nКогда Сфера добыта, дожди больше не идут.")
+add('find_power3',
+ f"{H}Careful!{R}\nThe bare Power Stone {B}kills{R} whoever holds it in a hand within two seconds.\n\nKeep it in the backpack and put it straight into the gauntlet.",
+ f"{H}Осторожно!{R}\nГолый Камень Силы {B}убивает{R} того, кто держит его в руке, за пару секунд.\n\nНоси его в рюкзаке и сразу вставь в перчатку.")
 add('wheel1',
  f"{H}Ability wheel{R}\nHold {B}V{R}: the wheel opens. Point at a stone, then at an ability, and release V to choose.\n\nPress {B}R{R} to use it.",
  f"{H}Колесо способностей{R}\nУдерживай {B}V{R}: откроется колесо. Наведи на камень, затем на способность и отпусти V.\n\n{B}R{R} — применить.")
@@ -112,8 +121,8 @@ add('end',
 # --- contents: built from the page order ---
 order = list(PAGES)
 def pn(k): return str(order.index(k) + 1)
-toc_en = [("First steps",'start1'),("Ability wheel",'wheel1'),("Power",'power1'),("Space",'space1'),("Reality",'reality1'),("Time",'time1'),("Mind",'mind1'),("Soul",'soul1'),("Beam, Snap",'beam'),("Uru",'ore1'),("Extractor",'extractor1'),("Settings",'settings')]
-toc_ru = [("Первые шаги",'start1'),("Колесо",'wheel1'),("Сила",'power1'),("Пространство",'space1'),("Реальность",'reality1'),("Время",'time1'),("Разум",'mind1'),("Душа",'soul1'),("Луч, щелчок",'beam'),("Уру",'ore1'),("Извлекатель",'extractor1'),("Настройки",'settings')]
+toc_en = [("First steps",'start1'),("Ability wheel",'wheel1'),("Power",'find_power1'),("Space",'space1'),("Reality",'reality1'),("Time",'time1'),("Mind",'mind1'),("Soul",'soul1'),("Beam, Snap",'beam'),("Uru",'ore1'),("Extractor",'extractor1'),("Settings",'settings')]
+toc_ru = [("Первые шаги",'start1'),("Колесо",'wheel1'),("Сила",'find_power1'),("Пространство",'space1'),("Реальность",'reality1'),("Время",'time1'),("Разум",'mind1'),("Душа",'soul1'),("Луч, щелчок",'beam'),("Уру",'ore1'),("Извлекатель",'extractor1'),("Настройки",'settings')]
 PAGES['contents'] = (
  f"{H}Contents{R}\n" + "\n".join(f"{n} {G}{pn(k)}{R}" for n,k in toc_en),
  f"{H}Содержание{R}\n" + "\n".join(f"{n} {G}{pn(k)}{R}" for n,k in toc_ru))

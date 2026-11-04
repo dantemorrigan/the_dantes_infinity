@@ -232,6 +232,11 @@ public final class CelestialClient {
 				mc.level.addParticle(ParticleTypes.LARGE_SMOKE, p.x, p.y, p.z, 0, 0.02, 0);
 				mc.level.addParticle(ParticleTypes.FLAME, p.x + rnd.nextGaussian() * 0.4, p.y, p.z + rnd.nextGaussian() * 0.4, 0, 0, 0);
 				if (m.solar()) mc.level.addParticle(ParticleTypes.LAVA, p.x, p.y, p.z, 0, 0, 0);
+				if (m.size() >= 3) { // the Power Stone's meteor burns violet
+					for (int i = 0; i < 6; i++) mc.level.addParticle(new net.minecraft.core.particles.DustParticleOptions(0x9B0FD0, 3.0f),
+							p.x + rnd.nextGaussian() * 1.2, p.y + rnd.nextGaussian() * 1.2, p.z + rnd.nextGaussian() * 1.2, 0, 0, 0);
+					mc.level.addParticle(ParticleTypes.REVERSE_PORTAL, p.x, p.y, p.z, 0, 0, 0);
+				}
 			}
 		}
 	}
@@ -270,7 +275,7 @@ public final class CelestialClient {
 			float age = clientTicks - m.start() + partial;
 			Vec3 p = m.pos(age);
 			ItemStackRenderState rs = model(m.solar(), m.size());
-			float scale = (new float[]{0.6f, 1.2f, 2.4f})[Mth.clamp(m.size(), 0, 2)] * 2.5f;
+			float scale = (new float[]{0.6f, 1.2f, 2.4f, 3.2f})[Mth.clamp(m.size(), 0, 3)] * 2.5f;
 			pose.pushPose();
 			pose.translate(p.x - cam.x, p.y - cam.y, p.z - cam.z);
 			pose.mulPose(Axis.YP.rotationDegrees(m.spin() + age * 9));
@@ -283,7 +288,7 @@ public final class CelestialClient {
 	}
 
 	private static ItemStackRenderState model(boolean solar, int size) {
-		String id = (solar ? "ca_solar_meteor_" : "ca_lunar_meteor_") + Mth.clamp(size, 0, 2);
+		String id = size >= 3 ? "ca_power_meteor" : (solar ? "ca_solar_meteor_" : "ca_lunar_meteor_") + Mth.clamp(size, 0, 2);
 		return MODELS.computeIfAbsent(id, key -> {
 			Minecraft mc = Minecraft.getInstance();
 			ItemStack stack = new ItemStack(Items.PAPER);
