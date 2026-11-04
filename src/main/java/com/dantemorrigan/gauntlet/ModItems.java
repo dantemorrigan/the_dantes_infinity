@@ -31,9 +31,9 @@ public final class ModItems {
 	private static Item.Properties stone(String name) {
 		int color = Stone.valueOf(name.toUpperCase(java.util.Locale.ROOT)).color;
 		return epic()
-				.component(DataComponents.ITEM_NAME, net.minecraft.network.chat.Component.translatable("item.infinity_gauntlet." + name + "_stone").withColor(color))
+				.component(DataComponents.ITEM_NAME, net.minecraft.network.chat.Component.translatable("item.infinity_gauntlet." + name + "_stone").withStyle(style -> style.withColor(color).withBold(true)))
 				.component(DataComponents.LORE, new net.minecraft.world.item.component.ItemLore(java.util.List.of(
-						net.minecraft.network.chat.Component.translatable("tooltip.infinity_gauntlet.loose_" + name).withStyle(s -> s.withColor(color).withItalic(false)))));
+						net.minecraft.network.chat.Component.translatable("tooltip.infinity_gauntlet.loose_" + name).withStyle(s -> s.withColor(color).withBold(false).withItalic(false)))));
 	}
 
 	/** The sealed Orb from the purple meteorite (holds the Power Stone) and the opened, empty one. */
