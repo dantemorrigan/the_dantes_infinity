@@ -5,6 +5,7 @@
 	"client": [
 		"AvatarRendererMixin",
 		"CameraMixin",
+		"ClientLanguageMixin",
 		"ClientInputAccessor",
 		"FogRendererMixin",
 		"HumanoidModelMixin",

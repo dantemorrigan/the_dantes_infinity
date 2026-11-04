@@ -18,6 +18,10 @@ public final class GauntletConfig {
     // Wheel input options (read on the client); legacy worn-gauntlet RMB is opt-in.
     public boolean abilityWheelToggle = false;
     public boolean legacyRightClickPower = false;
+	/** Mod UI language: "auto" (follow Minecraft), "en" or "ru". Applies to every string of the mod, book included. */
+	public String language = "auto";
+	/** Hand the field guide book to a player the first time they join a world. */
+	public boolean giveGuideBook = true;
 	// ---- Co-op server rules ----
 	public boolean abilityPvp = true;
 	public boolean abilityBlockChanges = true;
@@ -197,6 +201,17 @@ public final class GauntletConfig {
 	public static GauntletConfig reload() {
 		instance = load();
 		return instance;
+	}
+
+	/** Writes the current values back to {@code config/infinity_gauntlet.json}. */
+	public static void save() {
+		if (instance == null) return;
+		Path path = FabricLoader.getInstance().getConfigDir().resolve("infinity_gauntlet.json");
+		try (Writer writer = Files.newBufferedWriter(path)) {
+			new GsonBuilder().setPrettyPrinting().create().toJson(instance, writer);
+		} catch (IOException e) {
+			InfinityGauntlet.LOGGER.warn("Could not write {}", path, e);
+		}
 	}
 
 	private static GauntletConfig load() {
