@@ -156,4 +156,120 @@ final class Scenes {
 		release();
 		end();
 	}
+
+	// ---------------------------------------------------------------------------------------------------------------
+	static volatile Vec3 focus = Vec3.ZERO;
+
+	static com.dantemorrigan.gauntlet.boss.Thanos thanos(net.minecraft.server.MinecraftServer s) {
+		for (var lvl : s.getAllLevels()) {
+			var l = lvl.getEntitiesOfClass(com.dantemorrigan.gauntlet.boss.Thanos.class, new net.minecraft.world.phys.AABB(-3e4, -64, -3e4, 3e4, 400, 3e4));
+			if (!l.isEmpty()) return l.getFirst();
+		}
+		return null;
+	}
+
+	static Vec3 thanosPos() {
+		return server.computeOnServer(s -> { var t = thanos(s); return t == null ? null : t.position(); });
+	}
+
+	static void planet() {
+		Vec3 feet = stage(0, -380, 0, 0);
+		raw("time set 6000");
+		com.dantemorrigan.gauntlet.GauntletConfig.get().planetDestructionAllPlayers = true;
+		cmd("gauntlet give_power");
+		ticks(20);
+		server.runOnServer(s -> com.dantemorrigan.gauntlet.space.PlanetDestruction.start(s.getPlayerList().getPlayers().getFirst(), s.getPlayerList().getPlayers().getFirst().position()));
+		ctx.waitFor(mc -> mc.level != null && mc.level.dimension().equals(com.dantemorrigan.gauntlet.space.SpaceManager.DEAD_SPACE), 400);
+		ticks(10);
+		Vec3 p = playerPos();
+		System.out.println("PLANET player in space at " + p);
+		begin("planet");
+		Vec3 c = eye(p);
+		// The planet sits toward yaw 180 (north, -z).
+		Vec3 far = c.add(0, -2, -120);
+		Rig.set(Rig.track(c.add(6, 1, 9), c.add(-7, 3, 6), far, far.add(0, 5, 0), 380, true));
+		ticks(370);
+		ctx.takeScreenshot("trailer_planet");
+		end();
+	}
+
+	static void snap() {
+		Vec3 feet = stage(-120, -380, 0, 0);
+		raw("time set 14000");
+		gauntlet();
+		ticks(100);
+		begin("snap");
+		Vec3 c = eye(feet);
+		Rig.set(Rig.track(c.add(0, -0.3, -4), c.add(0.4, 0.3, -1.8), c.add(0, -0.2, 0), c.add(0.3, -0.4, 0), 70, true));
+		ticks(5);
+		cast("infinity_snap");
+		ticks(160);
+		ctx.takeScreenshot("trailer_snap");
+		end();
+	}
+
+	/** Thanos: arrival, the fight, the fall and the crash. */
+	static void thanosScenes() {
+		Vec3 feet = stage(40, -380, 0, -4);
+		raw("time set 5000");
+		cmd("gauntlet thanos reset");
+		ticks(20);
+		cmd("gauntlet thanos now");
+		Vec3 c = eye(feet);
+		// ship hovers ~70 ahead (z+) and ~78 up; Thanos lands in between
+		Vec3 ship = c.add(0, 78, 70);
+		begin("thanos_arrive");
+		Rig.set(Rig.track(c.add(4, -0.3, -9), c.add(-3, 6, -4), c.add(0, 40, 70), ship.add(0, -6, 0), 330, true));
+		ticks(335);
+		Rig.set(Rig.track(c.add(-3, 6, -4), c.add(-3, 1, 6), ship.add(0, -6, 0), c.add(0, 1, 40), 100, true));
+		ticks(100);
+		Vec3 t = thanosPos();
+		System.out.println("THANOS landed at " + t);
+		if (t != null) {
+			focus = t.add(0, 3, 0);
+			Rig.set(Rig.make(u -> new Vec3(focus.x + Math.sin(u * .02) * 14, focus.y - 1, focus.z - 13 + Math.cos(u * .02) * 4), u -> focus));
+			ticks(130);
+		}
+		ctx.takeScreenshot("trailer_thanos_land");
+		end();
+
+		// the fight
+		cmd("gamemode survival");
+		cmd("effect give @s resistance 90 4 true");
+		begin("thanos_fight");
+		for (int i = 0; i < 12; i++) {
+			Vec3 tp = thanosPos();
+			if (tp != null) focus = tp.add(0, 2.5, 0);
+			final int k = i;
+			Rig.set(Rig.make(u -> new Vec3(focus.x + 11 * Math.sin((k * 20 + u) * .03), focus.y - .5, focus.z + 11 * Math.cos((k * 20 + u) * .03)), u -> focus));
+			ticks(20);
+		}
+		ctx.takeScreenshot("trailer_thanos_fight");
+		end();
+
+		// the fall
+		cmd("gamemode creative");
+		server.runOnServer(s -> {
+			var th = thanos(s);
+			if (th == null) return;
+			th.invulnerableTime = 0;
+			th.setHealth(1);
+			th.hurtServer((net.minecraft.server.level.ServerLevel) th.level(), th.level().damageSources().explosion(null, null), 50);
+		});
+		Vec3 tp = thanosPos();
+		if (tp != null) focus = tp.add(0, 1.5, 0);
+		begin("thanos_death");
+		Rig.set(Rig.make(u -> new Vec3(focus.x + 5, focus.y, focus.z - 6 + u * .01), u -> focus));
+		ticks(250);
+		ctx.takeScreenshot("trailer_thanos_dust");
+		end();
+
+		// the ship crashes
+		begin("thanos_crash");
+		Vec3 pc = playerPos();
+		Rig.set(Rig.track(pc.add(0, 3, -4), pc.add(-6, 8, -2), pc.add(0, 30, 65), pc.add(0, 4, 60), 360, true));
+		ticks(380);
+		ctx.takeScreenshot("trailer_crash");
+		end();
+	}
 }
