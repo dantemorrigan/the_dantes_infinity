@@ -1,0 +1,20 @@
+{
+  "variants": {
+    "facing=north,gears=0": { "model": "infinity_gauntlet:block/quest_time_clock_0" },
+    "facing=south,gears=0": { "model": "infinity_gauntlet:block/quest_time_clock_0", "y": 180 },
+    "facing=east,gears=0":  { "model": "infinity_gauntlet:block/quest_time_clock_0", "y": 90 },
+    "facing=west,gears=0":  { "model": "infinity_gauntlet:block/quest_time_clock_0", "y": 270 },
+    "facing=north,gears=1": { "model": "infinity_gauntlet:block/quest_time_clock_1" },
+    "facing=south,gears=1": { "model": "infinity_gauntlet:block/quest_time_clock_1", "y": 180 },
+    "facing=east,gears=1":  { "model": "infinity_gauntlet:block/quest_time_clock_1", "y": 90 },
+    "facing=west,gears=1":  { "model": "infinity_gauntlet:block/quest_time_clock_1", "y": 270 },
+    "facing=north,gears=2": { "model": "infinity_gauntlet:block/quest_time_clock_2" },
+    "facing=south,gears=2": { "model": "infinity_gauntlet:block/quest_time_clock_2", "y": 180 },
+    "facing=east,gears=2":  { "model": "infinity_gauntlet:block/quest_time_clock_2", "y": 90 },
+    "facing=west,gears=2":  { "model": "infinity_gauntlet:block/quest_time_clock_2", "y": 270 },
+    "facing=north,gears=3": { "model": "infinity_gauntlet:block/quest_time_clock_3" },
+    "facing=south,gears=3": { "model": "infinity_gauntlet:block/quest_time_clock_3", "y": 180 },
+    "facing=east,gears=3":  { "model": "infinity_gauntlet:block/quest_time_clock_3", "y": 90 },
+    "facing=west,gears=3":  { "model": "infinity_gauntlet:block/quest_time_clock_3", "y": 270 }
+  }
+}

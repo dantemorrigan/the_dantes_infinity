@@ -32,6 +32,9 @@ public final class ModParticleProviders {
 		flat(ModParticles.QUEST_SOUL_WATER_RIPPLE, "quest_soul_water_ripple");
 		billboard(ModParticles.QUEST_SOUL_STONE_RISE, "quest_soul_stone_rise");
 		billboard(ModParticles.QUEST_SOUL_RETURN_FLARE, "quest_soul_return_flare");
+		billboard(ModParticles.QUEST_TIME_GEAR_LOCK, "quest_time_gear_lock");
+		billboard(ModParticles.QUEST_TIME_CLOCK_START, "quest_time_clock_start");
+		billboard(ModParticles.QUEST_TIME_REWARD_SPIRAL, "quest_time_reward_spiral");
 		billboard(ModParticles.QUEST_REALITY_STONE_TRAIL, "quest_reality_stone_trail");
 		billboard(ModParticles.QUEST_REALITY_ARROW_HIT, "quest_reality_arrow_hit");
 		billboard(ModParticles.QUEST_REALITY_FOG_DISPEL, "quest_reality_fog_dispel");

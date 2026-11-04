@@ -24,6 +24,11 @@ public final class ModCreativeTab {
 				output.accept(ModItems.QUEST_SPACE_TESSERACT);
 				output.accept(ModItems.QUEST_SOUL_TEMPLE_MAP);
 				output.accept(ModBlocks.QUEST_SOUL_RITUAL_BASALT);
+				output.accept(ModItems.QUEST_TIME_TEMPLE_MAP);
+				output.accept(ModItems.QUEST_TIME_GEAR_OVERWORLD);
+				output.accept(ModItems.QUEST_TIME_GEAR_NETHER);
+				output.accept(ModItems.QUEST_TIME_GEAR_END);
+				output.accept(ModBlocks.QUEST_TIME_CARVED_STONE);
 				output.accept(ModBlocks.QUEST_SPACE_CARVED_ICE);
 				output.accept(ModBlocks.PURPLE_METEORITE);
 				output.accept(ModBlocks.PURPLE_METEORITE_CORE);

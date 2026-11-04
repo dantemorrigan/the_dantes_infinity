@@ -75,6 +75,36 @@ public final class GauntletCommand {
 									return 1;
 								}))
 								.then(Commands.literal("ritual").executes(ctx -> com.dantemorrigan.gauntlet.stones.SoulQuest.sacrifice(ctx.getSource().getPlayerOrException(), null) ? 1 : 0)))
+						.then(Commands.literal("time_quest")
+								.then(Commands.literal("temple_here").executes(ctx -> {
+									var p = ctx.getSource().getPlayerOrException();
+									var level = p.level().getServer().overworld();
+									com.dantemorrigan.gauntlet.stones.TimeTemple.relocate(level.getServer(), p.blockPosition().offset(0, -1, 0));
+									com.dantemorrigan.gauntlet.stones.TimeTemple.forceBuild(level);
+									return 1;
+								}))
+								.then(Commands.literal("map").executes(ctx -> {
+									var p = ctx.getSource().getPlayerOrException();
+									var map = new net.minecraft.world.item.ItemStack(com.dantemorrigan.gauntlet.ModItems.QUEST_TIME_TEMPLE_MAP);
+									if (!p.getInventory().add(map)) p.drop(map, false);
+									return 1;
+								}))
+								.then(Commands.literal("locate").executes(ctx -> {
+									var site = com.dantemorrigan.gauntlet.stones.TimeTemple.site(ctx.getSource().getServer());
+									ctx.getSource().sendSuccess(() -> Component.literal("Temple of Time: " + site.toShortString()), false);
+									return 1;
+								}))
+								.then(Commands.literal("gears").executes(ctx -> {
+									var p = ctx.getSource().getPlayerOrException();
+									for (var item : new net.minecraft.world.item.Item[]{
+											com.dantemorrigan.gauntlet.ModItems.QUEST_TIME_GEAR_OVERWORLD,
+											com.dantemorrigan.gauntlet.ModItems.QUEST_TIME_GEAR_NETHER,
+											com.dantemorrigan.gauntlet.ModItems.QUEST_TIME_GEAR_END}) {
+										var stack = new net.minecraft.world.item.ItemStack(item);
+										if (!p.getInventory().add(stack)) p.drop(stack, false);
+									}
+									return 1;
+								})))
 						.then(Commands.literal("reality_fog").executes(ctx -> com.dantemorrigan.gauntlet.stones.RealityFog.start(ctx.getSource().getPlayerOrException()) ? 1 : 0))
 						.then(Commands.literal("space_quest")
 								.then(Commands.literal("rift").executes(ctx -> {

@@ -37,6 +37,8 @@ public class InfinityGauntlet implements ModInitializer {
 		com.dantemorrigan.gauntlet.stones.SoulTemple.init();
 		com.dantemorrigan.gauntlet.stones.SoulQuest.init();
 		com.dantemorrigan.gauntlet.stones.SoulLoot.init();
+		com.dantemorrigan.gauntlet.stones.TimeTemple.init();
+		com.dantemorrigan.gauntlet.stones.TimeLoot.init();
 		GauntletEffects.init();
 		ModNetwork.init();
 		com.dantemorrigan.gauntlet.power.InfinityBeam.init();

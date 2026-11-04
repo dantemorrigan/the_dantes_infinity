@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:block/orientable",
+  "textures": {
+    "top": "minecraft:block/chiseled_stone_bricks",
+    "front": "infinity_gauntlet:block/quest_time_clock_3",
+    "side": "minecraft:block/stone_bricks"
+  }
+}

@@ -56,6 +56,14 @@ public final class ModBlocks {
 	public static final Block QUEST_SOUL_RITUAL_BASALT = register("quest_soul_ritual_basalt", BlockBehaviour.Properties.of()
 			.mapColor(MapColor.COLOR_BLACK).instrument(NoteBlockInstrument.BASEDRUM).requiresCorrectToolForDrops().strength(3.0f, 9.0f).sound(SoundType.BASALT));
 
+	/** Carved stone and the clock mechanism of the Temple of Time. */
+	public static final Block QUEST_TIME_CARVED_STONE = register("quest_time_carved_stone", BlockBehaviour.Properties.of()
+			.mapColor(MapColor.STONE).instrument(NoteBlockInstrument.BASEDRUM).requiresCorrectToolForDrops().strength(3.0f, 9.0f).sound(SoundType.STONE));
+	public static final Block QUEST_TIME_CLOCK = registerNoItem("quest_time_clock", p -> new com.dantemorrigan.gauntlet.stones.TimeClockBlock(p),
+			BlockBehaviour.Properties.of().mapColor(MapColor.STONE).strength(-1.0f, 3_600_000.0f)
+					.lightLevel(state -> state.getValue(com.dantemorrigan.gauntlet.stones.TimeClockBlock.GEARS) * 4)
+					.noLootTable().sound(SoundType.COPPER).pushReaction(net.minecraft.world.level.material.PushReaction.BLOCK));
+
 	public static final ResourceKey<PlacedFeature> ORE_URU = ResourceKey.create(Registries.PLACED_FEATURE, InfinityGauntlet.id("ore_uru"));
 
 	private static Block register(String name, BlockBehaviour.Properties properties) {

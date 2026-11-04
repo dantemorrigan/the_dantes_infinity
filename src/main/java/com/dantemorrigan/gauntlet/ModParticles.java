@@ -93,6 +93,11 @@ public final class ModParticles {
 	public static final SimpleParticleType QUEST_SOUL_STONE_RISE = register("quest_soul_stone_rise");
 	public static final SimpleParticleType QUEST_SOUL_RETURN_FLARE = register("quest_soul_return_flare");
 
+	// Time Stone quest (pack: 03_Time_Quest). xa = size.
+	public static final SimpleParticleType QUEST_TIME_GEAR_LOCK = register("quest_time_gear_lock");
+	public static final SimpleParticleType QUEST_TIME_CLOCK_START = register("quest_time_clock_start");
+	public static final SimpleParticleType QUEST_TIME_REWARD_SPIRAL = register("quest_time_reward_spiral");
+
 	private static SimpleParticleType register(String name) {
 		return Registry.register(BuiltInRegistries.PARTICLE_TYPE, InfinityGauntlet.id(name), FabricParticleTypes.simple(true));
 	}

@@ -51,6 +51,19 @@ public final class ModItems {
 	public static final Item QUEST_SOUL_TEMPLE_MAP = register("quest_soul_temple_map", com.dantemorrigan.gauntlet.stones.SoulTempleMapItem::new,
 			new Item.Properties().stacksTo(1).rarity(Rarity.RARE));
 
+	/** Chart to the Temple of Time and the three Ancient Gears (Overworld, Nether, End) that start its clock. */
+	public static final Item QUEST_TIME_TEMPLE_MAP = register("quest_time_temple_map", com.dantemorrigan.gauntlet.stones.TimeTempleMapItem::new,
+			new Item.Properties().stacksTo(1).rarity(Rarity.RARE));
+	public static final Item QUEST_TIME_GEAR_OVERWORLD = register("quest_time_gear_overworld", gear());
+	public static final Item QUEST_TIME_GEAR_NETHER = register("quest_time_gear_nether", gear());
+	public static final Item QUEST_TIME_GEAR_END = register("quest_time_gear_end", gear());
+
+	private static Item.Properties gear() {
+		return new Item.Properties().rarity(Rarity.RARE).fireResistant()
+				.component(DataComponents.LORE, new net.minecraft.world.item.component.ItemLore(java.util.List.of(
+						net.minecraft.network.chat.Component.translatable("tooltip.infinity_gauntlet.time_gear"))));
+	}
+
 	/** Raw uru from the ore, smelted into uru ingots like iron. */
 	public static final Item RAW_URU = register("raw_uru", new Item.Properties().rarity(Rarity.UNCOMMON).fireResistant());
 	public static final Item URU_INGOT = register("uru_ingot", new Item.Properties().rarity(Rarity.RARE).fireResistant());
