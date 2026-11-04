@@ -50,7 +50,7 @@ final class QuestCompassHud {
                 Component.translatable(target.nameKey()), Math.round(distance));
         int width = mc.font.width(label) + 30;
         int x = (graphics.guiWidth() - width) / 2;
-        int y = 47;
+        int y = 25;
         graphics.fill(x, y, x + width, y + 20, 0xD014101F);
         graphics.text(mc.font, label, x + 24, y + 6, 0xFFF4EFFA, true);
 
