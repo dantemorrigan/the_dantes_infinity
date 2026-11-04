@@ -124,9 +124,8 @@ public final class ThanosRenderer extends EntityRenderer<Thanos, ThanosRenderer.
 		body.transformTo(pose, "sword_socket", poses);
 		GeoModel.Bone socket = body.bone("sword_socket");
 		if (socket != null) pose.translate(socket.px / 16f, socket.py / 16f, socket.pz / 16f);
-		// Long axis of the sword (X) runs forward out of the fist, the blades upright.
+		// Long axis of the sword (X) runs forward out of the fist, the edges up and down.
 		pose.mulPose(Axis.YP.rotationDegrees(90));
-		pose.mulPose(Axis.XP.rotationDegrees(90));
 		GeoModel sword = ThanosModels.sword();
 		RenderType type = alpha < 1 ? RenderTypes.entityTranslucent(ATLAS) : RenderTypes.entityCutout(ATLAS);
 		int color = ARGB.color((int) (alpha * 255), 255, 255, 255);

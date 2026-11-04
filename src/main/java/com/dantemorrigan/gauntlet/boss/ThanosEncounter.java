@@ -260,7 +260,7 @@ public final class ThanosEncounter {
 			double top = Math.max(p.getY(), e.landing.y);
 			if (level.dimension() == Level.OVERWORLD) top = Math.max(top, level.getSeaLevel());
 			// Ship hovers beyond the landing point, high up, its nose toward the player.
-			e.ship = new Vec3(p.getX() + dir.x * 34, top + (level.dimension() == Level.END ? 46 : 58), p.getZ() + dir.z * 34);
+			e.ship = new Vec3(p.getX() + dir.x * 70, top + (level.dimension() == Level.END ? 62 : 78), p.getZ() + dir.z * 70);
 			e.shipDir = new Vec3(-dir.x, 0, -dir.z);
 			e.shipYaw = (float) Math.toDegrees(Math.atan2(-e.shipDir.x, -e.shipDir.z));
 			EnderDragon dragon = level.dimension() == Level.END ? livingDragon(level) : null;

@@ -41,24 +41,32 @@ public class ThanosTest implements FabricClientGameTest {
 			server.runCommand("time set 3000");
 			server.runCommand("gamemode creative @p");
 			server.runCommand("gauntlet thanos reset");
-			server.runCommand("tp @p ~ ~ ~ 0 -12");
+			server.runCommand("execute as @p at @s run tp @s ~ ~ ~ 0 -12");
 			ctx.waitTicks(10);
 
 			// ---- Overworld: ship, red sky, beam, landing.
-			server.runCommand("gauntlet thanos now");
+			server.runCommand("execute as @p at @p run gauntlet thanos now");
 			ctx.waitTicks(70);
 			ctx.takeScreenshot("thanos_ship_approach");
 			ctx.waitTicks(55);
-			server.runCommand("tp @p ~ ~ ~ ~ -30");
+			server.runCommand("execute as @p at @s run tp @s ~ ~ ~ ~ -30");
 			ctx.waitTicks(5);
 			ctx.takeScreenshot("thanos_ship_hover_red_sky");
 			ctx.waitTicks(25);
-			server.runCommand("tp @p ~ ~ ~ ~ -12");
+			server.runCommand("execute as @p at @s run tp @s ~ ~ ~ ~ -12");
 			ctx.waitTicks(5);
 			ctx.takeScreenshot("thanos_beam");
 			ctx.waitTicks(40);
 			if (server.computeOnServer(ThanosTest::thanos) == null) throw new AssertionError("Thanos did not arrive");
 			ctx.takeScreenshot("thanos_landed");
+			// Step closer to see him.
+			server.runOnServer(s -> {
+				Thanos t = thanos(s);
+				ServerPlayer p = player(s);
+				var d = p.position().subtract(t.position()).normalize();
+				p.teleportTo(t.getX() + d.x * 5.5, t.getY(), t.getZ() + d.z * 5.5);
+				p.lookAt(net.minecraft.commands.arguments.EntityAnchorArgument.Anchor.EYES, t.position().add(0, 1.6, 0));
+			});
 			ctx.waitTicks(30);
 			ctx.takeScreenshot("thanos_intro_line");
 			ctx.waitTicks(80);
@@ -96,12 +104,14 @@ public class ThanosTest implements FabricClientGameTest {
 
 			// ---- Nether: the rift.
 			server.runCommand("gauntlet thanos reset");
-			server.runCommand("execute in minecraft:the_nether run tp @p 0 70 0 0 10");
-			server.runCommand("execute in minecraft:the_nether run fill -12 68 -12 12 68 12 minecraft:netherrack");
-			server.runCommand("execute in minecraft:the_nether run fill -12 69 -12 12 78 12 minecraft:air");
+			server.runCommand("execute in minecraft:the_nether run tp @p 0 121 0 0 10");
+			ctx.waitTicks(20);
+			server.runCommand("execute in minecraft:the_nether run fill -14 120 -14 14 120 14 minecraft:netherrack");
+			server.runCommand("execute in minecraft:the_nether run fill -14 121 -14 14 127 14 minecraft:air");
+			server.runCommand("execute in minecraft:the_nether run tp @p 0 121 0 0 10");
 			ctx.waitTicks(40);
 			sp.getClientLevel().waitForChunksRender();
-			server.runCommand("gauntlet thanos now");
+			server.runCommand("execute as @p at @p run gauntlet thanos now");
 			ctx.waitTicks(30);
 			ctx.takeScreenshot("thanos_nether_rift");
 			ctx.waitTicks(30);
@@ -114,12 +124,20 @@ public class ThanosTest implements FabricClientGameTest {
 			server.runCommand("execute in minecraft:the_end run tp @p 40 70 40 135 -10");
 			ctx.waitTicks(80);
 			sp.getClientLevel().waitForChunksRender();
-			server.runCommand("gauntlet thanos now");
-			ctx.waitTicks(125);
+			server.runCommand("execute as @p at @p run gauntlet thanos now");
+			ctx.waitTicks(120);
+			server.runOnServer(s -> {
+				ServerPlayer p = player(s);
+				var d = ((ServerLevel) p.level()).getDragons();
+				if (!d.isEmpty()) p.lookAt(net.minecraft.commands.arguments.EntityAnchorArgument.Anchor.EYES, d.getFirst().position());
+			});
+			ctx.waitTicks(20);
 			ctx.takeScreenshot("thanos_end_charge");
-			ctx.waitTicks(22);
+			ctx.waitTicks(19);
 			ctx.takeScreenshot("thanos_end_ray");
-			ctx.waitTicks(70);
+			ctx.waitTicks(30);
+			server.runCommand("execute as @p at @s run tp @s ~ ~ ~ ~ 20");
+			ctx.waitTicks(40);
 			ctx.takeScreenshot("thanos_end_beam");
 			server.runCommand("gauntlet thanos stop");
 			ctx.waitTicks(40);
