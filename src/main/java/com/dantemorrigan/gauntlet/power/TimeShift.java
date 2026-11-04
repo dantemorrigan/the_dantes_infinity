@@ -96,6 +96,7 @@ public final class TimeShift {
 			VIEWERS.put(p.getUUID(), p);
 			ServerPlayNetworking.send(p, fx);
 		}
+		server.overworld().playSound(null, player.blockPosition(), SoundEvents.BEACON_ACTIVATE, SoundSource.PLAYERS, 2.0F, 0.5F);
 	}
 
 	private static void tick(MinecraftServer server) {

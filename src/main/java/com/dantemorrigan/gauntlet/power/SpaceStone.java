@@ -162,6 +162,7 @@ public final class SpaceStone {
 		open(player.level(), center, yaw + 180, dest, player.getUUID(), GauntletConfig.get().portalLifetimeSeconds * 20);
 		GauntletState.setInUse(g, EnumSet.of(Stone.SPACE));
 		com.dantemorrigan.gauntlet.net.ModStatus.send(player, Component.translatable("msg.infinity_gauntlet.portal.open." + name(dest)));
+		player.level().playSound(null, BlockPos.containing(center), SoundEvents.PORTAL_TRIGGER, SoundSource.PLAYERS, 0.8f, 1.6f);
 	}
 
 	private static Portal open(ServerLevel level, Vec3 center, float yaw, int dest, UUID owner, int life) {
@@ -333,6 +334,8 @@ public final class SpaceStone {
 		Vec3 from = player.position();
 		player.teleport(new TeleportTransition(player.level(), target, Vec3.ZERO, player.getYRot(), player.getXRot(), TeleportTransition.DO_NOTHING));
 		player.fallDistance = 0;
+		player.level().playSound(null, BlockPos.containing(from), SoundEvents.PLAYER_TELEPORT, SoundSource.PLAYERS, 0.8f, 1.4f);
+		player.level().playSound(null, BlockPos.containing(target), SoundEvents.PLAYER_TELEPORT, SoundSource.PLAYERS, 1f, 1.2f);
 		sendFx(player.level(), from, target);
 		if (!g.isEmpty()) {
 			GauntletState.setInUse(g, EnumSet.of(Stone.SPACE));

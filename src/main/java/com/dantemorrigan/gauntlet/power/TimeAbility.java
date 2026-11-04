@@ -142,7 +142,7 @@ public final class TimeAbility {
 					ServerPlayNetworking.send(p, new ModNetwork.TimeRewindFx(p.getId(), true, cfg.timeWorldRewindTicks));
 				}
 			}
-			player.level().playSound(null, player.blockPosition(), com.dantemorrigan.gauntlet.ModSounds.ABILITY_TIME_WORLD_REWIND, SoundSource.PLAYERS, 3.0F, 1.0F);
+			player.level().playSound(null, player.blockPosition(), SoundEvents.BEACON_DEACTIVATE, SoundSource.PLAYERS, 2.0F, 0.5F);
 			return;
 		}
 

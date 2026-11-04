@@ -100,6 +100,8 @@ public final class RealityStrike {
 		player.swing(InteractionHand.OFF_HAND, true);
 		GauntletState.setInUse(g, EnumSet.of(Stone.REALITY));
 		send(level, center, new ModNetwork.RealityFx(4, center, new Vec3(r, 0, 0)));
+		level.playSound(null, c, SoundEvents.GENERIC_EXPLODE.value(), SoundSource.PLAYERS, 1.4F, 0.55F);
+		level.playSound(null, c, SoundEvents.AMETHYST_BLOCK_BREAK, SoundSource.PLAYERS, 2.0F, 0.5F);
 	}
 
 	public static boolean strikeLoose(ServerPlayer player) {
