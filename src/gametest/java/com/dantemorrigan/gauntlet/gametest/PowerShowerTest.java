@@ -12,11 +12,27 @@ import net.minecraft.core.BlockPos;
  * a meteorite the player ignored loses its Orb when the next shower starts (no second Orb), until the Orb is taken.
  */
 public class PowerShowerTest implements FabricClientGameTest {
+	/** Every meteorite site the world announced, in order (a server-side listener, so no tick is missed). */
+	private static final java.util.List<BlockPos> SITES = new java.util.concurrent.CopyOnWriteArrayList<>();
+	/** Whether the Orb block stood there the moment the meteorite landed. */
+	private static final java.util.List<Boolean> ORB_AT_LANDING = new java.util.concurrent.CopyOnWriteArrayList<>();
+	private static boolean listening;
+
 	@Override
 	public void runTest(ClientGameTestContext ctx) {
 		try (var sp = ctx.worldBuilder().create()) {
 			sp.getClientLevel().waitForChunksRender();
 			var server = sp.getServer();
+			if (!listening) {
+				listening = true;
+				net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents.END_SERVER_TICK.register(srv -> {
+					BlockPos site = PowerStoneFall.site(srv);
+					if (site != null && (SITES.isEmpty() || !SITES.getLast().equals(site))) {
+						ORB_AT_LANDING.add(srv.overworld().getBlockState(site).is(ModBlocks.POWER_ORB));
+						SITES.add(site);
+					}
+				});
+			}
 			server.runCommand("gamerule advance_time false");
 			server.runCommand("gamerule advance_weather false");
 			server.runCommand("time set 3000");
@@ -31,6 +47,8 @@ public class PowerShowerTest implements FabricClientGameTest {
 				cfg.powerShowerMaxMinutes = 0;
 				cfg.powerShowerSeconds = 5;
 
+				SITES.clear();
+				ORB_AT_LANDING.clear();
 				boolean started = false;
 				for (int i = 0; i < 40 && !started; i++) {
 					ctx.waitTicks(10);
@@ -40,20 +58,21 @@ public class PowerShowerTest implements FabricClientGameTest {
 				ctx.waitTicks(100);
 				ctx.takeScreenshot("shower_red_sky");
 
-				BlockPos first1 = waitForSite(ctx, server, null);
-				if (first1 == null) throw new AssertionError("The first shower left no meteorite with the Orb");
-				boolean orb1 = server.computeOnServer(s -> s.overworld().getBlockState(first1).is(ModBlocks.POWER_ORB));
-				if (!orb1) throw new AssertionError("The first meteorite has no Orb");
-				System.out.println("SHOWER first meteorite " + first1.toShortString() + " orb=" + orb1);
-
-				// The player ignores it. The next shower comes by itself; the old Orb must be gone by then.
-				BlockPos second = waitForSite(ctx, server, first1);
-				if (second == null) throw new AssertionError("A second shower did not come by itself");
-				boolean oldOrb = server.computeOnServer(s -> s.overworld().getBlockState(first1).is(ModBlocks.POWER_ORB));
-				boolean newOrb = server.computeOnServer(s -> s.overworld().getBlockState(second).is(ModBlocks.POWER_ORB));
-				System.out.println("SHOWER second meteorite " + second.toShortString() + " newOrb=" + newOrb + " oldOrb=" + oldOrb);
-				if (oldOrb) throw new AssertionError("The missed meteorite still has its Orb: it can be duplicated");
-				if (!newOrb) throw new AssertionError("The new meteorite has no Orb");
+				// Nobody touches anything: showers keep coming by themselves. Wait for three meteorites.
+				for (int i = 0; i < 400 && SITES.size() < 3; i++) ctx.waitTicks(10);
+				if (SITES.size() < 2) throw new AssertionError("Only " + SITES.size() + " meteorite(s) came by themselves");
+				System.out.println("SHOWER meteorites seen: " + SITES.size());
+				BlockPos current = server.computeOnServer(PowerStoneFall::site);
+				for (int i = 0; i < SITES.size(); i++) {
+					BlockPos site = SITES.get(i);
+					boolean orbNow = server.computeOnServer(s -> s.overworld().getBlockState(site).is(ModBlocks.POWER_ORB));
+					System.out.println("SHOWER meteorite " + i + " " + site.toShortString() + " orbAtLanding=" + ORB_AT_LANDING.get(i) + " orbNow=" + orbNow);
+					if (!ORB_AT_LANDING.get(i)) throw new AssertionError("Meteorite " + i + " landed without an Orb");
+					// Only the meteorite the world still points at may keep its Orb; every missed one must be empty.
+					boolean live = site.equals(current);
+					if (!live && orbNow) throw new AssertionError("Meteorite " + i + " was missed but still has its Orb: it can be duplicated");
+					if (live && !orbNow) throw new AssertionError("The current meteorite has lost its Orb");
+				}
 			} finally {
 				cfg.powerShowerFirstMinutes = first;
 				cfg.powerShowerMinMinutes = min;
@@ -61,15 +80,5 @@ public class PowerShowerTest implements FabricClientGameTest {
 				cfg.powerShowerSeconds = secs;
 			}
 		}
-	}
-
-	/** Waits (up to ~40 s) for a meteorite site different from {@code not}. */
-	private static BlockPos waitForSite(ClientGameTestContext ctx, net.fabricmc.fabric.api.client.gametest.v1.context.TestServerContext server, BlockPos not) {
-		for (int i = 0; i < 80; i++) {
-			ctx.waitTicks(10);
-			BlockPos site = server.computeOnServer(PowerStoneFall::site);
-			if (site != null && !site.equals(not)) return site;
-		}
-		return null;
 	}
 }

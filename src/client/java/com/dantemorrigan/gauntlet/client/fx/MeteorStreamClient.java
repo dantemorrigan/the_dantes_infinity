@@ -108,7 +108,7 @@ public final class MeteorStreamClient {
 			best = Math.max(best, 0.55f * radial * Math.min(in, out));
 		}
 		// A Power shower reddens the sky, softly: less than the Apocalypse, more than a hint.
-		return Math.max(best, 0.4f * showerTint(pos));
+		return Math.max(best, 0.28f * showerTint(pos));
 	}
 
 	private static void tick(Minecraft mc) {
