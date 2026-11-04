@@ -93,6 +93,7 @@ public final class SpaceStoneQuest {
 
 	public static void init() {
 		ServerTickEvents.END_SERVER_TICK.register(SpaceStoneQuest::tick);
+		net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents.DISCONNECT.register((h, s) -> { PORTAL_COOLDOWN.remove(h.getPlayer().getUUID()); COLD_WARNED.remove(h.getPlayer().getUUID()); });
 		ServerEntityEvents.ENTITY_LOAD.register((entity, level) -> {
 			if (entity instanceof ItemEntity item && item.getItem().is(ModItems.QUEST_SPACE_TESSERACT)) TESSERACTS.add(item);
 		});

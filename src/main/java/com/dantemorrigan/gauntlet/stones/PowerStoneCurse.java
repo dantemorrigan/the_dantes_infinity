@@ -32,6 +32,7 @@ public final class PowerStoneCurse {
 
 	public static void init() {
 		ServerTickEvents.END_SERVER_TICK.register(PowerStoneCurse::tick);
+		net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents.DISCONNECT.register((h, s) -> HOLDING.remove(h.getPlayer().getUUID()));
 	}
 
 	public static boolean holding(ServerPlayer p) {

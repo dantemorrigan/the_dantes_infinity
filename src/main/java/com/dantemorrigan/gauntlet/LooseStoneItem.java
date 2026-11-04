@@ -27,6 +27,7 @@ final class LooseStoneItem extends Item {
 
 	static {
 		ServerTickEvents.END_SERVER_TICK.register(LooseStoneItem::tick);
+		net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents.DISCONNECT.register((h, s) -> HOLDS.remove(h.getPlayer().getUUID()));
 	}
 
 	private final Stone stone;

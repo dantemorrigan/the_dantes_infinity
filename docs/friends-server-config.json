@@ -1,0 +1,13 @@
+{
+  "_comment": "Мягкий пресет для сервера с друзьями: положи в config/infinity_gauntlet.json (остальные поля оставь по умолчанию)",
+  "abilityPvp": false,
+  "abilityBlockChanges": true,
+  "allowPlanetDestruction": false,
+  "allowCelestialDestruction": false,
+  "allowInfinitySnap": false,
+  "allowMeteorStream": true,
+  "allowTimeShift": true,
+  "mindPlayerGrab": false,
+  "soulPlayerDrain": false,
+  "extractorPlayerTheft": false
+}
