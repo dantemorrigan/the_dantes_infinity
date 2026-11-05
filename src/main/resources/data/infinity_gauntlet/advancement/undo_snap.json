@@ -1,0 +1,28 @@
+{
+  "parent": "infinity_gauntlet:infinity_snap",
+  "display": {
+    "icon": {
+      "id": "infinity_gauntlet:time_stone"
+    },
+    "title": {
+      "translate": "advancements.infinity_gauntlet.undo_snap.title"
+    },
+    "description": {
+      "translate": "advancements.infinity_gauntlet.undo_snap.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": true
+  },
+  "criteria": {
+    "rewound": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "requirements": [
+    [
+      "rewound"
+    ]
+  ]
+}

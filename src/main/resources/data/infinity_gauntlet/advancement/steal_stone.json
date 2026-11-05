@@ -1,0 +1,28 @@
+{
+  "parent": "infinity_gauntlet:craft_gauntlet",
+  "display": {
+    "icon": {
+      "id": "infinity_gauntlet:infinity_extractor"
+    },
+    "title": {
+      "translate": "advancements.infinity_gauntlet.steal_stone.title"
+    },
+    "description": {
+      "translate": "advancements.infinity_gauntlet.steal_stone.description"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "stolen": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "requirements": [
+    [
+      "stolen"
+    ]
+  ]
+}

@@ -1,5 +1,6 @@
 package com.dantemorrigan.gauntlet.client.screen;
 
+import com.dantemorrigan.gauntlet.GauntletConfig;
 import com.dantemorrigan.gauntlet.client.lang.ModLang;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
@@ -10,7 +11,7 @@ import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
 import org.lwjgl.glfw.GLFW;
 
-/** Mod settings: a card-style language switcher (Auto / English / Русский). */
+/** Mod settings: card-style language switcher (Auto / English / Русский) and client presentation controls. */
 public final class ModSettingsScreen extends Screen {
 	private static final int ACCENT = 0xFFBB72FF;
 	private static final String[] NATIVE = {null, "English", "Русский"};
@@ -30,15 +31,80 @@ public final class ModSettingsScreen extends Screen {
 		for (int i = 0; i < ModLang.CODES.length; i++) if (ModLang.CODES[i].equals(cur)) selected = i;
 	}
 
-	private int cardW() { return Math.max(70, Math.min(120, (width - 60) / 3)); }
-	private int cardH() { return 92; }
+	private int cardW() { return Math.max(70, Math.min(116, (width - 60) / 3)); }
+	private int cardH() { return 76; }
 	private int cardX(int i) { return width / 2 - (cardW() * 3 + 16) / 2 + i * (cardW() + 8); }
-	private int cardY() { return height / 2 - 40; }
+	private int cardY() { return Math.max(42, height / 2 - 86); }
+	private int clientRowsY() { return cardY() + cardH() + 34; }
 
 	@Override
 	protected void init() {
+		GauntletConfig cfg = GauntletConfig.get();
+		int bw = Math.min(156, (width - 36) / 2);
+		int leftX = width / 2 - bw - 4;
+		int rightX = width / 2 + 4;
+		int row1Y = clientRowsY();
+		int row2Y = row1Y + 24;
+
+		addRenderableWidget(Button.builder(wheelLabel(cfg), b -> {
+			cfg.abilityWheelToggle = !cfg.abilityWheelToggle;
+			GauntletConfig.save();
+			b.setMessage(wheelLabel(cfg));
+		}).bounds(leftX, row1Y, bw, 20).build());
+
+		addRenderableWidget(Button.builder(hudLabel(cfg), b -> {
+			cfg.showStatusHud = !cfg.showStatusHud;
+			GauntletConfig.save();
+			b.setMessage(hudLabel(cfg));
+		}).bounds(rightX, row1Y, bw, 20).build());
+
+		addRenderableWidget(Button.builder(shakeLabel(cfg), b -> {
+			cfg.cameraShakeScale = nextStep(cfg.cameraShakeScale);
+			GauntletConfig.save();
+			b.setMessage(shakeLabel(cfg));
+		}).bounds(leftX, row2Y, bw, 20).build());
+
+		addRenderableWidget(Button.builder(flashLabel(cfg), b -> {
+			cfg.flashIntensity = nextStep(cfg.flashIntensity);
+			GauntletConfig.save();
+			b.setMessage(flashLabel(cfg));
+		}).bounds(rightX, row2Y, bw, 20).build());
+
 		addRenderableWidget(Button.builder(CommonComponents.GUI_DONE, b -> onClose())
-				.bounds(width / 2 - 75, Math.min(height - 28, cardY() + cardH() + 52), 150, 20).build());
+				.bounds(width / 2 - 75, Math.min(height - 24, row2Y + 28), 150, 20).build());
+	}
+
+	private static float nextStep(float cur) {
+		if (cur > 0.75f) return 0.5f;
+		if (cur > 0.1f) return 0.0f;
+		return 1.0f;
+	}
+
+	private static Component stepText(float val) {
+		if (val <= 0.05f) return Component.translatable("settings.infinity_gauntlet.value.off");
+		return Component.literal(Math.round(val * 100f) + "%");
+	}
+
+	private static Component wheelLabel(GauntletConfig cfg) {
+		Component mode = Component.translatable(cfg.abilityWheelToggle
+				? "settings.infinity_gauntlet.wheel.toggle"
+				: "settings.infinity_gauntlet.wheel.hold");
+		return Component.translatable("settings.infinity_gauntlet.wheel", mode);
+	}
+
+	private static Component hudLabel(GauntletConfig cfg) {
+		Component state = Component.translatable(cfg.showStatusHud
+				? "settings.infinity_gauntlet.value.on"
+				: "settings.infinity_gauntlet.value.off");
+		return Component.translatable("settings.infinity_gauntlet.hud", state);
+	}
+
+	private static Component shakeLabel(GauntletConfig cfg) {
+		return Component.translatable("settings.infinity_gauntlet.shake", stepText(cfg.cameraShakeScale));
+	}
+
+	private static Component flashLabel(GauntletConfig cfg) {
+		return Component.translatable("settings.infinity_gauntlet.flash", stepText(cfg.flashIntensity));
 	}
 
 	@Override public void onClose() { minecraft.setScreen(parent); }
@@ -76,11 +142,12 @@ public final class ModSettingsScreen extends Screen {
 
 	@Override
 	public void extractRenderState(GuiGraphicsExtractor g, int mx, int my, float delta) {
-		super.extractRenderState(g, mx, my, delta); // background + Done button
+		super.extractRenderState(g, mx, my, delta); // background + buttons
 		hovered = cardAt(mx, my);
-		g.centeredText(font, title.copy().withStyle(s -> s.withBold(true)), width / 2, cardY() - 48, 0xFFFFFFFF);
-		g.centeredText(font, Component.translatable("settings.infinity_gauntlet.language"), width / 2, cardY() - 30, 0xFFB9B2D6);
-		g.centeredText(font, Component.translatable("settings.infinity_gauntlet.language.hint"), width / 2, cardY() - 18, 0xFF7C7794);
+		int cy = cardY();
+		g.centeredText(font, title.copy().withStyle(s -> s.withBold(true)), width / 2, Math.max(8, cy - 34), 0xFFFFFFFF);
+		g.centeredText(font, Component.translatable("settings.infinity_gauntlet.language"), width / 2, cy - 22, 0xFFB9B2D6);
+		g.centeredText(font, Component.translatable("settings.infinity_gauntlet.language.hint"), width / 2, cy - 11, 0xFF7C7794);
 
 		for (int i = 0; i < 3; i++) {
 			glow[i] += ((hovered == i ? 1f : 0f) - glow[i]) * Math.min(1f, delta * 0.35f + 0.12f);
@@ -93,8 +160,8 @@ public final class ModSettingsScreen extends Screen {
 			case "ru" -> Component.translatable("settings.infinity_gauntlet.note.ru");
 			default -> Component.translatable("settings.infinity_gauntlet.note.auto");
 		};
-		g.centeredText(font, note, width / 2, cardY() + cardH() + 14, 0xFFD9D4F0);
-		g.centeredText(font, Component.translatable("settings.infinity_gauntlet.saved"), width / 2, cardY() + cardH() + 28, 0xFF6FCF97);
+		g.centeredText(font, note, width / 2, cy + cardH() + 5, 0xFFD9D4F0);
+		g.centeredText(font, Component.translatable("settings.infinity_gauntlet.client_section"), width / 2, clientRowsY() - 12, 0xFFB9B2D6);
 	}
 
 	private void drawCard(GuiGraphicsExtractor g, int i) {
@@ -109,25 +176,25 @@ public final class ModSettingsScreen extends Screen {
 		if (sel) g.outline(x - 1, y - 1, w + 2, h + 2, (ACCENT & 0x00FFFFFF) | 0x66000000);
 
 		// Badge
-		int bw = Math.max(34, font.width(BADGE[i]) + 14), bx = x + (w - bw) / 2, by = y + 12;
-		g.fill(bx, by, bx + bw, by + 22, (BADGE_COLOR[i] & 0x00FFFFFF) | 0x38000000);
-		g.outline(bx, by, bw, 22, BADGE_COLOR[i]);
-		g.centeredText(font, BADGE[i], x + w / 2, by + 7, BADGE_COLOR[i]);
+		int bw = Math.max(34, font.width(BADGE[i]) + 14), bx = x + (w - bw) / 2, by = y + 8;
+		g.fill(bx, by, bx + bw, by + 18, (BADGE_COLOR[i] & 0x00FFFFFF) | 0x38000000);
+		g.outline(bx, by, bw, 18, BADGE_COLOR[i]);
+		g.centeredText(font, BADGE[i], x + w / 2, by + 5, BADGE_COLOR[i]);
 
 		// Name in its own language, never translated
 		Component name = NATIVE[i] == null ? Component.translatable("settings.infinity_gauntlet.language.auto") : Component.literal(NATIVE[i]);
-		g.centeredText(font, name.copy().withStyle(s -> s.withBold(true)), x + w / 2, y + 46, sel ? 0xFFFFFFFF : 0xFFC9C4E0);
+		g.centeredText(font, name.copy().withStyle(s -> s.withBold(true)), x + w / 2, y + 34, sel ? 0xFFFFFFFF : 0xFFC9C4E0);
 		Component sub = switch (i) {
 			case 1 -> Component.literal("English");
 			case 2 -> Component.literal("Russian");
 			default -> Component.translatable("settings.infinity_gauntlet.language.auto.sub");
 		};
-		if (i != 0) g.centeredText(font, i == 1 ? "United States" : "Россия", x + w / 2, y + 58, 0xFF8F8AA8);
-		else g.centeredText(font, sub, x + w / 2, y + 58, 0xFF8F8AA8);
+		if (i != 0) g.centeredText(font, i == 1 ? "United States" : "Россия", x + w / 2, y + 46, 0xFF8F8AA8);
+		else g.centeredText(font, sub, x + w / 2, y + 46, 0xFF8F8AA8);
 
 		if (sel) {
-			g.fill(x + 10, y + h - 20, x + w - 10, y + h - 8, 0x40FFFFFF & ((ACCENT & 0x00FFFFFF) | 0xFF000000));
-			g.centeredText(font, "✔", x + w / 2, y + h - 18, 0xFFFFFFFF);
+			g.fill(x + 10, y + h - 16, x + w - 10, y + h - 5, 0x40FFFFFF & ((ACCENT & 0x00FFFFFF) | 0xFF000000));
+			g.centeredText(font, "✔", x + w / 2, y + h - 14, 0xFFFFFFFF);
 		}
 	}
 

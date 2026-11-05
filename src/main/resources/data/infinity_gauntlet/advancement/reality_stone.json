@@ -1,0 +1,35 @@
+{
+  "parent": "infinity_gauntlet:root",
+  "display": {
+    "icon": {
+      "id": "infinity_gauntlet:reality_stone"
+    },
+    "title": {
+      "translate": "advancements.infinity_gauntlet.reality_stone.title"
+    },
+    "description": {
+      "translate": "advancements.infinity_gauntlet.reality_stone.description"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "reality_stone": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "infinity_gauntlet:reality_stone"
+          }
+        ]
+      }
+    }
+  },
+  "requirements": [
+    [
+      "reality_stone"
+    ]
+  ]
+}

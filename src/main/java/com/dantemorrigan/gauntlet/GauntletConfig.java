@@ -18,6 +18,8 @@ public final class GauntletConfig {
     // Wheel input options (read on the client); legacy worn-gauntlet RMB is opt-in.
     public boolean abilityWheelToggle = false;
     public boolean legacyRightClickPower = false;
+	/** Show the top-left selected ability card and favorites bar while wearing the gauntlet (client). */
+	public boolean showStatusHud = true;
 	/** Mod UI language: "auto" (follow Minecraft), "en" or "ru". Applies to every string of the mod, book included. */
 	public String language = "auto";
 	/** Hand the field guide book to a player the first time they join a world. */

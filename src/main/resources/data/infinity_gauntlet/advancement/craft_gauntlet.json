@@ -1,0 +1,35 @@
+{
+  "parent": "infinity_gauntlet:mine_uru",
+  "display": {
+    "icon": {
+      "id": "infinity_gauntlet:gauntlet"
+    },
+    "title": {
+      "translate": "advancements.infinity_gauntlet.craft_gauntlet.title"
+    },
+    "description": {
+      "translate": "advancements.infinity_gauntlet.craft_gauntlet.description"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "gauntlet": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "infinity_gauntlet:gauntlet"
+          }
+        ]
+      }
+    }
+  },
+  "requirements": [
+    [
+      "gauntlet"
+    ]
+  ]
+}

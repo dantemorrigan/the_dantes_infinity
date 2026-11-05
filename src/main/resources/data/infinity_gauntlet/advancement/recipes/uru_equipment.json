@@ -1,0 +1,29 @@
+{
+  "parent": "minecraft:recipes/root",
+  "criteria": {
+    "has_uru_ingot": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "infinity_gauntlet:uru_ingot"
+          }
+        ]
+      }
+    }
+  },
+  "requirements": [
+    [
+      "has_uru_ingot"
+    ]
+  ],
+  "rewards": {
+    "recipes": [
+      "infinity_gauntlet:gauntlet",
+      "infinity_gauntlet:uru_helmet",
+      "infinity_gauntlet:uru_chestplate",
+      "infinity_gauntlet:uru_leggings",
+      "infinity_gauntlet:uru_boots"
+    ]
+  }
+}

@@ -52,8 +52,8 @@ add('beam',
  f"{H}All six stones{R}\n{B}Infinity Beam{R}: hold R. Drills tunnels, wounds the Ender Dragon.\n\n{B}Infinity Snap{R}: erases the universe and burns the gauntlet out. A loose Time Stone can undo it.",
  f"{H}Все шесть камней{R}\n{B}Луч Бесконечности{R}: держи R. Пробивает тоннели, ранит Дракона.\n\n{B}Щелчок{R}: стирает вселенную и сжигает перчатку. Вернуть может Камень Времени вне перчатки.")
 add('thanos',
- f"{H}Thanos{R}\nGather {B}five stones{R}: after half a day of calm the Mad Titan comes for them.\n{B}Uru armor{R} is a must. Explosions, diamond and netherite swords and bare stones hurt him.\nBeaten once, he never returns.",
- f"{H}Танос{R}\nСобери {B}пять камней{R}: через полсуток придёт Безумный Титан.\n{B}Броня Уру{R} обязательна. Ему больно от взрывов, алмазного и незеритового меча и камней без перчатки.\nПобеждённый, он не вернётся.")
+ f"{H}Thanos{R}\nGather {B}five stones{R}: after half a day of calm the Mad Titan comes for them.\n{B}Uru armor{R} is a must. The worn gauntlet hurts him most; explosions, bare stones and swords also work.\nBeaten once, he never returns.",
+ f"{H}Танос{R}\nСобери {B}пять камней{R}: через полсуток придёт Безумный Титан.\n{B}Броня Уру{R} обязательна. Сильнее всего его бьёт перчатка, дальше взрывы, камни и мечи.\nПобеждённый, он не вернётся.")
 add('uru',
  f"{H}Uru{R}\nFind ore near Y=−32. Mine with diamond or netherite and smelt it.\n\n{B}Uru armor{R} uses iron recipes. A full set reduces full-gauntlet damage. Ingots also go into the gauntlet recipe.",
  f"{H}Уру{R}\nИщи около Y=−32. Добудь алмазной или незеритовой киркой и переплавь.\n\n{B}Броня из Уру{R} крафтится как железная. Полный комплект гасит урон полной перчатки. Слитки нужны и для перчатки.")
@@ -61,8 +61,8 @@ add('extractor',
  f"{H}Infinity Extractor{R}\nPulls a stone out of someone's gauntlet: hold right-click on them, three cycles. Shift + right-click picks which stone.\n\nYour stones stay with you when you die, unless another player kills you.",
  f"{H}Извлекатель{R}\nВытягивает камень из чужой перчатки: держи ПКМ на цели, три цикла. Shift + ПКМ выбирает камень.\n\nПосле смерти камни остаются у тебя, если не убил другой игрок.")
 add('settings',
- f"{H}Settings{R}\n{B}Language{R}: Options or Pause menu, button {B}Infinity Gauntlet{R}.\n\nKeys can be rebound in Controls. Lost the book? {B}/gauntlet_guide{R}.\n\n{G}Use the power wisely.",
- f"{H}Настройки{R}\n{B}Язык{R}: меню Настроек или Паузы, кнопка {B}Infinity Gauntlet{R}.\n\nКлавиши меняются в настройках управления. Потерял книгу? {B}/gauntlet_guide{R}.\n\n{G}Распоряжайся силой мудро.")
+ f"{H}Settings{R}\n{B}Menu{R}: Options or Pause, button {B}Infinity Gauntlet{R} (language, wheel mode, HUD, shake, flash).\n\nLost the book? {B}/gauntlet_guide{R}.\n\n{G}Use the power wisely.",
+ f"{H}Настройки{R}\n{B}Меню{R}: Настройки или Пауза, кнопка {B}Infinity Gauntlet{R} (язык, колесо, HUD, тряска, вспышки).\n\nПотерял книгу? {B}/gauntlet_guide{R}.\n\n{G}Распоряжайся силой мудро.")
 # --- contents: built from the page order ---
 order = list(PAGES)
 def pn(k): return str(order.index(k) + 1)

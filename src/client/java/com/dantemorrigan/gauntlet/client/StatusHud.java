@@ -53,7 +53,7 @@ public final class StatusHud {
         Minecraft mc = Minecraft.getInstance();
         if (mc.player == null || mc.options.hideGui || mc.screen instanceof AbilityFavoritesScreen
                 || mc.screen instanceof AbilityWheelScreen) return;
-        boolean equipped = AbilityInput.equipped();
+        boolean equipped = AbilityInput.equipped() && com.dantemorrigan.gauntlet.GauntletConfig.get().showStatusHud;
         if (!equipped && notice == null && LINES.isEmpty()) return;
 
         int maxWidth = Math.max(44, Math.min(166, g.guiWidth() - 36));

@@ -34,6 +34,36 @@ public class GuideLangTest implements FabricClientGameTest {
 			if (!ctx.computeOnClient(mc -> java.util.stream.IntStream.range(0, mc.player.getInventory().getContainerSize()).anyMatch(i -> mc.player.getInventory().getItem(i).is(Items.WRITTEN_BOOK))))
 				throw new AssertionError("Guide book was not given on first join");
 
+			// Verify all 19 advancements loaded cleanly on the server and test awarding
+			sp.getServer().runOnServer(server -> {
+				String[] ids = {
+					"root", "mine_uru", "uru_armor", "craft_gauntlet",
+					"power_stone", "space_stone", "cosmos_explorer", "reality_stone",
+					"time_stone", "mind_stone", "soul_stone", "steal_stone",
+					"defeat_thanos", "awaken_gauntlet", "planet_breaker",
+					"infinity_snap", "undo_snap", "recipes/uru_smelting", "recipes/uru_equipment"
+				};
+				for (String id : ids) {
+					var holder = server.getAdvancements().get(com.dantemorrigan.gauntlet.InfinityGauntlet.id(id));
+					if (holder == null) throw new AssertionError("Missing advancement: " + id);
+				}
+				var player = server.getPlayerList().getPlayers().getFirst();
+				com.dantemorrigan.gauntlet.ModAdvancements.award(player, "defeat_thanos");
+				var thanosAdv = server.getAdvancements().get(com.dantemorrigan.gauntlet.InfinityGauntlet.id("defeat_thanos"));
+				if (!player.getAdvancements().getOrStartProgress(thanosAdv).isDone()) {
+					throw new AssertionError("ModAdvancements.award did not complete defeat_thanos");
+				}
+			});
+			sp.getServer().runCommand("give @p infinity_gauntlet:raw_uru");
+			ctx.waitTicks(5);
+			sp.getServer().runOnServer(server -> {
+				var player = server.getPlayerList().getPlayers().getFirst();
+				var mineUru = server.getAdvancements().get(com.dantemorrigan.gauntlet.InfinityGauntlet.id("mine_uru"));
+				if (!player.getAdvancements().getOrStartProgress(mineUru).isDone()) {
+					throw new AssertionError("Inventory trigger did not award mine_uru");
+				}
+			});
+
 			// Settings screen in every language
 			for (String code : new String[]{"en", "ru", "auto"}) {
 				ctx.runOnClient(mc -> ModLang.set(code));

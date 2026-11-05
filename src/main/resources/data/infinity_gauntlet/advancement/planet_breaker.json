@@ -1,0 +1,28 @@
+{
+  "parent": "infinity_gauntlet:awaken_gauntlet",
+  "display": {
+    "icon": {
+      "id": "infinity_gauntlet:power_orb"
+    },
+    "title": {
+      "translate": "advancements.infinity_gauntlet.planet_breaker.title"
+    },
+    "description": {
+      "translate": "advancements.infinity_gauntlet.planet_breaker.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "shattered": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "requirements": [
+    [
+      "shattered"
+    ]
+  ]
+}

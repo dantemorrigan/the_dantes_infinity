@@ -125,6 +125,10 @@ public final class GauntletEffects {
 		ItemStack worn = GauntletState.activeGauntlet(player);
 		s.worn = worn.isEmpty() ? EnumSet.noneOf(Stone.class) : GauntletState.inserted(worn);
 		s.inventoryBonus = player.getInventory().contains(st -> st.is(ModItems.GAUNTLET) && !GauntletState.inserted(st).isEmpty());
+		if (!s.worn.isEmpty() && now % 20 == 0) {
+			ModAdvancements.award(player, "craft_gauntlet");
+			for (Stone st : s.worn) ModAdvancements.award(player, st.name().toLowerCase(java.util.Locale.ROOT) + "_stone");
+		}
 
 		boolean full = s.worn.size() == Stone.values().length;
 		if (!full) {
@@ -225,6 +229,7 @@ public final class GauntletEffects {
 
 	private static void awaken(ServerPlayer player, State s, ItemStack worn) {
 		s.phase = Phase.AWAKENED;
+		ModAdvancements.award(player, "awaken_gauntlet");
 		GauntletState.setInUse(worn, EnumSet.noneOf(Stone.class));
 		applyAttributes(player, s);
 		player.setHealth(player.getMaxHealth());

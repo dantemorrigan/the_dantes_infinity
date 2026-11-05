@@ -1,0 +1,31 @@
+{
+  "parent": "infinity_gauntlet:craft_gauntlet",
+  "display": {
+    "icon": {
+      "id": "infinity_gauntlet:uru_helmet"
+    },
+    "title": {
+      "translate": "advancements.infinity_gauntlet.defeat_thanos.title"
+    },
+    "description": {
+      "translate": "advancements.infinity_gauntlet.defeat_thanos.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "defeated": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "requirements": [
+    [
+      "defeated"
+    ]
+  ],
+  "rewards": {
+    "experience": 500
+  }
+}

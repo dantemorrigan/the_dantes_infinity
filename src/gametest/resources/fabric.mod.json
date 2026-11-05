@@ -8,7 +8,6 @@
     "fabric-client-gametest": [
       "com.dantemorrigan.gauntlet.gametest.VisualTest",
       "com.dantemorrigan.gauntlet.gametest.ThanosTest",
-      "com.dantemorrigan.gauntlet.gametest.TrailerProbe",
       "com.dantemorrigan.gauntlet.gametest.ThanosCombatTest",
       "com.dantemorrigan.gauntlet.gametest.MindZombieRespawnTest",
       "com.dantemorrigan.gauntlet.gametest.PlanetNetherTest",
@@ -41,8 +40,7 @@
       "com.dantemorrigan.gauntlet.gametest.StoneForgetTest",
       "com.dantemorrigan.gauntlet.gametest.SoulQuestTest",
       "com.dantemorrigan.gauntlet.gametest.TimeQuestTest",
-      "com.dantemorrigan.gauntlet.gametest.MindQuestTest",
-      "com.dantemorrigan.gauntlet.gametest.trailer.Shoot"
+      "com.dantemorrigan.gauntlet.gametest.MindQuestTest"
     ]
   },
   "depends": {

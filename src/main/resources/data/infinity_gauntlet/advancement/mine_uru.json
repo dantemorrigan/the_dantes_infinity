@@ -1,0 +1,38 @@
+{
+  "parent": "infinity_gauntlet:root",
+  "display": {
+    "icon": {
+      "id": "infinity_gauntlet:raw_uru"
+    },
+    "title": {
+      "translate": "advancements.infinity_gauntlet.mine_uru.title"
+    },
+    "description": {
+      "translate": "advancements.infinity_gauntlet.mine_uru.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "uru": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "infinity_gauntlet:raw_uru",
+              "infinity_gauntlet:uru_ingot"
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "requirements": [
+    [
+      "uru"
+    ]
+  ]
+}

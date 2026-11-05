@@ -1,0 +1,31 @@
+{
+  "parent": "infinity_gauntlet:craft_gauntlet",
+  "display": {
+    "icon": {
+      "id": "infinity_gauntlet:gauntlet"
+    },
+    "title": {
+      "translate": "advancements.infinity_gauntlet.awaken_gauntlet.title"
+    },
+    "description": {
+      "translate": "advancements.infinity_gauntlet.awaken_gauntlet.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "awakened": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "requirements": [
+    [
+      "awakened"
+    ]
+  ],
+  "rewards": {
+    "experience": 500
+  }
+}

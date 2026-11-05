@@ -668,6 +668,10 @@ public class Thanos extends Monster {
 			if (thrown != null) { thrown.discard(); thrown = null; }
 			setFlag(FLAG_SWORD_OUT, false);
 			setAction(A_KNEEL);
+			if (source.getEntity() instanceof ServerPlayer killer) com.dantemorrigan.gauntlet.ModAdvancements.award(killer, "defeat_thanos");
+			for (ServerPlayer p : level.players()) {
+				if (p.distanceTo(this) < 128) com.dantemorrigan.gauntlet.ModAdvancements.award(p, "defeat_thanos");
+			}
 			ThanosEncounter.defeated(this);
 		}
 	}

@@ -19,8 +19,10 @@ public abstract class CameraMixin {
 
 	@Inject(method = "alignWithEntity", at = @At("TAIL"))
 	private void infinityGauntlet$shake(float partialTicks, CallbackInfo ci) {
-		float dy = Cutscene.shakeYaw(partialTicks) + com.dantemorrigan.gauntlet.client.boss.ThanosClient.shakeYaw(partialTicks) + com.dantemorrigan.gauntlet.client.cosmos.CosmosClient.shake(partialTicks, false);
-		float dx = Cutscene.shakePitch(partialTicks) + com.dantemorrigan.gauntlet.client.boss.ThanosClient.shakePitch(partialTicks) + com.dantemorrigan.gauntlet.client.cosmos.CosmosClient.shake(partialTicks, true);
+		float scale = com.dantemorrigan.gauntlet.GauntletConfig.get().cameraShakeScale;
+		if (scale <= 0f) return;
+		float dy = Cutscene.shakeYaw(partialTicks) + (com.dantemorrigan.gauntlet.client.boss.ThanosClient.shakeYaw(partialTicks) + com.dantemorrigan.gauntlet.client.cosmos.CosmosClient.shake(partialTicks, false)) * scale;
+		float dx = Cutscene.shakePitch(partialTicks) + (com.dantemorrigan.gauntlet.client.boss.ThanosClient.shakePitch(partialTicks) + com.dantemorrigan.gauntlet.client.cosmos.CosmosClient.shake(partialTicks, true)) * scale;
 		if (dy != 0 || dx != 0) this.setRotation(this.yRot + dy, this.xRot + dx);
 	}
 }

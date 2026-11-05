@@ -192,6 +192,7 @@ public final class InfinitySnap {
 			}
 			if (age < SNAP_TICK) return;
 			cast.event = now;
+			com.dantemorrigan.gauntlet.ModAdvancements.award(owner, "infinity_snap");
 			owner.level().playSound(null, owner.getX(), owner.getY(), owner.getZ(), SOUND, SoundSource.PLAYERS, 4.0f, 1.0f);
 			burn(cast.stack);
 			ModNetwork.SnapFx fade = new ModNetwork.SnapFx(0, ERASE_TICK - SNAP_TICK);
@@ -271,6 +272,7 @@ public final class InfinitySnap {
 			ServerPlayNetworking.send(p, new ModNetwork.SnapFx(2, REWIND_TICKS));
 		}
 		user.level().playSound(null, user.blockPosition(), SoundEvents.BEACON_DEACTIVATE, SoundSource.PLAYERS, 2.0f, 0.5f);
+		com.dantemorrigan.gauntlet.ModAdvancements.award(user, "undo_snap");
 		return true;
 	}
 

@@ -1,0 +1,28 @@
+{
+  "display": {
+    "icon": {
+      "id": "infinity_gauntlet:gauntlet"
+    },
+    "title": {
+      "translate": "advancements.infinity_gauntlet.root.title"
+    },
+    "description": {
+      "translate": "advancements.infinity_gauntlet.root.description"
+    },
+    "frame": "task",
+    "show_toast": false,
+    "announce_to_chat": false,
+    "hidden": false,
+    "background": "infinity_gauntlet:gui/advancements/backgrounds/cosmos"
+  },
+  "criteria": {
+    "entered_world": {
+      "trigger": "minecraft:tick"
+    }
+  },
+  "requirements": [
+    [
+      "entered_world"
+    ]
+  ]
+}

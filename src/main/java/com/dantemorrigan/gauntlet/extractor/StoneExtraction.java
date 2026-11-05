@@ -290,6 +290,7 @@ public final class StoneExtraction {
 		}
 		extractor.set(DataComponents.CONTAINER, ItemContainerContents.fromItems(List.of(stone)));
 		setState(extractor, 4);
+		com.dantemorrigan.gauntlet.ModAdvancements.award(p, "steal_stone");
 		if (target instanceof ServerPlayer victim) {
 			victim.closeContainer();
 			ModStatus.send(victim, Component.translatable("extractor.infinity_gauntlet.victim_lost", stoneName(s.stone)));

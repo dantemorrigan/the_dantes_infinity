@@ -192,3 +192,5 @@ networking, key-mapping, rendering, particles, dimensions, data-attachment, item
   в прямой видимости; держится с допуском `AIM_GRACE`=12 тиков (короткий уход с цели ставит цикл на паузу, а не ломает). Прицел на клиенте — `ExtractorClient.reticle`
   (серый = никого, жёлтый = цель взята и подписана, зелёный + полоса = идёт цикл, три метки = готовые циклы). Креативных игроков извлекатель не берёт
   (`CoopRules.canAffect`: креатив считается админ-режимом и защищён).
+- Достижения и рецепты: `data/infinity_gauntlet/advancement/` (17 достижений во вкладке `root` с фоном `textures/gui/advancements/backgrounds/cosmos.png` + 2 технических достижения открытия рецептов в `advancement/recipes/`). Серверные события (`awaken_gauntlet`, `defeat_thanos`, `planet_breaker`, `infinity_snap`, `undo_snap`, `steal_stone`, а также камни в надетой перчатке) выдаются через `ModAdvancements.award(ServerPlayer, String)`.
+- Экран настроек `client/screen/ModSettingsScreen`: переключатель языка (`auto` / `en` / `ru`) и клиентские тумблеры (`abilityWheelToggle`, `showStatusHud`, `cameraShakeScale`, `flashIntensity`) с мгновенным сохранением в `config/infinity_gauntlet.json`.

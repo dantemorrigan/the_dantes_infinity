@@ -1,0 +1,31 @@
+{
+  "parent": "infinity_gauntlet:space_stone",
+  "display": {
+    "icon": {
+      "id": "infinity_gauntlet:quest_space_tesseract"
+    },
+    "title": {
+      "translate": "advancements.infinity_gauntlet.cosmos_explorer.title"
+    },
+    "description": {
+      "translate": "advancements.infinity_gauntlet.cosmos_explorer.description"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "entered_cosmos": {
+      "trigger": "minecraft:changed_dimension",
+      "conditions": {
+        "to": "infinity_gauntlet:cosmos"
+      }
+    }
+  },
+  "requirements": [
+    [
+      "entered_cosmos"
+    ]
+  ]
+}

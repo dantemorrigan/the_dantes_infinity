@@ -1,0 +1,35 @@
+{
+  "parent": "infinity_gauntlet:root",
+  "display": {
+    "icon": {
+      "id": "infinity_gauntlet:mind_stone"
+    },
+    "title": {
+      "translate": "advancements.infinity_gauntlet.mind_stone.title"
+    },
+    "description": {
+      "translate": "advancements.infinity_gauntlet.mind_stone.description"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "mind_stone": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "infinity_gauntlet:mind_stone"
+          }
+        ]
+      }
+    }
+  },
+  "requirements": [
+    [
+      "mind_stone"
+    ]
+  ]
+}
