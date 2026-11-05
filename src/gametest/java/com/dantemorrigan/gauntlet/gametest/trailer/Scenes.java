@@ -174,6 +174,14 @@ final class Scenes {
 		return null;
 	}
 
+	static volatile Vec3 fT = Vec3.ZERO, fP = Vec3.ZERO;
+
+	static void upd() {
+		Vec3 t = thanosPos();
+		if (t != null) fT = t;
+		fP = playerPos();
+	}
+
 	static Vec3 thanosPos() {
 		return server.computeOnServer(s -> { var t = thanos(s); return t == null ? null : t.position(); });
 	}
@@ -206,7 +214,7 @@ final class Scenes {
 		ticks(100);
 		begin("snap");
 		Vec3 c = eye(feet);
-		Rig.set(Rig.track(c.add(1.6, 0.0, 3.6), c.add(0.9, 0.2, 2.2), c.add(0, -0.2, 0), c.add(-0.2, -0.3, 0), 90, true));
+		Rig.set(Rig.track(c.add(0.9, -0.1, 3.0), c.add(0.6, -0.5, 1.6), c.add(0.3, -0.5, 0.2), c.add(0.35, -0.7, 0.3), 110, true));
 		ticks(5);
 		cast("infinity_snap");
 		ticks(160);
@@ -239,17 +247,23 @@ final class Scenes {
 		ctx.takeScreenshot("trailer_thanos_land");
 		end();
 
-		// the fight
+		// the fight: a low hero angle on Thanos, then over the player's shoulder
 		cmd("gamemode survival");
 		cmd("effect give @s resistance 90 4 true");
 		begin("thanos_fight");
-		for (int i = 0; i < 12; i++) {
-			Vec3 tp = thanosPos();
-			if (tp != null) focus = tp.add(0, 2.5, 0);
-			final int k = i;
-			Rig.set(Rig.make(u -> new Vec3(focus.x + 11 * Math.sin((k * 20 + u) * .03), focus.y - .5, focus.z + 11 * Math.cos((k * 20 + u) * .03)), u -> focus));
-			ticks(20);
-		}
+		Rig.set(Rig.make(u -> {
+			Vec3 t0 = fT;
+			double a = Math.toRadians(30 + u * 0.9);
+			return new Vec3(t0.x + Math.sin(a) * 7.5, t0.y + 0.2, t0.z + Math.cos(a) * 7.5);
+		}, u -> fT.add(0, 2.4, 0)));
+		for (int i = 0; i < 16; i++) { upd(); ticks(10); }
+		Rig.set(Rig.make(u -> {
+			Vec3 p0 = fP, t0 = fT;
+			Vec3 back = p0.subtract(t0).multiply(1, 0, 1).normalize();
+			Vec3 side = new Vec3(-back.z, 0, back.x).scale(1.1);
+			return p0.add(back.scale(3.4)).add(side).add(0, 1.9, 0);
+		}, u -> fT.add(0, 2.2, 0)));
+		for (int i = 0; i < 14; i++) { upd(); ticks(10); }
 		ctx.takeScreenshot("trailer_thanos_fight");
 		end();
 
@@ -262,11 +276,13 @@ final class Scenes {
 			th.setHealth(1);
 			th.hurtServer((net.minecraft.server.level.ServerLevel) th.level(), th.level().damageSources().explosion(null, null), 50);
 		});
-		Vec3 tp = thanosPos();
-		if (tp != null) focus = tp.add(0, 1.5, 0);
+		upd();
 		begin("thanos_death");
-		Rig.set(Rig.make(u -> new Vec3(focus.x + 5, focus.y, focus.z - 6 + u * .01), u -> focus));
-		ticks(250);
+		Rig.set(Rig.make(u -> {
+			double a = Math.toRadians(200 + u * 0.35);
+			return new Vec3(fT.x + Math.sin(a) * 5.2, fT.y + 1.0 + u * 0.004, fT.z + Math.cos(a) * 5.2);
+		}, u -> fT.add(0, 1.5, 0)));
+		for (int i = 0; i < 25; i++) { ticks(10); }
 		ctx.takeScreenshot("trailer_thanos_dust");
 		end();
 
