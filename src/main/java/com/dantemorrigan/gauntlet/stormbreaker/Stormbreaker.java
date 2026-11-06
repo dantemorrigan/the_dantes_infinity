@@ -3,9 +3,11 @@ package com.dantemorrigan.gauntlet.stormbreaker;
 import com.dantemorrigan.gauntlet.CoopRules;
 import com.dantemorrigan.gauntlet.GauntletConfig;
 import com.dantemorrigan.gauntlet.InfinityGauntlet;
+import com.dantemorrigan.gauntlet.ModAdvancements;
 import com.dantemorrigan.gauntlet.ModComponents;
 import com.dantemorrigan.gauntlet.ModEntities;
 import com.dantemorrigan.gauntlet.ModItems;
+import com.dantemorrigan.gauntlet.boss.Thanos;
 import com.dantemorrigan.gauntlet.cosmos.CosmosTravel;
 import com.dantemorrigan.gauntlet.net.ModStatus;
 import com.dantemorrigan.gauntlet.power.PowerAbility;
@@ -122,13 +124,14 @@ public final class Stormbreaker {
     }
 
     private static final class Flight {
-        final boolean recall;
+        final boolean recall, crossDimensionRecall;
         final Set<UUID> hit = new HashSet<>();
         float yaw;
         int age;
-        Flight(float yaw, boolean recall) {
+        Flight(float yaw, boolean recall, boolean crossDimensionRecall) {
             this.yaw = yaw;
             this.recall = recall;
+            this.crossDimensionRecall = crossDimensionRecall;
         }
     }
 
@@ -163,7 +166,12 @@ public final class Stormbreaker {
         StormNetwork.init();
         ServerTickEvents.END_SERVER_TICK.register(Stormbreaker::tick);
         ServerLifecycleEvents.SERVER_STOPPED.register(SESSIONS::remove);
-        ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> stopFlight(handler.getPlayer(), SESSIONS.get(server)));
+        ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
+            ServerPlayer player = handler.getPlayer();
+            stopFlight(player, SESSIONS.get(server));
+            Relic relic = record(player);
+            if (relic != null && relic.belongsTo(player)) ModAdvancements.award(player, "stormbreaker_wielder");
+        });
         ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> stopFlight(handler.getPlayer(), SESSIONS.get(server)));
         ServerLivingEntityEvents.AFTER_DEATH.register((entity, source) -> {
             if (entity instanceof ServerPlayer p) onDeath(p);
@@ -241,6 +249,7 @@ public final class Stormbreaker {
         server.overworld().setAttached(RELIC, relic);
         if (!first) return;
         for (ServerPlayer p : server.getPlayerList().getPlayers()) {
+            if (relic.belongsTo(p)) ModAdvancements.award(p, "stormbreaker_wielder");
             if (p.containerMenu instanceof AbstractCraftingMenu menu && menu.getResultSlot().getItem().is(ModItems.STORMBREAKER)
                     && !matches(menu.getResultSlot().getItem(), relic)) {
                 menu.getResultSlot().set(ItemStack.EMPTY);
@@ -431,7 +440,10 @@ public final class Stormbreaker {
                 Vec3 offset = target.position().subtract(center);
                 if (Math.abs(offset.dot(lateral)) > halfWidth || Math.abs(offset.dot(w.direction)) > 1.2
                         || w.hit.contains(target.getUUID())) continue;
-                if (strike(p, target, 15 + 9 * w.power, w.direction, 1.15)) w.hit.add(target.getUUID());
+                if (strike(p, target, 15 + 9 * w.power, w.direction, 1.15)) {
+                    w.hit.add(target.getUUID());
+                    if (w.hit.size() == 3) ModAdvancements.award(p, "stormbreaker_wave");
+                }
             }
         }
         if (blockChanges) carveCraters(p, w, lateral, crest, halfWidth);
@@ -537,11 +549,12 @@ public final class Stormbreaker {
         for (LivingEntity living : targets(p.level(), ground, radius, wrath ? 15 : 8)) {
             Vec3 push = living.position().subtract(ground);
             if (push.x * push.x + push.z * push.z > radius * radius) continue;
-            if (strike(p, living, wrath ? 11 + stage * 4 : 16, push, wrath ? .55 : .66) && marked++ < 8) {
-                StormFx.IMPACT.play(p.level(), living.getBoundingBox().getCenter(), wrath ? 2.8 : 1.8);
-                if (wrath && push.horizontalDistanceSqr() > 12) {
-                    StormFx.LIGHTNING_HIT.play(p.level(), living.position(), 11);
-                }
+            if (!strike(p, living, wrath ? 11 + stage * 4 : 16, push, wrath ? .55 : .66)) continue;
+            if (wrath && living instanceof Thanos) ModAdvancements.award(p, "stormbreaker_titan");
+            if (marked++ >= 8) continue;
+            StormFx.IMPACT.play(p.level(), living.getBoundingBox().getCenter(), wrath ? 2.8 : 1.8);
+            if (wrath && push.horizontalDistanceSqr() > 12) {
+                StormFx.LIGHTNING_HIT.play(p.level(), living.position(), 11);
             }
         }
     }
@@ -571,7 +584,7 @@ public final class Stormbreaker {
         StormbreakerEntity model = spawn(p.level(), origin, StormbreakerEntity.OUTBOUND);
         if (model == null) return;
         s.display = model;
-        s.flight = new Flight(release.yaw, false);
+        s.flight = new Flight(release.yaw, false, false);
         model.setYRot(release.yaw);
         s.throwReady = server(p).getTickCount() + 42;
         server(p).overworld().setAttached(RELIC, Relic.at(p, IN_FLIGHT));
@@ -657,8 +670,9 @@ public final class Stormbreaker {
 
     private static void returnToOwner(ServerPlayer p, Session s, boolean caught) {
         removeDisplay(s);
+        if (!restore(p)) return; // Full inventory: keep the pending flight and retry.
+        if (s.flight != null && s.flight.crossDimensionRecall) ModAdvancements.award(p, "stormbreaker_recall");
         s.flight = null;
-        if (!restore(p)) return; // Full inventory: keep the return in the world record and retry.
         if (caught) {
             StormFx.CATCH.play(p.level(), p.getEyePosition().add(p.getLookAngle().scale(.45)).add(0, -.45, 0), 1.2);
             StormNetwork.visual(p, "throw_catch", 0, p.position());
@@ -750,7 +764,7 @@ public final class Stormbreaker {
                 ? (float) Math.toDegrees(Math.atan2(-toHand.x, toHand.z)) : p.getYRot();
         axe.setYRot(yaw);
         s.display = axe;
-        s.flight = new Flight(yaw, true);
+        s.flight = new Flight(yaw, true, relic.phase == IN_GROUND && relic.dimension != p.level().dimension());
         storeRelic(server(p), Relic.at(p, IN_FLIGHT));
         StormFx.LIGHTNING_HIT.play(p.level(), from.add(0, -.5, 0), 10);
         StormFx.RECLAIM.play(p.level(), from, local ? 3.2 : 5.5);
@@ -788,7 +802,11 @@ public final class Stormbreaker {
         s.pull = null;
         Relic relic = server.overworld().getAttached(RELIC);
         if (nearby && restore(p)) {
-            if (relic.owner.isEmpty()) StormNetwork.compass(level, relic.position, false);
+            if (relic.owner.isEmpty()) {
+                ModAdvancements.award(p, "stormbreaker_wielder");
+                ModAdvancements.award(p, "stormbreaker_skyfall");
+                StormNetwork.compass(level, relic.position, false);
+            }
             status(p, "bound");
             removeDisplay(s);
         } else if (s.display != null) {

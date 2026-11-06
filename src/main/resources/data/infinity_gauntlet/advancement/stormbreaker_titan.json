@@ -1,0 +1,28 @@
+{
+  "parent": "infinity_gauntlet:stormbreaker_wave",
+  "display": {
+    "icon": {
+      "id": "infinity_gauntlet:stormbreaker"
+    },
+    "title": {
+      "translate": "advancements.infinity_gauntlet.stormbreaker_titan.title"
+    },
+    "description": {
+      "translate": "advancements.infinity_gauntlet.stormbreaker_titan.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "achieved": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "requirements": [
+    [
+      "achieved"
+    ]
+  ]
+}
