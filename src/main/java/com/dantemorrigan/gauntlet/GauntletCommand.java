@@ -513,6 +513,10 @@ public final class GauntletCommand {
 			source.sendFailure(Component.translatable("command.infinity_gauntlet.thanos_running"));
 			return 0;
 		}
+		if (com.dantemorrigan.gauntlet.stones.MindArena.excludesThanos(p.level(), p.position())) {
+			source.sendFailure(Component.translatable("command.infinity_gauntlet.thanos_city_protected"));
+			return 0;
+		}
 		boolean ok = mode == 2 ? com.dantemorrigan.gauntlet.boss.ThanosEncounter.spawnNow(p) != null
 				: com.dantemorrigan.gauntlet.boss.ThanosEncounter.start(p, mode == 1);
 		return ok ? 1 : 0;

@@ -137,6 +137,17 @@ public final class MindArena {
 		return dx * dx + dz * dz <= RADIUS * RADIUS && pos.y >= site.getY() - DEPTH && pos.y < site.getY() + HEIGHT;
 	}
 
+	/** Leave room for Thanos's landing search outside Loki's arena. */
+	public static boolean excludesThanos(ServerLevel level, Vec3 pos) {
+		MinecraftServer server = level.getServer();
+		if (level != server.overworld() || !MindCity.built(server)
+				|| (StoneRegistry.released(server, Stone.MIND) && !MindQuest.lokiEncounterRunning(server))) return false;
+		BlockPos site = MindCity.site(server);
+		double dx = pos.x - site.getX() - .5, dz = pos.z - site.getZ() - .5;
+		int clearance = RADIUS + 16;
+		return dx * dx + dz * dz <= clearance * clearance;
+	}
+
 	public static boolean protects(ServerLevel level, BlockPos pos) {
 		MinecraftServer server = level.getServer();
 		return level == server.overworld() && active(server) && inside(MindCity.site(server), Vec3.atCenterOf(pos));
