@@ -24,12 +24,11 @@ final class StormbreakerRenderer extends EntityRenderer<StormbreakerEntity, Stor
     }
 
     private final ItemModelResolver models;
-    private final ItemStack stack = new ItemStack(ModItems.STORMBREAKER);
+    private ItemStack stack;
 
     StormbreakerRenderer(EntityRendererProvider.Context context) {
         super(context);
         models = context.getItemModelResolver();
-        stack.set(DataComponents.ITEM_MODEL, Stormbreaker.CHARGED);
     }
 
     @Override public State createRenderState() { return new State(); }
@@ -38,6 +37,11 @@ final class StormbreakerRenderer extends EntityRenderer<StormbreakerEntity, Stor
     public void extractRenderState(StormbreakerEntity entity, State state, float partial) {
         super.extractRenderState(entity, state, partial);
         state.phase = entity.phase();
+        if (stack == null) {
+            // Renderer providers run during the initial reload, before item components are bound.
+            stack = new ItemStack(ModItems.STORMBREAKER);
+            stack.set(DataComponents.ITEM_MODEL, Stormbreaker.CHARGED);
+        }
         models.updateForNonLiving(state.item, stack, ItemDisplayContext.NONE, entity);
     }
 
@@ -62,3 +66,4 @@ final class StormbreakerRenderer extends EntityRenderer<StormbreakerEntity, Stor
         super.submit(state, pose, collector, camera);
     }
 }
+
