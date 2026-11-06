@@ -183,9 +183,13 @@ public final class InfinityBeamClient {
         Vec3 axis = Math.abs(direction.y) > .95 ? new Vec3(1, 0, 0) : new Vec3(0, 1, 0);
         Vec3 a = direction.cross(axis).normalize(), b = direction.cross(a).normalize();
         double fade = Math.max(.1, Math.min(1, Math.min((age + 1) / 4, (state.duration() - age) / 7)));
-        double width = .26 * fade * (1 + .07 * Math.sin(age * .7));
+        double width = .53 * fade * (1 + .07 * Math.sin(age * .7));
         ribbon(ctx, camera, from, end, a, width, TIME_FLOW_BODY, 0xEFFFFFFF, 0, 1);
         ribbon(ctx, camera, from, end, b, width, TIME_FLOW_BODY, 0xCFFFFFFF, 0, 1);
+
+        // Angled ribbons give the hot core a softer green halo from any viewpoint.
+        ribbon(ctx, camera, from, end, a.add(b).normalize(), width * 1.45, TIME_FLOW_BODY, 0x4648FF89, 0, 1);
+        ribbon(ctx, camera, from, end, a.subtract(b).normalize(), width * 1.45, TIME_FLOW_BODY, 0x4648FF89, 0, 1);
 
         // Two counterposed strands wind toward the point of impact.
         for (int strand = 0; strand < 2; strand++) {
@@ -194,11 +198,11 @@ public final class InfinityBeamClient {
             for (int i = 1; i <= segments; i++) {
                 double distance = length * i / segments;
                 double phase = distance * 1.1 - age * .28 + strand * Math.PI;
-                double radius = .35 * fade * Math.min(1, Math.min(distance, length - distance));
+                double radius = .62 * fade * Math.min(1, Math.min(distance, length - distance));
                 Vec3 point = from.add(direction.scale(distance))
                         .add(a.scale(Math.cos(phase) * radius)).add(b.scale(Math.sin(phase) * radius));
                 Vec3 side = point.subtract(previous).cross(camera.subtract(previous)).normalize();
-                ribbon(ctx, camera, previous, point, side, .055 * fade, TIME_FLOW_BODY, 0xB0B8FFD3, 0, 1);
+                ribbon(ctx, camera, previous, point, side, .09 * fade, TIME_FLOW_BODY, 0xB0B8FFD3, 0, 1);
                 previous = point;
             }
         }

@@ -20,6 +20,8 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.HitResult;
+import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
 
 import java.util.EnumSet;
@@ -31,8 +33,9 @@ import java.util.UUID;
 public final class TimeFlow {
     private static final int DURATION = 100;
     private static final int COOLDOWN = 200;
-    private static final int PULSE_INTERVAL = 20;
-    private static final float PULSE_DAMAGE = 3;
+    private static final int HIT_INTERVAL = 12;
+    private static final float HIT_DAMAGE = 4;
+    private static final double HIT_RADIUS = .55;
     private static final int RANGE = 32;
     private static final Map<UUID, Cast> ACTIVE = new HashMap<>();
     private static final Map<UUID, Long> COOLDOWNS = new HashMap<>();
@@ -41,6 +44,7 @@ public final class TimeFlow {
         final ServerPlayer owner;
         final ServerLevel level;
         final ItemStack gauntlet;
+        final Map<UUID, Integer> lastHit = new HashMap<>();
         int age;
 
         Cast(ServerPlayer owner, ItemStack gauntlet) {
@@ -102,7 +106,7 @@ public final class TimeFlow {
                 limit = point;
             }
             Vec3 end = cast.level.clip(new ClipContext(from, limit, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, player)).getLocation();
-            if (cast.age % PULSE_INTERVAL == 0 && from.distanceToSqr(end) > 0.0001) damage(cast, from, end);
+            if (from.distanceToSqr(end) > 0.0001) damage(cast, from, end);
             if (cast.age % 2 == 0) send(cast, from, end, cast.age);
             if (++cast.age >= DURATION) {
                 casts.remove();
@@ -113,11 +117,24 @@ public final class TimeFlow {
 
     private static void damage(Cast cast, Vec3 from, Vec3 end) {
         ServerPlayer owner = cast.owner;
-        for (LivingEntity target : cast.level.getEntitiesOfClass(LivingEntity.class, new AABB(from, end),
+        AABB area = new AABB(from, end).inflate(HIT_RADIUS);
+        for (LivingEntity target : cast.level.getEntitiesOfClass(LivingEntity.class, area,
                 e -> e != owner && e.isAlive() && !e.isSpectator() && CoopRules.canAffect(owner, e))) {
+            UUID id = target.getUUID();
+            if (cast.age - cast.lastHit.getOrDefault(id, -HIT_INTERVAL) < HIT_INTERVAL) continue;
             AABB box = target.getBoundingBox();
-            if (box.contains(from) || box.clip(from, end).isPresent()) {
-                GauntletDamage.hurt(cast.level, target, owner, owner.damageSources().playerAttack(owner), PULSE_DAMAGE);
+            AABB widened = box.inflate(HIT_RADIUS);
+            Vec3 contact = widened.contains(from) ? from : widened.clip(from, end).orElse(null);
+            if (contact == null) continue;
+
+            // A wide beam can graze a mob, but its hit still needs a clear path to the real hitbox.
+            Vec3 body = new Vec3(Mth.clamp(contact.x, box.minX, box.maxX),
+                    Mth.clamp(contact.y, box.minY, box.maxY), Mth.clamp(contact.z, box.minZ, box.maxZ));
+            if (cast.level.clip(new ClipContext(from, body, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, owner))
+                    .getType() != HitResult.Type.MISS) continue;
+
+            if (GauntletDamage.hurt(cast.level, target, owner, owner.damageSources().playerAttack(owner), HIT_DAMAGE)) {
+                cast.lastHit.put(id, cast.age);
             }
         }
     }
