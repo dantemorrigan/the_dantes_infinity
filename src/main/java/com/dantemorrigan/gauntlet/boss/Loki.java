@@ -2,6 +2,7 @@ package com.dantemorrigan.gauntlet.boss;
 
 import com.dantemorrigan.gauntlet.ModAdvancements;
 import com.dantemorrigan.gauntlet.ModEntities;
+import com.dantemorrigan.gauntlet.ModSounds;
 import com.dantemorrigan.gauntlet.cosmos.CosmosTravel;
 import com.dantemorrigan.gauntlet.stormbreaker.Stormbreaker;
 import com.dantemorrigan.gauntlet.stones.MindArena;
@@ -19,6 +20,7 @@ import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerBossEvent;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.tags.DamageTypeTags;
@@ -81,6 +83,9 @@ public final class Loki extends Monster {
 			BossEvent.BossBarColor.YELLOW, BossEvent.BossBarOverlay.PROGRESS);
 	private BlockPos arena;
 	private UUID illusionOwner;
+	private boolean taunted;
+	private SoundEvent currentVoice;
+	private long voiceEnds;
 	private int teleportCooldown = 75;
 	private int perchCooldown = 95;
 	private int perchUntil;
@@ -123,6 +128,18 @@ public final class Loki extends Monster {
 	public void startEncounter(BlockPos city) {
 		arena = city.immutable();
 		entityData.set(INTRO, INTRO_TICKS);
+	}
+
+	public void greet(ServerLevel level) {
+		playVoice(level, ModSounds.LOKI_GREETING, 46);
+	}
+
+	private void playVoice(ServerLevel level, SoundEvent sound, int duration) {
+		long now = level.getGameTime();
+		if (currentVoice != null && now < voiceEnds) ModSounds.stopNearby(level, position(), currentVoice);
+		ModSounds.play(level, position().add(0, 1.55, 0), sound, 3.6f);
+		currentVoice = sound;
+		voiceEnds = now + duration;
 	}
 
 	public boolean isIllusion() { return entityData.get(ILLUSION); }
@@ -172,12 +189,14 @@ public final class Loki extends Monster {
 		if (arena != null) output.store("LokiArena", BlockPos.CODEC, arena);
 		output.putBoolean("LokiEnraged", isEnraged());
 		output.putInt("LokiShift", transformationTicks());
+		output.putBoolean("LokiTaunted", taunted);
 	}
 
 	@Override
 	protected void readAdditionalSaveData(ValueInput input) {
 		super.readAdditionalSaveData(input);
 		arena = input.read("LokiArena", BlockPos.CODEC).orElse(null);
+		taunted = input.getBooleanOr("LokiTaunted", false);
 		if (input.getBooleanOr("LokiEnraged", false)) applyRage();
 		entityData.set(SHIFT, Mth.clamp(input.getIntOr("LokiShift", 0), 0, TRANSFORMATION_TICKS));
 	}
@@ -227,6 +246,10 @@ public final class Loki extends Monster {
 		if (target == null) {
 			getNavigation().stop();
 			return;
+		}
+		if (!isIllusion() && !isEnraged() && !taunted && tickCount >= 75 && level.getGameTime() >= voiceEnds) {
+			taunted = true;
+			playVoice(level, ModSounds.LOKI_TAUNT, 51);
 		}
 		lookAt(target, 30, 30);
 		double distance = distanceToSqr(target);
@@ -507,6 +530,7 @@ public final class Loki extends Monster {
 		entityData.set(WARD, 0);
 		entityData.set(SHIFT, TRANSFORMATION_TICKS);
 		LokiFx.send(level, LokiFx.Effect.TRANSFORM, position(), getYRot());
+		playVoice(level, ModSounds.LOKI_TRANSFORMATION, 42);
 		level.playSound(null, blockPosition(), SoundEvents.ILLUSIONER_PREPARE_MIRROR, SoundSource.HOSTILE, 2.4f, .57f);
 	}
 
@@ -622,6 +646,7 @@ public final class Loki extends Monster {
 		if (!level.noCollision(boss.getBoundingBox()) || level.containsAnyLiquid(boss.getBoundingBox())) return null;
 		if (!level.addFreshEntity(boss)) return null;
 		LokiFx.send(level, LokiFx.Effect.TELEPORT_IN, at, yaw);
+		boss.greet(level);
 		return boss;
 	}
 
@@ -689,6 +714,7 @@ public final class Loki extends Monster {
 			LokiFx.send(level, LokiFx.Effect.TRANSFORM_REVEAL, position(), getYRot());
 			level.playSound(null, blockPosition(), SoundEvents.AMETHYST_BLOCK_RESONATE, SoundSource.HOSTILE, 2, .65f);
 		}
+		if (deathTime == REVERT_TICK + 5) playVoice(level, ModSounds.LOKI_DEFEAT, 38);
 		if (deathTime == 41) level.playSound(null, blockPosition(), SoundEvents.ARMOR_EQUIP_CHAIN.value(), SoundSource.HOSTILE, 1.3f, .65f);
 		if (deathTime == DISSOLVE_TICK) LokiFx.send(level, LokiFx.Effect.DEFEAT_DUST, position(), getYRot());
 		if (deathTime >= DISSOLVE_TICK && deathTime % 3 == 0) {

@@ -302,6 +302,7 @@ public final class MindQuest {
 				if (level.addFreshEntity(boss)) {
 					level.setAttached(BOSS, boss.getUUID());
 					LokiFx.send(level, LokiFx.Effect.PORTAL_LOOP, portal, arrival.yaw());
+					boss.greet(level);
 					level.playSound(null, boss.blockPosition(), SoundEvents.ILLUSIONER_PREPARE_MIRROR, SoundSource.HOSTILE, 1.6f, 0.85f);
 				}
 			}

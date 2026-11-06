@@ -123,5 +123,21 @@
         "stream": true
       }
     ]
+  },
+  "loki.greeting": {
+    "subtitle": "subtitles.infinity_gauntlet.loki.greeting",
+    "sounds": [{"name": "infinity_gauntlet:loki/greeting"}]
+  },
+  "loki.taunt": {
+    "subtitle": "subtitles.infinity_gauntlet.loki.taunt",
+    "sounds": [{"name": "infinity_gauntlet:loki/taunt"}]
+  },
+  "loki.transformation": {
+    "subtitle": "subtitles.infinity_gauntlet.loki.transformation",
+    "sounds": [{"name": "infinity_gauntlet:loki/transformation"}]
+  },
+  "loki.defeat": {
+    "subtitle": "subtitles.infinity_gauntlet.loki.defeat",
+    "sounds": [{"name": "infinity_gauntlet:loki/defeat"}]
   }
 }
