@@ -39,6 +39,12 @@ jobs:
         env:
           LIBGL_ALWAYS_SOFTWARE: 'true'
         run: xvfb-run -a ./gradlew runClientGameTest -PonlyTest=SnapTest
+      - name: Living Tribunal client regression
+        timeout-minutes: 10
+        env:
+          LIBGL_ALWAYS_SOFTWARE: 'true'
+          ALSOFT_DRIVERS: 'null'
+        run: xvfb-run -a ./gradlew runClientGameTest -PonlyTest=TribunalTest
       - name: cosmos screenshots and logs
         if: always()
         uses: actions/upload-artifact@v7

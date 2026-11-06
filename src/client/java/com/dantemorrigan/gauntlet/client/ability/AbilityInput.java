@@ -93,14 +93,14 @@ public final class AbilityInput {
         boolean openFavorites = false;
         while (FAVORITES.consumeClick()) openFavorites = true;
         if ((open || openFavorites) && mc.screen == null && equipped()
-                && !Cutscene.inputLocked() && !TimeRewindClient.inputLocked()) {
+                && !com.dantemorrigan.gauntlet.client.boss.TribunalClient.inputLocked() && !Cutscene.inputLocked() && !TimeRewindClient.inputLocked()) {
             cancel();
             mc.setScreen(open ? new AbilityWheelScreen() : new AbilityFavoritesScreen());
         }
         // A gauntlet burnt out by the snap has no abilities left: the wheel key just opens it to take the stones out.
         else if(open && mc.screen==null && !equipped() && com.dantemorrigan.gauntlet.snap.InfinitySnap.snapped(GauntletState.wornGauntlet(mc.player))) inventory();
         if(!CAST.isDown()) releaseGate=false;
-        if(!equipped() || !mc.player.isAlive() || mc.screen!=null || !mc.isWindowActive() || Cutscene.inputLocked() || TimeRewindClient.inputLocked()) {
+        if(!equipped() || !mc.player.isAlive() || mc.screen!=null || !mc.isWindowActive() || com.dantemorrigan.gauntlet.client.boss.TribunalClient.inputLocked() || Cutscene.inputLocked() || TimeRewindClient.inputLocked()) {
             if(button) cancel();
             while(CAST.consumeClick()) {} return;
         }

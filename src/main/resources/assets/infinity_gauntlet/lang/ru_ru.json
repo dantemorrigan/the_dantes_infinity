@@ -585,5 +585,8 @@
   "tribunal.infinity_gauntlet.sealed": "Трибунал запечатал Щелчок.",
   "subtitles.infinity_gauntlet.tribunal.arrival": "Ты слишком долго играл в Бога.",
   "subtitles.infinity_gauntlet.tribunal.surrender": "Сдайся.",
-  "subtitles.infinity_gauntlet.tribunal.defeat": "Это невозможно."
+  "subtitles.infinity_gauntlet.tribunal.defeat": "Это невозможно.",
+  "tribunal.infinity_gauntlet.awakening": "Дождись пробуждения Перчатки, прежде чем бросать вызов Трибуналу.",
+  "tribunal.infinity_gauntlet.available": "Могущество за пределами Бесконечности ощутило тебя. В космосе введи /tribunal challenge, чтобы бросить вызов Великому Трибуналу.",
+  "death.attack.infinityGauntlet.tribunal": "Великий Трибунал вынес приговор игроку %1$s"
 }

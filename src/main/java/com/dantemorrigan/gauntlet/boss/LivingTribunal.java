@@ -17,7 +17,8 @@ import org.joml.Vector3fc;
 
 public final class LivingTribunal extends Monster {
 	public static final int ARRIVAL = 0, BATTLE = 1, VERDICT = 2, DEPARTURE = 3;
-	public static final int INTRO_TICKS = 90, VERDICT_TICKS = 100, SHATTER_TICK = 68, WINDUP = 34;
+	public static final int INTRO_TICKS = 130, VERDICT_TICKS = 160, SHATTER_TICK = 105, WINDUP = 34;
+	private static final EntityDataAccessor<Integer> CHALLENGER = SynchedEntityData.defineId(LivingTribunal.class, EntityDataSerializers.INT);
 	private static final EntityDataAccessor<Integer> PHASE = SynchedEntityData.defineId(LivingTribunal.class, EntityDataSerializers.INT);
 	private static final EntityDataAccessor<Integer> AGE = SynchedEntityData.defineId(LivingTribunal.class, EntityDataSerializers.INT);
 	private static final EntityDataAccessor<Integer> ATTACK = SynchedEntityData.defineId(LivingTribunal.class, EntityDataSerializers.INT);
@@ -45,9 +46,11 @@ public final class LivingTribunal extends Monster {
 	@Override
 	protected void defineSynchedData(SynchedEntityData.Builder builder) {
 		super.defineSynchedData(builder);
-		builder.define(PHASE, ARRIVAL).define(AGE, 0).define(ATTACK, 0).define(MARK, new Vector3f());
+		builder.define(CHALLENGER, -1).define(PHASE, ARRIVAL).define(AGE, 0).define(ATTACK, 0).define(MARK, new Vector3f());
 	}
 
+	public int challenger() { return entityData.get(CHALLENGER); }
+	void challenger(int id) { entityData.set(CHALLENGER, id); }
 	public int phase() { return entityData.get(PHASE); }
 	public int sceneAge() { return entityData.get(AGE); }
 	public int attack() { return entityData.get(ATTACK); }
@@ -75,15 +78,18 @@ public final class LivingTribunal extends Monster {
 	public void tick() {
 		super.tick();
 		if (level() instanceof ServerLevel) bar.setProgress(getHealth() / getMaxHealth());
+		setDeltaMovement(Vec3.ZERO);
 	}
 
+	@Override public void remove(RemovalReason reason) { bar.removeAllPlayers(); super.remove(reason); }
+	@Override public boolean removeWhenFarAway(double distance) { return false; }
 	@Override public boolean isPushable() { return false; }
 	@Override public boolean canUsePortal(boolean passengers) { return false; }
 
 	@Override
 	public boolean hurtServer(ServerLevel level, DamageSource source, float amount) {
 		if (phase() != BATTLE || !(source.getEntity() instanceof ServerPlayer player)
-				|| !TribunalEncounter.isChallenger(this, player) || !(amount > 0)) return false;
+				|| !TribunalEncounter.isChallenger(this, player) || !(amount > 0) || !Float.isFinite(amount)) return false;
 		float resistance = level.getGameTime() < exposedUntil ? .72f : .14f;
 		return super.hurtServer(level, source, Math.min(amount, 85) * resistance);
 	}

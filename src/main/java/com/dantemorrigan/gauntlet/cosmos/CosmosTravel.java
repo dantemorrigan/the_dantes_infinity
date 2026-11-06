@@ -68,6 +68,7 @@ public final class CosmosTravel {
         ServerTickEvents.END_SERVER_TICK.register(CosmosTravel::tick);
         ServerPlayConnectionEvents.JOIN.register((h,s,server) -> {
             ServerPlayer p = h.getPlayer();
+            if (com.dantemorrigan.gauntlet.boss.TribunalEncounter.awaitingReturn(p)) return;
             if (p.hasAttached(FLIGHT)) {
                 if (flightDim(p) && equipped(p) && !p.hasAttached(SpaceManager.RECORD)) enable(p);
                 else stop(p, inCosmos(p));
@@ -136,6 +137,11 @@ public final class CosmosTravel {
             }
             sync(p, n);
         }
+    }
+    /** Re-enable flight immediately after a Tribunal respawn, before movement packets arrive. */
+    public static void restoreFlight(ServerPlayer p, Flight flight) {
+        p.setAttached(FLIGHT, flight);
+        enable(p);
     }
     private static void enable(ServerPlayer p) {
         p.setNoGravity(true); p.fallDistance = 0;

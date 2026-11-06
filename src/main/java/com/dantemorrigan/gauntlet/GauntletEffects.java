@@ -146,9 +146,9 @@ public final class GauntletEffects {
 
 		boolean active = s.phase != Phase.RITUAL;
 		// Regeneration
-		if (s.phase == Phase.AWAKENED) {
+		if (s.phase == Phase.AWAKENED && !com.dantemorrigan.gauntlet.boss.TribunalEncounter.inTrial(player)) {
 			player.heal(FULL_REGEN_PER_TICK);
-		} else if (active && s.inventoryBonus && now % INV_REGEN_INTERVAL == 0) {
+		} else if (active && s.inventoryBonus && !com.dantemorrigan.gauntlet.boss.TribunalEncounter.inTrial(player) && now % INV_REGEN_INTERVAL == 0) {
 			player.heal(1);
 		}
 		// Cleansing
@@ -226,6 +226,16 @@ public final class GauntletEffects {
 					player.getX() + Math.cos(a) * 1.2, player.getY() + 1.0, player.getZ() + Math.sin(a) * 1.2,
 					2, 0.05, 0.3, 0.05, 0);
 		}
+	}
+
+	/** Restore a Tribunal checkpoint without replaying the one-heart awakening ritual. */
+	public static void restoreAwakened(ServerPlayer player, float health) {
+		State state = STATES.computeIfAbsent(player.getUUID(), id -> new State());
+		state.worn = GauntletState.inserted(GauntletState.activeGauntlet(player));
+		state.inventoryBonus = true;
+		state.phase = Phase.AWAKENED;
+		applyAttributes(player, state);
+		player.setHealth(Math.min(health, player.getMaxHealth()));
 	}
 
 	private static void awaken(ServerPlayer player, State s, ItemStack worn) {

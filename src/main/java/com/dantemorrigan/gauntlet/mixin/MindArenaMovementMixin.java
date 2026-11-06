@@ -21,6 +21,7 @@ abstract class MindArenaMovementMixin {
 	@Inject(method = "handleMovePlayer", at = @At("RETURN"))
 	private void infinityGauntlet$stopBarrierCrossing(ServerboundMovePlayerPacket packet, CallbackInfo ci) {
 		MindArena.enforce(player);
+		com.dantemorrigan.gauntlet.boss.TribunalEncounter.enforce(player);
 	}
 
 	@Inject(method = "teleport(Lnet/minecraft/world/entity/PositionMoveRotation;Ljava/util/Set;)V", at = @At("HEAD"), cancellable = true)

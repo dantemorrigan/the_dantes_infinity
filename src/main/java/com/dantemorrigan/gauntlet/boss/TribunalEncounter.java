@@ -1,6 +1,11 @@
 package com.dantemorrigan.gauntlet.boss;
 
 import com.dantemorrigan.gauntlet.GauntletState;
+import com.dantemorrigan.gauntlet.GauntletEffects;
+import net.minecraft.world.damagesource.DamageType;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.core.registries.Registries;
 import com.dantemorrigan.gauntlet.InfinityGauntlet;
 import com.dantemorrigan.gauntlet.ModEntities;
 import com.dantemorrigan.gauntlet.ModSounds;
@@ -40,7 +45,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
+/** A voluntary late-game trial; progression, attacks, confiscation and death are owned by the server. */
 public final class TribunalEncounter {
+	public static final ResourceKey<DamageType> DAMAGE = ResourceKey.create(Registries.DAMAGE_TYPE, InfinityGauntlet.id("tribunal"));
 	private record Checkpoint(Vec3 position, float yaw, float pitch, float health, CosmosTravel.Flight flight, ItemStack gauntlet) {
 		static final Codec<Checkpoint> CODEC = RecordCodecBuilder.create(i -> i.group(
 				Vec3.CODEC.fieldOf("position").forGetter(Checkpoint::position),
@@ -53,6 +60,8 @@ public final class TribunalEncounter {
 
 	private static final AttachmentType<Checkpoint> RETURN = AttachmentRegistry.<Checkpoint>builder().persistent(Checkpoint.CODEC)
 			.buildAndRegister(InfinityGauntlet.id("tribunal_checkpoint"));
+	private static final AttachmentType<Boolean> NOTIFIED = AttachmentRegistry.<Boolean>builder().persistent(Codec.BOOL).copyOnDeath()
+			.buildAndRegister(InfinityGauntlet.id("tribunal_notified"));
 	private static final Map<MinecraftServer, Trial> TRIALS = new HashMap<>();
 	private static final DustParticleOptions GOLD = new DustParticleOptions(0xffd18b, 2.4f);
 
@@ -65,6 +74,7 @@ public final class TribunalEncounter {
 		Vec3 verdictOrigin;
 		int verdictAge;
 		boolean executing;
+		float healthCeiling;
 		Trial(ServerPlayer p, LivingTribunal boss) {
 			player = p.getUUID();
 			this.boss = boss;
@@ -72,6 +82,7 @@ public final class TribunalEncounter {
 			yaw = p.getYRot();
 			pitch = p.getXRot();
 			health = p.getHealth();
+			healthCeiling = health;
 			flight = p.getAttached(CosmosTravel.FLIGHT);
 		}
 	}
@@ -85,6 +96,10 @@ public final class TribunalEncounter {
 					return reason.equals("started") ? 1 : 0;
 				}))));
 		ServerTickEvents.END_SERVER_TICK.register(TribunalEncounter::tick);
+		ServerLifecycleEvents.SERVER_STOPPING.register(server -> {
+			Trial trial = TRIALS.get(server);
+			if (trial != null) close(server, trial);
+		});
 		ServerLifecycleEvents.SERVER_STOPPED.register(TRIALS::remove);
 		ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> {
 			Trial trial = TRIALS.get(server);
@@ -107,14 +122,28 @@ public final class TribunalEncounter {
 			player.experienceLevel = oldPlayer.experienceLevel;
 			player.totalExperience = oldPlayer.totalExperience;
 			player.experienceProgress = oldPlayer.experienceProgress;
-			restore(player, checkpoint);
+			player.setAttached(RETURN, checkpoint);
 			oldPlayer.removeAttached(RETURN);
 			oldPlayer.removeAttached(CosmosTravel.FLIGHT);
+		});
+		ServerPlayerEvents.AFTER_RESPAWN.register((old, player, alive) -> {
+			Checkpoint checkpoint = player.getAttached(RETURN);
+			if (!alive && checkpoint != null) restore(player, checkpoint);
 		});
 		ServerLivingEntityEvents.ALLOW_DAMAGE.register((entity, source, amount) -> {
 			if (!(entity instanceof ServerPlayer p)) return true;
 			Trial trial = trial(p);
-			return trial == null || trial.verdictAge == 0 || trial.executing;
+			if (trial == null || trial.executing) return true;
+			if (trial.verdictAge > 0) return false;
+			if (source.is(DAMAGE) && p.getHealth() - amount <= 2) { beginVerdict(trial, p); return false; }
+			return true;
+		});
+		ServerLivingEntityEvents.ALLOW_DEATH.register((entity, source, amount) -> {
+			if (!(entity instanceof ServerPlayer p)) return true;
+			Trial trial = trial(p);
+			if (trial == null || trial.executing) return true;
+			beginVerdict(trial, p);
+			return false;
 		});
 	}
 
@@ -130,12 +159,14 @@ public final class TribunalEncounter {
 		return trial != null && trial.player.equals(player.getUUID()) ? trial : null;
 	}
 
-	static String start(ServerPlayer p) {
+	public static String start(ServerPlayer p) {
 		ServerLevel level = p.level();
 		MinecraftServer server = level.getServer();
 		if (!CosmosTravel.inCosmos(p) || !p.hasAttached(CosmosTravel.FLIGHT) || !p.isAlive() || p.isSpectator()
 				|| p.isCreative() || level.getDifficulty() == Difficulty.PEACEFUL) return "space_only";
-		if (awaitingReturn(p) || TRIALS.containsKey(server) || PlanetDestruction.isBusy(p)) return "busy";
+		if (awaitingReturn(p) || TRIALS.containsKey(server) || PlanetDestruction.isBusy(p) || com.dantemorrigan.gauntlet.power.TimeAbility.isRewinding(p)
+				|| com.dantemorrigan.gauntlet.snap.InfinitySnap.casting(p)) return "busy";
+		if (fullGauntlet(p) && GauntletEffects.state(p).phase != GauntletEffects.Phase.AWAKENED) return "awakening";
 		if (!ThanosEncounter.defeatedForever(server) || !StoneRegistry.released(server, Stone.MIND) || !fullGauntlet(p)) return "locked";
 		LivingTribunal boss = ModEntities.TRIBUNAL.create(level, EntitySpawnReason.MOB_SUMMONED);
 		if (boss == null) return "busy";
@@ -147,10 +178,12 @@ public final class TribunalEncounter {
 		float yaw = Loki.yawTo(base, p.position());
 		boss.snapTo(base.x, base.y, base.z, yaw, 0);
 		boss.setYBodyRot(yaw);
+		boss.challenger(p.getId());
 		if (!level.addFreshEntity(boss)) return "busy";
 		TRIALS.put(server, new Trial(p, boss));
 		AbilityController.cancel(p);
 		CosmosTravel.cancelWarp(p);
+		p.closeContainer();
 		ModSounds.play(level, p.position(), ModSounds.TRIBUNAL_ARRIVAL, 3);
 		level.playSound(null, p.blockPosition(), SoundEvents.WARDEN_EMERGE, SoundSource.HOSTILE, 3, .5f);
 		return "started";
@@ -163,7 +196,18 @@ public final class TribunalEncounter {
 
 	private static void tick(MinecraftServer server) {
 		Trial trial = TRIALS.get(server);
-		if (trial == null) return;
+		if (trial == null) {
+			if (server.getTickCount() % 40 == 0 && ThanosEncounter.defeatedForever(server) && StoneRegistry.released(server, Stone.MIND)) {
+				for (ServerPlayer p : server.getPlayerList().getPlayers()) {
+					if (CosmosTravel.inCosmos(p) && fullGauntlet(p) && !p.isCreative() && !p.isSpectator()
+							&& !Boolean.TRUE.equals(p.getAttached(NOTIFIED))) {
+						p.setAttached(NOTIFIED, true);
+						p.sendSystemMessage(Component.translatable("tribunal.infinity_gauntlet.available"));
+					}
+				}
+			}
+			return;
+		}
 		ServerPlayer p = server.getPlayerList().getPlayer(trial.player);
 		LivingTribunal boss = trial.boss;
 		if (p == null || boss.isRemoved() || !p.isAlive() || p.level() != boss.level() || p.isSpectator() || p.isCreative()) {
@@ -193,7 +237,10 @@ public final class TribunalEncounter {
 			beginVerdict(trial, p);
 			return;
 		}
+		// Health is sealed by the Tribunal: food, potions and other healing cannot erase his previous hits.
+		p.setHealth(Math.min(p.getHealth(), trial.healthCeiling));
 		tickBattle(trial, p);
+		trial.healthCeiling = Math.min(trial.healthCeiling, p.getHealth());
 	}
 
 	private static void tickBattle(Trial trial, ServerPlayer p) {
@@ -221,7 +268,7 @@ public final class TribunalEncounter {
 			Vec3 mark = boss.mark();
 			level.sendParticles(GOLD, mark.x, mark.y, mark.z, 100, radius * .32, 2, radius * .32, .08);
 			level.playSound(null, BlockPos.containing(mark), SoundEvents.WARDEN_SONIC_BOOM, SoundSource.HOSTILE, 3, .55f);
-			if (delta.lengthSqr() <= radius * radius) hit(trial, p, kind == 3 ? 19 : kind == 2 ? 12 : 14);
+			if (delta.lengthSqr() <= radius * radius) hit(trial, p, p.getMaxHealth() * (kind == 3 ? .65f : kind == 2 ? .32f : .45f));
 			boss.exposedUntil = level.getGameTime() + 33;
 		}
 		if (trial.verdictAge == 0 && age >= LivingTribunal.WINDUP + 12) {
@@ -236,15 +283,17 @@ public final class TribunalEncounter {
 			beginVerdict(trial, p);
 			return;
 		}
-		p.hurtServer(p.level(), p.damageSources().indirectMagic(trial.boss, trial.boss), damage);
+		p.hurtServer(p.level(), new DamageSource(p.level().registryAccess().lookupOrThrow(Registries.DAMAGE_TYPE).getOrThrow(DAMAGE), trial.boss), damage);
 		if (p.isAlive() && p.getHealth() <= 2) beginVerdict(trial, p);
 	}
 
 	private static void beginVerdict(Trial trial, ServerPlayer p) {
+		if (trial.verdictAge > 0) return;
 		ItemStack gauntlet = GauntletState.activeGauntlet(p);
 		if (gauntlet.isEmpty()) return;
 		AbilityController.cancel(p);
 		CosmosTravel.cancelWarp(p);
+		p.closeContainer();
 		trial.verdictAge = 1;
 		trial.verdictOrigin = p.position();
 		p.setHealth(2);
@@ -259,10 +308,12 @@ public final class TribunalEncounter {
 		int age = ++trial.verdictAge;
 		trial.boss.age(age);
 		p.setDeltaMovement(Vec3.ZERO);
+		p.setHealth(2);
+		p.closeContainer();
 		if (age == 2 || age % 4 == 0) {
 			Vec3 anchor = trial.verdictOrigin;
 			Vec3 focus = trial.boss.position().add(0, 29, 0);
-			Vec3 look = trial.boss.mark().lerp(focus, Mth.clamp((age - 5) / 36.0, .1, 1)).subtract(anchor.add(0, p.getEyeHeight(), 0));
+			Vec3 look = trial.boss.mark().lerp(focus, Mth.clamp((age - 5) / 65.0, .1, 1)).subtract(anchor.add(0, p.getEyeHeight(), 0));
 			float pitch = (float) -Math.toDegrees(Math.atan2(look.y, look.horizontalDistance()));
 			p.connection.teleport(anchor.x, anchor.y, anchor.z, Loki.yawTo(anchor, focus), pitch);
 		}
@@ -287,9 +338,19 @@ public final class TribunalEncounter {
 		ItemStack displaced = p.getOffhandItem();
 		p.setItemInHand(InteractionHand.OFF_HAND, checkpoint.gauntlet.copy());
 		if (!displaced.isEmpty() && !p.getInventory().add(displaced)) p.drop(displaced, false);
-		p.setHealth(Math.min(checkpoint.health, p.getMaxHealth()));
-		p.setAttached(CosmosTravel.FLIGHT, checkpoint.flight);
+		GauntletEffects.restoreAwakened(p, checkpoint.health);
+		CosmosTravel.restoreFlight(p, checkpoint.flight);
 		p.removeAttached(RETURN);
+		p.inventoryMenu.broadcastChanges();
+	}
+
+	/** Movement packets cannot carry a challenger out of the verdict scene. */
+	public static void enforce(ServerPlayer p) {
+		Trial trial = trial(p);
+		if (trial == null || trial.verdictAge == 0 || trial.executing) return;
+		Vec3 at = trial.verdictOrigin;
+		if (p.position().distanceToSqr(at) > .01) p.connection.teleport(at.x, at.y, at.z, p.getYRot(), p.getXRot());
+		p.setDeltaMovement(Vec3.ZERO);
 	}
 
 	static void defeated(LivingTribunal boss) {

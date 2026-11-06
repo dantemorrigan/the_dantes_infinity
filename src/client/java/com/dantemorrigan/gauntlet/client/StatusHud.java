@@ -51,7 +51,7 @@ public final class StatusHud {
     }
     private static void render(GuiGraphicsExtractor g) {
         Minecraft mc = Minecraft.getInstance();
-        if (mc.player == null || mc.options.hideGui || mc.screen instanceof AbilityFavoritesScreen
+        if (com.dantemorrigan.gauntlet.client.boss.TribunalClient.cinematic() || mc.player == null || mc.options.hideGui || mc.screen instanceof AbilityFavoritesScreen
                 || mc.screen instanceof AbilityWheelScreen) return;
         boolean equipped = AbilityInput.equipped() && com.dantemorrigan.gauntlet.GauntletConfig.get().showStatusHud;
         if (!equipped && notice == null && LINES.isEmpty()) return;

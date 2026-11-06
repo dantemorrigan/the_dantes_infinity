@@ -15,7 +15,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public abstract class KeyboardInputMixin {
 	@Inject(method = "tick", at = @At("TAIL"))
 	private void infinityGauntlet$lock(CallbackInfo ci) {
-		if (Cutscene.inputLocked() || com.dantemorrigan.gauntlet.client.fx.TimeRewindClient.inputLocked()
+		if (com.dantemorrigan.gauntlet.client.boss.TribunalClient.inputLocked() || Cutscene.inputLocked() || com.dantemorrigan.gauntlet.client.fx.TimeRewindClient.inputLocked()
 				|| com.dantemorrigan.gauntlet.client.fx.RealityClient.inputLocked()) {
 			((ClientInput) (Object) this).keyPresses = Input.EMPTY;
 			((ClientInputAccessor) this).infinityGauntlet$setMoveVector(Vec2.ZERO);

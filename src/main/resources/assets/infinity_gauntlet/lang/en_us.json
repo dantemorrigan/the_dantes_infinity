@@ -585,5 +585,8 @@
   "tribunal.infinity_gauntlet.sealed": "The Tribunal has sealed the Snap.",
   "subtitles.infinity_gauntlet.tribunal.arrival": "You have played God for too long.",
   "subtitles.infinity_gauntlet.tribunal.surrender": "Surrender.",
-  "subtitles.infinity_gauntlet.tribunal.defeat": "This is impossible."
+  "subtitles.infinity_gauntlet.tribunal.defeat": "This is impossible.",
+  "tribunal.infinity_gauntlet.awakening": "Wait for the Gauntlet to awaken before challenging the Tribunal.",
+  "tribunal.infinity_gauntlet.available": "A presence beyond Infinity senses you. In the cosmos, use /tribunal challenge to face the Living Tribunal.",
+  "death.attack.infinityGauntlet.tribunal": "%1$s was judged by the Living Tribunal"
 }

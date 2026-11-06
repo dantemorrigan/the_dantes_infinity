@@ -189,4 +189,8 @@ Ideas: [IDEAS.md](IDEAS.md) · API notes: [docs/DEV_NOTES.md](docs/DEV_NOTES.md)
 
 ### The Living Tribunal
 
-After defeating Loki and Thanos, equip all six Stones and use `/tribunal challenge` while flying in the cosmos. Dodge the marked attacks and strike the Tribunal after each cast. His verdict destroys the Gauntlet on screen and returns you to your pre-fight position with your gear after respawning.
+After defeating Loki and Thanos, equip all six Stones and use `/tribunal challenge` while flying in the cosmos. Dodge the marked attacks and strike the Tribunal after each cast. He emerges from a black hole as a roughly 50-block golden figure with three faces, a floating head and an emissive chest seal. Cosmic rays, gravity wells and judgement pierce the awakened Gauntlet and Uru armor; regeneration is sealed during the trial. Strike during the short recovery window after a cast.
+
+At one heart, the cinematic confiscates the Gauntlet, carries it to his palm and shatters it, then kills the challenger. Respawning restores the pre-fight cosmic position, health, flight, six-Stone Gauntlet, remaining gear and experience. Quitting during the cinematic saves the checkpoint and restores the Gauntlet on login. The trial is repeatable. Three supplied voice lines and the looping **Void Battle Cosmic Finale** are included.
+
+Real-client smoke test, including the sound engine: `ALSOFT_DRIVERS=null xvfb-run -a ./gradlew runClientGameTest -PonlyTest=TribunalTest`.

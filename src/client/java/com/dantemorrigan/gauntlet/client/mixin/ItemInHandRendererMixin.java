@@ -19,6 +19,11 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 /** First person: a worn (off-hand) gauntlet is drawn as the player's arm wearing it, not as a held item. */
 @Mixin(ItemInHandRenderer.class)
 public abstract class ItemInHandRendererMixin {
+    @Inject(method = "renderHandsWithItems", at = @At("HEAD"), cancellable = true)
+    private void infinityGauntlet$tribunalCinematic(CallbackInfo ci) {
+        if (com.dantemorrigan.gauntlet.client.boss.TribunalClient.cinematic()) ci.cancel();
+    }
+
     @Inject(method = "renderArmWithItem", at = @At("HEAD"))
     private void infinityGauntlet$stormbreakerStart(AbstractClientPlayer player, float frameInterp, float xRot, InteractionHand hand, float attack,
             ItemStack item, float inverseArmHeight, PoseStack pose, SubmitNodeCollector collector, int light, CallbackInfo ci) {
