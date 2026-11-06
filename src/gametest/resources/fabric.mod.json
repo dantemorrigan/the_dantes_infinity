@@ -44,7 +44,8 @@
       "com.dantemorrigan.gauntlet.gametest.TribunalTest",
       "com.dantemorrigan.gauntlet.gametest.TribunalCosmicTest",
       "com.dantemorrigan.gauntlet.gametest.EarthReturnCreativeTest",
-      "com.dantemorrigan.gauntlet.gametest.TribunalHitTest"
+      "com.dantemorrigan.gauntlet.gametest.TribunalHitTest",
+      "com.dantemorrigan.gauntlet.gametest.CosmicMenuPersistenceTest"
     ]
   },
   "depends": {

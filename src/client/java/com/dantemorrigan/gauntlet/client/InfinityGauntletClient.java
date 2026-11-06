@@ -19,6 +19,7 @@ public class InfinityGauntletClient implements ClientModInitializer {
 
 	@Override
 	public void onInitializeClient() {
+        net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents.DISCONNECT.register((handler,client)->client.getToastManager().clear());
 		MenuScreens.register(ModMenus.GAUNTLET, GauntletScreen::new);
         com.dantemorrigan.gauntlet.client.ability.AbilityInput.init();
 		ModParticleProviders.init();

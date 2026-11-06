@@ -275,10 +275,8 @@ public final class AbilityWheelScreen extends Screen {
         if(ability!=null && AbilityInput.cooldown(ability)>0) {text(g,Component.literal(""+((AbilityInput.cooldown(ability)+19)/20)),(int)(px+s/2),(int)(py+s/2-4),0xFFFFDE82);}
     }
     private static String destinationIcon(String id) {
-        return switch (id) {
-            case "earth", "moon" -> "route_" + id;
-            case "sun", "mercury", "venus", "mars" -> "route_ember";
-            case "uranus", "neptune" -> "route_ice";
+        return switch(id) {
+            case "sun","mercury","venus","earth","moon","mars","jupiter","saturn","uranus","neptune" -> "route_"+id;
             default -> "destinations";
         };
     }

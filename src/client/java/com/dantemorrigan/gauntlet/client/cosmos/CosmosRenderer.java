@@ -79,7 +79,7 @@ public final class CosmosRenderer {
     /** Atmosphere colour + strength per body; the Sun gets a stronger corona. */
     private static final Map<String,float[]> GLOW=Map.of("earth",new float[]{.35f,.6f,1f,.34f},"venus",new float[]{1f,.85f,.5f,.5f},
         "mars",new float[]{1f,.6f,.4f,.12f},"jupiter",new float[]{.9f,.8f,.65f,.10f},"saturn",new float[]{.9f,.85f,.6f,.10f},
-        "uranus",new float[]{.5f,.85f,.9f,.3f},"neptune",new float[]{.3f,.5f,1f,.3f},"sun",new float[]{1f,.8f,.4f,.55f});
+        "uranus",new float[]{.5f,.85f,.9f,.3f},"neptune",new float[]{.3f,.5f,1f,.3f},"sun",new float[]{1f,.9f,.62f,1f});
     private static final Vec3 OVERWORLD_SUN=new Vec3(-.35,.65,.65).normalize();
     private static boolean warmed;
     private record Body(String id,Vec3 delta,double radius,double distance,double angular,int index) {}
@@ -128,10 +128,11 @@ public final class CosmosRenderer {
             pose.translate(b.delta().x*k,b.delta().y*k,b.delta().z*k);
             pose.scale(scale,scale,scale);
             pose.mulPose(Axis.ZP.rotationDegrees(tilt)); pose.mulPose(Axis.YP.rotationDegrees(yaw));
-            ctx.submitNodeCollector().submitCustomGeometry(pose,RenderTypes.entityTranslucentEmissive(texture),(p,out)->surface(p,out,mesh,light,alpha,isSun));
+            // Stellar surface uses an unlit opaque pipeline: entity lighting must not shade the Sun like a planet.
+            ctx.submitNodeCollector().submitCustomGeometry(pose,isSun?RenderTypes.beaconBeam(texture,false):RenderTypes.entityTranslucentEmissive(texture),(p,out)->surface(p,out,mesh,light,alpha,isSun));
             float[] glow=GLOW.get(b.id());
             if(glow!=null && ratio>.0015) {
-                var white=RenderTypes.entityTranslucentEmissive(Identifier.withDefaultNamespace("textures/block/white_concrete.png"));
+                var white=isSun?RenderTypes.beaconBeam(InfinityGauntlet.id("textures/tribunal/white.png"),true):RenderTypes.entityTranslucentEmissive(Identifier.withDefaultNamespace("textures/block/white_concrete.png"));
                 var gm=CosmosPlanets.mesh(Math.min(level,1));
                 ctx.submitNodeCollector().submitCustomGeometry(pose,white,(p,out)->glow(p,out,gm,light,alpha,camLocal,glow,isSun));
             }
@@ -163,8 +164,8 @@ public final class CosmosRenderer {
     }
     /** Thin translucent shells: soft atmospheric rim that fades toward the middle of the disc. */
     private static void glow(PoseStack.Pose p,VertexConsumer out,CosmosPlanets.Mesh m,Vector3f light,int alpha,Vector3f cam,float[] glow,boolean sun) {
-        float[] sizes=sun?new float[]{1.015f,1.05f,1.12f,1.25f}:new float[]{1.012f,1.03f,1.06f};
-        float[] strength=sun?new float[]{.55f,.35f,.2f,.1f}:new float[]{1f,.6f,.3f};
+        float[] sizes=sun?new float[]{1.008f,1.025f,1.065f,1.14f,1.3f,1.55f}:new float[]{1.012f,1.03f,1.06f};
+        float[] strength=sun?new float[]{.65f,.45f,.28f,.16f,.08f,.025f}:new float[]{1f,.6f,.3f};
         int cols=m.lon()+1; int cr=(int)(glow[0]*255),cg=(int)(glow[1]*255),cb=(int)(glow[2]*255);
         for(int s=0;s<sizes.length;s++) {
             int[] color=new int[(m.lat()+1)*cols];
@@ -172,7 +173,7 @@ public final class CosmosRenderer {
                 float nx=m.pos()[n*3],ny=m.pos()[n*3+1],nz=m.pos()[n*3+2];
                 float vx=cam.x-nx*sizes[s],vy=cam.y-ny*sizes[s],vz=cam.z-nz*sizes[s], vl=(float)Math.sqrt(vx*vx+vy*vy+vz*vz);
                 float facing=Math.max(0,(nx*vx+ny*vy+nz*vz)/Math.max(1e-4f,vl));
-                float rim=(float)Math.pow(1-facing,sun?1.2:2.2), day=sun?1:.25f+.75f*shade(nx,ny,nz,light);
+                float rim=sun?.08f+.92f*(float)Math.pow(1-facing,1.2):(float)Math.pow(1-facing,2.2), day=sun?1:.25f+.75f*shade(nx,ny,nz,light);
                 color[n]=((int)(alpha*glow[3]*strength[s]*rim*day))<<24|cr<<16|cg<<8|cb;
             }
             for(int i=0;i<m.lat();i++) for(int j=0;j<m.lon();j++) {

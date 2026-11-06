@@ -125,6 +125,10 @@ public final class TribunalEncounter {
 					String reason = start(player);
 					context.getSource().sendSystemMessage(Component.translatable("tribunal.infinity_gauntlet." + reason));
 					return reason.equals("started") ? 1 : 0;
+                })).then(Commands.literal("kill").requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS)).executes(context -> {
+                    ServerPlayer p=context.getSource().getPlayerOrException();Trial t=trial(p);
+                    if(t==null || t.boss.phase()==LivingTribunal.VERDICT)return 0;
+                    t.boss.setHealth(0);t.boss.die(p.damageSources().playerAttack(p));return 1;
                 })).then(Commands.literal("verdict").requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS)).executes(context -> {
                     ServerPlayer p=context.getSource().getPlayerOrException();Trial t=trial(p);
                     if(t==null || t.boss.phase()!=LivingTribunal.BATTLE) return 0;
@@ -258,11 +262,12 @@ public final class TribunalEncounter {
 			runVerdict(trial, p);
 			return;
 		}
-		if (!fullGauntlet(p) || p.distanceToSqr(boss) > 320 * 320) {
+		if (!fullGauntlet(p)) {
 			close(server, trial);
 			return;
 		}
 		if (boss.phase() == LivingTribunal.ARRIVAL) {
+            if(boss.position().add(0,53,0).distanceToSqr(p.position())>160*160)move(trial,p);
 			boss.age(boss.sceneAge() + 1);
 			if (boss.sceneAge() >= LivingTribunal.INTRO_TICKS) boss.phase(LivingTribunal.BATTLE);
 			return;
@@ -286,7 +291,16 @@ public final class TribunalEncounter {
         var desired=TribunalSpace.orbit(point(p.position()), angle);
         if(desired==null) return;
         Vec3 center=t.boss.position().add(0,TribunalSpace.HEIGHT/2,0);
-        Vec3 next=vector(TribunalSpace.step(point(center),desired,.55));
+        double separation=center.distanceTo(p.position());
+        // Cruise near the challenger; catch boost flight without allowing the encounter to despawn.
+        // A distant warp can cross entire planetary systems, so resume at a checked orbit anchor.
+        boolean catchup=separation>320;
+        double speed=separation>110?Math.min(10,(separation-80)*.08):.55;
+        Vec3 next=catchup?vector(desired):vector(TribunalSpace.step(point(center),desired,speed));
+        if(catchup){
+            for(Bolt bolt:t.bolts)boltPacket(t,bolt,0);t.bolts.clear();
+            t.boss.attack(0,Vec3.ZERO);t.boss.age(0);t.boss.nextAttack=18;
+        }
         Vec3 feet=next.add(0,-TribunalSpace.HEIGHT/2,0);
         t.boss.keepActiveAt(feet);t.boss.setPos(feet);
         float yaw=net.minecraft.util.Mth.approachDegrees(t.boss.getYRot(),Loki.yawTo(t.boss.position(),p.position()),t.boss.attack()>0?.2f:.35f);

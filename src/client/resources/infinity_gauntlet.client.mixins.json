@@ -15,7 +15,8 @@
 		"KeyboardInputMixin",
 		"SkyRendererMixin",
 		"StormCloudRendererMixin",
-		"RealityBlockUpdateMixin"
+		"RealityBlockUpdateMixin",
+		"ClientAdvancementsMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1

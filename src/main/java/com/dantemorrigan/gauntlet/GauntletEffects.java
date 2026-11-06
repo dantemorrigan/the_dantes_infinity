@@ -72,6 +72,10 @@ public final class GauntletEffects {
 		int ritualEnd;
 	}
 
+	private static final net.fabricmc.fabric.api.attachment.v1.AttachmentType<Boolean> AWAKENED =
+        net.fabricmc.fabric.api.attachment.v1.AttachmentRegistry.<Boolean>builder().persistent(com.mojang.serialization.Codec.BOOL)
+            .buildAndRegister(InfinityGauntlet.id("gauntlet_awakened"));
+
 	private static final Map<UUID, State> STATES = new HashMap<>();
 	private static final State NO_STATE = new State();
 
@@ -81,6 +85,7 @@ public final class GauntletEffects {
 
 	public static void init() {
 		ServerTickEvents.END_SERVER_TICK.register(GauntletEffects::tick);
+        net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents.SERVER_STOPPED.register(server->STATES.clear());
 		ServerLivingEntityEvents.ALLOW_DAMAGE.register((entity, source, amount) -> {
 			if (entity instanceof ServerPlayer player && state(player).phase == Phase.AWAKENED) {
 				if (source.is(com.dantemorrigan.gauntlet.stormbreaker.Stormbreaker.DAMAGE)) return true;
@@ -133,10 +138,13 @@ public final class GauntletEffects {
 
 		boolean full = s.worn.size() == Stone.values().length;
 		if (!full) {
+            if(!player.hasAttached(AWAKENED) || Boolean.TRUE.equals(player.getAttached(AWAKENED)))player.setAttached(AWAKENED,false);
 			if (s.phase != Phase.NONE && !worn.isEmpty()) GauntletState.setInUse(worn, EnumSet.noneOf(Stone.class));
 			s.phase = Phase.NONE;
 		} else if (s.phase == Phase.NONE) {
-			startRitual(player, s, worn, now);
+            // Older saves migrate from the completed awakening advancement once; unequipping writes false.
+            boolean saved=Boolean.TRUE.equals(player.getAttached(AWAKENED)) || !player.hasAttached(AWAKENED) && ModAdvancements.completed(player,"awaken_gauntlet");
+            if(saved)restoreAwakened(player,player.getHealth());else startRitual(player,s,worn,now);
 		} else if (s.phase == Phase.RITUAL) {
 			ritualTick(player, now);
 			if (now >= s.ritualEnd) awaken(player, s, worn);
@@ -228,8 +236,9 @@ public final class GauntletEffects {
 		}
 	}
 
-	/** Restore a Tribunal checkpoint without replaying the one-heart awakening ritual. */
+	/** Restore persisted awakening or a Tribunal checkpoint without replaying the one-heart ritual. */
 	public static void restoreAwakened(ServerPlayer player, float health) {
+        player.setAttached(AWAKENED,true);
 		State state = STATES.computeIfAbsent(player.getUUID(), id -> new State());
 		state.worn = GauntletState.inserted(GauntletState.activeGauntlet(player));
 		state.inventoryBonus = true;
@@ -239,6 +248,7 @@ public final class GauntletEffects {
 	}
 
 	private static void awaken(ServerPlayer player, State s, ItemStack worn) {
+        player.setAttached(AWAKENED,true);
 		s.phase = Phase.AWAKENED;
 		ModAdvancements.award(player, "awaken_gauntlet");
 		GauntletState.setInUse(worn, EnumSet.noneOf(Stone.class));

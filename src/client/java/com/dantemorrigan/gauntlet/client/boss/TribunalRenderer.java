@@ -165,6 +165,15 @@ public final class TribunalRenderer extends EntityRenderer<LivingTribunal, Tribu
 				billboard(pose, collector, HALO, glove, 1.1f + progress * 2.9f, -state.ticks * 5, 0xadffffff);
 			} else {
 				float shatter = smooth((state.ticks - LivingTribunal.SHATTER_TICK) / 24);
+                for(Stone stone:Stone.values()) {
+                    double angle=stone.ordinal()*Math.PI/3+state.ticks*.025;
+                    Vec3 direction=new Vec3(Math.cos(angle),Math.sin(angle),.45*Math.sin(angle*2)).normalize();
+                    Vec3 end=hand.add(direction.scale(10+100*shatter));
+                    int color=ARGB.color((int)(255*(1-shatter)),stone.color>>16&255,stone.color>>8&255,stone.color&255);
+                    beam(pose,collector,hand,end,1.5f+4*shatter,color);
+                    billboard(pose,collector,HALO,end,4+18*shatter,state.ticks*3,color);
+                    sphere(pose,collector,hand,3+stone.ordinal()*2+50*shatter,color);
+                }
 				billboard(pose, collector, EDICT, hand, 2 + 17 * shatter, state.ticks * 5,
 						ARGB.color((int) (255 * (1 - shatter)), 255, 246, 206));
 			}

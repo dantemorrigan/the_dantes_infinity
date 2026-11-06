@@ -77,7 +77,7 @@ public final class TribunalClient {
 					Vec3 at = TribunalRenderer.handPosition(nearby, 0);
 					var random = mc.level.getRandom();
 					for (int i = 0; i < 90; i++) mc.level.addParticle(new net.minecraft.core.particles.DustParticleOptions(
-							i % 3 == 0 ? com.dantemorrigan.gauntlet.Stone.values()[i % 6].color : 0xffd18b, 2f),
+							i % 3 == 0 ? com.dantemorrigan.gauntlet.Stone.values()[(i / 3) % 6].color : 0xffd18b, 2f),
 							at.x, at.y, at.z, random.nextGaussian() * .5, random.nextGaussian() * .5, random.nextGaussian() * .5);
 				}
 				lastPhase = phase; lastAge = age;
@@ -101,8 +101,7 @@ public final class TribunalClient {
 			g.fill(0, 0, w, bars, 0xf0070410);
 			g.fill(0, h - bars, w, h, 0xf0070410);
 			if (verdict && age >= LivingTribunal.SHATTER_TICK) {
-				float fade = Mth.clamp((age - LivingTribunal.SHATTER_TICK) / 48f, 0, 1);
-				g.fill(0, bars, w, h - bars, ARGB.color((int) (235 * fade * fade), 6, 4, 13));
+                stoneLight(g,age+partial.getGameTimeDeltaPartialTick(false)-LivingTribunal.SHATTER_TICK);
 			}
 			if (verdict) g.centeredText(Minecraft.getInstance().font, Component.literal("♥"), w / 2, h - bars - 16, 0xffff5867);
 			if (bars > 10) g.centeredText(Minecraft.getInstance().font,
@@ -110,6 +109,31 @@ public final class TribunalClient {
 					w / 2, h - bars + (bars - 8) / 2, 0xffffdfa0);
 		});
 	}
+
+    /** Six soft angular colour lobes expand from the blast and converge to white before death. */
+    private static void stoneLight(net.minecraft.client.gui.GuiGraphicsExtractor g,float age) {
+        int w=g.guiWidth(),h=g.guiHeight();
+        // Interpolated vertical strips keep the light smooth at every GUI scale.
+        for(int y=0;y<h;y+=10)for(int x=0;x<w;x+=3) {
+            int bottom=Math.min(h,y+10);
+            g.fillGradient(x,y,Math.min(w,x+3),bottom,stoneLightColor(x+1.5f,y,w,h,age),stoneLightColor(x+1.5f,bottom,w,h,age));
+        }
+    }
+    private static int stoneLightColor(float x,float y,int w,int h,float age) {
+        float power=Mth.clamp(age/8,0,1),white=Mth.clamp((age-14)/36,0,1);
+        var stones=com.dantemorrigan.gauntlet.Stone.values();
+        double dx=(x-w*.5)/Math.max(w,h),dy=(y-h*.5)/Math.max(w,h);
+        double angle=(Math.atan2(dy,dx)+Math.PI)/(Math.PI*2)*6+age*.012;
+        int sector=(int)angle;float blend=(float)(angle-sector);
+        int a=stones[Math.floorMod(sector,6)].color,b=stones[(sector+1)%6].color;
+        float core=(float)Math.exp(-(dx*dx+dy*dy)/(.012+age*.004));
+        float flash=Mth.clamp(white+core*.8f,0,1);
+        int r=(int)(((a>>16&255)*(1-blend)+(b>>16&255)*blend)*(1-flash)+255*flash);
+        int gr=(int)(((a>>8&255)*(1-blend)+(b>>8&255)*blend)*(1-flash)+255*flash);
+        int bl=(int)(((a&255)*(1-blend)+(b&255)*blend)*(1-flash)+255*flash);
+        float opacity=power*Mth.clamp(.3f+.5f*core+white*.7f,0,1);
+        return ARGB.color((int)(255*opacity),r,gr,bl);
+    }
 
 	public static boolean cinematic() { return nearby != null && nearby.phase() != LivingTribunal.BATTLE; }
 	public static boolean inputLocked() { return nearby != null && nearby.phase() == LivingTribunal.VERDICT; }

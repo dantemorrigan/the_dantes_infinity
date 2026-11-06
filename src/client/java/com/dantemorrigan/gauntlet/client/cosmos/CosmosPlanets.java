@@ -105,7 +105,7 @@ final class CosmosPlanets {
 
     private static double[] sun(double x, double y, double z, long s) {
         double g = fbm(x * 9, y * 9, z * 9, 5, s), fine = fbm(x * 40, y * 40, z * 40, 3, s + 1);
-        double[] c = mix(new double[]{255, 150, 30}, new double[]{255, 232, 150}, step(.3, .75, g * .7 + fine * .3));
+        double[] c = mix(new double[]{255, 220, 135}, new double[]{255, 253, 227}, step(.3, .75, g * .7 + fine * .3));
         double spot = step(.72, .8, fbm(x * 3.5 + 7, y * 3.5, z * 3.5, 4, s + 5)) * step(.45, .0, Math.abs(y)) * .0;
         return scale(c, 1 - spot * .5);
     }
