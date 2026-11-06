@@ -38,6 +38,7 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
+import net.minecraft.world.attribute.EnvironmentAttributes;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.damagesource.DamageType;
 import net.minecraft.world.entity.Entity;
@@ -403,44 +404,41 @@ public final class Stormbreaker {
         if (crest < 0 || (crest & 1) != 0) return;
         Vec3 center = w.start.add(w.direction.scale(crest * .92));
         Vec3 lateral = new Vec3(-w.direction.z, 0, w.direction.x);
-        double spread = 1.6 + w.power;
+        double halfWidth = 3.2 + w.power;
+        boolean ripGround = (crest & 3) == 0;
         for (int lane = -1; lane <= 1; lane++) {
-            Vec3 sample = center.add(lateral.scale(lane * spread));
+            Vec3 sample = center.add(lateral.scale(lane * halfWidth * .72));
             Vec3 surface = surface(w.level, sample, 4, 7);
             if (surface == null) continue;
-            StormFx.GROUND_WALL.play(w.level, surface, 3.9 + w.power, w.direction);
-            if ((crest & 3) == 0) StormFx.LIGHTNING_HIT.play(w.level, surface, 3.7 + w.power * 2);
-            tearGround(p, w, surface, lateral.scale(lane * .14));
-            if (lane == 0 && crest > 0) {
-                Vec3 between = surface(w.level, sample.subtract(w.direction.scale(.92)), 4, 7);
-                if (between != null) tearGround(p, w, between, Vec3.ZERO);
+            StormFx.GROUND_WALL.play(w.level, surface, 4 + w.power, w.direction);
+            for (LivingEntity target : targets(w.level, surface.add(0, .8, 0), 2.2, 2.2)) {
+                Vec3 offset = target.position().subtract(center);
+                if (Math.abs(offset.dot(lateral)) > halfWidth || Math.abs(offset.dot(w.direction)) > 1.2
+                        || w.hit.contains(target.getUUID())) continue;
+                if (strike(p, target, 15 + 9 * w.power, w.direction, 1.15)) w.hit.add(target.getUUID());
             }
-            for (LivingEntity target : targets(w.level, surface.add(0, .8, 0), 1.8, 2.2)) {
-                if (!w.hit.contains(target.getUUID()) && strike(p, target, 15 + 9 * w.power, w.direction, 1.15)) {
-                    w.hit.add(target.getUUID());
-                }
+        }
+        if (ripGround) {
+            // Cut a shallow crosswise row every other crest. Particles carry the debris without block entities in flight.
+            for (int column = -3; column <= 3; column++) {
+                Vec3 sample = center.add(lateral.scale(column * (halfWidth / 3)));
+                Vec3 surface = surface(w.level, sample, 4, 7);
+                if (surface != null) tearGround(p, w, surface);
             }
         }
         if (crest % 6 == 0) sound(w.level, center, SoundEvents.WIND_CHARGE_BURST.value(), .85f, .62f);
     }
 
-    private static void tearGround(ServerPlayer p, Wave wave, Vec3 surface, Vec3 sideways) {
+    private static void tearGround(ServerPlayer p, Wave wave, Vec3 surface) {
         ServerLevel level = wave.level;
         BlockPos floor = BlockPos.containing(surface.add(0, -.04, 0));
+        if (!wave.broken.add(new BlockPos(floor.getX(), 0, floor.getZ()))) return;
         var state = level.getBlockState(floor);
         if (state.isAir()) return;
         level.sendParticles(new BlockParticleOption(ParticleTypes.BLOCK, state),
-                surface.x, surface.y + .22, surface.z, 13, .5, .36, .5, .23);
-        if (!CoopRules.canEdit(p, level, floor) || state.hasBlockEntity() || !state.getFluidState().isEmpty()
-                || state.getDestroySpeed(level, floor) < 0
-                || !wave.broken.add(new BlockPos(floor.getX(), 0, floor.getZ()))
-                || !level.destroyBlock(floor, false, p)) return;
-        var debris = com.dantemorrigan.gauntlet.mixin.FallingBlockEntityAccessor.infinityGauntlet$create(
-                level, floor.getX() + .5, surface.y + .2, floor.getZ() + .5, state);
-        debris.disableDrop();
-        debris.setDeltaMovement(wave.direction.scale(.42 + wave.power * .14)
-                .add(sideways).add(0, .53 + level.getRandom().nextDouble() * .28, 0));
-        level.addFreshEntity(debris);
+                surface.x, surface.y + .26, surface.z, 7, .32, .22, .32, .28);
+        if (CoopRules.canEdit(p, level, floor) && !state.hasBlockEntity() && state.getFluidState().isEmpty()
+                && state.getDestroySpeed(level, floor) >= 0) level.removeBlock(floor, false);
     }
 
     static void lightning(ServerPlayer p) { beginCast(p, false); }
@@ -689,7 +687,7 @@ public final class Stormbreaker {
         s.swing = null;
         server(p).overworld().setAttached(RELIC, new Relic(relic.owner, UUID.randomUUID().toString(),
                 IN_GROUND, p.level().dimension(), site));
-        if (p.level().hasChunkAt(BlockPos.containing(site))) {
+        if (!p.level().isOutsideBuildHeight(BlockPos.containing(site)) && p.level().hasChunkAt(BlockPos.containing(site))) {
             s.display = spawn(p.level(), site, StormbreakerEntity.PLANTING);
             s.plantUntil = server(p).getTickCount() + 10;
         }
@@ -703,8 +701,9 @@ public final class Stormbreaker {
         if (s.pull != null) return;
         if (p.getInventory().getFreeSlot() < 0) { status(p, "inventory_full"); return; }
         Vec3 hand = p.getEyePosition();
-        boolean local = relic.dimension == p.level().dimension() && hand.distanceToSqr(relic.position) <= 80 * 80
-                && p.level().hasChunkAt(BlockPos.containing(relic.position));
+        boolean local = relic.dimension == p.level().dimension() && !p.level().isOutsideBuildHeight(BlockPos.containing(relic.position))
+                && hand.distanceToSqr(relic.position) <= 80 * 80
+                && surface(p.level(), relic.position, 1, 2) != null;
         Vec3 from = local ? relic.position.add(0, 1, 0)
                 : hand.add(Vec3.directionFromRotation(0, p.getYRot()).scale(18)).add(0, 5, 0);
         if (!p.level().hasChunkAt(BlockPos.containing(from))) from = hand.add(0, 6, 0);
@@ -719,7 +718,7 @@ public final class Stormbreaker {
         s.flight = new Flight(yaw, true);
         storeRelic(server(p), Relic.at(p, IN_FLIGHT));
         StormFx.LIGHTNING_HIT.play(p.level(), from.add(0, -.5, 0), 10);
-        StormFx.RECLAIM.play(p.level(), from, 3.2);
+        StormFx.RECLAIM.play(p.level(), from, local ? 3.2 : 5.5);
         sound(p.level(), from, SoundEvents.TRIDENT_THUNDER.value(), 1.6f, .78f);
     }
 
@@ -895,7 +894,8 @@ public final class Stormbreaker {
             if (level != null && relic.owner.isEmpty() && now % 20 == 0) {
                 StormNetwork.compass(level, relic.position, true);
             }
-            if (level != null && level.hasChunkAt(BlockPos.containing(relic.position))) {
+            if (level != null && !level.isOutsideBuildHeight(BlockPos.containing(relic.position))
+                    && level.hasChunkAt(BlockPos.containing(relic.position))) {
                 if (s.display == null || s.display.isRemoved()) {
                     s.display = spawn(level, relic.position, StormbreakerEntity.EMBEDDED);
                 }
@@ -908,6 +908,9 @@ public final class Stormbreaker {
                 if (now % 14 == 0) StormFx.EMBEDDED_IDLE.play(level, relic.position.add(.18, .65, 0), 2.5);
                 if (now % 50 == 0) {
                     Vec3 socket = relic.position.add(0, .35, 0);
+                    double clouds = level.environmentAttributes().getDimensionValue(EnvironmentAttributes.CLOUD_HEIGHT);
+                    double height = level.dimensionType().hasSkyLight() ? Math.max(40, clouds + 8 - socket.y) : 20;
+                    StormFx.WRATH_BOLT.play(level, socket, height / StormFx.WRATH_BOLT.pivotY);
                     StormFx.LIGHTNING_HIT.play(level, socket, 10);
                     StormFx.RECLAIM.play(level, socket, 2.8);
                     sound(level, socket, SoundEvents.LIGHTNING_BOLT_IMPACT, .85f, 1.14f);

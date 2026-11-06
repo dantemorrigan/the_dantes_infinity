@@ -17,16 +17,16 @@ Requirements: **Java 25**. Build: `./gradlew build` → `build/libs/infinity_gau
 ## Getting started
 
 - **Uru ore** generates in new Overworld chunks from the bottom of the world up to Y=0. Look around Y=−32 and use a diamond or netherite pickaxe. Smelt raw Uru in a furnace or blast furnace. Fortune increases the drop, and Silk Touch preserves the ore block.
-- **Gauntlet crafting** uses a 3×3 grid. From top to bottom: Uru / gold / diamond, gold / redstone / gold, diamond / gold / Uru. Use ingots for both metals. **Infinity Gauntlet Schematics** with the forging pattern can be found in world chests (villages, smiths, strongholds, dungeons, mineshafts, temples, pyramids, shipwrecks, underwater ruins, mansions, ancient cities, bastions, fortresses, End cities) and bought from cartographers, smiths, librarians, and wandering traders; right-clicking the schematic unlocks the recipe in the recipe book. Right-click with the gauntlet in your main hand to open the stone slots, then press F to move it to your offhand.
+- **Gauntlet crafting** uses a 3×3 grid. From top to bottom: Uru / gold / diamond, gold / redstone / gold, diamond / gold / Uru. Use ingots for both metals. **Infinity Gauntlet Schematics** with the forging pattern can be found in world chests (villages, smiths, strongholds, dungeons, mineshafts, temples, pyramids, shipwrecks, underwater ruins, mansions, ancient cities, bastions, fortresses, End cities) and bought from cartographers, smiths, librarians, and wandering traders; right-clicking the schematic unlocks the Gauntlet, Uru armor and Uru smelting recipes. Right-click with the gauntlet in your main hand to open the stone slots, then press F to move it to your offhand.
 - **Uru armor** follows iron armor recipes and is repaired with Uru ingots. A complete set reduces damage from a full gauntlet and loses durability when absorbing a hit.
-- All six Infinity Stones have survival sources below.
+- All six Infinity Stones have survival sources below. The in-game field guide updates when opened. Use `/gauntlet_guide` to get a copy.
 
 ## Stormbreaker
 - Craft the axe from five Uru ingots, a Nether Star and a jungle log. The rows are **Uru / Uru / Nether Star**, **Uru / Uru / Uru**, **empty / jungle log / empty**. The first successful craft binds it to the smith.
-- During a thunderstorm, an unclaimed Stormbreaker can fall near a player in the Overworld. Right click the embedded axe to pull it free and become its owner. A world has one Stormbreaker, so either the first craft or the first skyfall closes the other route. The recipe requires a player at a crafting table.
-- Hold it in your main hand. **Left click** chains three attacks. Hold **left click** while aiming at the ground and release for a terrain-splitting lightning wave. **Right click** calls lightning in a 7-block radius. **X** throws it horizontally, **H** calls Heaven’s Wrath over a 20-block radius, and **J** toggles flight. **Q** plants the axe while keeping ownership, and **K** recalls it. You can rebind the keys in Controls.
-- The flying axe cuts through breakable blocks where block changes are permitted. It returns to its owner when the path is blocked or they change dimensions. If the inventory is full, it returns as soon as a slot is available. After death, right click the planted axe to reclaim it.
-- Holding the bound axe gives strength and reduces incoming gauntlet damage. It also wards off Mind and Soul control and hostile Snap or Planet Destruction transfers.
+- During a thunderstorm, an unclaimed Stormbreaker can fall near a player in the Overworld. Players within 110 blocks see a blue compass and the distance to the crash site until someone claims the axe. Right-click the embedded axe to pull it free and become its owner. A world has one Stormbreaker, so either the first craft or the first skyfall closes the other route. The recipe requires a player at a crafting table.
+- Hold it in your main hand. **Left click** chains three attacks. Hold **left click** while aiming at the ground and release to send a wall of lightning and debris forward, broadside to your aim. **Right click** calls lightning in a 7-block radius. **X** throws it horizontally, **H** calls Heaven’s Wrath over a 20-block radius, and **J** toggles flight. **Q** plants the axe while keeping ownership, and **K** recalls it across dimensions or from the void. You can rebind the keys in Controls.
+- The flying axe cuts through breakable blocks where block changes are permitted. It returns to its owner when the path is blocked or they change dimensions. If the inventory is full, it returns as soon as a slot is available. Lightning strikes the planted axe periodically, reaching down from the clouds in the Overworld. After death, reclaim it with right-click or summon it with K.
+- Holding the bound axe gives strength and reduces direct Gauntlet damage, including meteor blasts. It wards off Mind and Soul control and hostile Snap or Planet Destruction transfers. Reality Strike and Inversion can still kill its wielder.
 
 ## Finding the Power Stone
 - Now and then (first after ~20 min, then every 20–50 min of world time) a **meteor shower** falls 60–110 blocks from a player in the Overworld; nearby players get a HUD + chat notice with the direction.
@@ -77,8 +77,8 @@ Requirements: **Java 25**. Build: `./gradlew build` → `build/libs/infinity_gau
 - **Settings screen**: Options or Pause menu → **Infinity Gauntlet ⚙** button (bottom left).
   - **Language switcher**: cards for Auto / English / Русский; applies instantly to the whole mod (menus, HUD messages, tooltips, advancements, the book) and is saved as `language` in `config/infinity_gauntlet.json`. Auto follows Minecraft's language.
   - **Client options**: toggle **Ability Wheel** mode (`Hold` vs `Press`), show or hide the top-left **Ability HUD** card (`showStatusHud`), and cycle **Camera Shake** (`100% / 50% / Off`) and **Screen Flash** (`100% / 50% / Off`).
-- **Advancements & Recipe Unlocks**: a dedicated **The Dante’s Infinity** advancement tab tracks Uru mining, Uru armor, crafting the Gauntlet, finding each of the six Infinity Stones, flying into the Solar System, stealing a stone with the Extractor, defeating Thanos, awakening the full Gauntlet, shattering a planet, executing the Infinity Snap, and undoing the Snap with the Time Stone. Mining Uru automatically unlocks smelting, armor, and Gauntlet recipes in the recipe book.
-- **Field guide book**: every player gets a written book (16 pages, same book in both languages) the first time they join a world — powers, controls, Thanos, Uru ore and armor, the Extractor, and settings. Lost it? Type `/gauntlet_guide` (no operator rights needed). Disable with `giveGuideBook: false`.
+- **Advancements & Recipe Unlocks**: a dedicated **The Dante’s Infinity** advancement tab tracks Uru mining, Uru armor, crafting the Gauntlet, finding each of the six Infinity Stones, flying into the Solar System, stealing a stone with the Extractor, defeating Thanos, awakening the full Gauntlet, shattering a planet, executing the Infinity Snap, and undoing the Snap with the Time Stone. Raw Uru or Uru ore unlocks smelting. A Uru ingot or the schematic unlocks the Gauntlet and armor recipes.
+- **Field guide book**: every player gets a written book (19 pages, available in both languages) the first time they join a world — powers, controls, Thanos, Uru, the Extractor, settings, and Stormbreaker. Lost it? Type `/gauntlet_guide` (no operator rights needed). Disable with `giveGuideBook: false`.
 - Texts live in `lang/en_us.json` / `ru_ru.json`; the book pages are generated by `python3 scripts/gen_guide.py`. Check: `xvfb-run -a ./gradlew runClientGameTest -PonlyTest=GuideLangTest`.
 
 ## Ability wheel controls
@@ -107,11 +107,15 @@ Testing the new controls: `xvfb-run -a ./gradlew runClientGameTest -PonlyTest=Ab
 ## Power Stone
 - The gauntlet only works **in the offhand** (F). Right-clicking with the gauntlet in the main hand opens the stone menu.
 - **Hold R** with Power Strike selected — charge (purple aura at the fist), **release** — power strike (damage, knockback and cooldown are handled on the server).
-- Use the **V** wheel to select a mode: power strike → **Planet Destruction** → **Sun and Moon Destruction**.
+- Use the **V** wheel to select a mode: **Power Strike**, **Planet Destruction**, **Sun and Moon Destruction** or **Meteor Stream**.
 - Ultimate: "Planet Destruction" mode, full charge (2 s), strike the ground beneath you. Works in the Overworld and the Nether only: **not in the End, and never while Thanos is here**. The blocks of the world stay intact, but the destruction is seen by **every player on the server in the Overworld or the Nether** (players in the End are never touched): they all go to Dead Space (`planetDestructionAllPlayers`; off = only players within `participantRadius`), and the Time Stone takes them all home.
 - The destruction ends the meteor rain, closes portals in the source world and interrupts its active beams/rewinds. The red sky and fog only apply in the Overworld.
 - In space: a large voxel Earth with simplified continents based on [NASA Blue Marble](https://science.nasa.gov/resource/blue-marble/), ocean, polar caps and clouds; current vanilla block textures are used.
 - Breakup: 14 uneven large fragments → 54–56 secondary fragments with flashes → 650 small shards. Another 280 particles and 60 debris pieces are spread across the scene. The geometry is deterministic; the Time Stone reassembles it.
+
+## Meteor Stream
+- Select **Meteor Stream** in the Power Stone wheel. In the Overworld, hold **R** while aiming at the Sun or Moon to lock on. Then aim the ring at terrain or water and release **R** to fire.
+- The ring follows the surface. By default, meteors fall for **60 seconds** within a **24-block radius**. Server settings govern player damage and block changes.
 
 ## Sun and Moon Destruction (Power Stone, 3rd mode)
 - In "Sun and Moon Destruction" mode, **aim the gauntlet at the sun/moon and hold R for 3 s** — lock-on (a purple thread to the luminary).
@@ -125,10 +129,10 @@ Testing the new controls: `xvfb-run -a ./gradlew runClientGameTest -PonlyTest=Ab
 ## Reality Stone — "Reality Inversion"
 - Select Reality Inversion and **hold R** (closed fist) — you can move freely while channeling: charge at the fist → red cracks → the world crumbles into cubic fragments and
   turns inside out along your path and gaze. The ground on both sides of your gaze folds into walls, buildings twist, water hangs
-  in the air. **Walk and turn your head**: the rift moves and turns with you. Mobs and players caught in the vortex permanently turn into red butterflies, and flying arrows turn
+  in the air. **Walk and turn your head**: the rift moves and turns with you. Eligible mobs and PvP targets in the vortex burst into red butterflies, and flying arrows turn
   into petals. **Release R** (open fist): the twisted blocks (ground, buildings, and suspended water) remain physically twisted in the world forever.
 - Radius and block limit are in the config (`reality*`).
-- Select Reality Strike and press **R** — a stone strike on the ground: a red wave spreads from the fist. All mobs and players it reaches (except bosses, your pets and named mobs) turn into red butterflies and dissolve into the air, with no drops. The ground within `realityStrikeRadius` (10) becomes redstone blocks, with fire in places. This change is **real** and stays. Cooldown `realityStrikeCooldownTicks`.
+- Select Reality Strike and press **R** — a stone strike on the ground: a red wave spreads from the fist. Affected mobs dissolve into red butterflies without drops. Eligible players take lethal damage unless protected. The Ender Dragon, Wither, your pets and named mobs are spared, and Thanos takes damage. The ground within `realityStrikeRadius` (10) becomes redstone blocks, with fire in places. This change is **real** and stays. Cooldown `realityStrikeCooldownTicks`.
 
 ## Space Stone
 - With Portal selected, **R** opens and closes it. **Shift+R** — choose the dimension: Nether / End / Overworld

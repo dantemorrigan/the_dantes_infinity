@@ -33,6 +33,7 @@ import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.util.ARGB;
 import net.minecraft.util.Mth;
 
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Vector3f;
 import org.lwjgl.glfw.GLFW;
@@ -101,6 +102,12 @@ public final class StormbreakerClient {
                     };
                 }
             };
+            if (fx == StormFx.WRATH_BOLT) {
+                double halfSize = size * .5;
+                double bottom = y + (fx.pivotY - 1) * size;
+                particle.setBoundingBox(new AABB(x - halfSize, bottom, z - halfSize,
+                        x + halfSize, bottom + size, z + halfSize));
+            }
             return fx.facing == StormFx.Facing.TRAIL ? particle.alignX(direction) : particle;
         });
     }

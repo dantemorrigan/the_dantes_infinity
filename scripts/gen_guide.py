@@ -31,14 +31,14 @@ add('wheel',
  f"{H}Ability wheel{R}\nHold {B}V{R}, point at a stone, then an ability, release. {B}R{R} uses it; hold R for charged powers.\n\n{B}Esc{R} cancels. Pin with 1–6. Hold B for favorites.",
  f"{H}Колесо способностей{R}\nДержи {B}V{R}, наведи на камень, потом на способность, отпусти. {B}R{R} — применить, держи R для заряжаемых.\n\n{B}Esc{R} — отмена. 1–6 закрепляют способность. Держи B для избранного.")
 add('power',
- f"{H}Power Stone{R}\n{B}Power strike{R}: hold R, release.\n{B}Planet Destruction{R}: full charge, hit the ground. Not in the End.\n{B}Celestial Destruction{R}: aim at the sun or moon.\n{B}Meteor Stream{R}: lock on, aim a circle.\n\nHeld bare, it kills.",
- f"{H}Камень Силы{R}\n{B}Силовой удар{R}: держи R, отпусти.\n{B}Уничтожение планеты{R}: заряд и удар в землю. Не в Энде.\n{B}Разрушение светил{R}: наведи на солнце или луну.\n{B}Поток метеоритов{R}: захват, круг.\nГолым он убивает.")
+ f"{H}Power Stone{R}\n{B}Power strike{R}: hold R, release.\n{B}Planet Destruction{R}: charge, hit ground.\n{B}Celestial Destruction{R}: aim at a luminary.\n{B}Meteor Stream{R}: lock on, aim low, release R.\n\nHeld bare, it kills.",
+ f"{H}Камень Силы{R}\n{B}Силовой удар{R}: держи R, отпусти.\n{B}Уничтожение планеты{R}: заряд, удар в землю.\n{B}Разрушение светил{R}: цель — светило.\n{B}Поток метеоритов{R}: захват, целься вниз, отпусти R.\nГолым убивает.")
 add('space',
  f"{H}Space Stone{R}\n{B}Portal{R}: a door to the Nether, End or Overworld.\n{B}Blink{R}: teleport where you look.\n{B}Flight{R}: Ctrl boosts; beyond the sky lies the Solar System.\n{B}Warp{R}: jump to a planet.",
  f"{H}Камень Пространства{R}\n{B}Портал{R}: дверь в другое измерение.\n{B}Рывок{R}: телепорт туда, куда смотришь.\n{B}Полёт{R}: Ctrl ускоряет; за небом — Солнечная система.\n{B}Варп{R}: прыжок к планете.")
 add('reality',
- f"{H}Reality Stone{R}\n{B}Reality strike{R}: press R. Mobs turn to butterflies, ground to redstone and fire.\n\n{B}Inversion{R}: hold R while moving. Mobs and players become butterflies; twisted blocks stay twisted.",
- f"{H}Камень Реальности{R}\n{B}Удар Реальности{R}: нажми R. Мобы — бабочки, земля — редстоун и огонь.\n\n{B}Изнанка{R}: держи R на ходу. Все в вихре — бабочки, а закрученные блоки остаются навсегда.")
+ f"{H}Reality Stone{R}\n{B}Reality strike{R}: press R. Mobs turn to butterflies, ground to redstone and fire.\n\n{B}Inversion{R}: hold R while moving. The vortex moves with you. Mobs dissolve, and terrain stays twisted.",
+ f"{H}Камень Реальности{R}\n{B}Удар Реальности{R}: нажми R. Мобы — бабочки, земля — редстоун и огонь.\n\n{B}Изнанка{R}: держи R на ходу. Вихрь движется за тобой. Мобы исчезают, а рельеф остаётся закрученным.")
 add('time',
  f"{H}Time Stone{R}\n{B}Rewind{R}: you are played back through your last 5 seconds.\n{B}Day / Night{R}: spins the sky to the other half of the day.\n\nIn Dead Space, rewind reassembles a destroyed planet.",
  f"{H}Камень Времени{R}\n{B}Перемотка{R}: тебя «проигрывает» назад на 5 секунд.\n{B}День / Ночь{R}: прокручивает небо на другую половину суток.\n\nВ Мёртвом космосе перемотка собирает разрушенную планету.")
@@ -49,25 +49,34 @@ add('soul',
  f"{H}Soul Stone{R}\n{B}Extract soul{R}: pull a mob's soul. Each gives +1 ❤ and +0.5 damage for a minute.\n{B}Mass extraction{R}: a wave takes every enemy's soul around you.",
  f"{H}Камень Души{R}\n{B}Извлечь душу{R}: вытяни душу моба. Каждая даёт +1 ❤ и +0.5 урона на минуту.\n{B}Массовое извлечение{R}: волна забирает души всех врагов рядом.")
 add('beam',
- f"{H}All six stones{R}\n{B}Infinity Beam{R}: hold R. Drills tunnels, wounds the Ender Dragon.\n\n{B}Infinity Snap{R}: erases the universe and burns the gauntlet out. A loose Time Stone can undo it.",
- f"{H}Все шесть камней{R}\n{B}Луч Бесконечности{R}: держи R. Пробивает тоннели, ранит Дракона.\n\n{B}Щелчок{R}: стирает вселенную и сжигает перчатку. Вернуть может Камень Времени вне перчатки.")
+ f"{H}All six stones{R}\n{B}Infinity Beam{R}: hold R. Burns through terrain and kills most mobs on contact.\n\n{B}Infinity Snap{R}: erases the universe and burns the gauntlet out. A loose Time Stone can undo it.",
+ f"{H}Все шесть камней{R}\n{B}Луч Бесконечности{R}: держи R. Бурит землю и сжигает мобов.\n\n{B}Щелчок{R}: стирает вселенную и сжигает перчатку. Вернуть может Камень Времени вне перчатки.")
 add('thanos',
  f"{H}Thanos{R}\nGather {B}five stones{R}: after half a day of calm the Mad Titan comes for them.\n{B}Uru armor{R} is a must. The worn gauntlet hurts him most; explosions, bare stones and swords also work.\nBeaten once, he never returns.",
  f"{H}Танос{R}\nСобери {B}пять камней{R}: через полсуток придёт Безумный Титан.\n{B}Броня Уру{R} обязательна. Сильнее всего его бьёт перчатка, дальше взрывы, камни и мечи.\nПобеждённый, он не вернётся.")
 add('uru',
- f"{H}Uru{R}\nFind ore near Y=−32. Mine with diamond or netherite and smelt it.\n\n{B}Uru armor{R} uses iron recipes. A full set reduces full-gauntlet damage. Find the {B}Gauntlet Schematic{R} in chests or traders.",
- f"{H}Уру{R}\nИщи около Y=−32. Добудь алмазной или незеритовой киркой и переплавь.\n\n{B}Броня из Уру{R} крафтится как железная и гасит урон перчатки. {B}Схему перчатки{R} ищи в сундуках и у торговцев.")
+ f"{H}Uru{R}\nFind ore near Y=−32. Mine with diamond or netherite and smelt it.\n\n{B}Uru armor{R} uses iron recipes. A full set reduces full-gauntlet damage. Find a {B}Gauntlet Schematic{R} in chests or shops. Use it to learn recipes.",
+ f"{H}Уру{R}\nРуда около Y=−32. Добудь алмазной или незеритовой киркой, переплавь.\n\n{B}Броня из Уру{R} снижает урон Перчатки. {B}Схема перчатки{R} открывает рецепты по ПКМ. Ищи в сундуках и у торговцев.")
 add('extractor',
  f"{H}Infinity Extractor{R}\nPulls a stone out of someone's gauntlet: hold right-click on them, three cycles. Shift + right-click picks which stone.\n\nYour stones stay with you when you die, unless another player kills you.",
  f"{H}Извлекатель{R}\nВытягивает камень из чужой перчатки: держи ПКМ на цели, три цикла. Shift + ПКМ выбирает камень.\n\nПосле смерти камни остаются у тебя, если не убил другой игрок.")
 add('settings',
  f"{H}Settings{R}\n{B}Menu{R}: Options or Pause, button {B}Infinity Gauntlet{R} (language, wheel mode, HUD, shake, flash).\n\nLost the book? {B}/gauntlet_guide{R}.\n\n{G}Use the power wisely.",
  f"{H}Настройки{R}\n{B}Меню{R}: Настройки или Пауза, кнопка {B}Infinity Gauntlet{R} (язык, колесо, HUD, тряска, вспышки).\n\nПотерял книгу? {B}/gauntlet_guide{R}.\n\n{G}Распоряжайся силой мудро.")
+add('storm_find',
+ f"{H}Stormbreaker{R}\nOne axe per world. Forge it with {B}5 Uru ingots{R}, a Nether Star and a jungle log. Or find it after a thunderstorm skyfall. A compass appears within 110 blocks. Right-click to claim it.",
+ f"{H}Гром-Секира{R}\nОдна на сервер. Для ковки нужны {B}5 слитков Уру{R}, звезда Незера и тропическое бревно. В грозу ищи её по компасу в радиусе 110 блоков. Подними секиру ПКМ.")
+add('storm_combat',
+ f"{H}Stormbreaker combat{R}\n{B}Left click{R}: three-hit combo. Hold at the ground and release for a lightning wall.\n{B}Right click{R}: lightning, radius 7.\n{B}H{R}: storm, radius 20.\n{B}X{R}: throw. {B}J{R}: flight.",
+ f"{H}Бой с Гром-Секирой{R}\n{B}ЛКМ{R}: тройное комбо. Зажми на земле и отпусти для стены молний.\n{B}ПКМ{R}: молнии, радиус 7.\n{B}H{R}: гроза, радиус 20.\n{B}X{R}: бросок. {B}J{R}: полёт.")
+add('storm_owner',
+ f"{H}The chosen wielder{R}\n{B}Q{R} or death plants the axe. Only the owner can recover it. {B}K{R} recalls it from any dimension or the void.\nIn hand, it gives strength and softens gauntlet hits.",
+ f"{H}Владелец секиры{R}\n{B}Q{R} или смерть оставляют секиру в земле. Забрать её может владелец. {B}K{R} призывает её из других измерений и бездны.\nВ руке даёт силу и снижает урон Перчатки.")
 # --- contents: built from the page order ---
 order = list(PAGES)
 def pn(k): return str(order.index(k) + 1)
-toc_en = [("Wheel",'wheel'),("Power",'power'),("Space",'space'),("Reality",'reality'),("Time",'time'),("Mind",'mind'),("Soul",'soul'),("Beam",'beam'),("Thanos",'thanos'),("Uru",'uru'),("Extractor",'extractor'),("Settings",'settings')]
-toc_ru = [("Колесо",'wheel'),("Сила",'power'),("Пространство",'space'),("Реальность",'reality'),("Время",'time'),("Разум",'mind'),("Душа",'soul'),("Луч",'beam'),("Танос",'thanos'),("Уру",'uru'),("Извлекатель",'extractor'),("Опции",'settings')]
+toc_en = [("Wheel",'wheel'),("Power",'power'),("Space",'space'),("Reality",'reality'),("Time",'time'),("Mind",'mind'),("Soul",'soul'),("Beam",'beam'),("Thanos",'thanos'),("Uru",'uru'),("Tools",'extractor'),("Stormbreaker",'storm_find')]
+toc_ru = [("Колесо",'wheel'),("Сила",'power'),("Пространство",'space'),("Реальность",'reality'),("Время",'time'),("Разум",'mind'),("Душа",'soul'),("Луч",'beam'),("Танос",'thanos'),("Уру",'uru'),("Инструменты",'extractor'),("Гром-Секира",'storm_find')]
 PAGES['contents'] = (
  f"{H}Contents{R}\n" + "\n".join(f"{n} {G}{pn(k)}{R}" for n,k in toc_en),
  f"{H}Содержание{R}\n" + "\n".join(f"{n} {G}{pn(k)}{R}" for n,k in toc_ru))
@@ -108,7 +117,7 @@ for k,(en,ru) in PAGES.items():
     for lang,t in (('en',en),('ru',ru)):
         n = lines_needed(t)
         if n > 13: print(f'OVERFLOW {k} [{lang}] ~{n} lines'); problems += 1
-print('GuideBook.PAGE_COUNT must be', len(PAGES)); print('pages:', len(PAGES), 'overflow:', problems)
+print('pages:', len(PAGES), 'overflow:', problems)
 
 # --- split the marked-up text into styled segments (legacy § codes render badly inside books) ---
 STYLE_OF = [('§5§l', 'H'), ('§l', 'B'), ('§8', 'G'), ('§r§0', 'T')]

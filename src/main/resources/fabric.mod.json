@@ -3,7 +3,7 @@
 	"id": "infinity_gauntlet",
 	"version": "${version}",
 	"name": "The Dante’s Infinity",
-	"description": "Wield the Infinity Gauntlet, find all six stones in survival, explore the Solar System, and face Thanos, the Mad Titan.",
+	"description": "Wield the Infinity Gauntlet, find all six stones in survival, claim Stormbreaker, explore the Solar System, and face Thanos.",
 	"authors": ["dantemorrigan"],
 	"license": "CC0-1.0",
 	"icon": "assets/infinity_gauntlet/icon.png",

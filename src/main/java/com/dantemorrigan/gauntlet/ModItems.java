@@ -14,7 +14,14 @@ import java.util.function.Function;
 public final class ModItems {
 	public static final Item STORMBREAKER = register("stormbreaker", com.dantemorrigan.gauntlet.stormbreaker.StormbreakerItem::new,
 			epic().component(DataComponents.LORE, new net.minecraft.world.item.component.ItemLore(java.util.List.of(
-					net.minecraft.network.chat.Component.translatable("tooltip.infinity_gauntlet.stormbreaker")))));
+					net.minecraft.network.chat.Component.translatable("tooltip.infinity_gauntlet.stormbreaker"),
+					net.minecraft.network.chat.Component.translatable("tooltip.infinity_gauntlet.stormbreaker_combat"),
+					net.minecraft.network.chat.Component.translatable("tooltip.infinity_gauntlet.stormbreaker_lightning",
+							net.minecraft.network.chat.Component.keybind("key.infinity_gauntlet.stormbreaker_wrath")),
+					net.minecraft.network.chat.Component.translatable("tooltip.infinity_gauntlet.stormbreaker_controls",
+							net.minecraft.network.chat.Component.keybind("key.infinity_gauntlet.stormbreaker_throw"),
+							net.minecraft.network.chat.Component.keybind("key.infinity_gauntlet.stormbreaker_flight"),
+							net.minecraft.network.chat.Component.keybind("key.infinity_gauntlet.stormbreaker_recall"))))));
 	public static final Item GAUNTLET = register("gauntlet", GauntletItem::new, epic().component(DataComponents.CONTAINER, ItemContainerContents.EMPTY));
 
 	public static final Item POWER_STONE = register("power_stone", stone("power"));
