@@ -35,7 +35,7 @@ public final class SupersonicFlight {
     }
     private static void tick(MinecraftServer server) {
         for(ServerPlayer p:server.getPlayerList().getPlayers()) {
-            if(!p.isAlive() || p.isSpectator() || !p.hasAttached(CosmosTravel.FLIGHT) || !CosmosTravel.equipped(p)) {
+            if(!p.isAlive() || p.isSpectator() || CosmosTravel.inCosmos(p) || !p.hasAttached(CosmosTravel.FLIGHT) || !CosmosTravel.equipped(p)) {
                 FLIGHTS.remove(p.getUUID()); continue;
             }
             Flight f=FLIGHTS.computeIfAbsent(p.getUUID(),id->new Flight(p));

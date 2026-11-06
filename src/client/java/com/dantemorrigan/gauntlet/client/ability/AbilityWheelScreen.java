@@ -157,7 +157,7 @@ public final class AbilityWheelScreen extends Screen {
             for(int i=0;i<count;i++) {
                 double a=Math.toRadians(-90+360.0*i/count);double x=Math.cos(a)*115,y=Math.sin(a)*115;
                 button(g,x,y,null,null,i==target,destinationAllowed(i),Stone.SPACE,54);
-                blit(g,"icons_64/"+(submenu==1?"portal_"+new String[]{"nether","end","overworld"}[i]:"route_"+CosmosRoutes.ALL.get(i).id()),(float)(cx()+(x-16)*scale()),(float)(cy()+(y-16)*scale()),32*scale(),32*scale(),64,64);
+                blit(g,"icons_64/"+(submenu==1?"portal_"+new String[]{"nether","end","overworld"}[i]:destinationIcon(CosmosRoutes.ALL.get(i).id())),(float)(cx()+(x-16)*scale()),(float)(cy()+(y-16)*scale()),32*scale(),32*scale(),64,64);
                 Component label=submenu==1?Component.translatable("ability.infinity_gauntlet.dimension."+new String[]{"nether","end","overworld"}[i]):Component.translatable("cosmos.infinity_gauntlet."+CosmosRoutes.ALL.get(i).id());
                 text(g,label,(int)(cx()+x*scale()),(int)(cy()+(y+34)*scale()),destinationAllowed(i)?0xFFDEE8F9:0xFF85818A);
             }
@@ -213,6 +213,14 @@ public final class AbilityWheelScreen extends Screen {
         if(stack!=null) item(g,stack,px+s*.2f,py+s*.2f,s*.6f);
         else if(ability!=null) icon(g,ability,px+s*.2f,py+s*.2f,s*.6f);
         if(ability!=null && AbilityInput.cooldown(ability)>0) {text(g,Component.literal(""+((AbilityInput.cooldown(ability)+19)/20)),(int)(px+s/2),(int)(py+s/2-4),0xFFFFDE82);}
+    }
+    private static String destinationIcon(String id) {
+        return switch (id) {
+            case "earth", "moon" -> "route_" + id;
+            case "sun", "mercury", "venus", "mars" -> "route_ember";
+            case "uranus", "neptune" -> "route_ice";
+            default -> "destinations";
+        };
     }
     public static void icon(GuiGraphicsExtractor g,Ability a,float x,float y,float size) {
         String id=a==Ability.WARP?"route_earth":a==Ability.PORTAL?"portal_"+new String[]{"nether","end","overworld"}[Math.floorMod(AbilityInput.portal(),3)]:a==Ability.FLIGHT&&CosmosClient.flying()?"flight_disable":a==Ability.GRAB&&AbilityInput.holding()>0?"mind_throw":a.id;

@@ -43,7 +43,7 @@ public final class CosmosTravel {
         int groundedTicks;
         LandingGrace(int expires) { this.expires = expires; }
     }
-    private static class Navigation { int selected, warp, cooldown; long lastAction = -100; }
+    private static class Navigation { int selected, planned = -1, warp, cooldown; long lastAction = -100; }
     public static boolean inCosmos(ServerPlayer p) { return p.level().dimension().equals(DIMENSION); }
     /** Dimensions where J flight works: Overworld (with exit to space), Nether and End (bounded), and the cosmos itself. */
     private static boolean flightDim(ServerPlayer p) {
@@ -91,7 +91,11 @@ public final class CosmosTravel {
             return grace == null || p.tickCount > grace.expires;
         });
     }
-    public static void action(ServerPlayer p, int action) {
+    public static void action(ServerPlayer p, int action) { action(p, action, false); }
+
+    public static void warpSelected(ServerPlayer p) { action(p, 2, true); }
+
+    private static void action(ServerPlayer p, int action, boolean useRoute) {
         if (action < 0 || action > 2 || !p.isAlive() || p.isSpectator() || p.hasAttached(SpaceManager.RECORD)) return;
         Navigation n = NAV.computeIfAbsent(p.getUUID(), id -> new Navigation());
         long now = p.level().getServer().overworld().getGameTime();
@@ -101,7 +105,13 @@ public final class CosmosTravel {
             if (inCosmos(p) && CosmosRoutes.earthDistance(p.getX(),p.getY(),p.getZ()) > CosmosRoutes.RETURN_RANGE) {
                 ModStatus.send(p, Component.translatable("cosmos.infinity_gauntlet.return_near_earth")); return;
             }
-            if (inCosmos(p)) { reenter(p); return; }
+            if (inCosmos(p)) {
+                n.warp = 0;
+                n.planned = -1;
+                reenter(p);
+                sync(p,n);
+                return;
+            }
             stop(p, false); return;
         }
         if (!equipped(p)) { ModStatus.send(p, Component.translatable("cosmos.infinity_gauntlet.need_stone")); return; }
@@ -113,9 +123,10 @@ public final class CosmosTravel {
         } else if (inCosmos(p) && p.hasAttached(FLIGHT)) {
             if (action == 2 && n.warp == 0 && n.cooldown == 0) {
                 Vec3 eye = p.getEyePosition(), look = p.getLookAngle();
-                int target = CosmosRoutes.aim(eye.x, eye.y, eye.z, look.x, look.y, look.z, 2.5);
+                int target = useRoute && n.planned >= 0 ? n.planned
+                    : CosmosRoutes.aim(eye.x, eye.y, eye.z, look.x, look.y, look.z, 2.5);
                 if (target < 0) ModStatus.send(p, Component.translatable("cosmos.infinity_gauntlet.no_target"));
-                else { n.selected = target; n.warp = CosmosRoutes.WARP_TICKS; }
+                else { n.selected = target; n.planned = -1; n.warp = CosmosRoutes.WARP_TICKS; }
             }
             sync(p, n);
         }
@@ -126,7 +137,7 @@ public final class CosmosTravel {
         sync(p, NAV.computeIfAbsent(p.getUUID(), id -> new Navigation()));
     }
     private static void sync(ServerPlayer p, Navigation n) {
-        ServerPlayNetworking.send(p, new ModNetwork.CosmosState(p.hasAttached(FLIGHT), n.selected, n.warp, n.cooldown));
+        ServerPlayNetworking.send(p, new ModNetwork.CosmosState(p.hasAttached(FLIGHT), n.warp > 0 ? n.selected : n.planned, n.warp, n.cooldown));
     }
     public static void stop(ServerPlayer p, boolean returnHome) {
         Flight f = p.removeAttached(FLIGHT);
@@ -205,32 +216,49 @@ public final class CosmosTravel {
                     p.teleport(new TeleportTransition(p.level(), arrival, Vec3.ZERO, d.arrivalYaw(), 0, TeleportTransition.DO_NOTHING));
                     n.cooldown = 100; sync(p,n);
                 }
-                // Bodies are solid for flight; only Earth has a re-entry route.
-                for (int i=0; i<CosmosRoutes.ALL.size(); i++) {
-                    var d = CosmosRoutes.ALL.get(i); Vec3 center = new Vec3(d.x(),d.y(),d.z());
-                    Vec3 delta = p.position().subtract(center);
-                    if (delta.length() < d.radius()+16) {
-                        if (i == CosmosRoutes.EARTH) { reenter(p); sync(p,n); break; }
-                        Vec3 out = delta.lengthSqr() < 1 ? new Vec3(0,1,0) : delta.normalize();
-                        p.teleport(new TeleportTransition(p.level(),center.add(out.scale(d.radius()+28)),Vec3.ZERO,p.getYRot(),p.getXRot(),TeleportTransition.DO_NOTHING));
-                    }
-                }
-                if (p.hasAttached(FLIGHT) && (Math.abs(p.getX())>CosmosRoutes.LIMIT || Math.abs(p.getZ())>CosmosRoutes.LIMIT || p.getY() < -900 || p.getY()>900)) {
-                    { var e = CosmosRoutes.ALL.get(CosmosRoutes.EARTH);
-                    p.teleport(new TeleportTransition(p.level(),new Vec3(e.arrivalX(),e.arrivalY(),e.arrivalZ()),Vec3.ZERO,e.arrivalYaw(),0,TeleportTransition.DO_NOTHING)); }
-                }
+                constrainPosition(p);
             }
             if (p.hasAttached(FLIGHT) && p.tickCount % 20 == 0) sync(p,n);
         }
     }
+    private static void constrainPosition(ServerPlayer p) {
+        Vec3 position = p.position();
+        Vec3 safe = bounded(position);
+        for (var body : CosmosRoutes.ALL) {
+            Vec3 center = new Vec3(body.x(), body.y(), body.z());
+            Vec3 offset = safe.subtract(center);
+            if (offset.lengthSqr() >= Math.pow(body.radius() + 16, 2)) continue;
+            Vec3 direction = offset.lengthSqr() < 1 ? new Vec3(1, 0, 0) : offset.normalize();
+            Vec3 outside = center.add(direction.scale(body.radius() + CosmosRoutes.BODY_CLEARANCE));
+            // For a player inside the Sun near the vertical limit, exit toward its equator.
+            if (outside.y < CosmosRoutes.MIN_Y || outside.y > CosmosRoutes.MAX_Y) {
+                Vec3 horizontal = new Vec3(offset.x, 0, offset.z);
+                direction = horizontal.lengthSqr() < 1 ? new Vec3(1, 0, 0) : horizontal.normalize();
+                outside = center.add(direction.scale(body.radius() + CosmosRoutes.BODY_CLEARANCE));
+            }
+            safe = bounded(outside);
+            break;
+        }
+        if (!position.equals(safe)) {
+            p.teleport(new TeleportTransition(p.level(), safe, Vec3.ZERO, p.getYRot(), p.getXRot(), TeleportTransition.DO_NOTHING));
+        }
+    }
+
+    private static Vec3 bounded(Vec3 pos) {
+        return new Vec3(
+            net.minecraft.util.Mth.clamp(pos.x, -CosmosRoutes.LIMIT, CosmosRoutes.LIMIT),
+            net.minecraft.util.Mth.clamp(pos.y, CosmosRoutes.MIN_Y, CosmosRoutes.MAX_Y),
+            net.minecraft.util.Mth.clamp(pos.z, -CosmosRoutes.LIMIT, CosmosRoutes.LIMIT));
+    }
+
     private CosmosTravel() {}
     public static int warpCooldown(ServerPlayer p) { Navigation n=NAV.get(p.getUUID()); return n==null?0:Math.max(n.cooldown,n.warp); }
-    public static int route(ServerPlayer p) { Navigation n=NAV.get(p.getUUID()); return n==null?0:n.selected; }
+    public static int route(ServerPlayer p) { Navigation n=NAV.get(p.getUUID()); return n==null?0:n.planned>=0?n.planned:n.selected; }
     public static boolean selectDestination(ServerPlayer p,int index) {
         if(index<0 || index>=CosmosRoutes.ALL.size() || !inCosmos(p) || !p.hasAttached(FLIGHT) || !equipped(p)) return false;
         Navigation n=NAV.computeIfAbsent(p.getUUID(),id->new Navigation());
         if(n.warp>0) return false;
-        n.selected=index;sync(p,n);return true;
+        n.planned=index;sync(p,n);return true;
     }
 
 }

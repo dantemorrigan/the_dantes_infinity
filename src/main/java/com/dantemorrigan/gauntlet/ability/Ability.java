@@ -21,7 +21,7 @@ public enum Ability {
     public static List<Ability> of(Stone stone,boolean cosmos) {
         return switch(stone) {
             case POWER -> List.of(STRIKE,PLANET,CELESTIAL,METEOR_STREAM);
-            case SPACE -> cosmos?List.of(FLIGHT,WARP):List.of(PORTAL,BLINK,FLIGHT);
+            case SPACE -> cosmos?List.of(FLIGHT,WARP,DESTINATIONS):List.of(PORTAL,BLINK,FLIGHT);
             case REALITY -> List.of(REALITY_STRIKE,INVERSION);
             case TIME -> List.of(REWIND,DAY_NIGHT,TIME_FLOW);
             case MIND -> List.of(GRAB,TEAR,DROP);

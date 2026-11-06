@@ -52,7 +52,17 @@ public class CosmosTravelTest implements FabricClientGameTest {
                     throw new AssertionError("Aimed warp failed: "+d.id());
                 ctx.waitTicks(40); ctx.takeScreenshot("cosmos_"+d.id());ctx.waitTicks(80);
             }
-            warpAimed.accept(CosmosRoutes.ALL.get(CosmosRoutes.EARTH));
+            // An explicit route must work even when the crosshair is aimed far away from the chosen body.
+            var earth = CosmosRoutes.ALL.get(CosmosRoutes.EARTH);
+            sp.getServer().runCommand("execute as @p at @p run tp @s ~ ~ ~ ~ -90");
+            for (int i = 0; i < 60 && sp.getServer().computeOnServer(
+                    server -> CosmosTravel.warpCooldown(server.getPlayerList().getPlayers().getFirst()) > 0); i++) ctx.waitTicks(20);
+            sp.getServer().runOnServer(server -> {
+                var player = server.getPlayerList().getPlayers().getFirst();
+                if (!CosmosTravel.selectDestination(player, CosmosRoutes.EARTH)) throw new AssertionError("Route selection rejected");
+                CosmosTravel.warpSelected(player);
+            });
+            ctx.waitFor(mc -> mc.player.position().distanceToSqr(earth.arrivalX(), earth.arrivalY(), earth.arrivalZ()) < 400, 1200);
             ctx.getInput().pressKey(GLFW.GLFW_KEY_J);
             ctx.waitFor(mc->mc.level.dimension().equals(net.minecraft.world.level.Level.OVERWORLD),200);
             ctx.waitTicks(10);
