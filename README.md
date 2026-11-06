@@ -22,7 +22,8 @@ Requirements: **Java 25**. Build: `./gradlew build` → `build/libs/infinity_gau
 - All six Infinity Stones have survival sources below.
 
 ## Stormbreaker
-- Craft the axe from five Uru ingots, a Nether Star and a jungle log. The rows are **Uru / Uru / Nether Star**, **Uru / Uru / Uru**, **empty / jungle log / empty**. The first player to use it becomes its sole owner for that world.
+- Craft the axe from five Uru ingots, a Nether Star and a jungle log. The rows are **Uru / Uru / Nether Star**, **Uru / Uru / Uru**, **empty / jungle log / empty**. The first successful craft binds it to the smith.
+- During a thunderstorm, an unclaimed Stormbreaker can fall near a player in the Overworld. Right click the embedded axe to pull it free and become its owner. A world has one Stormbreaker, so either the first craft or the first skyfall closes the other route. The recipe requires a player at a crafting table.
 - Hold it in your main hand. **Left click** chains three attacks or starts a lightning wall when you strike the top of a block. **Right click** calls a lightning strike. **X** throws it, **H** calls Heaven’s Wrath, and **J** toggles flight. You can rebind the keys in Controls.
 - The flying axe cuts through breakable blocks where block changes are permitted. It returns to its owner when the path is blocked or they change dimensions. If the inventory is full, it returns as soon as a slot is available. After death, right click the planted axe to reclaim it.
 - Holding the bound axe gives strength and reduces incoming gauntlet damage. It also wards off Mind and Soul control and hostile Snap or Planet Destruction transfers.

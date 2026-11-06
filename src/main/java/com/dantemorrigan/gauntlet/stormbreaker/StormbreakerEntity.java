@@ -18,7 +18,8 @@ import net.minecraft.world.level.storage.ValueOutput;
 public final class StormbreakerEntity extends Entity {
     private static final EntityDataAccessor<Integer> PHASE =
             SynchedEntityData.defineId(StormbreakerEntity.class, EntityDataSerializers.INT);
-    public static final int OUTBOUND = 0, RETURNING = 1, EMBEDDED = 2, PLANTING = 3;
+    private int phaseStarted;
+    public static final int OUTBOUND = 0, RETURNING = 1, EMBEDDED = 2, PLANTING = 3, SKYFALL = 4, PULLING = 5;
 
     public StormbreakerEntity(EntityType<? extends StormbreakerEntity> type, Level level) {
         super(type, level);
@@ -31,6 +32,17 @@ public final class StormbreakerEntity extends Entity {
 
     void phase(int phase) {
         entityData.set(PHASE, phase);
+
+    }
+
+    public float phaseAge(float partial) {
+        return Math.max(0, tickCount - phaseStarted + partial);
+    }
+
+    @Override
+    public void onSyncedDataUpdated(EntityDataAccessor<?> accessor) {
+        super.onSyncedDataUpdated(accessor);
+        if (accessor == PHASE) phaseStarted = tickCount;
     }
 
     @Override

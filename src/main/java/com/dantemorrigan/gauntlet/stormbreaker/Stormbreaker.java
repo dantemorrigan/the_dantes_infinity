@@ -43,9 +43,11 @@ import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.inventory.AbstractCraftingMenu;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.EntityHitResult;
@@ -65,7 +67,8 @@ public final class Stormbreaker {
     public static final Identifier CHARGED = InfinityGauntlet.id("stormbreaker_charged");
     private static final Identifier BASE = InfinityGauntlet.id("stormbreaker");
     private static final Identifier STRENGTH = InfinityGauntlet.id("stormbreaker_strength");
-    private static final int HELD = 0, IN_FLIGHT = 1, IN_GROUND = 2;
+    private static final int HELD = 0, IN_FLIGHT = 1, IN_GROUND = 2, FALLING = 3;
+    private static final int SKY_FALL_TICKS = 28, PULL_TICKS = 12;
     private static final int[] STRIKES = {36, 50, 65, 83};
     private static final StormFx[] COMBO = {StormFx.COMBO_1, StormFx.COMBO_2, StormFx.COMBO_3};
     private static final int[] SWING_TICKS = {9, 10, 16};
@@ -99,6 +102,8 @@ public final class Stormbreaker {
         Cast cast;
         Release release;
         Swing swing;
+        Pull pull;
+        int fallStart;
         int combo, lastSwing = -100, nextSwing, lightningReady, waveReady, throwReady, wrathReady, plantUntil;
         boolean flying, wasFlying;
     }
@@ -111,6 +116,8 @@ public final class Stormbreaker {
     }
 
     private record Swing(ServerLevel level, int start, int combo, Vec3 direction, UUID target) {}
+
+    private record Pull(UUID player, int finish) {}
 
     private record Release(ServerLevel level, int tick, Vec3 direction) {}
 
@@ -194,6 +201,39 @@ public final class Stormbreaker {
                 && p.getMainHandItem().is(ModItems.STORMBREAKER);
     }
 
+    public static boolean exists(MinecraftServer server) {
+        return server.overworld().hasAttached(RELIC);
+    }
+
+    public static ItemStack craftingPreview(ServerLevel level, ItemStack stack) {
+        if (!stack.is(ModItems.STORMBREAKER)) return stack;
+        if (exists(level.getServer())) return ItemStack.EMPTY;
+        // The result slot carries the same seal into the cursor or inventory on every kind of click.
+        stack.set(ModComponents.STORMBREAKER_SEAL, UUID.randomUUID().toString());
+        return stack;
+    }
+
+    public static void finishCraft(ServerPlayer p, ItemStack stack) {
+        if (!sealed(stack) || record(p) != null) return;
+        var relic = new Relic(p.getStringUUID(), stack.get(ModComponents.STORMBREAKER_SEAL), HELD,
+                p.level().dimension(), p.position());
+        storeRelic(server(p), relic);
+        status(p, "bound");
+    }
+
+    private static void storeRelic(MinecraftServer server, Relic relic) {
+        boolean first = !exists(server);
+        server.overworld().setAttached(RELIC, relic);
+        if (!first) return;
+        for (ServerPlayer p : server.getPlayerList().getPlayers()) {
+            if (p.containerMenu instanceof AbstractCraftingMenu menu && menu.getResultSlot().getItem().is(ModItems.STORMBREAKER)
+                    && !matches(menu.getResultSlot().getItem(), relic)) {
+                menu.getResultSlot().set(ItemStack.EMPTY);
+                menu.broadcastChanges();
+            }
+        }
+    }
+
     private static boolean ready(ServerPlayer p) {
         if (!mainHand(p)) return false;
         ItemStack stack = p.getMainHandItem();
@@ -201,7 +241,7 @@ public final class Stormbreaker {
         if (relic == null) {
             relic = Relic.at(p, HELD);
             stack.set(ModComponents.STORMBREAKER_SEAL, relic.seal());
-            server(p).overworld().setAttached(RELIC, relic);
+            storeRelic(server(p), relic);
             status(p, "bound");
             return true;
         }
@@ -494,17 +534,95 @@ public final class Stormbreaker {
         Session s = session(p);
         if (relic == null || relic.phase() != IN_GROUND || s.display != entity || !p.isAlive() || p.isSpectator()
                 || p.distanceToSqr(entity) > 36) return;
-        if (!relic.belongsTo(p)) {
+        if (!relic.owner.isEmpty() && !relic.belongsTo(p)) {
             Vec3 spark = entity.position().add(0, .6, 0);
             p.level().sendParticles(p, StormFx.OWNERSHIP_DENIED.particle, false, false,
                     spark.x, spark.y, spark.z, 0, 0, .8, 0, 1);
             status(p, "already_bound");
             return;
         }
-        if (!restore(p)) { status(p, "inventory_full"); return; }
+        if (s.pull != null || entity.phase() != StormbreakerEntity.EMBEDDED) return;
+        if (p.getInventory().getFreeSlot() < 0) { status(p, "inventory_full"); return; }
+        s.pull = new Pull(p.getUUID(), server(p).getTickCount() + PULL_TICKS);
+        entity.phase(StormbreakerEntity.PULLING);
+        p.swing(InteractionHand.MAIN_HAND, true);
+        StormNetwork.visual(p, "reclaim_hand", 0, entity.position());
         StormFx.RECLAIM.play(p.level(), entity.position().add(0, .55, 0), 1.4);
         sound(p.level(), entity.position(), SoundEvents.TRIDENT_RETURN, 1.1f, .85f);
-        removeDisplay(s);
+    }
+
+    private static void tickPull(MinecraftServer server, Session s, ServerLevel level, int now) {
+        if (s.pull == null) return;
+        ServerPlayer p = server.getPlayerList().getPlayer(s.pull.player);
+        boolean nearby = s.display != null && !s.display.isRemoved() && p != null && p.isAlive()
+                && !p.isSpectator() && p.level() == level && p.distanceToSqr(s.display) <= 36;
+        if (nearby && now < s.pull.finish) return;
+        s.pull = null;
+        if (nearby && restore(p)) {
+            status(p, "bound");
+            removeDisplay(s);
+        } else if (s.display != null) {
+            s.display.phase(StormbreakerEntity.EMBEDDED);
+        }
+    }
+
+    private static void rollSkyfall(ServerLevel level, int now) {
+        if (now % 20 != 0 || !level.isThundering() || level.getRandom().nextInt(180) != 0) return;
+        var players = level.getPlayers(p -> p.isAlive() && !p.isSpectator());
+        if (players.isEmpty()) return;
+        var random = level.getRandom();
+        var watcher = players.get(random.nextInt(players.size()));
+        for (int i = 0; i < 10; i++) {
+            double angle = random.nextDouble() * Math.TAU;
+            double range = 28 + random.nextDouble() * 34;
+            BlockPos column = BlockPos.containing(watcher.getX() + Math.cos(angle) * range, watcher.getY(),
+                    watcher.getZ() + Math.sin(angle) * range);
+            if (!level.hasChunkAt(column) || !level.getWorldBorder().isWithinBounds(column)) continue;
+            BlockPos top = level.getHeightmapPos(Heightmap.Types.MOTION_BLOCKING, column);
+            if (!level.isRainingAt(top) || !level.getBlockState(top).isAir()
+                    || !level.getFluidState(top.below()).isEmpty() || !level.getBlockState(top.below()).isSolidRender()) continue;
+            Vec3 landing = Vec3.atBottomCenterOf(top);
+            if (!level.hasChunkAt(BlockPos.containing(fallingPosition(landing, 0)))) continue;
+            storeRelic(level.getServer(), new Relic("", UUID.randomUUID().toString(), FALLING, level.dimension(), landing));
+            return;
+        }
+    }
+
+    private static Vec3 fallingPosition(Vec3 landing, double progress) {
+        double remaining = 1 - progress * progress;
+        return landing.add(-8 * remaining, 38 * remaining, 5 * remaining);
+    }
+
+    private static void tickSkyfall(ServerLevel level, Relic relic, Session s, int now) {
+        Vec3 landing = relic.position;
+        if (!level.hasChunkAt(BlockPos.containing(landing))) { removeDisplay(s); return; }
+        if (s.display == null || s.display.isRemoved()) {
+            // Never load an extra chunk just for the falling prop.
+            Vec3 origin = fallingPosition(landing, 0);
+            if (!level.hasChunkAt(BlockPos.containing(origin))) return;
+            s.display = spawn(level, origin, StormbreakerEntity.SKYFALL);
+            if (s.display == null) return;
+            s.fallStart = now;
+            sound(level, landing, SoundEvents.LIGHTNING_BOLT_THUNDER, 4f, .68f);
+            StormFx.WRATH_BOLT.play(level, origin.add(0, -.5, 0), 16);
+        }
+        double progress = Math.min(1, (now - s.fallStart) / (double) SKY_FALL_TICKS);
+        Vec3 at = fallingPosition(landing, progress);
+        Vec3 motion = at.subtract(s.display.position());
+        s.display.setDeltaMovement(motion);
+        s.display.setPos(at.x, at.y, at.z);
+        if (now % 2 == 0 && motion.lengthSqr() > .001) {
+            StormFx.THROW_OUT.play(level, at.subtract(motion.normalize()), 4.5, motion);
+        }
+        if (progress < 1) return;
+        s.display.setDeltaMovement(Vec3.ZERO);
+        s.display.phase(StormbreakerEntity.EMBEDDED);
+        storeRelic(level.getServer(), new Relic("", relic.seal, IN_GROUND, relic.dimension, landing));
+        StormFx.LIGHTNING_HIT.play(level, landing, 12);
+        StormFx.IMPACT.play(level, landing.add(0, .2, 0), 4.5);
+        StormFx.BLOCK_SHARDS.play(level, landing.add(0, .3, 0), 3.4);
+        sound(level, landing, SoundEvents.LIGHTNING_BOLT_IMPACT, 2.4f, .73f);
+        sound(level, landing, SoundEvents.ANVIL_PLACE, 1.4f, .76f);
     }
 
     private static StormbreakerEntity spawn(ServerLevel level, Vec3 at, int phase) {
@@ -563,10 +681,17 @@ public final class Stormbreaker {
 
     private static void tick(MinecraftServer server) {
         Relic relic = server.overworld().getAttached(RELIC);
-        if (relic == null) return;
-        Session s = SESSIONS.computeIfAbsent(server, key -> new Session());
         int now = server.getTickCount();
-        ServerPlayer owner = server.getPlayerList().getPlayer(UUID.fromString(relic.owner));
+        if (relic == null) {
+            if (now % 20 == 0 && !claimLegacyStack(server)) rollSkyfall(server.overworld(), now);
+            return;
+        }
+        Session s = SESSIONS.computeIfAbsent(server, key -> new Session());
+        if (relic.phase == FALLING) {
+            tickSkyfall(server.overworld(), relic, s, now);
+            return;
+        }
+        ServerPlayer owner = relic.owner.isEmpty() ? null : server.getPlayerList().getPlayer(UUID.fromString(relic.owner));
 
         if (relic.phase() == IN_GROUND) {
             ServerLevel level = server.getLevel(relic.dimension);
@@ -579,8 +704,12 @@ public final class Stormbreaker {
                     StormFx.IMPACT.play(level, relic.position.add(0, .16, 0), 1.1);
                     sound(level, relic.position, SoundEvents.ANVIL_PLACE, .8f, 1.25f);
                 }
+                if (s.pull != null) { tickPull(server, s, level, now); return; }
                 if (now % 48 == 0) StormFx.EMBEDDED_IDLE.play(level, relic.position.add(.18, .62, 0), .95);
-            } else removeDisplay(s);
+            } else {
+                s.pull = null;
+                removeDisplay(s);
+            }
         }
 
         // Only the current seal can survive in an inventory. Creative copies and stale return tokens are inert.
@@ -624,15 +753,33 @@ public final class Stormbreaker {
         if (relic.phase() == IN_FLIGHT) tickThrow(owner, s);
     }
 
+    // Before crafting bound the axe immediately, legitimate copies could still be unsealed.
+    private static boolean claimLegacyStack(MinecraftServer server) {
+        for (ServerPlayer p : server.getPlayerList().getPlayers()) {
+            if (!p.isAlive() || p.isSpectator()) continue;
+            Inventory inv = p.getInventory();
+            for (int slot = 0; slot < inv.getContainerSize(); slot++) {
+                ItemStack stack = inv.getItem(slot);
+                if (!stack.is(ModItems.STORMBREAKER) || sealed(stack)) continue;
+                Relic relic = Relic.at(p, HELD);
+                stack.set(ModComponents.STORMBREAKER_SEAL, relic.seal());
+                storeRelic(server, relic);
+                status(p, "bound");
+                return true;
+            }
+        }
+        return false;
+    }
+
     private static boolean cleanInventory(ServerPlayer player, Relic relic) {
         boolean keep = relic.belongsTo(player) && relic.phase() == HELD;
         ItemStack carried = player.containerMenu.getCarried();
         boolean found = keep && matches(carried, relic);
-        if (sealed(carried) && !found) player.containerMenu.setCarried(ItemStack.EMPTY);
+        if (carried.is(ModItems.STORMBREAKER) && !found) player.containerMenu.setCarried(ItemStack.EMPTY);
         Inventory inv = player.getInventory();
         for (int i = 0; i < inv.getContainerSize(); i++) {
             ItemStack stack = inv.getItem(i);
-            if (!sealed(stack)) continue;
+            if (!stack.is(ModItems.STORMBREAKER)) continue;
             if (!found && keep && matches(stack, relic)) found = true;
             else inv.setItem(i, ItemStack.EMPTY);
         }

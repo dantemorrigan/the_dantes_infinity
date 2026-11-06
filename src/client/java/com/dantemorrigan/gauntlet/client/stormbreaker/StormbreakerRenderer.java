@@ -21,6 +21,7 @@ final class StormbreakerRenderer extends EntityRenderer<StormbreakerEntity, Stor
     static final class State extends EntityRenderState {
         final ItemStackRenderState item = new ItemStackRenderState();
         int phase;
+        float phaseAge;
     }
 
     private final ItemModelResolver models;
@@ -37,6 +38,7 @@ final class StormbreakerRenderer extends EntityRenderer<StormbreakerEntity, Stor
     public void extractRenderState(StormbreakerEntity entity, State state, float partial) {
         super.extractRenderState(entity, state, partial);
         state.phase = entity.phase();
+        state.phaseAge = entity.phaseAge(partial);
         if (stack == null) {
             // Renderer providers run during the initial reload, before item components are bound.
             stack = new ItemStack(ModItems.STORMBREAKER);
@@ -49,11 +51,13 @@ final class StormbreakerRenderer extends EntityRenderer<StormbreakerEntity, Stor
     public void submit(State state, PoseStack pose, SubmitNodeCollector collector, CameraRenderState camera) {
         pose.pushPose();
         pose.scale(.84f, .84f, .84f);
-        if (state.phase == StormbreakerEntity.EMBEDDED || state.phase == StormbreakerEntity.PLANTING) {
-            float settling = state.phase == StormbreakerEntity.PLANTING ? Math.max(0, 1 - state.ageInTicks / 10) : 0;
-            pose.translate(0, .7 * settling * settling, 0);
+        if (state.phase == StormbreakerEntity.EMBEDDED || state.phase == StormbreakerEntity.PLANTING
+                || state.phase == StormbreakerEntity.PULLING) {
+            float settling = state.phase == StormbreakerEntity.PLANTING ? Math.max(0, 1 - state.phaseAge / 10) : 0;
+            float pull = state.phase == StormbreakerEntity.PULLING ? Math.min(1, state.phaseAge / 12) : 0;
+            pose.translate(0, .7 * settling * settling + .85 * pull * pull, 0);
             pose.mulPose(Axis.YP.rotationDegrees(25));
-            pose.mulPose(Axis.ZP.rotationDegrees(176 - 37 * settling));
+            pose.mulPose(Axis.ZP.rotationDegrees(176 - 37 * settling - 80 * pull * pull));
             // Model origin is at (8, 8, 8); the upper cutting edge touches the terrain.
             pose.translate(15f / 16, -22.8f / 16, 0);
         } else {
@@ -66,4 +70,3 @@ final class StormbreakerRenderer extends EntityRenderer<StormbreakerEntity, Stor
         super.submit(state, pose, collector, camera);
     }
 }
-

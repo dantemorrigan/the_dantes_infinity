@@ -25,7 +25,8 @@ public abstract class HumanoidModelMixin {
                 avatar.id, mc.getDeltaTracker().getGameTimeDeltaPartialTick(false));
         if (motion != null && mc.level != null
                 && mc.level.getEntity(avatar.id) instanceof net.minecraft.world.entity.player.Player player
-                && player.getMainHandItem().is(com.dantemorrigan.gauntlet.ModItems.STORMBREAKER)) {
+                && (player.getMainHandItem().is(com.dantemorrigan.gauntlet.ModItems.STORMBREAKER)
+                || com.dantemorrigan.gauntlet.client.stormbreaker.StormbreakerClient.isPulling(avatar.id))) {
             boolean leftHand = state.mainArm == net.minecraft.world.entity.HumanoidArm.LEFT;
             ModelPart axeArm = leftHand ? model.leftArm : model.rightArm;
             var rotation = motion.rotation();

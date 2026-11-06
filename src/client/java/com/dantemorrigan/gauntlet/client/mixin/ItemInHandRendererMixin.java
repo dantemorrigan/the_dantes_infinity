@@ -22,7 +22,7 @@ public abstract class ItemInHandRendererMixin {
     @Inject(method = "renderArmWithItem", at = @At("HEAD"))
     private void infinityGauntlet$stormbreakerStart(AbstractClientPlayer player, float frameInterp, float xRot, InteractionHand hand, float attack,
             ItemStack item, float inverseArmHeight, PoseStack pose, SubmitNodeCollector collector, int light, CallbackInfo ci) {
-        if (!item.is(ModItems.STORMBREAKER)) return;
+        if (!infinityGauntlet$stormPose(player, hand, item)) return;
         pose.pushPose();
         HumanoidArm arm = hand == InteractionHand.MAIN_HAND ? player.getMainArm() : player.getMainArm().getOpposite();
         com.dantemorrigan.gauntlet.client.stormbreaker.StormbreakerClient.firstPerson(
@@ -32,7 +32,12 @@ public abstract class ItemInHandRendererMixin {
     @Inject(method = "renderArmWithItem", at = @At("RETURN"))
     private void infinityGauntlet$stormbreakerEnd(AbstractClientPlayer player, float frameInterp, float xRot, InteractionHand hand, float attack,
             ItemStack item, float inverseArmHeight, PoseStack pose, SubmitNodeCollector collector, int light, CallbackInfo ci) {
-        if (item.is(ModItems.STORMBREAKER)) pose.popPose();
+        if (infinityGauntlet$stormPose(player, hand, item)) pose.popPose();
+    }
+
+    private static boolean infinityGauntlet$stormPose(AbstractClientPlayer player, InteractionHand hand, ItemStack item) {
+        return item.is(ModItems.STORMBREAKER) || hand == InteractionHand.MAIN_HAND
+                && com.dantemorrigan.gauntlet.client.stormbreaker.StormbreakerClient.isPulling(player.getId());
     }
 
 	@Shadow

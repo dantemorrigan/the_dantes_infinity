@@ -166,6 +166,11 @@ public final class StormbreakerClient {
         return clips.getAsJsonObject(name);
     }
 
+    public static boolean isPulling(int entity) {
+        Animation animation = ANIMATIONS.get(entity);
+        return animation != null && "reclaim_hand".equals(animation.clip);
+    }
+
     public static Pose pose(int entity, float partial) {
         if (level == null) return null;
         Animation animation = ANIMATIONS.get(entity);
