@@ -111,6 +111,8 @@ public final class MindQuest {
 		ServerLivingEntityEvents.AFTER_DEATH.register((entity, source) -> {
 			if (entity instanceof MindZombie zombie && entity.level() instanceof ServerLevel level) {
 				onMindZombieKilled(level, zombie, source.getEntity() instanceof ServerPlayer player ? player : null);
+			} else if (entity instanceof ServerPlayer player && MindArena.onDeath(player)) {
+				restartAfterDefeat(player.level().getServer());
 			}
 		});
 	}
@@ -239,7 +241,11 @@ public final class MindQuest {
 		BlockPos site = MindCity.site(server);
 		if (!stoneReleased && !MindArena.active(server) && level.getDifficulty() != Difficulty.PEACEFUL && MindArena.begin(level, site)) {
 			level.removeAttached(ALIVE); // Adopt in-bounds zombies from saves that predate the barrier.
-			ensureZombies(level, site);
+			if (remainingCount(server) > 0) ensureZombies(level, site);
+			else if (level.getAttached(REWARD) == null) {
+				level.players().stream().filter(MindArena::fighter).findFirst()
+						.ifPresent(player -> startArrival(level, site, player));
+			}
 		}
 		boolean sealed = MindArena.active(server);
 		if (sealed) {
@@ -415,6 +421,18 @@ public final class MindQuest {
 		if (boss == null) return;
 		level.removeAttached(BOSS);
 		if (level.getEntity(boss) instanceof Loki loki && loki.isAlive()) loki.discard();
+	}
+
+	private static void restartAfterDefeat(MinecraftServer server) {
+		ServerLevel level = server.overworld();
+		BlockPos site = MindCity.site(server);
+		MindArena.open(server);
+		clearLoki(level);
+		if (defeatedCount(server) < TOTAL_ZOMBIES) level.removeAttached(DEFEATED);
+		level.removeAttached(ALIVE);
+		AABB city = new AABB(site).inflate(MindCity.R_FLAT + 2);
+		for (MindZombie zombie : level.getEntitiesOfClass(MindZombie.class, city)) zombie.discard();
+		for (Loki copy : level.getEntitiesOfClass(Loki.class, city, e -> e.isCityEncounter() && e.isIllusion())) copy.discard();
 	}
 
 	/** Resets the Mind Stone quest when the Mind Stone is forgotten or stones are reset. */

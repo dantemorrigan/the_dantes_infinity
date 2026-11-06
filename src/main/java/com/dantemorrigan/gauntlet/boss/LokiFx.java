@@ -32,7 +32,9 @@ public record LokiFx(Effect effect, Vec3 position, float yaw, int recipient) imp
 		ROAR(20, false, 24, .18f),
 		PAW_WARN(17, false, 13, .12f),
 		CLAW(12, false, 7.3f, 1.35f),
-		FANGS(11, false, 5.2f, 1.28f);
+		FANGS(11, false, 5.2f, 1.28f),
+		BARRAGE_MARK(24, false, 12.2f, .08f),
+		BARRAGE_IMPACT(14, false, 9.6f, .14f);
 
 		public final int ticks;
 		public final boolean loop;

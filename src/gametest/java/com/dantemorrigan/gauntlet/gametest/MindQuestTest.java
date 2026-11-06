@@ -5,6 +5,7 @@ import com.dantemorrigan.gauntlet.ModItems;
 import com.dantemorrigan.gauntlet.boss.Loki;
 import com.dantemorrigan.gauntlet.Stone;
 import com.dantemorrigan.gauntlet.stones.MindCity;
+import com.dantemorrigan.gauntlet.stones.MindArena;
 import com.dantemorrigan.gauntlet.stones.MindQuest;
 import com.dantemorrigan.gauntlet.stones.MindZombie;
 import com.dantemorrigan.gauntlet.stones.StoneRegistry;
@@ -16,6 +17,9 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.entity.ExperienceOrb;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -30,6 +34,25 @@ import java.util.List;
 public class MindQuestTest implements FabricClientGameTest {
 	private static net.minecraft.server.level.ServerPlayer player(net.minecraft.server.MinecraftServer s) {
 		return s.getPlayerList().getPlayers().getFirst();
+	}
+
+	private static void defeatPlayer(net.minecraft.server.level.ServerPlayer player, LivingEntity attacker) {
+		player.removeEffect(MobEffects.RESISTANCE);
+		player.invulnerableTime = 0;
+		player.hurtServer(player.level(), player.damageSources().mobAttack(attacker), 1000);
+		if (player.isAlive()) throw new AssertionError("The encounter did not defeat the player");
+	}
+
+	private static void respawn(ClientGameTestContext ctx) {
+		ctx.waitFor(mc -> mc.player != null && mc.player.isDeadOrDying(), 80);
+		ctx.runOnClient(mc -> mc.player.respawn());
+		ctx.waitFor(mc -> mc.player != null && mc.player.isAlive(), 100);
+	}
+
+	private static void returnToArena(net.minecraft.server.MinecraftServer server, Vec3 stand) {
+		var p = player(server);
+		p.addEffect(new MobEffectInstance(MobEffects.RESISTANCE, 1500, 4));
+		p.teleportTo(stand.x, stand.y, stand.z);
 	}
 
 	@Override
@@ -110,6 +133,29 @@ public class MindQuestTest implements FabricClientGameTest {
 			});
 			ctx.takeScreenshot("mind_zombies");
 
+			server.runCommand("spawnpoint @p " + BlockPos.containing(stand).getX() + " " + BlockPos.containing(stand).getY() + " " + BlockPos.containing(stand).getZ());
+			server.runOnServer(s -> {
+				var p = player(s);
+				var level = s.overworld();
+				var zombies = level.getEntitiesOfClass(MindZombie.class, new AABB(site).inflate(48), MindZombie::isAlive);
+				zombies.getFirst().hurtServer(level, level.damageSources().playerAttack(p), 1000);
+				if (MindQuest.defeatedCount(s) != 1) throw new AssertionError("Zombie wipe test did not get one kill");
+				defeatPlayer(p, zombies.getLast());
+			});
+			respawn(ctx);
+			ctx.waitTicks(45);
+			server.runOnServer(s -> {
+				if (MindArena.inside(site, player(s).position()) || MindQuest.defeatedCount(s) != 0
+						|| !s.overworld().getEntitiesOfClass(MindZombie.class, new AABB(site).inflate(48), MindZombie::isAlive).isEmpty()) {
+					throw new AssertionError("Zombie wipe did not respawn outside and reset the wave: player=" + player(s).position()
+							+ ", defeated=" + MindQuest.defeatedCount(s) + ", zombies="
+							+ s.overworld().getEntitiesOfClass(MindZombie.class, new AABB(site).inflate(48), MindZombie::isAlive).size());
+				}
+				returnToArena(s, stand);
+			});
+			ctx.waitTicks(12);
+			System.out.println("MIND_ZOMBIE_RETRY_PASSED");
+
 			// Defeat the first 9 Mind Zombies; verify progress is 9/10 and stone is not yet released.
 			server.runOnServer(s -> {
 				var p = player(s);
@@ -141,18 +187,40 @@ public class MindQuestTest implements FabricClientGameTest {
 			ctx.takeScreenshot("loki_portal");
 
 			ctx.waitTicks(42);
-			var bossId = server.computeOnServer(s -> {
+			var firstBossId = server.computeOnServer(s -> {
 				var bosses = s.overworld().getEntitiesOfClass(Loki.class, city, e -> e.isAlive() && !e.isIllusion());
 				if (bosses.size() != 1) throw new AssertionError("Expected exactly one Loki, found " + bosses.size());
 				if (StoneRegistry.released(s, Stone.MIND)) throw new AssertionError("Loki's arrival already released the Mind Stone");
 				return bosses.getFirst().getUUID();
 			});
 			server.runOnServer(s -> {
-				var boss = s.overworld().getEntity(bossId);
+				var boss = s.overworld().getEntity(firstBossId);
 				if (boss != null) player(s).lookAt(net.minecraft.commands.arguments.EntityAnchorArgument.Anchor.EYES, boss.getEyePosition());
 			});
 			ctx.waitTicks(2);
 			ctx.takeScreenshot("loki_arrival");
+			server.runOnServer(s -> defeatPlayer(player(s), (Loki) s.overworld().getEntity(firstBossId)));
+			respawn(ctx);
+			ctx.waitTicks(48);
+			server.runOnServer(s -> {
+				if (MindArena.inside(site, player(s).position()) || MindQuest.defeatedCount(s) != 10
+						|| !s.overworld().getEntitiesOfClass(Loki.class, city, Loki::isAlive).isEmpty()) {
+					throw new AssertionError("Loki wipe did not wait outside for a fresh boss");
+				}
+				returnToArena(s, stand);
+			});
+			ctx.waitTicks(72);
+			var bossId = server.computeOnServer(s -> {
+				var level = s.overworld();
+				var bosses = level.getEntitiesOfClass(Loki.class, city, e -> e.isAlive() && !e.isIllusion());
+				if (bosses.size() != 1 || bosses.getFirst().getUUID().equals(firstBossId)
+						|| bosses.getFirst().getHealth() != bosses.getFirst().getMaxHealth()
+						|| !level.getEntitiesOfClass(MindZombie.class, city, MindZombie::isAlive).isEmpty()) {
+					throw new AssertionError("Loki retry did not return with full health and skip the zombie wave");
+				}
+				return bosses.getFirst().getUUID();
+			});
+			System.out.println("MIND_LOKI_RETRY_PASSED");
 
 			server.runOnServer(s -> {
 				var level = s.overworld();
@@ -179,9 +247,28 @@ public class MindQuestTest implements FabricClientGameTest {
 				Vec3 plaza = MindCity.plazaStand(site);
 				boss.setPos(plaza);
 				p.teleportTo(plaza.x, plaza.y + 1, plaza.z + 8);
-				boss.setHealth(max * 0.4f);
+				boss.setHealth(max);
 			});
-			server.runCommand("gamemode survival @p");
+			boolean roofAttack = false;
+			for (int i = 0; i < 360; i += 4) {
+				int state = server.computeOnServer(s -> {
+					Loki boss = (Loki) s.overworld().getEntity(bossId);
+					if (boss.attack() == Loki.Attack.BARRAGE && boss.strikeTicks() > 0 && boss.getY() >= site.getY() + 4) return 1;
+					return boss.getY() < site.getY() + 3 && boss.distanceToSqr(player(s)) < 36 ? 2 : 0;
+				});
+				if (state == 1) roofAttack = true;
+				if (state == 2 && roofAttack) break;
+				if (i == 356) throw new AssertionError("Loki did not complete a rooftop barrage cycle; cast observed: " + roofAttack);
+				ctx.waitTicks(4);
+			}
+			System.out.println("MIND_LOKI_BARRAGE_PASSED");
+			server.runOnServer(s -> {
+				Loki boss = (Loki) s.overworld().getEntity(bossId);
+				Vec3 plaza = MindCity.plazaStand(site);
+				boss.setPos(plaza);
+				player(s).teleportTo(plaza.x, plaza.y + 1, plaza.z + 8);
+				boss.setHealth(boss.getMaxHealth() * .4f);
+			});
 			for (int i = 0; i < 120; i += 4) {
 				if (server.computeOnServer(s -> player(s).hasEffect(net.minecraft.world.effect.MobEffects.SLOWNESS))) break;
 				ctx.waitTicks(4);

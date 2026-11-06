@@ -48,7 +48,12 @@ public final class LokiClient {
 
 	public static void init() {
 		for (LokiFx.Effect effect : LokiFx.Effect.values()) {
-			TEXTURES.put(effect, InfinityGauntlet.id("textures/loki/" + effect.name().toLowerCase(Locale.ROOT) + ".png"));
+			String texture = switch (effect) {
+				case BARRAGE_MARK -> "bind_mark";
+				case BARRAGE_IMPACT -> "roar";
+				default -> effect.name().toLowerCase(Locale.ROOT);
+			};
+			TEXTURES.put(effect, InfinityGauntlet.id("textures/loki/" + texture + ".png"));
 		}
 		ClientPlayNetworking.registerGlobalReceiver(LokiFx.TYPE, (fx, context) -> {
 			setLevel(context.client().level);
@@ -139,7 +144,8 @@ public final class LokiClient {
 			}
 			pose.pushPose();
 			pose.translate(origin.x, origin.y + effect.yOffset, origin.z);
-			if (effect == LokiFx.Effect.ROAR_WARN || effect == LokiFx.Effect.ROAR || effect == LokiFx.Effect.PAW_WARN) {
+			if (effect == LokiFx.Effect.ROAR_WARN || effect == LokiFx.Effect.ROAR || effect == LokiFx.Effect.PAW_WARN
+					|| effect == LokiFx.Effect.BARRAGE_MARK || effect == LokiFx.Effect.BARRAGE_IMPACT) {
 				pose.mulPose(Axis.YP.rotationDegrees(-fx.yaw() + 180));
 				pose.mulPose(Axis.XP.rotationDegrees(90));
 			} else if (effect == LokiFx.Effect.PORTAL_OPEN || effect == LokiFx.Effect.PORTAL_LOOP || effect == LokiFx.Effect.DAGGER_SLASH) {

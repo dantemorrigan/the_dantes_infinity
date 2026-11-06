@@ -3,6 +3,7 @@ package com.dantemorrigan.gauntlet.stones;
 import com.dantemorrigan.gauntlet.InfinityGauntlet;
 import com.dantemorrigan.gauntlet.Stone;
 import com.dantemorrigan.gauntlet.net.ModStatus;
+import com.dantemorrigan.gauntlet.boss.Loki;
 import com.mojang.serialization.Codec;
 import net.fabricmc.fabric.api.attachment.v1.AttachmentRegistry;
 import net.fabricmc.fabric.api.attachment.v1.AttachmentType;
@@ -31,10 +32,12 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
-/** The city barrier is enforced server-side. Its roster persists through death, logout and server restarts. */
+/** The city barrier is enforced server-side. Its roster persists through logout and server restarts. */
 public final class MindArena {
 	private static final AttachmentType<List<String>> FIGHTERS = AttachmentRegistry.<List<String>>builder()
 			.persistent(Codec.STRING.listOf()).buildAndRegister(InfinityGauntlet.id("mind_arena_fighters"));
+	private static final AttachmentType<BlockPos> RESPAWN_SITE = AttachmentRegistry.<BlockPos>builder()
+			.persistent(BlockPos.CODEC).buildAndRegister(InfinityGauntlet.id("mind_arena_respawn"));
 	private static final int RADIUS = MindCity.R_FLAT, DEPTH = 4, HEIGHT = 24;
 	private static final DustParticleOptions BARRIER = new DustParticleOptions(0xFFCD54, 1.4f);
 	private static final Map<UUID, Vec3> LAST_INSIDE = new HashMap<>();
@@ -85,6 +88,39 @@ public final class MindArena {
 			if (entrants.contains(p.getStringUUID())) ModStatus.send(p, Component.translatable("msg.infinity_gauntlet.mind_quest.sealed"));
 		}
 		return true;
+	}
+
+	/** Removes a defeated participant and reports whether there is anyone left to fight. */
+	static boolean onDeath(ServerPlayer player) {
+		MinecraftServer server = player.level().getServer();
+		if (!active(server) || !registered(player)) return false;
+		ServerLevel level = server.overworld();
+		player.setAttached(RESPAWN_SITE, MindCity.site(server));
+		LAST_INSIDE.remove(player.getUUID());
+		level.setAttached(FIGHTERS, level.getAttachedOrElse(FIGHTERS, List.of()).stream()
+				.filter(id -> !id.equals(player.getStringUUID())).toList());
+		return level.players().stream().noneMatch(MindArena::fighter);
+	}
+
+	public static TeleportTransition takeRespawn(ServerPlayer player, TeleportTransition.PostTeleportTransition post) {
+		BlockPos site = player.removeAttached(RESPAWN_SITE);
+		if (site == null) return null;
+		ServerLevel level = player.level().getServer().overworld();
+		Vec3 at = outsideRespawn(level, site);
+		return new TeleportTransition(level, at, Vec3.ZERO, Loki.yawTo(at, Vec3.atCenterOf(site)), 0, post);
+	}
+
+	private static Vec3 outsideRespawn(ServerLevel level, BlockPos site) {
+		for (int radius = RADIUS + 4; radius <= RADIUS + 14; radius += 2) {
+			for (int angle : new int[]{0, 45, -45, 90, -90, 135, -135, 180}) {
+				Vec3 direction = Vec3.directionFromRotation(0, angle);
+				BlockPos column = BlockPos.containing(Vec3.atBottomCenterOf(site).add(direction.scale(radius)));
+				Vec3 at = Vec3.atBottomCenterOf(level.getHeightmapPos(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, column));
+				if (Loki.safeFooting(level, at)) return at;
+			}
+		}
+		BlockPos column = site.south(RADIUS + 4);
+		return Vec3.atBottomCenterOf(level.getHeightmapPos(Heightmap.Types.MOTION_BLOCKING, column));
 	}
 
 	static void open(MinecraftServer server) {

@@ -34,9 +34,12 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.goal.FloatGoal;
 import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.ClipContext;
+import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
 import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 
 import java.util.Set;
@@ -45,7 +48,7 @@ import java.util.UUID;
 public final class Loki extends Monster {
 	public static final int INTRO_TICKS = 22;
 	public enum Attack {
-		DAGGER(7, 5), BOLT(15, 8), GROUNDING(18, 8), BITE(10, 9), PAW(17, 12), ROAR(24, 13);
+		DAGGER(7, 5), BOLT(15, 8), GROUNDING(18, 8), BITE(10, 9), PAW(17, 12), ROAR(24, 13), BARRAGE(24, 12);
 
 		public final int windup, recovery;
 		Attack(int windup, int recovery) {
@@ -54,7 +57,8 @@ public final class Loki extends Monster {
 		}
 	}
 
-	private static final EntityDimensions FENRIR_SIZE = EntityDimensions.scalable(2.85f, 3.7f).withEyeHeight(2.55f);
+	private static final EntityDimensions FENRIR_SIZE = EntityDimensions.scalable(2.45f, 4.0f).withEyeHeight(2.85f);
+	private static final double BARRAGE_RADIUS = 4.5;
 	private static final float PHASE_THRESHOLD = 0.45f;
 	private static final Attack[] ATTACKS = Attack.values();
 	public static final int EXPERIENCE = 650;
@@ -72,6 +76,10 @@ public final class Loki extends Monster {
 	private BlockPos arena;
 	private UUID illusionOwner;
 	private int teleportCooldown = 75;
+	private int perchCooldown = 95;
+	private int perchUntil;
+	private Vec3 perchReturn;
+	private int perchShots;
 	private int cloneCooldown = 110;
 	private int strikeCooldown = 20;
 	private int lifetime = CLONE_LIFETIME;
@@ -183,6 +191,7 @@ public final class Loki extends Monster {
 			if (!isEnraged() && getHealth() <= getMaxHealth() * PHASE_THRESHOLD) enrage(level);
 			if (wardTicks() > 0) entityData.set(WARD, wardTicks() - 1);
 			if (wardCooldown > 0) wardCooldown--;
+			if (perchCooldown > 0) perchCooldown--;
 			if (shiftTicks > 0) {
 				shiftTicks--;
 				return;
@@ -225,6 +234,7 @@ public final class Loki extends Monster {
 			spellCooldown = 46;
 			return;
 		}
+		if (!isIllusion() && !isEnraged() && arena != null && tickPerch(level, target, sight)) return;
 		if (isEnraged()) {
 			if (sight && roarCooldown == 0 && distance < 13 * 13) {
 				startAttack(level, target, Attack.ROAR);
@@ -248,11 +258,7 @@ public final class Loki extends Monster {
 		if (!isIllusion() && --teleportCooldown <= 0 && (distance > 16 || wardTicks() > 0)) {
 			Vec3 to = findFlank(level, target, 4.5, 8);
 			if (to != null) {
-				getNavigation().stop();
-				LokiFx.send(level, LokiFx.Effect.TELEPORT_OUT, position(), getYRot());
-				teleportTo(level, to.x, to.y, to.z, Set.of(), yawTo(to, target.position()), 0, false);
-				LokiFx.send(level, LokiFx.Effect.TELEPORT_IN, position(), getYRot());
-				level.playSound(null, blockPosition(), SoundEvents.ENDERMAN_TELEPORT, SoundSource.HOSTILE, 1f, 1.35f);
+				teleportForAttack(level, target, to);
 				teleportCooldown = 86;
 				strikeCooldown = Math.max(strikeCooldown, 6);
 				return;
@@ -268,6 +274,74 @@ public final class Loki extends Monster {
 		} else {
 			getNavigation().stop();
 		}
+	}
+
+	private boolean tickPerch(ServerLevel level, ServerPlayer target, boolean sight) {
+		if (perchUntil > 0) {
+			if (tickCount >= perchUntil || perchShots == 0 || getY() < arena.getY() + 3) {
+				perchUntil = 0;
+				perchCooldown = 165;
+				Vec3 flank = findFlank(level, target, 2.2, 4.5);
+				if (flank == null && safeFooting(level, perchReturn)) flank = perchReturn;
+				perchReturn = null;
+				if (flank != null) teleportForAttack(level, target, flank);
+				strikeCooldown = Math.max(strikeCooldown, 8);
+				spellCooldown = Math.max(spellCooldown, 28);
+				teleportCooldown = Math.max(teleportCooldown, 28);
+				return false;
+			}
+			getNavigation().stop();
+			if (sight && spellCooldown == 0) {
+				perchShots--;
+				spellCooldown = 12;
+				startAttack(level, target, Attack.BARRAGE);
+			}
+			return true;
+		}
+		if (perchCooldown > 0 || target.getY() > arena.getY() + 4) return false;
+		Vec3 to = findPerch(level, target);
+		if (to == null) {
+			perchCooldown = 50;
+			return false;
+		}
+		perchReturn = position();
+		teleportForAttack(level, target, to);
+		perchUntil = tickCount + 105;
+		perchShots = 2;
+		spellCooldown = 12;
+		return true;
+	}
+
+	private Vec3 findPerch(ServerLevel level, ServerPlayer target) {
+		Vec3 best = null;
+		double bestScore = Double.POSITIVE_INFINITY;
+		for (int x = -20; x <= 20; x += 2) {
+			for (int z = -20; z <= 20; z += 2) {
+				BlockPos column = arena.offset(x, 0, z);
+				if (!level.hasChunkAt(column)) continue;
+				BlockPos top = level.getHeightmapPos(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, column);
+				Vec3 at = Vec3.atBottomCenterOf(top);
+				double height = at.y - target.getY();
+				double distance = target.position().distanceTo(at);
+				if (height < 3 || height > 13 || distance < 7 || distance > 27 || !insideArena(at)) continue;
+				double score = Math.abs(distance - 15) - height * .25;
+				if (score >= bestScore || !safeFooting(level, at)) continue;
+				if (level.clip(new ClipContext(at.add(0, 1.88, 0), target.getEyePosition(),
+						ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, this)).getType() != HitResult.Type.MISS) continue;
+				bestScore = score;
+				best = at;
+			}
+		}
+		return best;
+	}
+
+	private void teleportForAttack(ServerLevel level, ServerPlayer target, Vec3 to) {
+		getNavigation().stop();
+		setDeltaMovement(Vec3.ZERO);
+		LokiFx.send(level, LokiFx.Effect.TELEPORT_OUT, position(), getYRot());
+		teleportTo(level, to.x, to.y, to.z, Set.of(), yawTo(to, target.position()), 0, false);
+		LokiFx.send(level, LokiFx.Effect.TELEPORT_IN, position(), getYRot());
+		level.playSound(null, blockPosition(), SoundEvents.ENDERMAN_TELEPORT, SoundSource.HOSTILE, 1, 1.35f);
 	}
 
 	private static boolean flying(ServerPlayer player) {
@@ -290,6 +364,10 @@ public final class Loki extends Monster {
 						aim.add(0, next == Attack.BOLT ? .9 : .5, 0), attackYaw);
 				level.playSound(null, blockPosition(), SoundEvents.EVOKER_PREPARE_ATTACK, SoundSource.HOSTILE, 1.2f, 1.35f);
 			}
+			case BARRAGE -> {
+				LokiFx.send(level, LokiFx.Effect.BARRAGE_MARK, aim, attackYaw);
+				level.playSound(null, blockPosition(), SoundEvents.EVOKER_PREPARE_ATTACK, SoundSource.HOSTILE, 1.6f, .9f);
+			}
 			case ROAR -> {
 				LokiFx.send(level, LokiFx.Effect.ROAR_WARN, position(), attackYaw);
 				level.playSound(null, blockPosition(), SoundEvents.RAVAGER_STUNNED, SoundSource.HOSTILE, 3, .6f);
@@ -306,6 +384,19 @@ public final class Loki extends Monster {
 
 	private void finishAttack(ServerLevel level) {
 		ServerPlayer target = level.getPlayerByUUID(attackTarget) instanceof ServerPlayer player ? player : null;
+		if (attack() == Attack.BARRAGE) {
+			LokiFx.beam(level, getEyePosition(), aim.add(0, .35, 0));
+			LokiFx.send(level, LokiFx.Effect.BARRAGE_IMPACT, aim, attackYaw);
+			level.playSound(null, BlockPos.containing(aim), SoundEvents.EVOKER_CAST_SPELL, SoundSource.HOSTILE, 2, .75f);
+			for (ServerPlayer player : level.players()) {
+				Vec3 offset = player.position().subtract(aim);
+				if (!eligible(player) || Math.abs(offset.y) > 2.8 || offset.horizontalDistanceSqr() > BARRAGE_RADIUS * BARRAGE_RADIUS) continue;
+				if (level.clip(new ClipContext(aim.add(0, .45, 0), player.getEyePosition(),
+						ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, this)).getType() != HitResult.Type.MISS) continue;
+				player.hurtServer(level, level.damageSources().indirectMagic(this, this), 12);
+			}
+			return;
+		}
 		if (attack() == Attack.BOLT || attack() == Attack.GROUNDING) {
 			boolean grounding = attack() == Attack.GROUNDING;
 			Vec3 end = aim.add(0, .75, 0);
@@ -402,6 +493,8 @@ public final class Loki extends Monster {
 		setPos(at);
 		applyRage();
 		shiftTicks = 25;
+		perchUntil = 0;
+		perchReturn = null;
 		entityData.set(INTRO, 0);
 		entityData.set(STRIKE, 0);
 		entityData.set(WARD, 0);
