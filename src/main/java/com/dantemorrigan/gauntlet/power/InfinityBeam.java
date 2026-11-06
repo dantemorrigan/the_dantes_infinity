@@ -62,7 +62,7 @@ public final class InfinityBeam {
     }
     public static void request(ServerPlayer p, boolean start) {
         if (!start) { cancel(p); return; }
-        if (active(p)) return;
+        if (active(p) || TimeFlow.active(p)) return;
         ItemStack g = GauntletState.activeGauntlet(p);
         if (!ready(p, g) || p.isUsingItem()) {
             com.dantemorrigan.gauntlet.net.ModStatus.send(p, Component.translatable("msg.infinity_gauntlet.need.beam"));

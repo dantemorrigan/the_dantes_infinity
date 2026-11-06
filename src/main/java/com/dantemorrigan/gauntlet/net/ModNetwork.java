@@ -297,6 +297,14 @@ public final class ModNetwork {
 		@Override public Type<BeamFx> type() { return TYPE; }
 	}
 
+	/** S2C: the Time Stone beam has no charge phase and a separate visual style. */
+	public record TimeFlowFx(BeamFx beam) implements CustomPacketPayload {
+		public static final Type<TimeFlowFx> TYPE = newType("time_flow_fx");
+		public static final StreamCodec<ByteBuf, TimeFlowFx> CODEC = StreamCodec.composite(
+			BeamFx.CODEC, TimeFlowFx::beam, TimeFlowFx::new);
+		@Override public Type<TimeFlowFx> type() { return TYPE; }
+	}
+
 	/** A HUD notice. It travels as a component so translations are resolved by the CLIENT (dedicated servers have no mod lang files). */
 	/** S2C: visibility and shared world-space center of the Reality Stone mist. */
 	public record RealityFogFx(boolean on, Vec3 center) implements CustomPacketPayload {
@@ -443,6 +451,7 @@ public final class ModNetwork {
 		PayloadTypeRegistry.clientboundPlay().register(RealityFogFx.TYPE, RealityFogFx.CODEC);
 		PayloadTypeRegistry.serverboundPlay().register(BeamAction.TYPE, BeamAction.CODEC);
 		PayloadTypeRegistry.clientboundPlay().register(BeamFx.TYPE, BeamFx.CODEC);
+		PayloadTypeRegistry.clientboundPlay().register(TimeFlowFx.TYPE, TimeFlowFx.CODEC);
 		PayloadTypeRegistry.serverboundPlay().register(SpaceAction.TYPE, SpaceAction.CODEC);
 		PayloadTypeRegistry.clientboundPlay().register(PortalOpen.TYPE, PortalOpen.CODEC);
 		PayloadTypeRegistry.clientboundPlay().register(PortalClose.TYPE, PortalClose.CODEC);

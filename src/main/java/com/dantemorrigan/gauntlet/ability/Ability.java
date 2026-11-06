@@ -11,7 +11,8 @@ public enum Ability {
     REALITY_STRIKE("reality_strike",Stone.REALITY,false), INVERSION("reality_inversion",Stone.REALITY,true),
     REWIND("time_rewind",Stone.TIME,false), DAY_NIGHT("time_shift",Stone.TIME,false),
     GRAB("mind_grab",Stone.MIND,false), TEAR("mind_tear",Stone.MIND,false), DROP("mind_release",Stone.MIND,false),
-    SOUL("soul_extract",Stone.SOUL,false), SOUL_MASS("soul_mass",Stone.SOUL,false), BEAM("infinity_beam",null,true), SNAP("infinity_snap",null,false);
+    SOUL("soul_extract",Stone.SOUL,false), SOUL_MASS("soul_mass",Stone.SOUL,false), BEAM("infinity_beam",null,true), SNAP("infinity_snap",null,false),
+    TIME_FLOW("time_flow",Stone.TIME,false);
     public final String id; public final Stone stone; public final boolean hold;
     Ability(String id,Stone stone,boolean hold) { this.id=id;this.stone=stone;this.hold=hold; }
     public String key() { return "ability.infinity_gauntlet."+id; }
@@ -22,7 +23,7 @@ public enum Ability {
             case POWER -> List.of(STRIKE,PLANET,CELESTIAL,METEOR_STREAM);
             case SPACE -> cosmos?List.of(FLIGHT,WARP):List.of(PORTAL,BLINK,FLIGHT);
             case REALITY -> List.of(REALITY_STRIKE,INVERSION);
-            case TIME -> List.of(REWIND,DAY_NIGHT);
+            case TIME -> List.of(REWIND,DAY_NIGHT,TIME_FLOW);
             case MIND -> List.of(GRAB,TEAR,DROP);
             case SOUL -> List.of(SOUL,SOUL_MASS);
         };

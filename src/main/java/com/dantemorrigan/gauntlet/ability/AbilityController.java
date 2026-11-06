@@ -34,7 +34,7 @@ public final class AbilityController {
         ServerTickEvents.END_SERVER_TICK.register(AbilityController::tick);
         ServerPlayConnectionEvents.JOIN.register((h,s,server)->sync(h.getPlayer()));
         ServerPlayConnectionEvents.DISCONNECT.register((h,s)->{cancel(h.getPlayer());LAST_START.remove(h.getPlayer().getUUID());});
-        ServerLifecycleEvents.SERVER_STOPPED.register(s->{CHARGES.clear();HELD.clear();LAST_START.clear();});
+        ServerLifecycleEvents.SERVER_STOPPED.register(s->{CHARGES.clear();HELD.clear();LAST_START.clear();TimeFlow.clear();});
     }
     public static Ability selected(ServerPlayer p) {
         Ability a=Ability.byId(p.getAttached(SELECTED));return a==null?Ability.STRIKE:a;
@@ -44,6 +44,7 @@ public final class AbilityController {
     }
     public static int heldKind(ServerPlayer p) { return MindStone.holdingMob(p)?2:MindStone.holding(p)?1:0; }
     public static int cooldown(ServerPlayer p,Ability a) {
+        if(a==Ability.TIME_FLOW) return TimeFlow.cooldown(p);
         if(p.isCreative()) return 0;
         return switch(a) {
             case STRIKE,PLANET,CELESTIAL -> PowerAbility.cooldown(p,a==Ability.PLANET);
@@ -87,6 +88,7 @@ public final class AbilityController {
         if(a==Ability.PLANET && !PlanetDestruction.hasReturnStone(p)) return "planet_time";
         if(a==Ability.REWIND && TimeAbility.canRestorePlanet(p) && !TimeAbility.isRewinding(p)) return "";
         if(PlanetDestruction.isBusy(p) || TimeAbility.isRewinding(p)) return "busy";
+        if(a==Ability.TIME_FLOW && (TimeFlow.active(p) || InfinityBeam.active(p))) return "busy";
         if(SpaceManager.inSpace(p) && a!=Ability.REWIND) return "dimension";
         if(a==Ability.BEAM && GauntletEffects.state(p).phase!=GauntletEffects.Phase.AWAKENED) return "awakening";
         if((a==Ability.DAY_NIGHT || a==Ability.CELESTIAL || a==Ability.METEOR_STREAM) && !p.level().dimension().equals(Level.OVERWORLD)) return "dimension";
@@ -132,7 +134,7 @@ public final class AbilityController {
             if(current!=Ability.GRAB || !reason(p,Ability.TEAR).isEmpty()) {sync(p);return;}
             MindStone.action(p,1);sync(p);return;
         }
-        if(action!=0 || HELD.containsKey(p.getUUID()) || CHARGES.containsKey(p.getUUID())) return;
+        if(action!=0 || TimeFlow.active(p) || HELD.containsKey(p.getUUID()) || CHARGES.containsKey(p.getUUID())) return;
         long now=p.level().getServer().overworld().getGameTime();
         if(now-LAST_START.getOrDefault(p.getUUID(),-100L)<3) return;
         LAST_START.put(p.getUUID(),now);
@@ -155,6 +157,7 @@ public final class AbilityController {
             case INVERSION -> {RealityStone.hold(p,true);if(RealityStone.active(p)) HELD.put(p.getUUID(),a);}
             case REWIND -> TimeAbility.request(p);
             case DAY_NIGHT -> TimeShift.request(p);
+            case TIME_FLOW -> TimeFlow.start(p,g);
             case GRAB -> MindStone.action(p,0);
             case TEAR -> MindStone.action(p,1);
             case DROP -> MindStone.drop(p);
@@ -184,10 +187,11 @@ public final class AbilityController {
         Charge c=CHARGES.remove(p.getUUID());
         if(c!=null) GauntletState.setInUse(c.gauntlet(),EnumSet.noneOf(Stone.class));
         HELD.remove(p.getUUID());CelestialApocalypse.resetAim(p);
-        InfinityBeam.cancel(p);RealityStone.stop(p);com.dantemorrigan.gauntlet.meteor.MeteorStream.cancel(p);
+        TimeFlow.cancel(p);InfinityBeam.cancel(p);RealityStone.stop(p);com.dantemorrigan.gauntlet.meteor.MeteorStream.cancel(p);
         if(p.isUsingItem() && p.getUseItem().is(ModItems.GAUNTLET)) p.stopUsingItem();
     }
     private static void tick(MinecraftServer server) {
+        TimeFlow.tick(server);
         for(ServerPlayer p:server.getPlayerList().getPlayers()) {
             Charge c=CHARGES.get(p.getUUID());
             if(c!=null) {
