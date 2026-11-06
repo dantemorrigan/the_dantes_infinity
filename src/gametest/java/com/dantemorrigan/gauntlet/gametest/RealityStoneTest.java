@@ -9,7 +9,7 @@ import net.minecraft.world.entity.Mob;
 import net.minecraft.world.phys.AABB;
 import org.lwjgl.glfw.GLFW;
 
-/** Reality Inversion: hold G, the world folds/twists, mobs -> butterflies, arrows -> petals; release restores all. */
+/** Reality Inversion: hold G while moving, the world folds/twists, targets -> butterflies, arrows -> petals; release leaves blocks twisted forever. */
 public class RealityStoneTest implements FabricClientGameTest {
 	private static TestSingleplayerContext SP;
 
@@ -41,6 +41,7 @@ public class RealityStoneTest implements FabricClientGameTest {
 			ctx.waitTicks(3);
 			ctx.takeScreenshot("r00_before");
 			int visibleBefore = sp.getServer().computeOnServer(s -> visibleMobs(s));
+			BlockPos houseCorner = sp.getServer().computeOnServer(s -> s.overworld().players().get(0).blockPosition().offset(4, 0, 6));
 
 			ctx.getInput().holdKey(GLFW.GLFW_KEY_G);
 			ctx.waitTicks(8);
@@ -56,9 +57,13 @@ public class RealityStoneTest implements FabricClientGameTest {
 			ctx.waitTicks(20);
 			ctx.takeScreenshot("r05_folded");
 			int visibleDuring = sp.getServer().computeOnServer(s -> visibleMobs(s));
-			// Move the hand (gaze): the parting turns with it.
+			// Move forward while holding G and turn the gaze: the parting moves with the player.
+			var posBeforeMove = sp.getServer().computeOnServer(s -> s.overworld().players().get(0).position());
+			ctx.getInput().holdKey(GLFW.GLFW_KEY_W);
 			ctx.getInput().lookAt(80, 30);
 			ctx.waitTicks(25);
+			ctx.getInput().releaseKey(GLFW.GLFW_KEY_W);
+			var posAfterMove = sp.getServer().computeOnServer(s -> s.overworld().players().get(0).position());
 			ctx.takeScreenshot("r06_hand_moved");
 			ctx.runOnClient(mc -> mc.options.setCameraType(CameraType.FIRST_PERSON));
 			ctx.getInput().lookAt(80, 5);
@@ -73,20 +78,16 @@ public class RealityStoneTest implements FabricClientGameTest {
 			ctx.waitTicks(6);
 			ctx.takeScreenshot("r09_release");
 			ctx.waitTicks(25);
-			ctx.takeScreenshot("r10_restored");
+			ctx.takeScreenshot("r10_twisted_permanent");
 			int visibleAfter = sp.getServer().computeOnServer(s -> visibleMobs(s));
-			boolean houseOk = sp.getServer().computeOnServer(s -> {
-				BlockPos p = s.overworld().players().get(0).blockPosition();
-				return s.overworld().getBlockState(p.offset(4, 0, 6)).isSolidRender();
-			});
-			boolean clientOk = ctx.computeOnClient(mc -> {
-				BlockPos p = mc.player.blockPosition();
-				return !mc.level.getBlockState(p.offset(4, 0, 6)).isAir() && !mc.level.getBlockState(p.offset(6, -1, 0)).isAir();
-			});
+			boolean houseDisplaced = sp.getServer().computeOnServer(s -> s.overworld().getBlockState(houseCorner).isAir());
+			boolean movedDuringCast = posAfterMove.distanceToSqr(posBeforeMove) > 0.05;
 			System.out.println("DEBUG visible mobs before/during/after: " + visibleBefore + "/" + visibleDuring + "/" + visibleAfter
-					+ " serverHouse=" + houseOk + " clientBlocksBack=" + clientOk);
-			if (visibleAfter != visibleBefore) throw new AssertionError("mobs not restored");
-			if (!clientOk) throw new AssertionError("client blocks not restored");
+					+ " houseDisplaced=" + houseDisplaced + " movedDuringCast=" + movedDuringCast);
+			if (visibleBefore < 3) throw new AssertionError("expected mobs before cast");
+			if (visibleAfter != 0) throw new AssertionError("mobs in vortex should remain butterflies permanently, got " + visibleAfter);
+			if (!houseDisplaced) throw new AssertionError("expected twisted blocks to remain displaced after release");
+			if (!movedDuringCast) throw new AssertionError("expected player to be able to move during Reality Inversion");
 		}
 	}
 

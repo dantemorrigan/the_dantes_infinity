@@ -19,7 +19,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.OwnableEntity;
 import net.minecraft.world.entity.boss.enderdragon.EnderDragon;
 import net.minecraft.world.entity.boss.wither.WitherBoss;
@@ -57,11 +57,11 @@ public final class RealityStrike {
 		final Vec3 center;
 		final UUID caster;
 		final List<Column> columns;
-		final List<Mob> mobs;
+		final List<LivingEntity> mobs;
 		final boolean loose;
 		int tick;
 
-		Wave(ServerLevel level, Vec3 center, UUID caster, List<Column> columns, List<Mob> mobs, boolean loose) {
+		Wave(ServerLevel level, Vec3 center, UUID caster, List<Column> columns, List<LivingEntity> mobs, boolean loose) {
 			this.level = level;
 			this.center = center;
 			this.caster = caster;
@@ -139,12 +139,13 @@ public final class RealityStrike {
 		return columns;
 	}
 
-	private static List<Mob> targets(ServerPlayer player, Vec3 center, double r, double reachPadding) {
+	private static List<LivingEntity> targets(ServerPlayer player, Vec3 center, double r, double reachPadding) {
 		ServerLevel level = player.level();
 		// Everyone around (bosses are too real; your own pets and named mobs are spared).
-		List<Mob> mobs = new ArrayList<>(level.getEntitiesOfClass(Mob.class, new AABB(center, center).inflate(r, r * 0.6, r), m -> m.isAlive()
+		List<LivingEntity> mobs = new ArrayList<>(level.getEntitiesOfClass(LivingEntity.class, new AABB(center, center).inflate(r, r * 0.6, r), m -> m != player && m.isAlive() && !m.isSpectator()
 				&& !(m instanceof EnderDragon) && !(m instanceof WitherBoss) && !m.hasCustomName()
 				&& !(m instanceof OwnableEntity o && player.getUUID().equals(o.getOwnerReference() != null ? o.getOwnerReference().getUUID() : null))
+				&& CoopRules.canAffect(player, m)
 				&& m.position().distanceTo(center) <= r + reachPadding));
 		mobs.sort(Comparator.comparingDouble(m -> m.position().distanceToSqr(center)));
 
@@ -200,9 +201,9 @@ public final class RealityStrike {
 				if (w.mobs.isEmpty() && w.columns.isEmpty()) it.remove();
 				continue;
 			}
-			// Mobs the wave reaches become red butterflies and dissolve.
+			// Everyone the wave reaches becomes red butterflies and dissolves.
 			while (!w.mobs.isEmpty() && w.mobs.getFirst().position().distanceTo(w.center) <= front + 0.5) {
-				Mob mob = w.mobs.removeFirst();
+				LivingEntity mob = w.mobs.removeFirst();
 				if (!mob.isAlive() || mob.level() != w.level) continue;
 				if (mob instanceof com.dantemorrigan.gauntlet.boss.Thanos) {
 					// Too real to be unmade: the wave only burns him.
@@ -212,7 +213,14 @@ public final class RealityStrike {
 				Vec3 at = mob.position().add(0, mob.getBbHeight() / 2, 0);
 				send(w.level, at, new ModNetwork.RealityFx(3, at, new Vec3(mob.getBbWidth(), mob.getBbHeight(), 0)));
 				w.level.playSound(null, mob.blockPosition(), SoundEvents.AMETHYST_CLUSTER_BREAK, SoundSource.HOSTILE, 1.0F, 1.4F);
-				mob.discard();
+				if (mob instanceof ServerPlayer victim) {
+					com.dantemorrigan.gauntlet.uru.GauntletDamage.hurt(w.level, victim, owner, owner.damageSources().playerAttack(owner), Float.MAX_VALUE);
+					if (victim.isAlive() && !com.dantemorrigan.gauntlet.uru.UruArmor.fullSet(victim)) {
+						victim.hurtServer(w.level, w.level.damageSources().genericKill(), Float.MAX_VALUE);
+					}
+				} else {
+					mob.discard();
+				}
 			}
 			if (w.columns.isEmpty() && w.mobs.isEmpty()) {
 				it.remove();

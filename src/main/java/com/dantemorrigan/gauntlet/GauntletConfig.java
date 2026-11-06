@@ -202,14 +202,14 @@ public final class GauntletConfig {
 	public int beamChargeTicks = 40;
 	public int beamFireTicks = 120;
 	/** Version marker for the one-time migration of the original 2-second default. */
-	public int beamTimingVersion = 1;
+	public int beamTimingVersion = 2;
 	public int beamCooldownTicks = 900;
 	public double beamRange = 72;
-	public double beamHitRadius = 1.2;
-	public float beamDamage = 160;
+	public double beamHitRadius = 3.0;
+	public float beamDamage = 10000;
 	public boolean beamBreakBlocks = true;
 	public double beamDrillRadius = 4.5;
-	public int beamBlocksPerTick = 512;
+	public int beamBlocksPerTick = 1536;
 
 	// ---- Time stone rewind (server) ----
 	/** How far back the personal rewind goes (seconds of recorded history). */
@@ -296,6 +296,12 @@ public final class GauntletConfig {
 						config = read;
 						if (json.isJsonObject() && !json.getAsJsonObject().has("beamTimingVersion") && config.beamFireTicks == 40)
 							config.beamFireTicks = 120;
+						if (config.beamTimingVersion < 2) {
+							config.beamTimingVersion = 2;
+							if (config.beamHitRadius < 3.0) config.beamHitRadius = 3.0;
+							if (config.beamDamage < 10000) config.beamDamage = 10000;
+							if (config.beamBlocksPerTick < 1536) config.beamBlocksPerTick = 1536;
+						}
 					}
 				}
 			}

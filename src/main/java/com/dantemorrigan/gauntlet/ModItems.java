@@ -13,8 +13,8 @@ import java.util.function.Function;
 
 public final class ModItems {
 	public static final Item STORMBREAKER = register("stormbreaker", com.dantemorrigan.gauntlet.stormbreaker.StormbreakerItem::new,
-            epic().component(DataComponents.LORE, new net.minecraft.world.item.component.ItemLore(java.util.List.of(
-                    net.minecraft.network.chat.Component.translatable("tooltip.infinity_gauntlet.stormbreaker")))));
+			epic().component(DataComponents.LORE, new net.minecraft.world.item.component.ItemLore(java.util.List.of(
+					net.minecraft.network.chat.Component.translatable("tooltip.infinity_gauntlet.stormbreaker")))));
 	public static final Item GAUNTLET = register("gauntlet", GauntletItem::new, epic().component(DataComponents.CONTAINER, ItemContainerContents.EMPTY));
 
 	public static final Item POWER_STONE = register("power_stone", stone("power"));
@@ -64,6 +64,15 @@ public final class ModItems {
 	/** Map that unrolls to reveal the single overgrown Ruined City (Mind Stone quest). */
 	public static final Item QUEST_MIND_CITY_MAP = register("quest_mind_city_map", com.dantemorrigan.gauntlet.stones.MindCityMapItem::new,
 			new Item.Properties().stacksTo(1).rarity(Rarity.RARE));
+
+	/** Ancient forging schematic of the Infinity Gauntlet (found in chests and sold by traders). */
+	public static final Item QUEST_GAUNTLET_BLUEPRINT = register("quest_gauntlet_blueprint", com.dantemorrigan.gauntlet.stones.GauntletBlueprintItem::new,
+			new Item.Properties().stacksTo(1).rarity(Rarity.RARE)
+					.component(DataComponents.LORE, new net.minecraft.world.item.component.ItemLore(java.util.List.of(
+							net.minecraft.network.chat.Component.translatable("tooltip.infinity_gauntlet.gauntlet_blueprint").withStyle(s -> s.withItalic(false).withColor(net.minecraft.ChatFormatting.GRAY)),
+							net.minecraft.network.chat.Component.translatable("tooltip.infinity_gauntlet.gauntlet_blueprint.row1").withStyle(s -> s.withItalic(false)),
+							net.minecraft.network.chat.Component.translatable("tooltip.infinity_gauntlet.gauntlet_blueprint.row2").withStyle(s -> s.withItalic(false)),
+							net.minecraft.network.chat.Component.translatable("tooltip.infinity_gauntlet.gauntlet_blueprint.row3").withStyle(s -> s.withItalic(false))))));
 
 	private static Item.Properties gear() {
 		return new Item.Properties().rarity(Rarity.RARE).fireResistant()

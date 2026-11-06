@@ -10,11 +10,22 @@
           }
         ]
       }
+    },
+    "has_gauntlet_blueprint": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "infinity_gauntlet:quest_gauntlet_blueprint"
+          }
+        ]
+      }
     }
   },
   "requirements": [
     [
-      "has_uru_ingot"
+      "has_uru_ingot",
+      "has_gauntlet_blueprint"
     ]
   ],
   "rewards": {

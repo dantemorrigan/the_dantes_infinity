@@ -37,8 +37,8 @@ add('space',
  f"{H}Space Stone{R}\n{B}Portal{R}: a door to the Nether, End or Overworld.\n{B}Blink{R}: teleport where you look.\n{B}Flight{R}: Ctrl boosts; beyond the sky lies the Solar System.\n{B}Warp{R}: jump to a planet.",
  f"{H}Камень Пространства{R}\n{B}Портал{R}: дверь в другое измерение.\n{B}Рывок{R}: телепорт туда, куда смотришь.\n{B}Полёт{R}: Ctrl ускоряет; за небом — Солнечная система.\n{B}Варп{R}: прыжок к планете.")
 add('reality',
- f"{H}Reality Stone{R}\n{B}Reality strike{R}: select the strike and press R. Mobs become butterflies, the ground turns to redstone and fire.\n\n{B}Inversion{R}: hold R. The world folds around your gaze. Blocks stay intact.",
- f"{H}Камень Реальности{R}\n{B}Удар Реальности{R}: выбери удар и нажми R. Мобы — бабочки, земля — красный камень и огонь.\n\n{B}Изнанка{R}: держи R. Мир складывается вслед за взглядом. Блоки не ломаются.")
+ f"{H}Reality Stone{R}\n{B}Reality strike{R}: press R. Mobs turn to butterflies, ground to redstone and fire.\n\n{B}Inversion{R}: hold R while moving. Mobs and players become butterflies; twisted blocks stay twisted.",
+ f"{H}Камень Реальности{R}\n{B}Удар Реальности{R}: нажми R. Мобы — бабочки, земля — редстоун и огонь.\n\n{B}Изнанка{R}: держи R на ходу. Все в вихре — бабочки, а закрученные блоки остаются навсегда.")
 add('time',
  f"{H}Time Stone{R}\n{B}Rewind{R}: you are played back through your last 5 seconds.\n{B}Day / Night{R}: spins the sky to the other half of the day.\n\nIn Dead Space, rewind reassembles a destroyed planet.",
  f"{H}Камень Времени{R}\n{B}Перемотка{R}: тебя «проигрывает» назад на 5 секунд.\n{B}День / Ночь{R}: прокручивает небо на другую половину суток.\n\nВ Мёртвом космосе перемотка собирает разрушенную планету.")
@@ -55,8 +55,8 @@ add('thanos',
  f"{H}Thanos{R}\nGather {B}five stones{R}: after half a day of calm the Mad Titan comes for them.\n{B}Uru armor{R} is a must. The worn gauntlet hurts him most; explosions, bare stones and swords also work.\nBeaten once, he never returns.",
  f"{H}Танос{R}\nСобери {B}пять камней{R}: через полсуток придёт Безумный Титан.\n{B}Броня Уру{R} обязательна. Сильнее всего его бьёт перчатка, дальше взрывы, камни и мечи.\nПобеждённый, он не вернётся.")
 add('uru',
- f"{H}Uru{R}\nFind ore near Y=−32. Mine with diamond or netherite and smelt it.\n\n{B}Uru armor{R} uses iron recipes. A full set reduces full-gauntlet damage. Ingots also go into the gauntlet recipe.",
- f"{H}Уру{R}\nИщи около Y=−32. Добудь алмазной или незеритовой киркой и переплавь.\n\n{B}Броня из Уру{R} крафтится как железная. Полный комплект гасит урон полной перчатки. Слитки нужны и для перчатки.")
+ f"{H}Uru{R}\nFind ore near Y=−32. Mine with diamond or netherite and smelt it.\n\n{B}Uru armor{R} uses iron recipes. A full set reduces full-gauntlet damage. Find the {B}Gauntlet Schematic{R} in chests or traders.",
+ f"{H}Уру{R}\nИщи около Y=−32. Добудь алмазной или незеритовой киркой и переплавь.\n\n{B}Броня из Уру{R} крафтится как железная и гасит урон перчатки. {B}Схему перчатки{R} ищи в сундуках и у торговцев.")
 add('extractor',
  f"{H}Infinity Extractor{R}\nPulls a stone out of someone's gauntlet: hold right-click on them, three cycles. Shift + right-click picks which stone.\n\nYour stones stay with you when you die, unless another player kills you.",
  f"{H}Извлекатель{R}\nВытягивает камень из чужой перчатки: держи ПКМ на цели, три цикла. Shift + ПКМ выбирает камень.\n\nПосле смерти камни остаются у тебя, если не убил другой игрок.")

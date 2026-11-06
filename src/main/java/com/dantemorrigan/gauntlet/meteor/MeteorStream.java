@@ -142,6 +142,9 @@ public final class MeteorStream {
 			return;
 		}
 		if (aim.center == null) {
+			aim.center = resolveTarget(p, GauntletConfig.get(), null);
+		}
+		if (aim.center == null) {
 			ModStatus.send(p, Component.translatable("meteor.infinity_gauntlet.no_ground"));
 			return;
 		}
@@ -259,22 +262,100 @@ public final class MeteorStream {
 			}
 			if (aim.lock >= cfg.streamLockTicks) {
 				aim.phase = 1;
+				aim.center = resolveTarget(p, cfg, null);
+				sendAim(p, true, aim.center != null, aim.center == null ? Vec3.ZERO : aim.center);
 				p.level().playSound(null, p.blockPosition(), SoundEvents.BEACON_POWER_SELECT, SoundSource.PLAYERS, 1.0F, 1.5F);
 				ModStatus.send(p, Component.translatable("meteor.infinity_gauntlet.aim_ground", Component.translatable("meteor.infinity_gauntlet." + body)));
 			}
 			return;
 		}
-		// Phase 1: the circle follows where the player looks on the ground.
-		Vec3 eye = p.getEyePosition();
-		Vec3 end = eye.add(p.getLookAngle().scale(cfg.streamMaxRange));
-		BlockHitResult hit = p.level().clip(new ClipContext(eye, end, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, p));
-		Vec3 center = null;
-		if (hit.getType() == HitResult.Type.BLOCK && hit.getDirection() == Direction.UP && hit.getLocation().distanceTo(p.position()) >= cfg.streamMinRange
-				&& p.level().getWorldBorder().isWithinBounds(hit.getBlockPos()) && (!cfg.abilityBlockChanges || CoopRules.canEdit(p, p.level(), hit.getBlockPos()))) {
-			center = hit.getLocation();
+		// Phase 1: the circle follows where the player looks on any terrain or water surface.
+		Vec3 center = resolveTarget(p, cfg, aim.center);
+		if (center != null && (!p.level().getWorldBorder().isWithinBounds(BlockPos.containing(center))
+				|| (cfg.abilityBlockChanges && !CoopRules.canEdit(p, p.level(), BlockPos.containing(center))))) {
+			center = aim.center;
 		}
 		aim.center = center;
-		if (p.tickCount % 4 == 0) sendAim(p, true, center != null, center == null ? Vec3.ZERO : center);
+		if (p.tickCount % 2 == 0) sendAim(p, true, center != null, center == null ? Vec3.ZERO : center);
+	}
+
+	/**
+	 * Universal ground/water target resolution: works on any block face (top, sides, slopes, hills), on water and lava,
+	 * and clamps to [streamMinRange, streamMaxRange] instead of dropping the circle when looking too close or far.
+	 */
+	public static Vec3 resolveTarget(Player p, GauntletConfig cfg, Vec3 fallback) {
+		Level level = p.level();
+		Vec3 eye = p.getEyePosition();
+		Vec3 look = p.getLookAngle();
+		Vec3 end = eye.add(look.scale(cfg.streamMaxRange));
+		BlockHitResult hit = level.clip(new ClipContext(eye, end, ClipContext.Block.OUTLINE, ClipContext.Fluid.ANY, p));
+
+		Vec3 lookH = new Vec3(look.x, 0, look.z);
+		if (lookH.lengthSqr() < 1.0e-4) {
+			float yawRad = p.getYRot() * Mth.DEG_TO_RAD;
+			lookH = new Vec3(-Mth.sin(yawRad), 0, Mth.cos(yawRad));
+		} else {
+			lookH = lookH.normalize();
+		}
+
+		double tx, tz, refY;
+		if (hit.getType() == HitResult.Type.BLOCK) {
+			Vec3 loc = hit.getLocation();
+			double dx = loc.x - p.getX();
+			double dz = loc.z - p.getZ();
+			double hDist = Math.sqrt(dx * dx + dz * dz);
+			if (hDist < cfg.streamMinRange) {
+				tx = p.getX() + lookH.x * cfg.streamMinRange;
+				tz = p.getZ() + lookH.z * cfg.streamMinRange;
+				refY = loc.y;
+			} else {
+				tx = loc.x;
+				tz = loc.z;
+				refY = hit.getBlockPos().getY() + 0.5;
+			}
+		} else {
+			if (look.y > 0.25 && fallback != null) return fallback;
+			double dist = look.y < -0.02
+					? Mth.clamp((eye.y - p.getY()) / -look.y, cfg.streamMinRange, cfg.streamMaxRange)
+					: Math.min(cfg.streamMaxRange, Math.max(cfg.streamMinRange, 48.0));
+			tx = p.getX() + lookH.x * dist;
+			tz = p.getZ() + lookH.z * dist;
+			refY = fallback != null ? fallback.y : p.getY();
+		}
+		BlockPos col = BlockPos.containing(tx, refY, tz);
+		if (!level.hasChunkAt(col)) return fallback;
+		double ty = surfaceY(level, tx, tz, refY);
+		return new Vec3(tx, ty, tz);
+	}
+
+	/** Finds the terrain or water surface Y at (x, z) near refY, adapting to hills, cliffs, caves and water bodies. */
+	public static double surfaceY(Level level, double x, double z, double refY) {
+		int bx = Mth.floor(x);
+		int bz = Mth.floor(z);
+		BlockPos probe = new BlockPos(bx, Mth.floor(refY), bz);
+		if (!level.hasChunkAt(probe)) return refY;
+		if (isSurfaceSupport(level, probe)) {
+			BlockPos cur = probe;
+			for (int i = 0; i < 16 && isSurfaceSupport(level, cur.above()); i++) {
+				cur = cur.above();
+			}
+			return cur.getY() + 1.0;
+		}
+		BlockPos cur = probe;
+		for (int i = 0; i < 24; i++) {
+			if (isSurfaceSupport(level, cur)) {
+				return cur.getY() + 1.0;
+			}
+			cur = cur.below();
+		}
+		int hm = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, bx, bz);
+		return hm > level.getMinY() ? hm : refY;
+	}
+
+	private static boolean isSurfaceSupport(Level level, BlockPos pos) {
+		BlockState state = level.getBlockState(pos);
+		if (!state.getFluidState().isEmpty()) return true;
+		return !state.isAir() && !state.getCollisionShape(level, pos).isEmpty();
 	}
 
 	private static void launch(ServerLevel level, Stream s) {
@@ -311,20 +392,26 @@ public final class MeteorStream {
 		boolean blocks = cfg.abilityBlockChanges && owner != null;
 		ExplosionDamageCalculator rules = new ExplosionDamageCalculator() {
 			@Override
+			public java.util.Optional<Float> getBlockExplosionResistance(Explosion explosion, BlockGetter getter, BlockPos pos, BlockState state, net.minecraft.world.level.material.FluidState fluid) {
+				if (!fluid.isEmpty()) return java.util.Optional.of(0.5f);
+				return super.getBlockExplosionResistance(explosion, getter, pos, state, fluid);
+			}
+
+			@Override
 			public boolean shouldBlockExplode(Explosion explosion, BlockGetter getter, BlockPos pos, BlockState state, float power) {
 				return blocks && CoopRules.canEdit(owner, level, pos);
 			}
 
-            @Override
-            public float getEntityDamageAmount(Explosion explosion, Entity entity, float exposure) {
-                float damage = super.getEntityDamageAmount(explosion, entity, exposure);
-                if (damage > 0 && entity instanceof ServerPlayer player
-                        && com.dantemorrigan.gauntlet.stormbreaker.Stormbreaker.guarded(player)) {
-                    com.dantemorrigan.gauntlet.stormbreaker.Stormbreaker.guardFlash(player, owner);
-                    return damage * .36f;
-                }
-                return damage;
-            }
+			@Override
+			public float getEntityDamageAmount(Explosion explosion, Entity entity, float exposure) {
+				float damage = super.getEntityDamageAmount(explosion, entity, exposure);
+				if (damage > 0 && entity instanceof ServerPlayer player
+						&& com.dantemorrigan.gauntlet.stormbreaker.Stormbreaker.guarded(player)) {
+					com.dantemorrigan.gauntlet.stormbreaker.Stormbreaker.guardFlash(player, owner);
+					return damage * .36f;
+				}
+				return damage;
+			}
 
 			@Override
 			public boolean shouldDamageEntity(Explosion explosion, Entity entity) {

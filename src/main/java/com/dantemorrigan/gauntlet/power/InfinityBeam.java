@@ -5,10 +5,13 @@ import com.dantemorrigan.gauntlet.*;
 import com.dantemorrigan.gauntlet.net.ModNetwork;
 import com.dantemorrigan.gauntlet.space.PlanetDestruction;
 import com.dantemorrigan.gauntlet.space.SpaceManager;
+import com.dantemorrigan.gauntlet.uru.GauntletDamage;
+import com.dantemorrigan.gauntlet.uru.UruArmor;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
@@ -17,8 +20,10 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.boss.enderdragon.EnderDragon;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.ClipContext;
+import net.minecraft.world.level.block.BaseFireBlock;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.phys.AABB;
@@ -117,22 +122,42 @@ public final class InfinityBeam {
         }
     }
     private static void drill(Cast c, Vec3 from, Vec3 dir, double distance) {
-        int budget = Math.max(1, Math.min(2048, GauntletConfig.get().beamBlocksPerTick));
+        int budget = Math.max(512, Math.min(4096, GauntletConfig.get().beamBlocksPerTick));
         double radius = Math.max(1, Math.min(8, GauntletConfig.get().beamDrillRadius));
         Set<Long> visited = new HashSet<>();
-        for (double d = 3; d <= distance; d += 2.5) {
+        List<BlockPos> scorchCandidates = new ArrayList<>();
+        var rnd = c.level.getRandom();
+        for (double d = 1.5; d <= distance; d += 1.0) {
             Vec3 center = from.add(dir.scale(d));
-            double r = Math.min(radius, 1.2 + d * .35);
+            double r = Math.min(radius, 1.8 + d * .45);
+            double rSq = r * r;
+            double rimSq = (r + 1.0) * (r + 1.0);
             BlockPos origin = BlockPos.containing(center);
-            int bound = (int) Math.ceil(r);
+            int bound = (int) Math.ceil(r + 1.0);
             for (int x = -bound; x <= bound; x++) for (int y = -bound; y <= bound; y++) for (int z = -bound; z <= bound; z++) {
                 BlockPos pos = origin.offset(x, y, z);
-                if (!visited.add(pos.asLong()) || pos.getCenter().distanceToSqr(center) > r * r
-                        || pos.getCenter().distanceToSqr(c.owner.position()) < 9 || !CoopRules.canEdit(c.owner, c.level, pos)) continue;
+                double distSq = pos.getCenter().distanceToSqr(center);
+                if (distSq > rimSq || pos.getCenter().distanceToSqr(c.owner.position()) < 6) continue;
+                if (distSq > rSq) {
+                    if (y <= 0 && rnd.nextFloat() < 0.14f) scorchCandidates.add(pos.immutable());
+                    continue;
+                }
+                if (!visited.add(pos.asLong()) || !CoopRules.canEdit(c.owner, c.level, pos)) continue;
                 var block = c.level.getBlockState(pos);
                 if (block.isAir() || block.getDestroySpeed(c.level, pos) < 0) continue;
                 // No drops, falling-block entities or hundreds of separate explosions per tick.
                 if (c.level.setBlock(pos, Blocks.AIR.defaultBlockState(), Block.UPDATE_ALL) && --budget <= 0) return;
+            }
+            if ((int) d % 4 == 0) {
+                c.level.sendParticles(ParticleTypes.FLAME, center.x, center.y, center.z, 4, r * 0.4, r * 0.4, r * 0.4, 0.04);
+            }
+        }
+        for (BlockPos pos : scorchCandidates) {
+            BlockPos above = pos.above();
+            if (!c.level.getBlockState(pos).isAir() && c.level.getBlockState(above).isAir()
+                    && CoopRules.canEdit(c.owner, c.level, above)
+                    && BaseFireBlock.canBePlacedAt(c.level, above, net.minecraft.core.Direction.UP)) {
+                c.level.setBlock(above, BaseFireBlock.getState(c.level, above), Block.UPDATE_ALL);
             }
         }
     }
@@ -140,7 +165,7 @@ public final class InfinityBeam {
         return box.contains(from) || box.clip(from, to).isPresent();
     }
     private static void damage(Cast c, Vec3 from, Vec3 to) {
-        double radius = Math.max(.2, Math.min(4, GauntletConfig.get().beamHitRadius));
+        double radius = Math.max(2.5, Math.min(6.0, Math.max(GauntletConfig.get().beamHitRadius, GauntletConfig.get().beamDrillRadius * 0.75)));
         AABB area = new AABB(from, to).inflate(radius + 16);
         for (LivingEntity target : c.level.getEntitiesOfClass(LivingEntity.class, area,
                 e -> e != c.owner && e.isAlive() && !e.isSpectator())) {
@@ -152,27 +177,44 @@ public final class InfinityBeam {
             if (!hit) continue;
             boolean dragon = target instanceof EnderDragon;
             boolean thanos = target instanceof com.dantemorrigan.gauntlet.boss.Thanos;
-            float cap = dragon ? target.getMaxHealth() * .70f : thanos ? target.getMaxHealth() * Math.max(0, GauntletConfig.get().thanosBeamShare) : Math.max(0, GauntletConfig.get().beamDamage);
-            float spent = c.damage.getOrDefault(target.getUUID(), 0f);
-            float amount = Math.min(cap - spent, cap / c.duration);
-            if (amount <= 0) continue;
             if (dragon) {
+                float cap = target.getMaxHealth() * .70f;
+                float spent = c.damage.getOrDefault(target.getUUID(), 0f);
+                float amount = Math.min(cap - spent, cap / c.duration);
+                if (amount <= 0) continue;
                 // Dragon body parts and sitting phases otherwise reduce/cap conventional damage.
                 // One parent UUID budget makes a full connected cast remove exactly 70% max HP.
                 float before = target.getHealth();
                 target.setHealth(Math.max(0, before - amount));
                 c.damage.put(target.getUUID(), spent + Math.min(amount, before));
             } else if (thanos) {
+                float cap = target.getMaxHealth() * Math.max(0, GauntletConfig.get().thanosBeamShare);
+                float spent = c.damage.getOrDefault(target.getUUID(), 0f);
+                float amount = Math.min(cap - spent, cap / c.duration);
+                if (amount <= 0) continue;
                 // A full connected beam takes thanosBeamShare of his health; each slice lands (no hurt-immunity gaps).
                 if ((c.age - c.charge) % 4 == 0) {
                     float pulse = Math.min(cap - spent, amount * 4);
                     if (((com.dantemorrigan.gauntlet.boss.Thanos) target).hurtByBeam(c.level, c.owner, pulse)) c.damage.put(target.getUUID(), spent + pulse);
                 }
-            } else if ((c.age - c.charge) % 4 == 0) {
-                float pulse = Math.min(cap - spent, amount * 4);
-                if (com.dantemorrigan.gauntlet.uru.GauntletDamage.hurt(c.level, target, c.owner, c.owner.damageSources().playerAttack(c.owner), pulse)) {
-                    c.damage.put(target.getUUID(), spent + pulse);
+            } else if (!(target instanceof Player) && !UruArmor.fullSet(target)) {
+                // Every non-boss mob caught in the all-stones beam is incinerated and killed on the very first hit.
+                target.invulnerableTime = 0;
+                target.igniteForSeconds(10);
+                Vec3 body = target.position().add(0, target.getBbHeight() * 0.5, 0);
+                c.level.sendParticles(ParticleTypes.FLAME, body.x, body.y, body.z, 18, 0.35, 0.45, 0.35, 0.08);
+                c.level.sendParticles(ParticleTypes.LAVA, body.x, body.y, body.z, 6, 0.25, 0.3, 0.25, 0.02);
+                var src = c.owner.damageSources().playerAttack(c.owner);
+                GauntletDamage.hurt(c.level, target, c.owner, src, Float.MAX_VALUE);
+                if (target.isAlive()) {
+                    target.setHealth(0f);
+                    target.die(src);
+                    if (target.isAlive()) target.kill(c.level);
                 }
+            } else if (!UruArmor.fullSet(target) || (c.age - c.charge) % 4 == 0) {
+                target.invulnerableTime = 0;
+                target.igniteForSeconds(10);
+                GauntletDamage.hurt(c.level, target, c.owner, c.owner.damageSources().playerAttack(c.owner), Float.MAX_VALUE);
             }
         }
     }

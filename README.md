@@ -6,7 +6,7 @@
 
 🇬🇧 English · [🇷🇺 Русский](README.ru.md)
 
-Requirements: **Java 25**. Build: `./gradlew build` → `build/libs/infinity_gauntlet-1.0.5.jar` (+ Fabric API 0.155.3+26.1.2).
+Requirements: **Java 25**. Build: `./gradlew build` → `build/libs/infinity_gauntlet-1.0.6.jar` (+ Fabric API 0.155.3+26.1.2).
 
 ```
 ./gradlew runClient          # test client
@@ -17,7 +17,7 @@ Requirements: **Java 25**. Build: `./gradlew build` → `build/libs/infinity_gau
 ## Getting started
 
 - **Uru ore** generates in new Overworld chunks from the bottom of the world up to Y=0. Look around Y=−32 and use a diamond or netherite pickaxe. Smelt raw Uru in a furnace or blast furnace. Fortune increases the drop, and Silk Touch preserves the ore block.
-- **Gauntlet crafting** uses a 3×3 grid. From top to bottom: Uru / gold / diamond, gold / redstone / gold, diamond / gold / Uru. Use ingots for both metals. Right-click with the gauntlet in your main hand to open the stone slots, then press F to move it to your offhand.
+- **Gauntlet crafting** uses a 3×3 grid. From top to bottom: Uru / gold / diamond, gold / redstone / gold, diamond / gold / Uru. Use ingots for both metals. **Infinity Gauntlet Schematics** with the forging pattern can be found in world chests (villages, smiths, strongholds, dungeons, mineshafts, temples, pyramids, shipwrecks, underwater ruins, mansions, ancient cities, bastions, fortresses, End cities) and bought from cartographers, smiths, librarians, and wandering traders; right-clicking the schematic unlocks the recipe in the recipe book. Right-click with the gauntlet in your main hand to open the stone slots, then press F to move it to your offhand.
 - **Uru armor** follows iron armor recipes and is repaired with Uru ingots. A complete set reduces damage from a full gauntlet and loses durability when absorbing a hit.
 - All six Infinity Stones have survival sources below.
 
@@ -97,8 +97,8 @@ Testing the new controls: `xvfb-run -a ./gradlew runClientGameTest -PonlyTest=Ab
 
 ## Infinity Beam — all six stones
 - Equip a gauntlet holding all stones in your offhand, wait for it to awaken and select Infinity Beam and **hold R**: 2 s charge, then a 6 s beam. Releasing interrupts the attack.
-- Range 72 blocks; full contact with the dragon removes 70% of its max health (140 HP). Misses reduce the damage; crystal healing is independent.
-- The beam drills a tunnel up to 9 blocks wide with no item drops; bedrock is preserved and no new chunks are loaded.
+- Annihilates non-boss mobs in a single hit, scorching and burning everything in its path. Range 72 blocks; full contact with the dragon removes 70% of its max health (140 HP). Misses reduce the damage; crystal healing is independent.
+- The beam drills a scorching tunnel up to 9 blocks wide with no item drops; bedrock is preserved and no new chunks are loaded.
 - Cooldown 45 s (disabled in creative mode). Parameters: `beamChargeTicks`, `beamFireTicks`, `beamCooldownTicks`, `beamRange`, `beamDamage`, `beamHitRadius`, `beamBreakBlocks`, `beamDrillRadius`, `beamBlocksPerTick`.
 - Ability statuses and the rain timer are shown in a separate top-left panel in bold.
 - The charge, beam barrel, flash and impact animations come from the supplied Infinity Beam Ultimate Basic; the six colored spirals are built at render time.
@@ -122,14 +122,12 @@ Testing the new controls: `xvfb-run -a ./gradlew runClientGameTest -PonlyTest=Ab
   **Moon destroyed** → days as usual, only stars at night.
 
 ## Reality Stone — "Reality Inversion"
-- Select Reality Inversion and **hold R** (closed fist): charge at the fist → red cracks → the world crumbles into cubic fragments and
-  turns inside out. The ground on both sides of your gaze folds into walls, buildings twist, water hangs
-  in the air. **Turn your head**: the rift follows your hand. Mobs turn into red butterflies, flying arrows
-  into petals. **Release R** (open fist): everything flows back, mobs return.
-- The world on the server does not change: these are real blocks of the current resource pack, temporarily removed only on your client.
-  Mobs always return (release, death, logout, dimension change, even a server restart).
-- You can't walk while holding: you control the "hand", i.e. your gaze. Radius and block limit are in the config (`reality*`).
-- Select Reality Strike and press **R** — a stone strike on the ground: a red wave spreads from the fist. All mobs it reaches (except bosses, your pets and named mobs) turn into red butterflies and dissolve into the air, with no drops. The ground within `realityStrikeRadius` (10) becomes redstone blocks, with fire in places. This change is **real** and stays. Cooldown `realityStrikeCooldownTicks`.
+- Select Reality Inversion and **hold R** (closed fist) — you can move freely while channeling: charge at the fist → red cracks → the world crumbles into cubic fragments and
+  turns inside out along your path and gaze. The ground on both sides of your gaze folds into walls, buildings twist, water hangs
+  in the air. **Walk and turn your head**: the rift moves and turns with you. Mobs and players caught in the vortex permanently turn into red butterflies, and flying arrows turn
+  into petals. **Release R** (open fist): the twisted blocks (ground, buildings, and suspended water) remain physically twisted in the world forever.
+- Radius and block limit are in the config (`reality*`).
+- Select Reality Strike and press **R** — a stone strike on the ground: a red wave spreads from the fist. All mobs and players it reaches (except bosses, your pets and named mobs) turn into red butterflies and dissolve into the air, with no drops. The ground within `realityStrikeRadius` (10) becomes redstone blocks, with fire in places. This change is **real** and stays. Cooldown `realityStrikeCooldownTicks`.
 
 ## Space Stone
 - With Portal selected, **R** opens and closes it. **Shift+R** — choose the dimension: Nether / End / Overworld
