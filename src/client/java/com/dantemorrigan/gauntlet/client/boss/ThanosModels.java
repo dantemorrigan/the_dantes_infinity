@@ -133,6 +133,19 @@ public final class ThanosModels {
 			case Thanos.A_RIFT -> apply(poses, "rift_entry", t, 1);
 			case Thanos.A_INTRO -> apply(poses, "intro", t, 1);
 			case Thanos.A_ROAR -> apply(poses, "roar", t, 1);
+			case Thanos.A_RAGE_QUAKE -> {
+				float windup = Thanos.QUAKE_WINDUP / 20f;
+				if (t < windup) apply(poses, "roar", t, 1);
+				else apply(poses, "slam", t - windup, 1);
+			}
+			case Thanos.A_RAGE_BARRAGE -> {
+				float beat = t % (Thanos.BARRAGE_INTERVAL / 20f);
+				float windup = Thanos.BARRAGE_WINDUP / 20f;
+				if (t < Thanos.BARRAGE_STRIKES * Thanos.BARRAGE_INTERVAL / 20f) {
+					if (beat < windup - .2f) apply(poses, "roar", beat, .65f);
+					else apply(poses, "backhand", beat - windup + .35f, 1);
+				}
+			}
 			case Thanos.A_KNEEL -> apply(poses, "kneel", t, 1);
 			case Thanos.A_LEAVE -> apply(poses, "leave", t, 1);
 			default -> {}

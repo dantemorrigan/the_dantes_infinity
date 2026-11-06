@@ -192,7 +192,7 @@ public final class InfinityBeam {
                 float spent = c.damage.getOrDefault(target.getUUID(), 0f);
                 float amount = Math.min(cap - spent, cap / c.duration);
                 if (amount <= 0) continue;
-                // A full connected beam takes thanosBeamShare of his health; each slice lands (no hurt-immunity gaps).
+                // Limit the beam budget before phase-specific mitigation. Each slice bypasses hurt-immunity frames.
                 if ((c.age - c.charge) % 4 == 0) {
                     float pulse = Math.min(cap - spent, amount * 4);
                     if (((com.dantemorrigan.gauntlet.boss.Thanos) target).hurtByBeam(c.level, c.owner, pulse)) c.damage.put(target.getUUID(), spent + pulse);

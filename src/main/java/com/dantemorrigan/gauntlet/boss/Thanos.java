@@ -10,6 +10,7 @@ import com.dantemorrigan.gauntlet.stormbreaker.Stormbreaker;
 import com.dantemorrigan.gauntlet.uru.UruArmor;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.BlockParticleOption;
+import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.syncher.EntityDataAccessor;
@@ -52,7 +53,7 @@ import java.util.UUID;
  * Thanos, the Mad Titan: the final boss. The encounter ({@link ThanosEncounter}) scripts his arrival and exit; once the
  * fight begins he runs his own state machine: double-sword swings, a gauntlet backhand that hurls the player away, a
  * high leap that ends in a ground slam, and a boomerang sword throw. Below half health he is enraged (faster, shorter
- * pauses). Defeat: he falls to one knee, speaks, and turns to dust; then he leaves his empty gauntlet and experience.
+ * pauses, heavier blows, damage resistance and two ultimate attacks). Defeat: he falls to one knee, speaks, and turns to dust; then he leaves his empty gauntlet and experience.
  *
  * <p>He shrugs off ordinary weapons, while Stormbreaker, diamond and netherite swords, explosions and Infinity Stones
  * can deal meaningful damage. His blows ignore most of ordinary armor; only a full Uru set really holds them.
@@ -62,10 +63,16 @@ public class Thanos extends Monster {
 
 	// Actions (synced; the client plays the matching animation from the moment the value changes).
 	public static final int A_IDLE = 0, A_DESCEND = 1, A_RIFT = 2, A_INTRO = 3, A_SWING = 4, A_THROW = 5, A_LEAP = 6,
-			A_SLAM = 7, A_BACKHAND = 8, A_STAGGER = 9, A_KNEEL = 10, A_LEAVE = 11, A_ROAR = 12;
+			A_SLAM = 7, A_BACKHAND = 8, A_STAGGER = 9, A_KNEEL = 10, A_LEAVE = 11, A_ROAR = 12,
+			A_RAGE_QUAKE = 13, A_RAGE_BARRAGE = 14;
 	public static final int FLAG_GAUNTLET = 1, FLAG_SWORD_OUT = 2, FLAG_ENRAGED = 4, FLAG_FIGHT = 8;
 	/** Ticks of the defeat: kneel and speak, then turn to dust. */
 	public static final int DEATH_TICKS = 230, DUST_START = 150;
+	public static final int QUAKE_WINDUP = 28, BARRAGE_INTERVAL = 24, BARRAGE_WINDUP = 20, BARRAGE_STRIKES = 3;
+	private static final float RAGE_HEALTH = .5f, RAGE_DAMAGE = 1.35f, RAGE_TAKEN = .6f;
+	private static final int RAGE_COOLDOWN = 160, QUAKE_TRAVEL = 14;
+	private static final double QUAKE_RADIUS = 14, BARRAGE_RADIUS = 4.5;
+	private static final DustParticleOptions RAGE_DUST = new DustParticleOptions(0xFF7837, 1.8f);
 
 	private static final EntityDataAccessor<Integer> ACTION = SynchedEntityData.defineId(Thanos.class, EntityDataSerializers.INT);
 	private static final EntityDataAccessor<Integer> FLAGS = SynchedEntityData.defineId(Thanos.class, EntityDataSerializers.INT);
@@ -82,6 +89,9 @@ public class Thanos extends Monster {
 	private int unreachableTicks;
 	private boolean taunt70, taunt35;
 	private int staggerGuard;
+	private int nextRageAttack;
+	private boolean barrageNext;
+	private Vec3 barrageMark;
 	/** Scripted movement (descent in the beam, walk out of the rift, rise when leaving). */
 	private Vec3 scriptFrom, scriptTo;
 	private int scriptTicks, scriptAge;
@@ -235,17 +245,26 @@ public class Thanos extends Monster {
 			return;
 		}
 		GauntletConfig cfg = GauntletConfig.get();
-		boolean enraged = this.getHealth() < this.getMaxHealth() * 0.5f;
-		if (enraged && !flag(FLAG_ENRAGED)) setFlag(FLAG_ENRAGED, true);
+		if (this.getHealth() <= this.getMaxHealth() * RAGE_HEALTH && !flag(FLAG_ENRAGED)) {
+			setFlag(FLAG_ENRAGED, true);
+			if (this.distanceTo(target) <= 30) startRageAttack(level, target);
+			else roar();
+			return;
+		}
+		boolean enraged = flag(FLAG_ENRAGED);
 		this.setTarget(target);
 		this.getLookControl().setLookAt(target, 30f, 30f);
 
 		// Mid-fight taunts (the line plays over the fight, he keeps attacking).
 		float hp = this.getHealth() / this.getMaxHealth();
 		if (!taunt70 && hp < 0.7f) { taunt70 = true; ThanosEncounter.line(this, ThanosEncounter.LINE_UNIVERSE); }
-		if (!taunt35 && hp < 0.35f) { taunt35 = true; ThanosEncounter.line(this, ThanosEncounter.LINE_DIE); roar(); return; }
+		if (!taunt35 && hp < 0.35f && action() == A_IDLE) { taunt35 = true; ThanosEncounter.line(this, ThanosEncounter.LINE_DIE); roar(); return; }
 
-		switch (action()) {
+		int action = action();
+		if (action == A_RAGE_QUAKE || action == A_RAGE_BARRAGE) {
+			this.setDeltaMovement(0, Math.min(0, this.getDeltaMovement().y), 0);
+		}
+		switch (action) {
 			case A_SWING -> tickSwing(level, target, cfg);
 			case A_BACKHAND -> tickBackhand(level, target, cfg);
 			case A_THROW -> tickThrow(level, target);
@@ -253,6 +272,8 @@ public class Thanos extends Monster {
 			case A_SLAM -> { if (actionTicks >= 22) setAction(A_IDLE); }
 			case A_STAGGER -> { if (actionTicks >= 12) setAction(A_IDLE); }
 			case A_ROAR -> { this.getNavigation().stop(); if (actionTicks >= 36) setAction(A_IDLE); }
+			case A_RAGE_QUAKE -> tickQuake(level, cfg);
+			case A_RAGE_BARRAGE -> tickBarrage(level, target, cfg);
 			default -> tickChase(level, target, enraged);
 		}
 		if (staggerGuard > 0) staggerGuard--;
@@ -293,6 +314,10 @@ public class Thanos extends Monster {
 		boolean stuck = this.getNavigation().isDone() && d > 4.5;
 		unreachableTicks = (stuck || Math.abs(dy) > 3.5 || !target.onGround() && dy > 2) ? unreachableTicks + 1 : Math.max(0, unreachableTicks - 2);
 
+		if (enraged && tickCount >= nextRageAttack && d <= 30) {
+			startRageAttack(level, target);
+			return;
+		}
 		if (cooldown <= 0) {
 			int pause = enraged ? 14 : 22;
 			if (d <= 3.6) {
@@ -321,6 +346,91 @@ public class Thanos extends Monster {
 		if (this.walkAnimation.isMoving() && this.tickCount % 9 == 0) {
 			level.playSound(null, this.blockPosition(), SoundEvents.IRON_GOLEM_STEP, SoundSource.HOSTILE, 1.4f, 0.55f);
 		}
+	}
+
+	private void startRageAttack(ServerLevel level, ServerPlayer target) {
+		boolean barrage = barrageNext || !this.onGround() || this.distanceTo(target) > QUAKE_RADIUS;
+		setAction(barrage ? A_RAGE_BARRAGE : A_RAGE_QUAKE);
+		barrageNext = !barrage;
+		barrageMark = null;
+		nextRageAttack = tickCount + RAGE_COOLDOWN;
+		this.getNavigation().stop();
+		faceTowards(target.position());
+		level.playSound(null, this.blockPosition(), SoundEvents.RAVAGER_ROAR, SoundSource.HOSTILE, 3f, .53f);
+	}
+
+	private void tickQuake(ServerLevel level, GauntletConfig cfg) {
+		Vec3 center = this.position();
+		if (actionTicks < QUAKE_WINDUP) {
+			if (actionTicks % 7 == 0) rageRing(level, center, QUAKE_RADIUS);
+			return;
+		}
+		int travel = actionTicks - QUAKE_WINDUP;
+		if (travel >= QUAKE_TRAVEL) {
+			if (travel >= QUAKE_TRAVEL + 18) finishRageAttack();
+			return;
+		}
+		if (travel == 0) rageImpact(level, center, 6);
+		double inner = travel * QUAKE_RADIUS / QUAKE_TRAVEL;
+		double outer = inner + QUAKE_RADIUS / QUAKE_TRAVEL;
+		if (travel % 2 == 0) rageRing(level, center, outer);
+		for (LivingEntity victim : level.getEntitiesOfClass(LivingEntity.class,
+				new AABB(center, center).inflate(outer, 3, outer), e -> e != this && e.isAlive())) {
+			Vec3 offset = victim.position().subtract(center);
+			double distance = offset.horizontalDistance();
+			if (distance > outer || distance < inner - 1 || offset.y > 1.15 || offset.y < -2.5
+					|| hitThisAction.contains(victim.getUUID()) || !this.hasLineOfSight(victim)) continue;
+			hit(level, victim, cfg.thanosSlamDamage * 1.6f, horizontal(offset).scale(2.1).add(0, .85, 0), false);
+		}
+	}
+
+	private void tickBarrage(ServerLevel level, ServerPlayer target, GauntletConfig cfg) {
+		int strike = (actionTicks - 1) / BARRAGE_INTERVAL;
+		int beat = (actionTicks - 1) % BARRAGE_INTERVAL;
+		if (strike >= BARRAGE_STRIKES) {
+			if (actionTicks >= BARRAGE_STRIKES * BARRAGE_INTERVAL + 14) finishRageAttack();
+			return;
+		}
+		if (beat == 0) {
+			// Lock the impact point at the warning, so a player can step clear.
+			barrageMark = target.position();
+			faceTowards(barrageMark);
+			level.playSound(null, BlockPos.containing(barrageMark), SoundEvents.NOTE_BLOCK_BASS.value(), SoundSource.HOSTILE, 2f, .55f);
+		}
+		if (barrageMark == null) return;
+		if (beat < BARRAGE_WINDUP && beat % 5 == 0) rageRing(level, barrageMark, BARRAGE_RADIUS);
+		if (beat != BARRAGE_WINDUP) return;
+		rageImpact(level, barrageMark, 3.8);
+		Vec3 center = barrageMark;
+		for (LivingEntity victim : level.getEntitiesOfClass(LivingEntity.class,
+				new AABB(center, center).inflate(BARRAGE_RADIUS, 3, BARRAGE_RADIUS), e -> e != this && e.isAlive())) {
+			Vec3 offset = victim.position().subtract(center);
+			if (offset.lengthSqr() <= BARRAGE_RADIUS * BARRAGE_RADIUS) {
+				hit(level, victim, cfg.thanosSlamDamage * 1.35f, horizontal(offset).scale(1.3).add(0, .55, 0), false);
+			}
+		}
+	}
+
+	private void finishRageAttack() {
+		setAction(A_IDLE);
+		barrageMark = null;
+		cooldown = Math.max(cooldown, 14);
+	}
+
+	private static void rageRing(ServerLevel level, Vec3 center, double radius) {
+		int points = radius >= 8 ? 24 : 14;
+		for (int i = 0; i < points; i++) {
+			double angle = i * Math.TAU / points;
+			level.sendParticles(RAGE_DUST, center.x + Math.cos(angle) * radius, center.y + .18,
+					center.z + Math.sin(angle) * radius, 1, 0, 0, 0, 0);
+		}
+	}
+
+	private static void rageImpact(ServerLevel level, Vec3 at, double size) {
+		level.sendParticles(ModParticles.THANOS_SLAM_WAVE, at.x, at.y + .12, at.z, 0, 0, size, 0, 1);
+		level.sendParticles(ModParticles.THANOS_SLAM_DUST, at.x, at.y + .24, at.z, 0, 0, size, 0, 1);
+		level.playSound(null, BlockPos.containing(at), SoundEvents.GENERIC_EXPLODE.value(), SoundSource.HOSTILE, 2.8f, .55f);
+		ThanosEncounter.shake(level, at, 1.15f);
 	}
 
 	private void tickSwing(ServerLevel level, ServerPlayer target, GauntletConfig cfg) {
@@ -508,7 +618,8 @@ public class Thanos extends Monster {
 				return false;
 			}
 		}
-		float amount = base;
+		if (flag(FLAG_ENRAGED)) base *= RAGE_DAMAGE;
+		float amount;
 		boolean uru = UruArmor.fullSet(e);
 		if (uru) {
 			amount = base * cfg.thanosUruFactor;
@@ -540,6 +651,9 @@ public class Thanos extends Monster {
 		boolean stormbreaker = source.is(Stormbreaker.DAMAGE);
 		float scaled = rawDamage || stormbreaker ? amount : amount * takenMultiplier(source);
 		if (!rawDamage && !stormbreaker && amount >= 1000f) scaled = Math.min(scaled, looseStone(source) ? 90f : 60f);
+		float beforeRage = this.getHealth() - this.getMaxHealth() * RAGE_HEALTH;
+		if (flag(FLAG_ENRAGED) || beforeRage <= 0) scaled *= RAGE_TAKEN;
+		else scaled = Math.min(scaled, beforeRage); // A single burst cannot skip the second phase.
 		// The axe already limits hits per swing, wave and throw leg. Let each distinct hit land on the Titan.
 		if (stormbreaker) this.invulnerableTime = 0;
 		boolean hurt = super.hurtServer(level, source, scaled);
@@ -547,7 +661,7 @@ public class Thanos extends Monster {
 			Vec3 p = this.position().add(0, 1.6, 0);
 			level.sendParticles(ModParticles.THANOS_ARMOR_HIT, p.x, p.y, p.z, 0, 0.6, 0, 0, 1);
 			if (source.is(DamageTypeTags.IS_EXPLOSION) && scaled >= 16 && staggerGuard == 0 && !this.isDeadOrDying()
-					&& action() != A_LEAP && action() != A_ROAR) {
+					&& action() != A_LEAP && action() != A_ROAR && action() != A_RAGE_QUAKE && action() != A_RAGE_BARRAGE) {
 				setAction(A_STAGGER);
 				staggerGuard = 80;
 			}
