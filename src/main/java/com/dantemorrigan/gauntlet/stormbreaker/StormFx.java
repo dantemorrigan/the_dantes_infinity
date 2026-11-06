@@ -11,7 +11,7 @@ import net.minecraft.world.phys.Vec3;
 import java.util.Locale;
 
 public enum StormFx {
-    COMBO_1(9), COMBO_2(9), COMBO_3(9),
+    COMBO_1(9, 1, .5f, Facing.CHOP), COMBO_2(9, 1, .5f, Facing.CHOP), COMBO_3(9, 1, .5f, Facing.CHOP),
     LIGHTNING_HIT(10, 1, 177f / 192, Facing.VERTICAL),
     WRATH_BOLT(12, 1, 241f / 256, Facing.VERTICAL),
     GROUND_WALL(10, 1, .5f + .31f * 96 / 224, Facing.DIRECTED),
@@ -23,7 +23,7 @@ public enum StormFx {
     EMBEDDED_IDLE(8, 3, .66f, Facing.VERTICAL),
     WRATH_TARGET(10, 2, .5f, Facing.FLAT);
 
-    public enum Facing { CAMERA, VERTICAL, DIRECTED, FLAT, TRAIL }
+    public enum Facing { CAMERA, VERTICAL, DIRECTED, FLAT, TRAIL, CHOP }
 
     public final SimpleParticleType particle;
     public final int frames;

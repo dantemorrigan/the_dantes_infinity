@@ -33,40 +33,40 @@
         {
           "tick": 3,
           "rotation_xyz_deg": [
-            -28,
-            -62,
-            -38
+            -74,
+            -12,
+            -18
           ],
           "translation_xyz_blocks": [
-            -0.16,
-            0.15,
-            -0.17
+            -0.09,
+            0.3,
+            -0.14
           ]
         },
         {
           "tick": 6,
           "rotation_xyz_deg": [
-            23,
-            72,
-            43
+            59,
+            8,
+            10
           ],
           "translation_xyz_blocks": [
-            0.21,
-            -0.04,
+            0.02,
+            -0.23,
             0.3
           ]
         },
         {
           "tick": 9,
           "rotation_xyz_deg": [
-            16,
-            43,
-            25
+            30,
+            3,
+            5
           ],
           "translation_xyz_blocks": [
-            0.12,
-            -0.04,
-            0.19
+            0.01,
+            -0.11,
+            0.16
           ]
         },
         {
@@ -110,53 +110,53 @@
         {
           "tick": 0,
           "rotation_xyz_deg": [
-            16,
-            43,
-            25
+            30,
+            3,
+            5
           ],
           "translation_xyz_blocks": [
-            0.12,
-            -0.04,
-            0.19
+            0.01,
+            -0.11,
+            0.16
           ]
         },
         {
           "tick": 3,
           "rotation_xyz_deg": [
-            19,
-            67,
-            45
+            -81,
+            10,
+            19
           ],
           "translation_xyz_blocks": [
-            0.18,
-            -0.1,
-            -0.14
+            0.08,
+            0.36,
+            -0.15
           ]
         },
         {
           "tick": 7,
           "rotation_xyz_deg": [
-            -22,
-            -74,
-            -41
+            66,
+            -8,
+            -12
           ],
           "translation_xyz_blocks": [
-            -0.23,
-            0.16,
-            0.29
+            -0.04,
+            -0.28,
+            0.32
           ]
         },
         {
           "tick": 10,
           "rotation_xyz_deg": [
-            -12,
-            -38,
-            -23
+            34,
+            -4,
+            -6
           ],
           "translation_xyz_blocks": [
+            -0.02,
             -0.12,
-            0.1,
-            0.14
+            0.18
           ]
         },
         {
@@ -200,53 +200,53 @@
         {
           "tick": 0,
           "rotation_xyz_deg": [
-            -12,
-            -38,
-            -23
+            34,
+            -4,
+            -6
           ],
           "translation_xyz_blocks": [
+            -0.02,
             -0.12,
-            0.1,
-            0.14
+            0.18
           ]
         },
         {
           "tick": 6,
           "rotation_xyz_deg": [
-            -85,
-            13,
-            -20
+            -100,
+            0,
+            -5
           ],
           "translation_xyz_blocks": [
-            0.04,
-            0.44,
-            -0.24
+            0.01,
+            0.47,
+            -0.22
           ]
         },
         {
           "tick": 10,
           "rotation_xyz_deg": [
-            79,
-            -13,
-            20
+            88,
+            0,
+            3
           ],
           "translation_xyz_blocks": [
-            0.02,
-            -0.28,
-            0.36
+            0,
+            -0.37,
+            0.4
           ]
         },
         {
           "tick": 14,
           "rotation_xyz_deg": [
-            36,
+            43,
             0,
-            8
+            2
           ],
           "translation_xyz_blocks": [
             0,
-            -0.13,
-            0.17
+            -0.18,
+            0.19
           ]
         },
         {

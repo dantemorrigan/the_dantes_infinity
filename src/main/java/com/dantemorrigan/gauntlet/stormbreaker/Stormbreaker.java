@@ -1,6 +1,7 @@
 package com.dantemorrigan.gauntlet.stormbreaker;
 
 import com.dantemorrigan.gauntlet.CoopRules;
+import com.dantemorrigan.gauntlet.GauntletConfig;
 import com.dantemorrigan.gauntlet.InfinityGauntlet;
 import com.dantemorrigan.gauntlet.ModComponents;
 import com.dantemorrigan.gauntlet.ModEntities;
@@ -79,6 +80,7 @@ public final class Stormbreaker {
     private static final StormFx[] COMBO = {StormFx.COMBO_1, StormFx.COMBO_2, StormFx.COMBO_3};
     private static final int[] SWING_TICKS = {9, 10, 16};
     private static final int[] SWING_CONTACT = {6, 7, 10};
+    private static final double WAVE_STEP = .92;
 
     private record Relic(String owner, String seal, int phase, ResourceKey<Level> dimension, Vec3 position) {
         static final Codec<Relic> CODEC = RecordCodecBuilder.create(i -> i.group(
@@ -144,7 +146,6 @@ public final class Stormbreaker {
         final int crests;
         final float power;
         final Set<UUID> hit = new HashSet<>();
-        final Set<BlockPos> broken = new HashSet<>();
         Wave(ServerLevel level, Vec3 start, Vec3 direction, int tick, float power) {
             this.level = level;
             this.start = start;
@@ -324,7 +325,7 @@ public final class Stormbreaker {
         Vec3 forward = swing.direction;
         Vec3 arc = p.getEyePosition().add(forward.scale(1.8)).add(0, -.42, 0);
         if (age == SWING_CONTACT[index] - 2) {
-            COMBO[index].play(p.level(), arc, 2.65 + .25 * index);
+            COMBO[index].play(p.level(), arc.add(0, .25, 0), 3.15 + .32 * index);
             sound(p.level(), p.position(), SoundEvents.TRIDENT_RIPTIDE_1.value(), .65f, 1.20f - index * .16f);
             sound(p.level(), arc, SoundEvents.WIND_CHARGE_THROW, .48f, 1.35f - index * .17f);
         }
@@ -343,7 +344,7 @@ public final class Stormbreaker {
         if (index != 1) return;
         for (LivingEntity target : targets(p.level(), arc, 2.1, 1.4)) {
             Vec3 delta = target.position().subtract(p.position());
-            if (target != direct && delta.lengthSqr() < 12 && delta.normalize().dot(forward) > .15 && p.hasLineOfSight(target)) {
+            if (target != direct && delta.lengthSqr() < 12 && delta.normalize().dot(forward) > .66 && p.hasLineOfSight(target)) {
                 strike(p, target, 8, forward, .3);
             }
         }
@@ -407,44 +408,72 @@ public final class Stormbreaker {
             StormFx.TAKEOFF.play(w.level, w.start.add(0, .06, 0), 5.5);
             StormFx.LIGHTNING_HIT.play(w.level, w.start, 8);
         }
-        if (crest < 0 || (crest & 1) != 0) return;
-        Vec3 center = w.start.add(w.direction.scale(crest * .92));
+        if (crest < 0) return;
+        Vec3 center = w.start.add(w.direction.scale(crest * WAVE_STEP));
+        boolean blockChanges = GauntletConfig.get().abilityBlockChanges;
         Vec3 lateral = new Vec3(-w.direction.z, 0, w.direction.x);
-        double halfWidth = 3.2 + w.power;
-        boolean ripGround = (crest & 3) == 0;
+        double halfWidth = 3.8 + 1.4 * w.power;
+        if ((crest & 1) != 0) {
+            if (blockChanges) carveCraters(p, w, lateral, crest, halfWidth);
+            return;
+        }
         for (int lane = -1; lane <= 1; lane++) {
-            Vec3 sample = center.add(lateral.scale(lane * halfWidth * .72));
+            Vec3 sample = center.add(w.direction.scale(.72)).add(lateral.scale(lane * halfWidth * .72));
             Vec3 surface = surface(w.level, sample, 4, 7);
             if (surface == null) continue;
-            StormFx.GROUND_WALL.play(w.level, surface, 4 + w.power, w.direction);
-            for (LivingEntity target : targets(w.level, surface.add(0, .8, 0), 2.2, 2.2)) {
+            StormFx.GROUND_WALL.play(w.level, surface, 4.5 + w.power, w.direction);
+            if (blockChanges) {
+                var block = w.level.getBlockState(BlockPos.containing(surface.add(0, -.04, 0)));
+                if (!block.isAir()) w.level.sendParticles(new BlockParticleOption(ParticleTypes.BLOCK, block),
+                        surface.x, surface.y + .28, surface.z, 12, .55, .33, .55, .28);
+            }
+            for (LivingEntity target : targets(w.level, surface.add(0, .8, 0), 2.65, 2.2)) {
                 Vec3 offset = target.position().subtract(center);
                 if (Math.abs(offset.dot(lateral)) > halfWidth || Math.abs(offset.dot(w.direction)) > 1.2
                         || w.hit.contains(target.getUUID())) continue;
                 if (strike(p, target, 15 + 9 * w.power, w.direction, 1.15)) w.hit.add(target.getUUID());
             }
         }
-        if (ripGround) {
-            // Cut a shallow crosswise row every other crest. Particles carry the debris without block entities in flight.
-            for (int column = -3; column <= 3; column++) {
-                Vec3 sample = center.add(lateral.scale(column * (halfWidth / 3)));
-                Vec3 surface = surface(w.level, sample, 4, 7);
-                if (surface != null) tearGround(p, w, surface);
-            }
-        }
+        if (blockChanges) carveCraters(p, w, lateral, crest, halfWidth);
         if (crest % 6 == 0) sound(w.level, center, SoundEvents.WIND_CHARGE_BURST.value(), .85f, .62f);
     }
 
-    private static void tearGround(ServerPlayer p, Wave wave, Vec3 surface) {
+    private static void carveCraters(ServerPlayer player, Wave wave, Vec3 lateral, int crest, double halfWidth) {
         ServerLevel level = wave.level;
-        BlockPos floor = BlockPos.containing(surface.add(0, -.04, 0));
-        if (!wave.broken.add(new BlockPos(floor.getX(), 0, floor.getZ()))) return;
-        var state = level.getBlockState(floor);
-        if (state.isAir()) return;
-        level.sendParticles(new BlockParticleOption(ParticleTypes.BLOCK, state),
-                surface.x, surface.y + .26, surface.z, 7, .32, .22, .32, .28);
-        if (CoopRules.canEdit(p, level, floor) && !state.hasBlockEntity() && state.getFluidState().isEmpty()
-                && state.getDestroySpeed(level, floor) >= 0) level.removeBlock(floor, false);
+        double from = crest * WAVE_STEP;
+        double to = from + WAVE_STEP;
+        Vec3 center = wave.start.add(wave.direction.scale((from + to) * .5));
+        double xRadius = Math.abs(lateral.x) * halfWidth + Math.abs(wave.direction.x) * WAVE_STEP * .5;
+        double zRadius = Math.abs(lateral.z) * halfWidth + Math.abs(wave.direction.z) * WAVE_STEP * .5;
+        int ground = Mth.floor(wave.start.y - .04);
+        var pos = new BlockPos.MutableBlockPos();
+        // One slice per tick. Overlapping bowls leave deeper pockets joined by a torn channel.
+        for (int x = Mth.floor(center.x - xRadius); x <= Mth.floor(center.x + xRadius); x++) {
+            for (int z = Mth.floor(center.z - zRadius); z <= Mth.floor(center.z + zRadius); z++) {
+                Vec3 column = new Vec3(x + .5, wave.start.y, z + .5);
+                Vec3 offset = column.subtract(wave.start);
+                double forward = offset.dot(wave.direction);
+                if (forward < from || forward >= to || !level.hasChunkAt(pos.set(x, ground, z))) continue;
+                double side = offset.dot(lateral) / halfWidth;
+                double along = Math.IEEEremainder(forward - 2.76, 7.36) / 4.6;
+                double bowl = 1 - side * side - along * along;
+                if (bowl <= 0) continue;
+
+                Vec3 terrain = surface(level, column, 1, 7);
+                int floor = terrain == null ? ground : Math.min(ground, Mth.floor(terrain.y - .04));
+                int depth = 1 + (int) Math.ceil((1 + 3 * wave.power) * bowl);
+                int clearance = 2 + (int) Math.ceil((1 + 3 * wave.power) * bowl);
+                for (int y = ground + clearance; y > floor - depth; y--) {
+                    pos.set(x, y, z);
+                    if (level.isOutsideBuildHeight(pos)) continue;
+                    var block = level.getBlockState(pos);
+                    if (!block.isAir() && !block.hasBlockEntity() && block.getFluidState().isEmpty()
+                            && block.getDestroySpeed(level, pos) >= 0 && CoopRules.canEdit(player, level, pos)) {
+                        level.removeBlock(pos, false);
+                    }
+                }
+            }
+        }
     }
 
     static void lightning(ServerPlayer p) { beginCast(p, false); }

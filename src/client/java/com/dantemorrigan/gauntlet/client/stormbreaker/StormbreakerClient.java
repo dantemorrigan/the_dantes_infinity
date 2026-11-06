@@ -108,6 +108,10 @@ public final class StormbreakerClient {
                             q.rotationY((float) Math.atan2(-right.z, right.x));
                         };
                         case DIRECTED -> (q, camera, partial) -> q.rotationY((float) Math.atan2(direction.x, direction.z));
+                        case CHOP -> (q, camera, partial) -> {
+                            float roll = fx == StormFx.COMBO_1 ? -78 : fx == StormFx.COMBO_2 ? 76 : -18;
+                            q.set(camera.rotation()).rotateZ(roll * Mth.DEG_TO_RAD);
+                        };
                         case FLAT -> (q, camera, partial) -> q.rotationX(-Mth.HALF_PI);
                         default -> super.getFacingCameraMode();
                     };
