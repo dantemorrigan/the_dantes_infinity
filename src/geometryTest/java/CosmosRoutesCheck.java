@@ -10,7 +10,10 @@ public class CosmosRoutesCheck {
             if(!names.add(d.id())) throw new AssertionError("Duplicate destination");
             double dx=d.arrivalX()-d.x(),dy=d.arrivalY()-d.y(),dz=d.arrivalZ()-d.z();
             if(!d.field() && Math.sqrt(dx*dx+dy*dy+dz*dz)<=d.radius()+28) throw new AssertionError("Unsafe arrival");
-            if(Math.abs(d.arrivalY())>=900) throw new AssertionError("Arrival outside vertical safety bounds");
+            if(d.arrivalY()<=CosmosRoutes.MIN_Y || d.arrivalY()>=CosmosRoutes.MAX_Y) throw new AssertionError("Arrival outside vertical safety bounds");
+            if (!d.id().equals("sun") && (d.y() - d.radius() - CosmosRoutes.BODY_CLEARANCE <= CosmosRoutes.MIN_Y
+                    || d.y() + d.radius() + CosmosRoutes.BODY_CLEARANCE >= CosmosRoutes.MAX_Y))
+                throw new AssertionError("Body cannot be flown around: " + d.id());
         }
         double previous=0;
         for(int y=0;y<1200;y++) {
@@ -22,6 +25,13 @@ public class CosmosRoutesCheck {
         int target=0; for(int i=0;i<CosmosRoutes.ALL.size();i++) target=CosmosRoutes.next(target);
         if(target!=0) throw new AssertionError("Navigation wrap");
         if(CosmosRoutes.BOOST_SPEED<=CosmosRoutes.CRUISE_SPEED || CosmosRoutes.BOOST_SPEED>3) throw new AssertionError("Movement budget");
+        if (CosmosRoutes.SPACE_BOOST_SPEED <= CosmosRoutes.BOOST_SPEED || CosmosRoutes.SPACE_BOOST_SPEED >= 8)
+            throw new AssertionError("Space boost budget");
+        double max = CosmosRoutes.MAX_Y;
+        if (CosmosRoutes.limitAxis(max, 7, CosmosRoutes.MIN_Y, max) != 0
+                || CosmosRoutes.limitAxis(max, -7, CosmosRoutes.MIN_Y, max) != -7
+                || CosmosRoutes.limitAxis(max - 1, 7, CosmosRoutes.MIN_Y, max) != .12)
+            throw new AssertionError("Flight limit must brake only in the outward direction");
         System.out.println("Cosmos navigation and atmosphere checks passed");
     }
 }

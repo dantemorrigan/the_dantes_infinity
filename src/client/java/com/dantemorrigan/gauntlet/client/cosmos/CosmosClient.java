@@ -21,7 +21,7 @@ public final class CosmosClient {
     public static final KeyMapping NEXT = key("cosmos_next", GLFW.GLFW_KEY_UNKNOWN);
     public static final KeyMapping WARP = key("cosmos_warp", GLFW.GLFW_KEY_UNKNOWN);
     private static boolean enabled;
-    private static int selected, warp, cooldown, ticks, impactPause;
+    private static int selected = -1, warp, cooldown, ticks, impactPause;
     private static int sonicBooms, impactBursts;
     public static int sonicBooms() { return sonicBooms; }
     public static int impactBursts() { return impactBursts; }
@@ -52,7 +52,7 @@ public final class CosmosClient {
         ClientPlayNetworking.registerGlobalReceiver(ModNetwork.CosmosState.TYPE, (p,c) -> {
             if (!p.enabled()) clear();
             else {
-                enabled=true; selected=Math.floorMod(p.destination(), CosmosRoutes.ALL.size());
+                enabled=true; selected=p.destination();
                 if (warp>0 && p.warpTicks()==0) { velocity=Vec3.ZERO; flash(); }
                 warp=p.warpTicks(); cooldown=p.cooldown();
             }
@@ -62,7 +62,7 @@ public final class CosmosClient {
         CosmosRenderer.init();
     }
     private static void clear() {
-        enabled=false; velocity=Vec3.ZERO; previous=null; intensity=0; warp=0; cooldown=0;
+        enabled=false; velocity=Vec3.ZERO; previous=null; intensity=0; selected=-1; warp=0; cooldown=0;
         lastBoost=false; lastDimension=null; impactPause=0;sonicBooms=0;impactBursts=0;
         StatusHud.persistent("cosmos",null); StatusHud.persistent("cosmos_keys",null);
     }
@@ -116,20 +116,22 @@ public final class CosmosClient {
         if(locked || wheel || warp>0) thrust=Vec3.ZERO;
         if(thrust.lengthSqr()>1) thrust=thrust.normalize();
         boolean boost=!locked && !wheel && warp==0 && mc.options.keySprint.isDown() && thrust.lengthSqr()>.01;
-        double cap=boost?CosmosRoutes.BOOST_SPEED:CosmosRoutes.CRUISE_SPEED;
+        boolean space=inCosmos();
+        double cap=boost?(space?CosmosRoutes.SPACE_BOOST_SPEED:CosmosRoutes.BOOST_SPEED):CosmosRoutes.CRUISE_SPEED;
         if(wheel) cap=Math.max(cap,velocity.length());
-        velocity=velocity.scale(thrust.lengthSqr()<.01?.8:.94).add(thrust.scale(boost?.23:.10));
+        velocity=velocity.scale(thrust.lengthSqr()<.01?.8:.94).add(thrust.scale(boost?(space?.48:.23):.10));
         if(velocity.length()>cap) velocity=velocity.normalize().scale(cap);
-        if(locked) velocity=Vec3.ZERO;
+        if(locked || warp>0) velocity=Vec3.ZERO;
+        if(space) velocity=constrainFlight(p.position(),velocity);
         p.setDeltaMovement(velocity); p.fallDistance=0;
         intensity+=( (boost||warp>0?1:0)-intensity)*.16f;
         if(boost && !lastBoost && ticks-lastFlash>120) { flash(); lastFlash=ticks; }
         lastBoost=boost;
         if(intensity>.15f || inCosmos() || atmosphere()>.2f) effects(mc,look);
         String speed=String.format(java.util.Locale.ROOT,"%.0f",velocity.length()*20);
-        if(inCosmos()) {
+        if(space) {
             Vec3 eye=p.getEyePosition();
-            int target=warp>0?selected:CosmosRoutes.aim(eye.x,eye.y,eye.z,look.x,look.y,look.z,2.5);
+            int target=selected>=0?selected:CosmosRoutes.aim(eye.x,eye.y,eye.z,look.x,look.y,look.z,2.5);
             if(target>=0) {
                 var d=CosmosRoutes.ALL.get(target);
                 int distance=(int)Math.max(0,eye.distanceTo(new Vec3(d.x(),d.y(),d.z()))-d.radius());
@@ -137,12 +139,30 @@ public final class CosmosClient {
             } else StatusHud.persistent("cosmos",Component.translatable("cosmos.infinity_gauntlet.aim",speed));
             StatusHud.persistent("cosmos_keys",warp>0?Component.translatable("cosmos.infinity_gauntlet.warp",String.format(java.util.Locale.ROOT,"%.1f",warp/20f)):
                 cooldown>0?Component.translatable("cosmos.infinity_gauntlet.cooldown",(cooldown+19)/20):
-                null);
+                Component.translatable("cosmos.infinity_gauntlet.orbit_controls",mc.options.keySprint.getTranslatedKeyMessage()));
         } else {
             StatusHud.persistent("cosmos",mc.level.dimension().equals(Level.OVERWORLD)?Component.translatable("cosmos.infinity_gauntlet.ascent",(int)p.getY(),(int)CosmosRoutes.EXIT_HEIGHT,speed):null);
             StatusHud.persistent("cosmos_keys",null);
         }
     }
+    private static Vec3 constrainFlight(Vec3 position, Vec3 velocity) {
+        if (velocity.lengthSqr() < 1e-8) return velocity;
+        for (var body : CosmosRoutes.ALL) {
+            Vec3 offset = position.subtract(new Vec3(body.x(), body.y(), body.z()));
+            double distance = offset.length();
+            double clearance = distance - body.radius() - CosmosRoutes.BODY_CLEARANCE;
+            if (clearance > 64 || distance < 1e-6) continue;
+            Vec3 normal = offset.scale(1 / distance);
+            double inward = -velocity.dot(normal);
+            double allowed = CosmosRoutes.approachSpeed(clearance);
+            if (inward > allowed) velocity = velocity.add(normal.scale(inward - allowed));
+        }
+        return new Vec3(
+            CosmosRoutes.limitAxis(position.x, velocity.x, -CosmosRoutes.LIMIT, CosmosRoutes.LIMIT),
+            CosmosRoutes.limitAxis(position.y, velocity.y, CosmosRoutes.MIN_Y, CosmosRoutes.MAX_Y),
+            CosmosRoutes.limitAxis(position.z, velocity.z, -CosmosRoutes.LIMIT, CosmosRoutes.LIMIT));
+    }
+
     private static void effects(Minecraft mc, Vec3 look) {
         var p=mc.player; var rnd=mc.level.getRandom();
         // <= 4 transient streaks/tick; each expires after 12 ticks. No particles across the universe.
@@ -154,7 +174,7 @@ public final class CosmosClient {
             for(int i=0;i<count;i++) {
                 double a=rnd.nextDouble()*Math.PI*2, r=2+rnd.nextDouble()*5;
                 Vec3 pos=p.getEyePosition().add(look.scale(4+rnd.nextDouble()*18)).add(right.scale(Math.cos(a)*r)).add(up.scale(Math.sin(a)*r));
-                Vec3 v=look.scale(-.8-velocity.length());
+                Vec3 v=look.scale(-.8-Math.min(3,velocity.length()));
                 ClientPower.spawn(ModParticles.COSMOS_SPEED_STREAK,pos,v.x,v.y,v.z);
             }
             if(ticks%2==0) {

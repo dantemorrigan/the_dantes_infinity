@@ -44,9 +44,23 @@ public final class CosmosRoutes {
         body("neptune", 100000, 245, 3.88));
     public static final int EARTH = 3, SUN = 0;
     public static final double RETURN_RANGE = 3000, LIMIT = 125000;
+    public static final double MIN_Y = -980, MAX_Y = 4096;
+    public static final double BODY_CLEARANCE = 28;
     public static final double EXIT_HEIGHT = 640;
     public static final int WARP_TICKS = 50;
     public static final double CRUISE_SPEED = .85, BOOST_SPEED = 3;
+    // Stay below the vanilla movement correction budget, even when boosting on a multiplayer server.
+    public static final double SPACE_BOOST_SPEED = 7;
+
+    /** Limit only motion toward a boundary so tangential movement remains available. */
+    public static double approachSpeed(double clearance) {
+        return Math.max(0, clearance) * .12;
+    }
+
+    public static double limitAxis(double position, double velocity, double min, double max) {
+        return Math.max(-approachSpeed(position - min), Math.min(velocity, approachSpeed(max - position)));
+    }
+
     public static double earthDistance(double x, double y, double z) {
         var e = ALL.get(EARTH); return Math.sqrt((x - e.x()) * (x - e.x()) + (y - e.y()) * (y - e.y()) + (z - e.z()) * (z - e.z()));
     }

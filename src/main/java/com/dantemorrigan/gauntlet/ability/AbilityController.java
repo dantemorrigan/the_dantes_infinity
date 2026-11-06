@@ -150,7 +150,7 @@ public final class AbilityController {
             case PORTAL -> SpaceStone.action(p,0);
             case BLINK -> SpaceStone.action(p,2);
             case FLIGHT -> CosmosTravel.action(p,0);
-            case WARP -> CosmosTravel.action(p,2);
+            case WARP -> CosmosTravel.warpSelected(p);
             case REALITY_STRIKE -> RealityStrike.strike(p);
             case INVERSION -> {RealityStone.hold(p,true);if(RealityStone.active(p)) HELD.put(p.getUUID(),a);}
             case REWIND -> TimeAbility.request(p);
