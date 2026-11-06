@@ -184,6 +184,9 @@ public final class TribunalEncounter {
 		});
 	}
 
+	public static LivingTribunal targetFor(ServerPlayer p) {
+        Trial t=trial(p);return t!=null && t.boss.isAlive() && !t.boss.isRemoved()?t.boss:null;
+    }
 	public static boolean inTrial(ServerPlayer p) { return trial(p) != null; }
 	public static boolean awaitingReturn(ServerPlayer p) { return p.hasAttached(RETURN); }
 	public static boolean isChallenger(LivingTribunal boss, ServerPlayer p) {
@@ -279,14 +282,14 @@ public final class TribunalEncounter {
 
 
     private static void move(Trial t, ServerPlayer p) {
-        double angle=++t.flightAge*.008;
+        double angle=++t.flightAge*.003;
         var desired=TribunalSpace.orbit(point(p.position()), angle);
         if(desired==null) return;
         Vec3 center=t.boss.position().add(0,TribunalSpace.HEIGHT/2,0);
-        Vec3 next=vector(TribunalSpace.step(point(center),desired,1.35));
+        Vec3 next=vector(TribunalSpace.step(point(center),desired,.55));
         Vec3 feet=next.add(0,-TribunalSpace.HEIGHT/2,0);
         t.boss.keepActiveAt(feet);t.boss.setPos(feet);
-        float yaw=Loki.yawTo(t.boss.position(),p.position());
+        float yaw=net.minecraft.util.Mth.approachDegrees(t.boss.getYRot(),Loki.yawTo(t.boss.position(),p.position()),t.boss.attack()>0?.2f:.35f);
         t.boss.setYRot(yaw); t.boss.setYBodyRot(yaw); t.boss.setYHeadRot(yaw);
     }
     private static void boltPacket(Trial t, Bolt b, int ticks) {
@@ -296,7 +299,8 @@ public final class TribunalEncounter {
                 net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking.send(witness,packet);
     }
     private static void shoot(Trial t, ServerPlayer p) {
-        Vec3 from=t.boss.position().add(0,TribunalSpace.HEIGHT*.67,0);
+        boolean left=(t.bolts.size()&1)==1;
+        Vec3 from=t.boss.position().add(TribunalPose.palm(t.boss.getYRot(),t.boss.tickCount,t.boss.phase(),t.boss.attack(),t.boss.sceneAge(),left));
         Vec3 aim=p.getEyePosition().add(p.getDeltaMovement().scale(10));
         Bolt b=new Bolt(from,aim.subtract(from).normalize().scale(3.6));t.bolts.add(b);boltPacket(t,b,65);
     }
@@ -307,7 +311,7 @@ public final class TribunalEncounter {
             boolean impact=p.getBoundingBox().inflate(2.4).clip(b.position,next).isPresent() || p.getBoundingBox().inflate(2.4).contains(b.position);
             if(impact || ++b.age>65 || !TribunalSpace.clear(point(b.position),point(next),1)) {
                 boltPacket(t,b,0);it.remove();
-                if(impact) { hit(t,p,p.getMaxHealth()*.18f); if(t.verdictAge>0) return; }
+                if(impact) { hit(t,p,p.getMaxHealth()*.08f); if(t.verdictAge>0) return; }
             } else b.position=next;
         }
     }
@@ -331,12 +335,12 @@ public final class TribunalEncounter {
         }
         if(age==LivingTribunal.WINDUP && kind!=LivingTribunal.VOLLEY && kind!=LivingTribunal.WAVE && kind!=LivingTribunal.PRISON) {
             double radius=kind==LivingTribunal.NOVA?30:kind==LivingTribunal.GRAVITY?18:kind==LivingTribunal.LANCE?5:10;
-            if(distance<=radius) hit(t,p,p.getMaxHealth()*(kind==LivingTribunal.NOVA?.65f:.32f));
+            if(distance<=radius) hit(t,p,p.getMaxHealth()*(kind==LivingTribunal.NOVA?.40f:kind==LivingTribunal.LANCE?.24f:.18f));
             Vec3 at=boss.mark();level.sendParticles(GOLD,at.x,at.y,at.z,80,radius*.3,2,radius*.3,.08);
             level.playSound(null,p.blockPosition(),SoundEvents.WARDEN_SONIC_BOOM,SoundSource.HOSTILE,2,.55f);
         }
-        if(kind==LivingTribunal.WAVE && age>=34 && age<=74 && Math.abs(distance-(age-34)*1.6)<2.8 && age%6==0) hit(t,p,p.getMaxHealth()*.25f);
-        if(kind==LivingTribunal.PRISON && age>=34 && age<=94 && age%15==0 && distance>14 && distance<29) hit(t,p,p.getMaxHealth()*.18f);
+        if(kind==LivingTribunal.WAVE && age>=34 && age<=74 && Math.abs(distance-(age-34)*1.6)<2.8 && age%6==0) hit(t,p,p.getMaxHealth()*.12f);
+        if(kind==LivingTribunal.PRISON && age>=34 && age<=94 && age%15==0 && distance>14 && distance<29) hit(t,p,p.getMaxHealth()*.08f);
         int end=kind==LivingTribunal.PRISON?100:kind==LivingTribunal.WAVE?80:kind==LivingTribunal.VOLLEY?70:50;
         if(t.verdictAge==0 && age>=end) { boss.attack(0,Vec3.ZERO);boss.age(0);boss.exposedUntil=level.getGameTime()+32;boss.nextAttack=26; }
     }

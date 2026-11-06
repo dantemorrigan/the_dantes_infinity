@@ -167,8 +167,7 @@ public final class InfinityBeam {
     private static void damage(Cast c, Vec3 from, Vec3 to) {
         double radius = Math.max(2.5, Math.min(6.0, Math.max(GauntletConfig.get().beamHitRadius, GauntletConfig.get().beamDrillRadius * 0.75)));
         AABB area = new AABB(from, to).inflate(radius + 16);
-        for (LivingEntity target : c.level.getEntitiesOfClass(LivingEntity.class, area,
-                e -> e != c.owner && e.isAlive() && !e.isSpectator())) {
+        for (LivingEntity target : CombatTargets.inArea(c.owner,area)) {
             if (!CoopRules.canAffect(c.owner, target)) continue;
             boolean hit = intersects(target.getBoundingBox().inflate(radius), from, to);
             if (target instanceof EnderDragon dragon) {

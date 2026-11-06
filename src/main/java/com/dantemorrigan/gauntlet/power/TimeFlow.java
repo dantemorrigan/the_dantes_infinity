@@ -119,8 +119,7 @@ public final class TimeFlow {
     private static void damage(Cast cast, Vec3 from, Vec3 end) {
         ServerPlayer owner = cast.owner;
         AABB area = new AABB(from, end).inflate(HIT_RADIUS);
-        for (LivingEntity target : cast.level.getEntitiesOfClass(LivingEntity.class, area,
-                e -> e != owner && e.isAlive() && !e.isSpectator() && CoopRules.canAffect(owner, e))) {
+        for (LivingEntity target : CombatTargets.inArea(owner,area)) {
             UUID id = target.getUUID();
             if (cast.age - cast.lastHit.getOrDefault(id, -HIT_INTERVAL) < HIT_INTERVAL) continue;
             AABB box = target.getBoundingBox();

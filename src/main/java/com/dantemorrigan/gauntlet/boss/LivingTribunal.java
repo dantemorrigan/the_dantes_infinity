@@ -42,6 +42,10 @@ public final class LivingTribunal extends Monster {
 	int attackCycle;
 	int nextAttack = 18;
 	long exposedUntil;
+    private boolean gauntletHit;
+    public boolean hurtByGauntlet(ServerLevel level,ServerPlayer owner,float amount) {
+        gauntletHit=true;try{return hurtServer(level,level.damageSources().playerAttack(owner),amount);}finally{gauntletHit=false;}
+    }
 
 	public LivingTribunal(EntityType<? extends LivingTribunal> type, Level level) {
 		super(type, level);
@@ -107,8 +111,9 @@ public final class LivingTribunal extends Monster {
 	public boolean hurtServer(ServerLevel level, DamageSource source, float amount) {
 		if (phase() != BATTLE || !(source.getEntity() instanceof ServerPlayer player)
 				|| !TribunalEncounter.isChallenger(this, player) || !(amount > 0) || !Float.isFinite(amount)) return false;
-		float resistance = level.getGameTime() < exposedUntil ? .72f : .14f;
-		return super.hurtServer(level, source, Math.min(amount, 85) * resistance);
+		float resistance = gauntletHit ? (level.getGameTime()<exposedUntil?.85f:.55f) : .14f;
+        if(gauntletHit) invulnerableTime=0;
+        return super.hurtServer(level, source, Math.min(amount,100)*resistance);
 	}
 
 	@Override

@@ -88,7 +88,12 @@ public final class PowerAbility {
 			tryUltimate(player, gauntlet, chargeTicks, hit);
 			return;
 		}
-		strike(player, gauntlet, Math.min(1f, chargeTicks / (float) cfg.strikeFullChargeTicks), hit);
+		if(com.dantemorrigan.gauntlet.cosmos.CosmosTravel.inCosmos(player)) {
+            float charge=Math.min(1f,chargeTicks/(float)cfg.strikeFullChargeTicks);
+            CosmicGauntlet.powerStrike(player,hit,charge);
+            player.getCooldowns().addCooldown(gauntlet,cfg.strikeCooldownTicks);return;
+        }
+        strike(player, gauntlet, Math.min(1f, chargeTicks / (float) cfg.strikeFullChargeTicks), hit);
 	}
 
 	private static void tryUltimate(ServerPlayer player, ItemStack gauntlet, int chargeTicks, HitResult hit) {
@@ -133,7 +138,7 @@ public final class PowerAbility {
 
 		Entity direct = hit instanceof EntityHitResult eh ? eh.getEntity() : null;
 		AABB area = new AABB(impact, impact).inflate(radius);
-		for (Entity e : level.getEntities(player, area, e -> e instanceof LivingEntity le && le.isAlive() && !e.isSpectator())) {
+		for (Entity e : CombatTargets.inArea(player,area)) {
 			if (!CoopRules.canAffect(player, e)) continue;
 			double dist = e.position().distanceTo(impact);
 			if (e != direct && dist > radius) continue;
@@ -168,7 +173,13 @@ public final class PowerAbility {
 		AABB box = player.getBoundingBox().expandTowards(player.getLookAngle().scale(max)).inflate(1.0);
 		EntityHitResult entity = ProjectileUtil.getEntityHitResult(player, eye, entityEnd, box,
 				e -> !e.isSpectator() && e.isPickable() && e instanceof LivingEntity, max * max);
-		return entity != null ? entity : block;
+		var giant=com.dantemorrigan.gauntlet.boss.TribunalEncounter.targetFor(player);
+        if(giant!=null) {
+            var boxG=giant.getBoundingBox().inflate(1);
+            Vec3 contact=boxG.contains(eye)?eye:boxG.clip(eye,entityEnd).orElse(null);
+            if(contact!=null && (entity==null || eye.distanceToSqr(contact)<eye.distanceToSqr(entity.getLocation()))) entity=new EntityHitResult(giant,contact);
+        }
+        return entity != null ? entity : block;
 	}
 
 	private PowerAbility() {}

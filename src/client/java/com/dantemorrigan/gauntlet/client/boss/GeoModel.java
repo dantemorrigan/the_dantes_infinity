@@ -182,11 +182,18 @@ public final class GeoModel {
 
 	// ------------------------------------------------------------------ drawing
 
-	public void render(PoseStack pose, VertexConsumer out, Map<String, BonePose> poses, int light, int overlay, CubeTint tint) {
-		for (Bone root : roots) renderBone(pose, out, root, poses, light, overlay, tint);
-	}
 
-	private void renderBone(PoseStack pose, VertexConsumer out, Bone bone, Map<String, BonePose> poses, int light, int overlay, CubeTint tint) {
+    public record Clip(float nx,float ny,float nz,float offset) {
+        float distance(Vector3f p){return p.x*nx+p.y*ny+p.z*nz-offset;}
+    }
+    public void render(PoseStack pose,VertexConsumer out,Map<String,BonePose> poses,int light,int overlay,CubeTint tint) {
+        renderClipped(pose,out,poses,light,overlay,tint,null);
+    }
+    public void renderClipped(PoseStack pose,VertexConsumer out,Map<String,BonePose> poses,int light,int overlay,CubeTint tint,Clip clip) {
+        for(Bone root:roots)renderBone(pose,out,root,poses,light,overlay,tint,clip);
+    }
+
+	private void renderBone(PoseStack pose, VertexConsumer out, Bone bone, Map<String, BonePose> poses, int light, int overlay, CubeTint tint, Clip clip) {
 		BonePose p = poses == null ? null : poses.get(bone.name);
 		if (p != null && p.hidden) return;
 		pose.pushPose();
@@ -195,29 +202,51 @@ public final class GeoModel {
 		for (Cube c : bone.cubes) {
 			int color = tint == null ? -1 : tint.color(bone, c);
 			if (color == 0) continue;
-			cube(out, last, c, color, light, overlay);
+			cube(out, last, c, color, light, overlay, clip);
 		}
-		for (Bone child : bone.children) renderBone(pose, out, child, poses, light, overlay, tint);
+		for (Bone child : bone.children) renderBone(pose, out, child, poses, light, overlay, tint, clip);
 		pose.popPose();
 	}
 
-	private static void cube(VertexConsumer out, PoseStack.Pose pose, Cube c, int color, int light, int overlay) {
+	private static void cube(VertexConsumer out, PoseStack.Pose pose, Cube c, int color, int light, int overlay, Clip clip) {
 		float s = 1f / 16f;
 		float x0 = c.x0 * s, y0 = c.y0 * s, z0 = c.z0 * s, x1 = c.x1 * s, y1 = c.y1 * s, z1 = c.z1 * s;
 		Matrix4f m = pose.pose();
 		// Corners per face in the order TL, TR, BR, BL as seen from outside; emitted BL, BR, TR, TL (counter-clockwise).
-		face(out, pose, m, c.uv[0], color, light, overlay, 0, 0, -1, x1, y1, z0, x0, y1, z0, x0, y0, z0, x1, y0, z0);
-		face(out, pose, m, c.uv[1], color, light, overlay, 0, 0, 1, x0, y1, z1, x1, y1, z1, x1, y0, z1, x0, y0, z1);
-		face(out, pose, m, c.uv[2], color, light, overlay, 1, 0, 0, x1, y1, z1, x1, y1, z0, x1, y0, z0, x1, y0, z1);
-		face(out, pose, m, c.uv[3], color, light, overlay, -1, 0, 0, x0, y1, z0, x0, y1, z1, x0, y0, z1, x0, y0, z0);
-		face(out, pose, m, c.uv[4], color, light, overlay, 0, 1, 0, x0, y1, z0, x1, y1, z0, x1, y1, z1, x0, y1, z1);
-		face(out, pose, m, c.uv[5], color, light, overlay, 0, -1, 0, x0, y0, z1, x1, y0, z1, x1, y0, z0, x0, y0, z0);
+		face(out, pose, m, clip, c.uv[0], color, light, overlay, 0, 0, -1, x1, y1, z0, x0, y1, z0, x0, y0, z0, x1, y0, z0);
+		face(out, pose, m, clip, c.uv[1], color, light, overlay, 0, 0, 1, x0, y1, z1, x1, y1, z1, x1, y0, z1, x0, y0, z1);
+		face(out, pose, m, clip, c.uv[2], color, light, overlay, 1, 0, 0, x1, y1, z1, x1, y1, z0, x1, y0, z0, x1, y0, z1);
+		face(out, pose, m, clip, c.uv[3], color, light, overlay, -1, 0, 0, x0, y1, z0, x0, y1, z1, x0, y0, z1, x0, y0, z0);
+		face(out, pose, m, clip, c.uv[4], color, light, overlay, 0, 1, 0, x0, y1, z0, x1, y1, z0, x1, y1, z1, x0, y1, z1);
+		face(out, pose, m, clip, c.uv[5], color, light, overlay, 0, -1, 0, x0, y0, z1, x1, y0, z1, x1, y0, z0, x0, y0, z0);
 	}
 
-	private static void face(VertexConsumer out, PoseStack.Pose pose, Matrix4f m, float[] uv, int color, int light, int overlay,
+    private record Corner(Vector3f p,float u,float v) {
+        Corner mix(Corner other,float t){return new Corner(new Vector3f(p).lerp(other.p,t),u+(other.u-u)*t,v+(other.v-v)*t);}
+    }
+	private static void face(VertexConsumer out, PoseStack.Pose pose, Matrix4f m, Clip clip, float[] uv, int color, int light, int overlay,
 			float nx, float ny, float nz,
 			float tlx, float tly, float tlz, float trx, float try_, float trz, float brx, float bry, float brz, float blx, float bly, float blz) {
 		if (uv == null) return;
+
+        if(clip!=null) {
+            var polygon=new ArrayList<Corner>();
+            polygon.add(new Corner(m.transformPosition(new Vector3f(blx,bly,blz)),uv[0],uv[3]));
+            polygon.add(new Corner(m.transformPosition(new Vector3f(brx,bry,brz)),uv[2],uv[3]));
+            polygon.add(new Corner(m.transformPosition(new Vector3f(trx,try_,trz)),uv[2],uv[1]));
+            polygon.add(new Corner(m.transformPosition(new Vector3f(tlx,tly,tlz)),uv[0],uv[1]));
+            var visible=new ArrayList<Corner>();Corner previous=polygon.getLast();float dp=clip.distance(previous.p);
+            for(Corner current:polygon) {
+                float dc=clip.distance(current.p);
+                if((dp<=0)!=(dc<=0))visible.add(previous.mix(current,dp/(dp-dc)));
+                if(dc<=0)visible.add(current);previous=current;dp=dc;
+            }
+            for(int i=1;i+1<visible.size();i++) {
+                Corner[] triangle={visible.getFirst(),visible.get(i),visible.get(i+1),visible.get(i+1)};
+                for(Corner v:triangle) out.addVertex(v.p.x,v.p.y,v.p.z).setColor(color).setUv(v.u,v.v).setOverlay(overlay).setLight(light).setNormal(pose,nx,ny,nz);
+            }
+            return;
+        }
 		out.addVertex(m, blx, bly, blz).setColor(color).setUv(uv[0], uv[3]).setOverlay(overlay).setLight(light).setNormal(pose, nx, ny, nz);
 		out.addVertex(m, brx, bry, brz).setColor(color).setUv(uv[2], uv[3]).setOverlay(overlay).setLight(light).setNormal(pose, nx, ny, nz);
 		out.addVertex(m, trx, try_, trz).setColor(color).setUv(uv[2], uv[1]).setOverlay(overlay).setLight(light).setNormal(pose, nx, ny, nz);

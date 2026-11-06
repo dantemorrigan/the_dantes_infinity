@@ -26,7 +26,7 @@ public final class CosmicGauntlet {
     public static int cooldown(ServerPlayer p,Ability a) { return (int)Math.max(0,COOLDOWNS.getOrDefault(p.getUUID(),new EnumMap<>(Ability.class)).getOrDefault(a,0L)-p.level().getGameTime()); }
     private static void cool(ServerPlayer p,Ability a,int ticks) {COOLDOWNS.computeIfAbsent(p.getUUID(),k->new EnumMap<>(Ability.class)).put(a,p.level().getGameTime()+ticks);}
     public static boolean active(ServerPlayer p) {return HOLDS.containsKey(p.getUUID());}
-    public static void stop(ServerPlayer p) {HOLDS.remove(p.getUUID());}
+    public static void stop(ServerPlayer p) {if(HOLDS.remove(p.getUUID())!=null) fx(p,4,p.position(),new Vec3(p.getId(),0,0),0,0,1);}
     private static TribunalSpace.Point point(Vec3 p) {return new TribunalSpace.Point(p.x,p.y,p.z);}
     public static double reach(ServerPlayer p,double wanted) {
         if(!CosmosTravel.inCosmos(p)) return wanted;
@@ -44,7 +44,7 @@ public final class CosmicGauntlet {
     }
     private static void pulse(ServerPlayer p,Vec3 center,double radius,float damage,int color) {pulse(p,center,radius,damage,color,false);}
     private static void pulse(ServerPlayer p,Vec3 center,double radius,float damage,int color,boolean bossesOnly) {
-        for(var e:p.level().getEntitiesOfClass(LivingEntity.class,new AABB(center,center).inflate(radius),e->e!=p && e.isAlive() && CoopRules.canAffect(p,e))) {
+        for(var e:CombatTargets.inArea(p,new AABB(center,center).inflate(radius))) {
             if(bossesOnly && !MindStone.isBoss(e)) continue;
             if(distance(center,e.getBoundingBox())>radius) continue;
             if(GauntletDamage.hurt(p.level(),e,p,p.damageSources().playerAttack(p),damage) && !MindStone.isBoss(e)) {
@@ -53,12 +53,23 @@ public final class CosmicGauntlet {
         }
         fx(p,0,center,center,(float)radius,color,30);
     }
+    public static void powerStrike(ServerPlayer p,HitResult hit,float charge) {
+        Vec3 at=hit.getLocation();
+        fx(p,2,p.getEyePosition(),at,3+charge*3,0xffba80ff,16);
+        pulse(p,at,12+charge*8,35+charge*55,0xffba80ff);
+        p.level().playSound(null,p.blockPosition(),net.minecraft.sounds.SoundEvents.WARDEN_SONIC_BOOM,net.minecraft.sounds.SoundSource.PLAYERS,1.5f,.85f);
+        p.swing(net.minecraft.world.InteractionHand.OFF_HAND,true);
+    }
     public static void cast(ServerPlayer p,Ability ability,int charge) {
         if(!CosmosTravel.inCosmos(p) || !p.isAlive() || GauntletState.activeGauntlet(p).isEmpty() || cooldown(p,ability)>0) return;
         Vec3 target=PowerAbility.pick(p,reach(p,170)).getLocation();
         switch(ability) {
-            case REALITY_STRIKE -> {pulse(p,target,24,35,0xffff486c);cool(p,ability,80);}
-            case INVERSION -> {HOLDS.put(p.getUUID(),new Hold(p,GauntletState.activeGauntlet(p),p.tickCount));cool(p,ability,160);}
+            case REALITY_STRIKE -> {fx(p,2,p.getEyePosition(),target,6,0xffff486c,18);pulse(p,target,28,64,0xffff486c);cool(p,ability,80);}
+            case INVERSION -> {
+                HOLDS.put(p.getUUID(),new Hold(p,GauntletState.activeGauntlet(p),p.tickCount));
+                pulse(p,p.position(),120,80,0xffd94dff);
+                fx(p,3,p.position(),new Vec3(p.getId(),0,0),130,0xffe461ff,160);cool(p,ability,160);
+            }
             case SOUL -> {
                 var hit=PowerAbility.pick(p,reach(p,170));
                 if(hit instanceof EntityHitResult e && MindStone.isBoss(e.getEntity())) pulse(p,target,8,38,0xffffa151);
@@ -89,8 +100,9 @@ public final class CosmicGauntlet {
         ServerTickEvents.END_SERVER_TICK.register(server->{
             HOLDS.values().removeIf(h->{
                 ServerPlayer p=h.owner();
-                if(!p.isAlive() || !CosmosTravel.inCosmos(p) || GauntletState.activeGauntlet(p)!=h.gauntlet() || p.tickCount-h.started()>160) return true;
-                if(p.tickCount%12==0) pulse(p,PowerAbility.pick(p,reach(p,160)).getLocation(),28,12,0xffd94dff);
+                if(!p.isAlive() || !CosmosTravel.inCosmos(p) || GauntletState.activeGauntlet(p)!=h.gauntlet() || p.tickCount-h.started()>160) {
+                    fx(p,4,p.position(),new Vec3(p.getId(),0,0),0,0,1);return true;
+                }
                 return false;
             });
             ROCKS.removeIf(r->{

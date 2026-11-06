@@ -36,12 +36,20 @@ public final class CosmosRenderer {
         int color=((int)(255*opacity)<<24)|0xFFFFFF;
         float inset=.5f/512;
         float[][] uv={{inset,inset},{1-inset,inset},{1-inset,1-inset},{inset,1-inset}};
+        float distortion=com.dantemorrigan.gauntlet.client.fx.CosmicClient.distortion();
+        float clock=Minecraft.getInstance().level==null?0:Minecraft.getInstance().level.getGameTime();
+        int cells=distortion>.001f?8:1;
         for(int f=0;f<6;f++) {
-            Vector3f[] c={face(f,-1,-1),face(f,1,-1),face(f,1,1),face(f,-1,1)};
+            final int faceIndex=f;
             CelestialSky.draw(pose,InfinityGauntlet.id("textures/environment/cosmos/faces/"+FACES[f]+".png"),out->{
-                for(int winding=0;winding<2;winding++) for(int j=0;j<4;j++) {
-                    int i=winding==0?j:3-j;
-                    out.addVertex(c[i].x*100,c[i].y*100,c[i].z*100).setUv(uv[i][0],uv[i][1]).setColor(color);
+                for(int x=0;x<cells;x++) for(int y=0;y<cells;y++) {
+                    float u0=(float)x/cells,u1=(float)(x+1)/cells,v0=(float)y/cells,v1=(float)(y+1)/cells;
+                    float[][] cell={{u0,v0},{u1,v0},{u1,v1},{u0,v1}};
+                    for(int winding=0;winding<2;winding++)for(int j=0;j<4;j++) {
+                        float[] t=cell[winding==0?j:3-j];
+                        Vector3f vertex=com.dantemorrigan.gauntlet.client.fx.CosmicClient.bend(face(faceIndex,t[0]*2-1,t[1]*2-1).mul(100),distortion,clock);
+                        out.addVertex(vertex.x,vertex.y,vertex.z).setUv(inset+t[0]*(1-2*inset),inset+t[1]*(1-2*inset)).setColor(color);
+                    }
                 }
             });
         }
