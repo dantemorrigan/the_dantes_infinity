@@ -10,6 +10,7 @@ import com.dantemorrigan.gauntlet.ModSounds;
 import com.dantemorrigan.gauntlet.Stone;
 import com.dantemorrigan.gauntlet.net.ModNetwork;
 import com.dantemorrigan.gauntlet.net.ModStatus;
+import com.dantemorrigan.gauntlet.stones.MindArena;
 import com.dantemorrigan.gauntlet.stones.StoneKeeper;
 import com.mojang.serialization.Codec;
 import net.fabricmc.fabric.api.attachment.v1.AttachmentRegistry;
@@ -167,7 +168,8 @@ public final class ThanosEncounter {
 
 	/** Starts the encounter for this player now (command or trigger). Returns false if one is already running. */
 	public static boolean start(ServerPlayer player, boolean skipWarning) {
-		if (active != null || beaten(player.level().getServer())) return false;
+		if (active != null || beaten(player.level().getServer())
+				|| MindArena.excludesThanos(player.level(), player.position())) return false;
 		Encounter e = new Encounter();
 		e.playerId = player.getUUID();
 		e.level = (ServerLevel) player.level();
@@ -235,7 +237,7 @@ public final class ThanosEncounter {
 				continue;
 			}
 			if (now - armed < cfg.thanosDelayTicks) continue;
-			if (!arena(p.level())) continue;
+			if (!arena(p.level()) || MindArena.excludesThanos(p.level(), p.position())) continue;
 			Long back = RETURN_AT.get(p.getUUID());
 			if (back != null && now < back) continue;
 			RETURN_AT.remove(p.getUUID());
@@ -263,7 +265,7 @@ public final class ThanosEncounter {
 				if (p == null || !p.isAlive()) { active = null; return; }
 				if (age % 40 == 0) e.level.playSound(null, p.blockPosition(), SoundEvents.WARDEN_HEARTBEAT, SoundSource.HOSTILE, 1.6f, 0.5f);
 				if (age >= GauntletConfig.get().thanosWarningSeconds * 20) {
-					if (!arena(p.level())) { active = null; return; } // gone somewhere he can't follow: next check tries again
+					if (!arena(p.level()) || MindArena.excludesThanos(p.level(), p.position())) { active = null; return; }
 					beginArrival(e, p);
 				}
 			}
@@ -323,7 +325,7 @@ public final class ThanosEncounter {
 	}
 
 	private static void arrival(Encounter e, ServerPlayer p, int age) {
-		if (p == null) { withdraw(false); return; }
+		if (p == null || MindArena.excludesThanos(p.level(), p.position())) { withdraw(false); return; }
 		ServerLevel level = e.level;
 		GauntletConfig cfg = GauntletConfig.get();
 		if (e.mode == Mode.SKY) {
@@ -411,6 +413,7 @@ public final class ThanosEncounter {
 		Thanos boss = e.boss;
 		if (boss == null || boss.isRemoved()) { withdraw(false); return; }
 		if (p == null) { withdraw(false); return; }
+		if (MindArena.excludesThanos(p.level(), p.position())) { withdraw(true); return; }
 		boolean away = p.level() != boss.level() || p.distanceTo(boss) > 96;
 		// Left the arena (another dimension stops every sound on the client): cut the theme for them explicitly.
 		if (away && e.awayTicks == 0) send(p, FX_MUSIC_STOP, 0, Vec3.ZERO, Vec3.ZERO, 0, 40);
@@ -781,7 +784,7 @@ public final class ThanosEncounter {
 
 	/** Debug: a Thanos right here, already fighting (no scene). */
 	public static Thanos spawnNow(ServerPlayer p) {
-		if (active != null || beaten(p.level().getServer())) return null;
+		if (active != null || beaten(p.level().getServer()) || MindArena.excludesThanos(p.level(), p.position())) return null;
 		Encounter e = new Encounter();
 		e.playerId = p.getUUID();
 		e.level = (ServerLevel) p.level();
