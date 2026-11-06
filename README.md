@@ -9,7 +9,7 @@
 Requirements: **Java 25**. Build: `./gradlew build` → `build/libs/infinity_gauntlet-1.0.6.jar` (+ Fabric API 0.155.3+26.1.2).
 
 ```
-./gradlew runClient          # test client
+./gradlew runClient          # test client; stable offline profile Player433
 ./gradlew runClientGameTest  # visual run with screenshots (build/run/clientGameTest/screenshots)
 ./gradlew runClientGameTest -PonlyTest=SoulQuestTest  # a single test (headless Linux: xvfb-run -a)
 ```
@@ -200,3 +200,7 @@ Cosmic Gauntlet variants include long-range Power Strike with 3D recoil, visible
 Creative testing: `/tribunal challenge` retains progression gates but leaves the challenger invulnerable. Operators can use `/tribunal verdict` during the battle to test the final cinematic, or `/tribunal kill` to kill the current Tribunal and show his victory destruction. Approaching Earth after a warp now re-enters the Overworld before the planetary collision shell.
 
 Cosmic route cards now use ten separate 64px icons with characteristic surfaces and rings. The Sun uses an unlit stellar surface and a broad white-gold corona. Rejoining preserves an equipped Gauntlet's awakened state; completed advancement syncs do not replay mod notifications, and stale toast queues clear when leaving a world. New achievements and explicitly revoked/re-earned achievements still notify normally.
+
+Development identity: `runClient` now keeps the offline name **Player433** between launches. Minecraft otherwise chooses a fresh `Player###` and UUID, which makes advancements appear new even when the singleplayer inventory was retained. To use another development profile, pass `-PdevUsername=YourName` consistently; a changed name is a different player. Standard launcher accounts are unaffected.
+
+Loki fights creative players in both forms while creative damage immunity remains active. A real Loki's completed death scene shows a green-gold victory notice with a horned-helm seal; illusions do not trigger it. Solar-system surfaces now rotate on the saved world clock with sidereal period ratios and axial tilts, including the retrograde Venus and Uranus axes (one terrestrial day is scaled to one game day). The Tribunal's six-colour full-screen light uses a cached, linearly filtered texture and at most two GUI quads per frame; it is prepared on joining the world.

@@ -481,8 +481,15 @@ public final class Loki extends Monster {
 		}
 	}
 
+    @Override
+    protected net.minecraft.world.entity.LivingEntity asValidTarget(net.minecraft.world.entity.LivingEntity target) {
+        // Mob's vanilla target accessor also discards creative players after custom selection.
+        if(target instanceof ServerPlayer player && player.isCreative() && eligible(player))return player;
+        return super.asValidTarget(target);
+    }
+
 	private boolean eligible(ServerPlayer player) {
-		return player != null && player.isAlive() && !player.isSpectator() && !player.isCreative()
+		return player != null && player.isAlive() && !player.isSpectator()
 				&& (arena == null || insideArena(player.position()));
 	}
 
@@ -725,6 +732,10 @@ public final class Loki extends Monster {
 			level.sendParticles(jade, getX(), getY() + .45 + rise * .9, getZ(), 13, .4, .24, .32, .04);
 		}
 		if (deathTime >= DEATH_TICKS && !isRemoved()) {
+            for(ServerPlayer player:level.players()) if(player.isAlive() && !player.isSpectator() && player.distanceToSqr(this)<=80*80) {
+                net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking.send(player,new com.dantemorrigan.gauntlet.net.ModNetwork.QuestAlert(Component.translatable("msg.infinity_gauntlet.loki.defeated"),2));
+                level.playSound(null,player.blockPosition(),SoundEvents.UI_TOAST_CHALLENGE_COMPLETE,net.minecraft.sounds.SoundSource.PLAYERS,1,1.15f);
+            }
 			MindQuest.onLokiDefeated(level, this);
 			remove(RemovalReason.KILLED);
 		}

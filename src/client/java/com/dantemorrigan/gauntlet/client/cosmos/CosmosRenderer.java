@@ -116,8 +116,9 @@ public final class CosmosRenderer {
             // Distance used for depth only: angular size and direction stay true, order is preserved.
             double shown=isSun?far*.68:orbit?far*(.2+.2*Math.min(1,b.distance()/130000)):far*.3;
             double k=shown/b.distance(); float scale=(float)(b.radius()*k);
-            int index=Math.max(0,b.index()); int alpha=orbit?255:(int)(255*Math.min(1,(atmosphere-.65)/.35));
-            float tilt=orbit?CosmosPlanets.TILT[index]:23.4f, yaw=orbit?index*67f:0;
+            int alpha=orbit?255:(int)(255*Math.min(1,(atmosphere-.65)/.35));
+            float tilt=com.dantemorrigan.gauntlet.cosmos.CelestialRotation.spin(b.id()).tilt();
+            float yaw=com.dantemorrigan.gauntlet.cosmos.CelestialRotation.yaw(b.id(),mc.level.getGameTime()+mc.getDeltaTracker().getGameTimeDeltaPartialTick(false));
             Vec3 toSun=orbit?(isSun?Vec3.ZERO:sun.subtract(new Vec3(b.delta().x+cam.x,b.delta().y+cam.y,b.delta().z+cam.z)).normalize()):OVERWORLD_SUN;
             var q=new org.joml.Quaternionf().rotationZ((float)Math.toRadians(tilt)).rotateY((float)Math.toRadians(yaw)).conjugate();
             Vector3f light=q.transform(new Vector3f((float)toSun.x,(float)toSun.y,(float)toSun.z));

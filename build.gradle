@@ -115,3 +115,21 @@ tasks.named('processGametestResources') {
         }
     }
 }
+
+// Keep the offline development identity stable between launches; Minecraft otherwise chooses Player###.
+// The default retains the profile from the existing test save. Override for a second local client.
+loom.runs.named('client') {
+    programArguments.addAll('--username', providers.gradleProperty('devUsername').getOrElse('Player433'))
+}
+// Game tests inherit the client configuration but keep their own deterministic Player0 identity.
+loom.runs.named('clientGameTest') {
+    def inherited = new ArrayList(programArguments.get())
+    def cleaned = []
+    def testName = 'Player0'
+    for (int i = 0; i < inherited.size(); i++) {
+        if (inherited[i] == '--username' && i + 1 < inherited.size()) testName = inherited[++i]
+        else cleaned.add(inherited[i])
+    }
+    cleaned.addAll(['--username', testName])
+    programArguments.set(cleaned)
+}

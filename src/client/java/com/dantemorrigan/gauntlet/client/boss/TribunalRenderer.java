@@ -172,7 +172,7 @@ public final class TribunalRenderer extends EntityRenderer<LivingTribunal, Tribu
                     int color=ARGB.color((int)(255*(1-shatter)),stone.color>>16&255,stone.color>>8&255,stone.color&255);
                     beam(pose,collector,hand,end,1.5f+4*shatter,color);
                     billboard(pose,collector,HALO,end,4+18*shatter,state.ticks*3,color);
-                    sphere(pose,collector,hand,3+stone.ordinal()*2+50*shatter,color);
+                    if(stone.ordinal()%3==0)sphere(pose,collector,hand,3+stone.ordinal()*2+50*shatter,color);
                 }
 				billboard(pose, collector, EDICT, hand, 2 + 17 * shatter, state.ticks * 5,
 						ARGB.color((int) (255 * (1 - shatter)), 255, 246, 206));

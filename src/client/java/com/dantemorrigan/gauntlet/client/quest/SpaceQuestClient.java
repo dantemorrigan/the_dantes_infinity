@@ -70,6 +70,7 @@ public final class SpaceQuestClient {
 			int textW = mc.font.width(alert);
 			int fw = Math.min(w - 16, Math.max(256, cap + pad + textW + pad + end));
 			int x = (w - fw) / 2, y = h / 5, color = ARGB.color(a, 255, 255, 255);
+            if(style==2){lokiAlert(g,x,y,fw,fh,a,leftTextCenter(x,cap,pad,fw,end));return;}
 			g.blit(RenderPipelines.GUI_TEXTURED, style == 1 ? SOUL_FRAME : FRAME, x, y, 0, 0, cap, fh, 24, 24, 128, 24, color);
 			g.blit(RenderPipelines.GUI_TEXTURED, style == 1 ? SOUL_FRAME : FRAME, x + cap, y, 24, 0, fw - cap - end, fh, 96, 24, 128, 24, color);
 			g.blit(RenderPipelines.GUI_TEXTURED, style == 1 ? SOUL_FRAME : FRAME, x + fw - end, y, 120, 0, end, fh, 8, 24, 128, 24, color);
@@ -77,6 +78,27 @@ public final class SpaceQuestClient {
 			g.centeredText(mc.font, alert, (left + right) / 2, y + (fh - mc.font.lineHeight) / 2 + 1, style == 1 ? ARGB.color(a, 255, 214, 170) : ARGB.color(a, 210, 236, 255));
 		}
 	}
+
+    private static int leftTextCenter(int x,int cap,int pad,int width,int end){return (x+cap+pad+x+width-end-pad)/2;}
+    private static void lokiAlert(GuiGraphicsExtractor g,int x,int y,int w,int h,int alpha,int textCenter) {
+        int tint=ARGB.color(alpha,183,255,208),gold=ARGB.color(alpha,239,203,104),jade=ARGB.color(alpha,68,219,138);
+        g.blit(RenderPipelines.GUI_TEXTURED,SOUL_FRAME,x,y,0,0,48,h,24,24,128,24,tint);
+        g.blit(RenderPipelines.GUI_TEXTURED,SOUL_FRAME,x+48,y,24,0,w-64,h,96,24,128,24,tint);
+        g.blit(RenderPipelines.GUI_TEXTURED,SOUL_FRAME,x+w-16,y,120,0,16,h,8,24,128,24,tint);
+        // Golden horned helm over an emerald seal; the original three-slice notice layout is retained.
+        int cx=x+24,cy=y+24;
+        g.fill(cx-12,cy-15,cx+13,cy+15,ARGB.color(alpha,7,12,16));
+        g.fill(cx-7,cy-4,cx+8,cy+8,gold);g.fill(cx-5,cy+2,cx+6,cy+11,jade);
+        for(int side:new int[]{-1,1}) {
+            int hx=cx+side*8;
+            g.fill(hx-2,cy-10,hx+2,cy+1,gold);
+            g.fill(hx+side*2-1,cy-15,hx+side*2+2,cy-8,gold);
+        }
+        g.fill(cx-5,cy+3,cx-2,cy+5,ARGB.color(alpha,230,255,235));
+        g.fill(cx+3,cy+3,cx+6,cy+5,ARGB.color(alpha,230,255,235));
+        g.fill(cx-2,cy+8,cx+3,cy+9,gold);
+        g.centeredText(Minecraft.getInstance().font,alert,textCenter,y+(h-Minecraft.getInstance().font.lineHeight)/2+1,ARGB.color(alpha,202,255,219));
+    }
 
 	/** Six faces of the star field, drawn inside the sky pass (dimension skybox "end"). */
 	public static void drawSky() {

@@ -598,5 +598,6 @@
   "tribunal.infinity_gauntlet.attack.4": "Cosmic Volley",
   "tribunal.infinity_gauntlet.attack.5": "Spherical Shockwave",
   "tribunal.infinity_gauntlet.attack.6": "Lance of Justice",
-  "tribunal.infinity_gauntlet.attack.7": "Stellar Prison"
+  "tribunal.infinity_gauntlet.attack.7": "Stellar Prison",
+  "msg.infinity_gauntlet.loki.defeated": "Loki defeated. His illusions are shattered."
 }

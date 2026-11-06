@@ -202,3 +202,9 @@ networking, key-mapping, rendering, particles, dimensions, data-attachment, item
 - Экран настроек `client/screen/ModSettingsScreen`: переключатель языка (`auto` / `en` / `ru`) и клиентские тумблеры (`abilityWheelToggle`, `showStatusHud`, `cameraShakeScale`, `flashIntensity`) с мгновенным сохранением в `config/infinity_gauntlet.json`.
 - Схема Перчатки Бесконечности (`quest_gauntlet_blueprint`, `stones/GauntletBlueprintItem`, `stones/GauntletLoot`): раскладывается в 31 таблицу сундуков мира и продаётся у картографов, кузнецов, библиотекарей и странствующих торговцев; ПКМ выдаёт рецепты Перчатки и Уру в книгу рецептов.
 - Изнанка Реальности (`power/RealityStone`, `client/fx/RealityClient`): работает в движении (`inputLocked() == false`), превращает всех мобов и игроков в вихре в бабочек, а после завершения физически фиксирует закрученные блоки земли и воды в мире навсегда (`PLACE_FLAGS` с `UPDATE_SKIP_ON_PLACE | UPDATE_KNOWN_SHAPE`).
+
+### Loki, rotations and Tribunal light
+
+`./gradlew runClient` uses the stable offline profile `Player433`; override with `-PdevUsername=...` only when intentionally testing a different player. Offline UUIDs derive from the name. Minecraft's random default name is not suitable for checking advancement persistence across process restarts.
+
+Focused checks: `-PonlyTest=LokiCreativePolishTest` verifies creative targeting in both forms, immunity, the localized victory notice and the cached burst in the real HUD. `java -cp build/classes/java/main src/geometryTest/java/CelestialRotationCheck.java` verifies sidereal periods, retrograde axes and smooth rotation at large saved world times. FPS improvement is structural (thousands of per-frame GUI gradient elements replaced by two quads); device-specific FPS still needs manual checking.

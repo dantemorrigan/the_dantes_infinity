@@ -40,7 +40,6 @@ final class CosmosPlanets {
     /** Starts painting every body in the background, nearest-first order is irrelevant. */
     static void warmup() { for (String id : IDS) texture(id); }
     private static final String[] IDS = {"sun", "earth", "moon", "jupiter", "saturn", "mars", "venus", "mercury", "uranus", "neptune", "saturn_ring"};
-    static final int[] TILT = {7, 0, 3, 23, 7, 25, 3, 27, 82, 28};
 
     // ---------------------------------------------------------------- noise
     private static double hash(int x, int y, int z, long seed) {

@@ -598,5 +598,6 @@
   "tribunal.infinity_gauntlet.attack.4": "Залп космической энергии",
   "tribunal.infinity_gauntlet.attack.5": "Сферическая ударная волна",
   "tribunal.infinity_gauntlet.attack.6": "Копьё правосудия",
-  "tribunal.infinity_gauntlet.attack.7": "Звёздная клетка"
+  "tribunal.infinity_gauntlet.attack.7": "Звёздная клетка",
+  "msg.infinity_gauntlet.loki.defeated": "Локи повержен. Иллюзии рассеяны."
 }

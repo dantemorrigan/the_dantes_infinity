@@ -75,7 +75,8 @@ public final class MindArena {
 
 	static boolean fighter(ServerPlayer player) {
 		MinecraftServer server = player.level().getServer();
-		return active(server) && registered(player) && eligible(player)
+		// A registered fighter may switch to creative for testing without wiping the active encounter.
+        return active(server) && registered(player) && player.isAlive() && !player.isSpectator()
 				&& player.level() == server.overworld() && inside(MindCity.site(server), player.position());
 	}
 
