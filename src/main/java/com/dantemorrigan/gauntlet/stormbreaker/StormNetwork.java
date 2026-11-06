@@ -8,6 +8,7 @@ import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.phys.Vec3;
 
@@ -29,9 +30,19 @@ public final class StormNetwork {
         @Override public Type<Visual> type() { return TYPE; }
     }
 
+    public record Compass(Vec3 site, boolean active) implements CustomPacketPayload {
+        public static final Type<Compass> TYPE = new Type<>(InfinityGauntlet.id("stormbreaker_compass"));
+        public static final StreamCodec<ByteBuf, Compass> CODEC = StreamCodec.composite(
+                Vec3.STREAM_CODEC, Compass::site, ByteBufCodecs.BOOL, Compass::active, Compass::new);
+        @Override public Type<Compass> type() { return TYPE; }
+    }
+
+    public static final int COMPASS_RANGE = 110;
+
     static void init() {
         PayloadTypeRegistry.serverboundPlay().register(Action.TYPE, Action.CODEC);
         PayloadTypeRegistry.clientboundPlay().register(Visual.TYPE, Visual.CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(Compass.TYPE, Compass.CODEC);
         ServerPlayNetworking.registerGlobalReceiver(Action.TYPE, (packet, context) ->
                 Stormbreaker.action(context.player(), packet.action()));
     }
@@ -40,6 +51,15 @@ public final class StormNetwork {
         var payload = new Visual(owner.getId(), clip, elapsed, origin);
         for (ServerPlayer viewer : PlayerLookup.around(owner.level(), origin, 110)) {
             if (ServerPlayNetworking.canSend(viewer, Visual.TYPE)) ServerPlayNetworking.send(viewer, payload);
+        }
+    }
+
+    static void compass(ServerLevel level, Vec3 site, boolean active) {
+        var payload = new Compass(site, active);
+        for (ServerPlayer viewer : PlayerLookup.around(level, site, COMPASS_RANGE)) {
+            if (!viewer.isSpectator() && ServerPlayNetworking.canSend(viewer, Compass.TYPE)) {
+                ServerPlayNetworking.send(viewer, payload);
+            }
         }
     }
 

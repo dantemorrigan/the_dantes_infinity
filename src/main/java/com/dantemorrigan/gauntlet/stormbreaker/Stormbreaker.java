@@ -558,7 +558,9 @@ public final class Stormbreaker {
                 && !p.isSpectator() && p.level() == level && p.distanceToSqr(s.display) <= 36;
         if (nearby && now < s.pull.finish) return;
         s.pull = null;
+        Relic relic = server.overworld().getAttached(RELIC);
         if (nearby && restore(p)) {
+            if (relic.owner.isEmpty()) StormNetwork.compass(level, relic.position, false);
             status(p, "bound");
             removeDisplay(s);
         } else if (s.display != null) {
@@ -618,6 +620,7 @@ public final class Stormbreaker {
         s.display.setDeltaMovement(Vec3.ZERO);
         s.display.phase(StormbreakerEntity.EMBEDDED);
         storeRelic(level.getServer(), new Relic("", relic.seal, IN_GROUND, relic.dimension, landing));
+        StormNetwork.compass(level, landing, true);
         StormFx.LIGHTNING_HIT.play(level, landing, 12);
         StormFx.IMPACT.play(level, landing.add(0, .2, 0), 4.5);
         StormFx.BLOCK_SHARDS.play(level, landing.add(0, .3, 0), 3.4);
@@ -695,6 +698,9 @@ public final class Stormbreaker {
 
         if (relic.phase() == IN_GROUND) {
             ServerLevel level = server.getLevel(relic.dimension);
+            if (level != null && relic.owner.isEmpty() && now % 20 == 0) {
+                StormNetwork.compass(level, relic.position, true);
+            }
             if (level != null && level.hasChunkAt(BlockPos.containing(relic.position))) {
                 if (s.display == null || s.display.isRemoved()) {
                     s.display = spawn(level, relic.position, StormbreakerEntity.EMBEDDED);

@@ -3,10 +3,14 @@ package com.dantemorrigan.gauntlet.client;
 import com.dantemorrigan.gauntlet.InfinityGauntlet;
 import com.dantemorrigan.gauntlet.client.ability.AbilityFavoritesScreen;
 import com.dantemorrigan.gauntlet.client.ability.AbilityWheelScreen;
+import com.dantemorrigan.gauntlet.stormbreaker.StormNetwork;
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.contents.TranslatableContents;
@@ -14,10 +18,15 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.component.MapDecorations;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.Vec3;
 
 /** Reads the same world coordinates that vanilla uses to draw the red X on a quest map. */
 final class QuestCompassHud {
     private static final int ACCENT = 0xFFE8B75F;
+    private static final int STORM_ACCENT = 0xFF65CAFF;
+    private static Skyfall skyfall;
+
+    private record Skyfall(ClientLevel level, Vec3 site, long expires) {}
     private static final double ARRIVAL_RADIUS = 12.0;
 
     private record Target(String nameKey, double x, double z) {
@@ -27,6 +36,12 @@ final class QuestCompassHud {
     }
 
     static void init() {
+        ClientPlayNetworking.registerGlobalReceiver(StormNetwork.Compass.TYPE, (packet, context) -> {
+            ClientLevel level = context.client().level;
+            skyfall = packet.active() && level != null && level.dimension() == Level.OVERWORLD
+                    ? new Skyfall(level, packet.site(), level.getGameTime() + 35) : null;
+        });
+        ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> skyfall = null);
         HudElementRegistry.addLast(InfinityGauntlet.id("quest_compass"), (graphics, delta) -> render(graphics));
     }
 
@@ -38,11 +53,27 @@ final class QuestCompassHud {
                 || mc.screen instanceof AbilityWheelScreen) return;
 
         Target target = selectTarget(player);
-        if (target == null) return;
+        int y = 25;
+        if (target != null && target.distanceFrom(player) > ARRIVAL_RADIUS) {
+            renderTarget(graphics, mc, player, target, y, ACCENT);
+            y += 24;
+        }
 
+        Skyfall current = skyfall;
+        if (current == null) return;
+        if (current.level != mc.level || mc.level.getGameTime() >= current.expires) {
+            skyfall = null;
+            return;
+        }
+        if (player.isSpectator() || player.position().distanceToSqr(current.site)
+                > StormNetwork.COMPASS_RANGE * StormNetwork.COMPASS_RANGE) return;
+        renderTarget(graphics, mc, player,
+                new Target("item.infinity_gauntlet.stormbreaker", current.site.x, current.site.z), y, STORM_ACCENT);
+    }
+
+    private static void renderTarget(GuiGraphicsExtractor graphics, Minecraft mc, LocalPlayer player,
+            Target target, int y, int accent) {
         double distance = target.distanceFrom(player);
-        if (distance <= ARRIVAL_RADIUS) return;
-
         // Minecraft yaw starts at south (+Z) and increases toward west (-X).
         double bearing = Math.atan2(player.getX() - target.x(), target.z() - player.getZ());
         float relative = (float) (bearing - Math.toRadians(player.getYRot()));
@@ -50,7 +81,6 @@ final class QuestCompassHud {
                 Component.translatable(target.nameKey()), Math.round(distance));
         int width = mc.font.width(label) + 30;
         int x = (graphics.guiWidth() - width) / 2;
-        int y = 25;
         graphics.fill(x, y, x + width, y + 20, 0xD014101F);
         graphics.text(mc.font, label, x + 24, y + 6, 0xFFF4EFFA, true);
 
@@ -58,9 +88,9 @@ final class QuestCompassHud {
         pose.pushMatrix();
         pose.translate(x + 12, y + 10);
         pose.rotate(relative);
-        graphics.fill(-1, -5, 1, 6, ACCENT);
-        graphics.fill(-2, -4, 2, -2, ACCENT);
-        graphics.fill(-4, -2, 4, 0, ACCENT);
+        graphics.fill(-1, -5, 1, 6, accent);
+        graphics.fill(-2, -4, 2, -2, accent);
+        graphics.fill(-4, -2, 4, 0, accent);
         pose.popMatrix();
     }
 
