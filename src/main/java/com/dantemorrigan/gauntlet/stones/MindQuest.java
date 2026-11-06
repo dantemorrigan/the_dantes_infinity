@@ -30,7 +30,7 @@ import net.minecraft.world.Difficulty;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.ExperienceOrb;
-import net.minecraft.world.entity.item.ItemEntity;
+
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.levelgen.Heightmap;
@@ -39,7 +39,9 @@ import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 /** The Ruined City releases its Mind Stone once per world, after Loki's defeat. */
@@ -50,10 +52,11 @@ public final class MindQuest {
 
 	private record Arrival(Vec3 portal, float yaw, long startTick) {}
 
-	private record Reward(Vec3 position, long revealTick) {
+	private record Reward(Vec3 position, long revealTick, Optional<UUID> recipient) {
 		static final Codec<Reward> CODEC = RecordCodecBuilder.create(i -> i.group(
 				Vec3.CODEC.fieldOf("position").forGetter(Reward::position),
-				Codec.LONG.fieldOf("reveal_tick").forGetter(Reward::revealTick)
+				Codec.LONG.fieldOf("reveal_tick").forGetter(Reward::revealTick),
+				UUIDUtil.CODEC.optionalFieldOf("recipient").forGetter(Reward::recipient)
 		).apply(i, Reward::new));
 	}
 
@@ -81,11 +84,12 @@ public final class MindQuest {
 	private static final AttachmentType<List<String>> ALIVE = AttachmentRegistry.<List<String>>builder()
 			.persistent(Codec.STRING.listOf()).buildAndRegister(InfinityGauntlet.id("mind_zombies_alive"));
 	private static Arrival arrival;
+	private static Reward displayedReward;
 
 	public static void init() {
 		LokiFx.init();
 		MindArena.init();
-		ServerLifecycleEvents.SERVER_STOPPED.register(s -> arrival = null);
+		ServerLifecycleEvents.SERVER_STOPPED.register(s -> { arrival = null; displayedReward = null; });
 		ServerTickEvents.END_SERVER_TICK.register(MindQuest::tick);
 		ServerEntityEvents.ENTITY_LOAD.register((entity, level) -> {
 			if (entity instanceof MindZombie zombie && (!MindArena.active(level.getServer())
@@ -307,7 +311,7 @@ public final class MindQuest {
 		BlockPos city = MindCity.site(level.getServer());
 		if (!MindArena.inside(city, at)) at = MindCity.plazaStand(city);
 		if (!StoneRegistry.released(level.getServer(), Stone.MIND) && level.getAttached(REWARD) == null) {
-			level.setAttached(REWARD, new Reward(at, level.getGameTime() + REWARD_TICKS));
+			level.setAttached(REWARD, new Reward(at, level.getGameTime() + REWARD_TICKS, Optional.empty()));
 			LokiFx.send(level, LokiFx.Effect.ESSENCE_COLLECT, at, 0);
 			level.playSound(null, BlockPos.containing(at), SoundEvents.AMETHYST_BLOCK_RESONATE, SoundSource.HOSTILE, 2.1f, 1.05f);
 		}
@@ -318,36 +322,44 @@ public final class MindQuest {
 	}
 
 	private static void revealReward(ServerLevel level, Reward reward) {
-		Vec3 at = reward.position();
-		BlockPos pos = BlockPos.containing(at);
-		if (level.getGameTime() < reward.revealTick() || !level.isPositionEntityTicking(pos)) return;
+		if (level.getGameTime() < reward.revealTick()) return;
 		MinecraftServer server = level.getServer();
-		ItemStack rewardStack = new ItemStack(ModItems.MIND_STONE);
-		if (MindArena.active(server)) {
-			ServerPlayer recipient = level.players().stream().filter(MindArena::fighter)
-					.min(java.util.Comparator.comparingDouble(player -> player.distanceToSqr(at))).orElse(null);
+		ServerPlayer recipient = reward.recipient().map(server.getPlayerList()::getPlayer).orElse(null);
+		if (reward != displayedReward || !rewardEligible(level, recipient)) {
+			recipient = level.players().stream().filter(player -> rewardEligible(level, player))
+					.min(Comparator.comparingDouble(player -> player.distanceToSqr(reward.position()))).orElse(null);
 			if (recipient == null) return;
-			if (!recipient.getInventory().add(rewardStack)) {
-				ItemStack held = recipient.getMainHandItem();
-				recipient.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, rewardStack);
-				if (!held.isEmpty()) OrbItem.giveIntoBackpack(recipient, held);
-			}
-			MindArena.open(server);
-		} else {
-			ItemEntity stone = new ItemEntity(level, at.x, at.y + 0.45, at.z, rewardStack, 0, 0.16, 0);
-			stone.setDefaultPickUpDelay();
-			stone.setUnlimitedLifetime();
-			stone.setInvulnerable(true);
-			if (!level.addFreshEntity(stone)) return;
+			Vec3 eye = recipient.getEyePosition();
+			Vec3 front = eye.add(recipient.getLookAngle().scale(2.3));
+			var hit = level.clip(new ClipContext(eye, front, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, recipient));
+			if (hit.getType() != HitResult.Type.MISS) front = eye.lerp(hit.getLocation(), .7);
+			displayedReward = new Reward(reward.position(), level.getGameTime() + LokiFx.Effect.MIND_STONE_REVEAL.ticks,
+					Optional.of(recipient.getUUID()));
+			level.setAttached(REWARD, displayedReward);
+			LokiFx.reward(level, front, recipient);
+			level.playSound(null, recipient.blockPosition(), SoundEvents.BEACON_POWER_SELECT, SoundSource.PLAYERS, 1.4f, 1.35f);
+			return;
+		}
+
+		ItemStack rewardStack = new ItemStack(ModItems.MIND_STONE);
+		if (!recipient.getInventory().add(rewardStack)) {
+			ItemStack held = recipient.getMainHandItem();
+			recipient.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, rewardStack);
+			if (!held.isEmpty()) OrbItem.giveIntoBackpack(recipient, held);
 		}
 		StoneRegistry.markReleased(server, Stone.MIND);
 		level.removeAttached(REWARD);
-		LokiFx.send(level, LokiFx.Effect.MIND_STONE_REVEAL, at, 0);
-		level.playSound(null, pos, ModSounds.STONE_INSERT, SoundSource.PLAYERS, 2.2f, 1.0f);
-		level.playSound(null, pos, SoundEvents.BEACON_POWER_SELECT, SoundSource.PLAYERS, 2.0f, 1.3f);
+		displayedReward = null;
+		MindArena.open(server);
+		level.playSound(null, recipient.blockPosition(), ModSounds.STONE_INSERT, SoundSource.PLAYERS, 2.2f, 1);
 		for (ServerPlayer player : level.players()) {
-			if (player.distanceToSqr(at) < 48 * 48) ModStatus.send(player, Component.translatable("msg.infinity_gauntlet.mind_quest.completed"));
+			if (player.distanceToSqr(reward.position()) < 48 * 48) ModStatus.send(player, Component.translatable("msg.infinity_gauntlet.mind_quest.completed"));
 		}
+	}
+
+	private static boolean rewardEligible(ServerLevel level, ServerPlayer player) {
+		return player != null && player.level() == level && player.isAlive() && !player.isSpectator()
+				&& (!MindArena.active(level.getServer()) || MindArena.fighter(player));
 	}
 
 	/** Ensures the remaining undefeated Mind Zombies exist: only those lost without being defeated are ever replaced. */

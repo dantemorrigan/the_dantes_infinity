@@ -27,6 +27,7 @@ public final class ModSounds {
 	public static final SoundEvent THANOS_YOU_WILL_DIE = register("thanos.you_will_die");
 	public static final SoundEvent THANOS_DEFEAT_1 = register("thanos.defeat_1");
 	public static final SoundEvent THANOS_DEFEAT_2 = register("thanos.defeat_2");
+	public static final SoundEvent LOKI_MUSIC = register("loki.battle_music");
 	public static final SoundEvent THANOS_MUSIC = register("thanos.battle_music");
 
 	private static SoundEvent register(String name) {

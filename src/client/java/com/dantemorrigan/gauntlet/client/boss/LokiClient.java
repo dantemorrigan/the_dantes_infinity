@@ -2,6 +2,9 @@ package com.dantemorrigan.gauntlet.client.boss;
 
 import com.dantemorrigan.gauntlet.GauntletConfig;
 import com.dantemorrigan.gauntlet.InfinityGauntlet;
+import com.dantemorrigan.gauntlet.ModItems;
+import com.dantemorrigan.gauntlet.ModSounds;
+import com.dantemorrigan.gauntlet.boss.Loki;
 import com.dantemorrigan.gauntlet.boss.LokiFx;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
@@ -14,6 +17,9 @@ import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.rendertype.RenderTypes;
+import net.minecraft.client.renderer.item.ItemStackRenderState;
+import net.minecraft.world.item.ItemDisplayContext;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.ARGB;
@@ -34,6 +40,7 @@ public final class LokiClient {
 	private static final Map<LokiFx.Effect, Identifier> TEXTURES = new EnumMap<>(LokiFx.Effect.class);
 	private static ClientLevel level;
 	private static long ticks;
+	private static ThanosClient.Music music;
 
 	private record Cue(LokiFx fx, long start) {
 		float age(float partial) { return ticks - start + partial; }
@@ -51,6 +58,7 @@ public final class LokiClient {
 			setLevel(mc.level);
 			ticks++;
 			CUES.removeIf(c -> c.age(0) >= c.fx.effect().ticks);
+			tickMusic(mc);
 		});
 		LevelRenderEvents.COLLECT_SUBMITS.register(LokiClient::render);
 		HudElementRegistry.addLast(InfinityGauntlet.id("loki_gold_light"), (graphics, delta) -> {
@@ -65,6 +73,31 @@ public final class LokiClient {
 		if (next == level) return;
 		level = next;
 		CUES.clear();
+		if (music != null) music.halt();
+		music = null;
+	}
+
+	private static void tickMusic(Minecraft mc) {
+		boolean fight = false;
+		if (mc.player != null && mc.player.isAlive() && !mc.player.isSpectator() && level != null
+				&& !ThanosClient.musicPlaying()) {
+			for (var entity : level.entitiesForRendering()) {
+				if (entity instanceof Loki loki && loki.isAlive() && !loki.isIllusion()
+						&& mc.player.distanceToSqr(loki) < 50 * 50) {
+					fight = true;
+					break;
+				}
+			}
+		}
+		if (music != null && music.isStopped()) music = null;
+		if (fight && music == null) {
+			music = new ThanosClient.Music(ModSounds.LOKI_MUSIC);
+			mc.getSoundManager().play(music);
+		}
+		if (music != null) {
+			if (fight) mc.getMusicManager().stopPlaying();
+			else music.fadeOut(40);
+		}
 	}
 
 	public static float goldTint(Vec3 camera, float partial) {
@@ -97,9 +130,19 @@ public final class LokiClient {
 			if (effect == LokiFx.Effect.GOLD_WORLD_WASH) fade *= GauntletConfig.get().flashIntensity;
 			int color = ARGB.color((int) (255 * Mth.clamp(fade, 0, 1)), 255, 255, 255);
 			Vec3 origin = fx.position().subtract(camera);
+			if (effect == LokiFx.Effect.WARD) {
+				if (!(level.getEntity(fx.recipient()) instanceof Loki loki) || !loki.isAlive() || loki.isEnraged()) continue;
+				origin = loki.getPosition(partial).subtract(camera);
+			}
+			if (effect == LokiFx.Effect.MIND_STONE_REVEAL) {
+				renderStone(ctx, mc, pose, fx, camera, age);
+			}
 			pose.pushPose();
 			pose.translate(origin.x, origin.y + effect.yOffset, origin.z);
-			if (effect == LokiFx.Effect.PORTAL_OPEN || effect == LokiFx.Effect.PORTAL_LOOP || effect == LokiFx.Effect.DAGGER_SLASH) {
+			if (effect == LokiFx.Effect.ROAR_WARN || effect == LokiFx.Effect.ROAR || effect == LokiFx.Effect.PAW_WARN) {
+				pose.mulPose(Axis.YP.rotationDegrees(-fx.yaw() + 180));
+				pose.mulPose(Axis.XP.rotationDegrees(90));
+			} else if (effect == LokiFx.Effect.PORTAL_OPEN || effect == LokiFx.Effect.PORTAL_LOOP || effect == LokiFx.Effect.DAGGER_SLASH) {
 				pose.mulPose(Axis.YP.rotationDegrees(-fx.yaw()));
 			} else {
 				pose.mulPose(mc.gameRenderer.getMainCamera().rotation());
@@ -113,6 +156,25 @@ public final class LokiClient {
 			});
 			pose.popPose();
 		}
+	}
+
+	private static void renderStone(LevelRenderContext ctx, Minecraft mc, PoseStack pose, LokiFx fx, Vec3 camera, float age) {
+		if (age < 7) return;
+		var recipient = level.getEntity(fx.recipient());
+		float travel = Mth.clamp((age - 35) / 17f, 0, 1);
+		Vec3 origin = fx.position().add(0, Mth.sin(age * .18f) * .09f, 0);
+		if (recipient != null) origin = origin.lerp(recipient.position().add(0, 1.15, 0), travel * travel);
+		origin = origin.subtract(camera);
+		float size = .95f * Mth.clamp((age - 7) / 17f, 0, 1) * (1 - .8f * travel);
+		ItemStackRenderState state = new ItemStackRenderState();
+		mc.getItemModelResolver().updateForTopItem(state, new ItemStack(ModItems.MIND_STONE), ItemDisplayContext.FIXED, level, null, 0);
+		pose.pushPose();
+		pose.translate(origin.x, origin.y, origin.z);
+		pose.mulPose(Axis.YP.rotationDegrees(age * 7));
+		pose.mulPose(Axis.ZP.rotationDegrees(12));
+		pose.scale(size, size, size);
+		state.submit(pose, ctx.submitNodeCollector(), LightCoordsUtil.FULL_BRIGHT, OverlayTexture.NO_OVERLAY, 0);
+		pose.popPose();
 	}
 
 	private static void vertex(VertexConsumer out, PoseStack.Pose pose, float x, float y, float u, float v, int color) {

@@ -909,6 +909,11 @@ public final class Stormbreaker {
         sound(p.level(), p.position(), SoundEvents.TRIDENT_RIPTIDE_3.value(), 1, .9f);
     }
 
+    public static boolean isFlying(ServerPlayer p) {
+        Session session = SESSIONS.get(server(p));
+        return session != null && session.flying && guarded(p);
+    }
+
     public static void releaseFlight(ServerPlayer p) {
         stopFlight(p, SESSIONS.get(server(p)));
     }

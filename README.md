@@ -59,8 +59,8 @@ Requirements: **Java 25**. Build: `./gradlew build` → `build/libs/infinity_gau
 ## Finding the Mind Stone
 - Across villages, ruins, temples, dungeons, mineshafts, and from cartographers and wandering traders, you can find the **Map to the Ruined City** (right-click to unroll). It marks the single **Ruined City** in the world.
 - Entering the city seals the arena and spawns **10 Mind Zombies**. The barrier blocks escape by teleporting, flying or digging. Environmental damage cannot advance the fight.
-- After the **10th Mind Zombie** falls, golden light washes over the city and a portal opens. **Loki** steps out, teleports around the ruins and lunges with his daggers. Each illusion breaks in one hit. Below 45% health, Loki moves faster, teleports more often and summons up to three copies at a time.
-- **Arrows, explosions and Infinity Stone attacks** deal extra damage to Loki. After the fight, the closest participant receives the **Mind Stone**, the barrier opens, and **650 XP** drops where Loki fell.
+- After the **10th Mind Zombie** falls, golden light washes over the city and **Loki** steps through a portal. He uses protective wards, daggers and ranged spells that can ground Stormbreaker and Gauntlet flyers. Illusions break in one hit. At 45% health he becomes **Fenrir**, who bites, strikes with his paws and stuns with a roar.
+- **Arrows, explosions and Infinity Stone attacks** are especially effective. After victory the **Mind Stone** forms in front of the closest participant and flies into their inventory. The barrier opens once they receive it, and **650 XP** drops where Loki fell.
 - Advancements: **Nice Try, Loki** for shattering an illusion and **God of Mischief** for defeating Loki. Debug: `/gauntlet mind_quest city_here | locate | map | summon`. Smoke test: `-PonlyTest=MindQuestTest`.
 
 ## Final boss: Thanos

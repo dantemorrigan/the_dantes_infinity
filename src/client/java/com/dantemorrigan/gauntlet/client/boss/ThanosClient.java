@@ -205,7 +205,7 @@ public final class ThanosClient {
 				if (!playing && !starting) {
 					// Not playing: never started, or the engine dropped it (a dimension change stops every sound). Start over.
 					if (music != null) music.halt();
-					music = new Music();
+					music = new Music(ModSounds.THANOS_MUSIC);
 					music.created = ticks;
 					var result = mc.getSoundManager().play(music);
 					InfinityGauntlet.LOGGER.info("Thanos battle theme: {}", result);
@@ -765,15 +765,15 @@ public final class ThanosClient {
 	// ------------------------------------------------------------------ music
 
 	/** The battle theme: not loud, steady, looping; fades in, and out when asked. */
-	private static final class Music extends AbstractTickableSoundInstance {
+	static final class Music extends AbstractTickableSoundInstance {
 		private static final float LEVEL = 0.42f;
 		private float step = LEVEL / 40f;
 		private boolean out;
 		/** Client tick when it was created (the sound engine only ticks it once it really plays). */
 		long created;
 
-		Music() {
-			super(ModSounds.THANOS_MUSIC, SoundSource.RECORDS, SoundInstance.createUnseededRandom());
+		Music(net.minecraft.sounds.SoundEvent sound) {
+			super(sound, SoundSource.RECORDS, SoundInstance.createUnseededRandom());
 			this.looping = true;
 			this.delay = 0;
 			this.volume = 0.001f;

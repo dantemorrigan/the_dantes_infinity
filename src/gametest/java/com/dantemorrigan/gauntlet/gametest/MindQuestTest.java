@@ -26,7 +26,7 @@ import net.minecraft.world.phys.Vec3;
 
 import java.util.List;
 
-/** Smoke: Ruined City built, map unrolled, 10 sun-immune Mind Zombies, Loki’s portal and rage, illusions, both advancements, and a single Mind Stone reward. */
+/** Smoke: Ruined City built, map unrolled, 10 sun-immune Mind Zombies, Loki’s portal and Fenrir transformation, illusions, both advancements, and a single Mind Stone reward. */
 public class MindQuestTest implements FabricClientGameTest {
 	private static net.minecraft.server.level.ServerPlayer player(net.minecraft.server.MinecraftServer s) {
 		return s.getPlayerList().getPlayers().getFirst();
@@ -176,13 +176,23 @@ public class MindQuestTest implements FabricClientGameTest {
 				boss.invulnerableTime = 0;
 				GauntletDamage.hurt(level, boss, p, melee, 5);
 				if (max - boss.getHealth() <= meleeDamage) throw new AssertionError("Infinity Stone powers did not deal extra damage to Loki");
+				Vec3 plaza = MindCity.plazaStand(site);
+				boss.setPos(plaza);
+				p.teleportTo(plaza.x, plaza.y + 1, plaza.z + 8);
 				boss.setHealth(max * 0.4f);
 			});
 			server.runCommand("gamemode survival @p");
-			ctx.waitTicks(22);
+			for (int i = 0; i < 120; i += 4) {
+				if (server.computeOnServer(s -> player(s).hasEffect(net.minecraft.world.effect.MobEffects.SLOWNESS))) break;
+				ctx.waitTicks(4);
+			}
 			server.runOnServer(s -> {
 				Loki boss = (Loki) s.overworld().getEntity(bossId);
-				if (!boss.isEnraged()) throw new AssertionError("Loki did not enter rage");
+				if (!boss.isEnraged() || boss.getBbHeight() < 3.5f) throw new AssertionError("Loki did not become a giant Fenrir");
+				var p = player(s);
+				if (!p.hasEffect(net.minecraft.world.effect.MobEffects.SLOWNESS)) throw new AssertionError("Fenrir’s roar did not stun the fighter");
+				p.removeEffect(net.minecraft.world.effect.MobEffects.BLINDNESS);
+				p.lookAt(net.minecraft.commands.arguments.EntityAnchorArgument.Anchor.EYES, boss.getEyePosition());
 				var copies = s.overworld().getEntitiesOfClass(Loki.class, city, e -> e.isAlive() && e.isIllusion());
 				if (copies.isEmpty()) throw new AssertionError("Enraged Loki did not summon an illusion");
 				Loki copy = copies.getFirst();
@@ -208,8 +218,14 @@ public class MindQuestTest implements FabricClientGameTest {
 					throw new AssertionError("Loki did not drop high-value XP orbs");
 				}
 			});
-			ctx.waitTicks(34);
+			ctx.waitTicks(35);
 			ctx.takeScreenshot("loki_reward");
+			server.runOnServer(s -> {
+				if (StoneRegistry.released(s, Stone.MIND) || player(s).getInventory().countItem(ModItems.MIND_STONE) != 0) {
+					throw new AssertionError("The stone was awarded before its reveal animation finished");
+				}
+			});
+			for (int i = 0; i < 100 && !server.computeOnServer(s -> StoneRegistry.released(s, Stone.MIND)); i += 4) ctx.waitTicks(4);
 			server.runOnServer(s -> {
 				if (!StoneRegistry.released(s, Stone.MIND)) throw new AssertionError("Defeating Loki did not release the Mind Stone");
 				var stones = s.overworld().getEntitiesOfClass(ItemEntity.class, city, item -> item.getItem().is(ModItems.MIND_STONE));
@@ -236,7 +252,16 @@ public class MindQuestTest implements FabricClientGameTest {
 				if (bosses.size() != 1) throw new AssertionError("Reset did not bring back one city Loki");
 				Loki replay = bosses.getFirst();
 				replay.hurtServer(level, level.damageSources().playerAttack(player(s)), 1000f);
-				if (replay.isAlive()) throw new AssertionError("City replay could not be defeated");
+				if (!replay.isAlive()) throw new AssertionError("A hit skipped the Fenrir phase");
+				replay.setHealth(replay.getMaxHealth() * .4f);
+			});
+			ctx.waitTicks(42);
+			server.runOnServer(s -> {
+				var level = s.overworld();
+				Loki replay = level.getEntitiesOfClass(Loki.class, city, e -> e.isAlive() && !e.isIllusion()).getFirst();
+				replay.invulnerableTime = 0;
+				replay.hurtServer(level, level.damageSources().playerAttack(player(s)), 1000f);
+				if (replay.isAlive()) throw new AssertionError("City replay could not be defeated in the Fenrir phase");
 			});
 			ctx.waitTicks(75);
 			server.runOnServer(s -> {

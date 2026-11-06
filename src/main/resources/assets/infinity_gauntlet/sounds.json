@@ -115,5 +115,13 @@
         "stream": true
       }
     ]
+  },
+  "loki.battle_music": {
+    "sounds": [
+      {
+        "name": "infinity_gauntlet:loki/the_god_of_deception",
+        "stream": true
+      }
+    ]
   }
 }

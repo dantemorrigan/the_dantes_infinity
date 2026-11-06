@@ -31,7 +31,7 @@ public final class ModEntities {
 
 	private static final ResourceKey<EntityType<?>> LOKI_KEY = ResourceKey.create(Registries.ENTITY_TYPE, InfinityGauntlet.id("loki"));
 	public static final EntityType<Loki> LOKI = Registry.register(BuiltInRegistries.ENTITY_TYPE, LOKI_KEY,
-			EntityType.Builder.of(Loki::new, MobCategory.MONSTER).sized(0.84f, 2.55f).eyeHeight(1.8f)
+			EntityType.Builder.of(Loki::new, MobCategory.MONSTER).sized(0.72f, 2.25f).eyeHeight(1.88f)
 					.clientTrackingRange(10).updateInterval(2).noLootTable().build(LOKI_KEY));
 
 	private static final ResourceKey<EntityType<?>> THANOS_KEY = ResourceKey.create(Registries.ENTITY_TYPE, InfinityGauntlet.id("thanos"));
