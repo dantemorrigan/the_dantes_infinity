@@ -38,7 +38,6 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
-import net.minecraft.world.attribute.EnvironmentAttributes;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.damagesource.DamageType;
 import net.minecraft.world.entity.Entity;
@@ -906,12 +905,9 @@ public final class Stormbreaker {
                 }
                 if (s.pull != null) { tickPull(server, s, level, now); return; }
                 if (now % 14 == 0) StormFx.EMBEDDED_IDLE.play(level, relic.position.add(.18, .65, 0), 2.5);
-                if (now % 50 == 0) {
+                if (s.display != null && s.display.phase() == StormbreakerEntity.EMBEDDED && now % 50 == 0) {
                     Vec3 socket = relic.position.add(0, .35, 0);
-                    double clouds = level.environmentAttributes().getDimensionValue(EnvironmentAttributes.CLOUD_HEIGHT);
-                    double height = level.dimensionType().hasSkyLight() ? Math.max(40, clouds + 8 - socket.y) : 20;
-                    StormFx.WRATH_BOLT.play(level, socket, height / StormFx.WRATH_BOLT.pivotY);
-                    StormFx.LIGHTNING_HIT.play(level, socket, 10);
+                    StormFx.WRATH_BOLT.play(level, socket, 20);
                     StormFx.RECLAIM.play(level, socket, 2.8);
                     sound(level, socket, SoundEvents.LIGHTNING_BOLT_IMPACT, .85f, 1.14f);
                 }

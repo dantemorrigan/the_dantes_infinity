@@ -6,6 +6,7 @@ import com.dantemorrigan.gauntlet.InfinityGauntlet;
 import com.dantemorrigan.gauntlet.ModEntities;
 import com.dantemorrigan.gauntlet.ModParticles;
 import com.dantemorrigan.gauntlet.Stone;
+import com.dantemorrigan.gauntlet.stormbreaker.Stormbreaker;
 import com.dantemorrigan.gauntlet.uru.UruArmor;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.BlockParticleOption;
@@ -53,8 +54,8 @@ import java.util.UUID;
  * high leap that ends in a ground slam, and a boomerang sword throw. Below half health he is enraged (faster, shorter
  * pauses). Defeat: he falls to one knee, speaks, and turns to dust; then he leaves his empty gauntlet and experience.
  *
- * <p>He shrugs off ordinary weapons and takes heavy damage only from explosions, diamond / netherite swords and the
- * stones used bare in the hand. His blows ignore most of ordinary armor; only a full Uru set really holds them.
+ * <p>He shrugs off ordinary weapons, while Stormbreaker, diamond and netherite swords, explosions and Infinity Stones
+ * can deal meaningful damage. His blows ignore most of ordinary armor; only a full Uru set really holds them.
  */
 public class Thanos extends Monster {
 	public static final ResourceKey<DamageType> DAMAGE = ResourceKey.create(Registries.DAMAGE_TYPE, InfinityGauntlet.id("thanos"));
@@ -249,7 +250,7 @@ public class Thanos extends Monster {
 			case A_BACKHAND -> tickBackhand(level, target, cfg);
 			case A_THROW -> tickThrow(level, target);
 			case A_LEAP -> tickLeap(level, target);
-			case A_SLAM -> { if (actionTicks >= 16) setAction(A_IDLE); }
+			case A_SLAM -> { if (actionTicks >= 22) setAction(A_IDLE); }
 			case A_STAGGER -> { if (actionTicks >= 12) setAction(A_IDLE); }
 			case A_ROAR -> { this.getNavigation().stop(); if (actionTicks >= 36) setAction(A_IDLE); }
 			default -> tickChase(level, target, enraged);
@@ -293,7 +294,7 @@ public class Thanos extends Monster {
 		unreachableTicks = (stuck || Math.abs(dy) > 3.5 || !target.onGround() && dy > 2) ? unreachableTicks + 1 : Math.max(0, unreachableTicks - 2);
 
 		if (cooldown <= 0) {
-			int pause = enraged ? 10 : 18;
+			int pause = enraged ? 14 : 22;
 			if (d <= 3.6) {
 				if (swordHome && this.random.nextFloat() < 0.62f) { setAction(A_SWING); cooldown = pause; return; }
 				setAction(A_BACKHAND);
@@ -338,8 +339,8 @@ public class Thanos extends Monster {
 				}
 			}
 		}
-		if (actionTicks >= 21) {
-			// Enraged: sometimes a second swing straight away.
+		if (actionTicks >= 25) {
+			// Even an enraged follow-up leaves a brief opening after the first swing.
 			if (flag(FLAG_ENRAGED) && this.random.nextFloat() < 0.4f && this.distanceTo(target) < 4.0) setAction(A_SWING);
 			else setAction(A_IDLE);
 		}
@@ -357,7 +358,7 @@ public class Thanos extends Monster {
 				}
 			}
 		}
-		if (actionTicks >= 16) setAction(A_IDLE);
+		if (actionTicks >= 20) setAction(A_IDLE);
 	}
 
 	private void tickThrow(ServerLevel level, ServerPlayer target) {
@@ -536,8 +537,11 @@ public class Thanos extends Monster {
 				|| source.is(DamageTypes.SWEET_BERRY_BUSH) || source.is(DamageTypes.HOT_FLOOR) || source.is(DamageTypes.WITHER)) {
 			return false;
 		}
-		float scaled = rawDamage ? amount : amount * takenMultiplier(source);
-		if (!rawDamage && amount >= 1000f) scaled = Math.min(scaled, looseStone(source) ? 90f : 60f);
+		boolean stormbreaker = source.is(Stormbreaker.DAMAGE);
+		float scaled = rawDamage || stormbreaker ? amount : amount * takenMultiplier(source);
+		if (!rawDamage && !stormbreaker && amount >= 1000f) scaled = Math.min(scaled, looseStone(source) ? 90f : 60f);
+		// The axe already limits hits per swing, wave and throw leg. Let each distinct hit land on the Titan.
+		if (stormbreaker) this.invulnerableTime = 0;
 		boolean hurt = super.hurtServer(level, source, scaled);
 		if (hurt) {
 			Vec3 p = this.position().add(0, 1.6, 0);

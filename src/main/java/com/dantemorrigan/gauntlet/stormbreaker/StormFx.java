@@ -53,9 +53,12 @@ public enum StormFx {
     }
 
     public void play(ServerLevel level, Vec3 at, double size, Vec3 direction) {
+        if (this == WRATH_BOLT || this == LIGHTNING_HIT) {
+            StormNetwork.visual(level, 0, this == WRATH_BOLT ? "sky_bolt_heavy" : "sky_bolt", 0, at);
+            return;
+        }
         Vec3 parameters = direction.normalize().scale(size);
-        boolean longRange = this == WRATH_BOLT || this == LIGHTNING_HIT;
-        level.sendParticles(particle, longRange, false, at.x, at.y, at.z, 0, parameters.x, parameters.y, parameters.z, 1);
+        level.sendParticles(particle, false, false, at.x, at.y, at.z, 0, parameters.x, parameters.y, parameters.z, 1);
     }
 
     static void init() {}

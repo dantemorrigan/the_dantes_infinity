@@ -50,8 +50,12 @@ public final class StormNetwork {
     }
 
     static void visual(ServerPlayer owner, String clip, int elapsed, Vec3 origin) {
-        var payload = new Visual(owner.getId(), clip, elapsed, origin);
-        for (ServerPlayer viewer : PlayerLookup.around(owner.level(), origin, 110)) {
+        visual(owner.level(), owner.getId(), clip, elapsed, origin);
+    }
+
+    static void visual(ServerLevel level, int entity, String clip, int elapsed, Vec3 origin) {
+        var payload = new Visual(entity, clip, elapsed, origin);
+        for (ServerPlayer viewer : PlayerLookup.around(level, origin, 110)) {
             if (ServerPlayNetworking.canSend(viewer, Visual.TYPE)) ServerPlayNetworking.send(viewer, payload);
         }
     }

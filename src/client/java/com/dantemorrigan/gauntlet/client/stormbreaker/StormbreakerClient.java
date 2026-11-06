@@ -16,6 +16,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.mojang.blaze3d.platform.InputConstants;
 import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.event.client.player.ClientPreAttackCallback;
@@ -25,20 +26,27 @@ import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.client.particle.v1.ParticleProviderRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
+import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext;
+import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.RenderPipelines;
+import net.minecraft.client.renderer.rendertype.RenderTypes;
+import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.util.ARGB;
+import net.minecraft.util.LightCoordsUtil;
 import net.minecraft.util.Mth;
-
+import net.minecraft.world.attribute.EnvironmentAttributes;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Vector3f;
 import org.lwjgl.glfw.GLFW;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public final class StormbreakerClient {
@@ -52,15 +60,18 @@ public final class StormbreakerClient {
     private static boolean primaryActive, flightDown, recallDown;
     private static JsonObject clips;
     private static Storm storm;
+    private static final List<SkyBolt> SKY_BOLTS = new ArrayList<>();
 
     private record Animation(String clip, long start, int length) {}
     private record Storm(int owner, Vec3 center, long start) {}
+    private record SkyBolt(Vec3 socket, long start, boolean heavy) {}
     public record Pose(Vec3 rotation, Vec3 translation) {}
 
     public static void init() {
         EntityRendererRegistry.register(ModEntities.STORMBREAKER, StormbreakerRenderer::new);
         for (StormFx fx : StormFx.values()) register(fx);
         ClientPlayNetworking.registerGlobalReceiver(StormNetwork.Visual.TYPE, (packet, context) -> receive(packet));
+        LevelRenderEvents.COLLECT_SUBMITS.register(StormbreakerClient::drawSkyBolt);
         ClientPlayConnectionEvents.DISCONNECT.register((handler, mc) -> reset(null));
         ClientPreAttackCallback.EVENT.register((mc, player, clicks) -> {
             if (!canUse(mc) || !player.getMainHandItem().is(ModItems.STORMBREAKER)) return false;
@@ -115,6 +126,7 @@ public final class StormbreakerClient {
     private static void reset(ClientLevel next) {
         level = next;
         storm = null;
+        SKY_BOLTS.clear();
         primaryActive = false;
         flightDown = FLIGHT.isDown();
         recallDown = RECALL.isDown();
@@ -129,6 +141,7 @@ public final class StormbreakerClient {
         long now = level.getGameTime();
         ANIMATIONS.values().removeIf(a -> now - a.start > a.length);
         if (storm != null && now - storm.start > 113) storm = null;
+        SKY_BOLTS.removeIf(bolt -> now - bolt.start >= StormFx.WRATH_BOLT.frames);
         boolean controls = canUse(mc);
         boolean held = controls && mc.player.getMainHandItem().is(ModItems.STORMBREAKER);
         if (consume(THROW) && held) send(StormNetwork.THROW);
@@ -168,6 +181,10 @@ public final class StormbreakerClient {
         if (mc.level == null) return;
         if (level != mc.level) reset(mc.level);
         long start = level.getGameTime() - packet.elapsed();
+        if ("sky_bolt".equals(packet.clip()) || "sky_bolt_heavy".equals(packet.clip())) {
+            SKY_BOLTS.add(new SkyBolt(packet.origin(), start, "sky_bolt_heavy".equals(packet.clip())));
+            return;
+        }
         if ("stop".equals(packet.clip())) {
             if (storm != null && storm.owner == packet.entity()) storm = null;
             ANIMATIONS.remove(packet.entity());
@@ -194,6 +211,55 @@ public final class StormbreakerClient {
                 default -> { }
             }
         }
+    }
+
+    private static void drawSkyBolt(LevelRenderContext context) {
+        if (level == null || SKY_BOLTS.isEmpty()) return;
+        var camera = Minecraft.getInstance().gameRenderer.getMainCamera();
+        Vector3f right = new Vector3f(1, 0, 0).rotate(camera.rotation());
+        Vec3 across = new Vec3(right.x(), 0, right.z()).normalize();
+        float clouds = level.environmentAttributes().getDimensionValue(EnvironmentAttributes.CLOUD_HEIGHT);
+        long now = level.getGameTime();
+        for (SkyBolt bolt : SKY_BOLTS) {
+            int frame = (int) (now - bolt.start);
+            if (frame >= 0 && frame < StormFx.WRATH_BOLT.frames) {
+                drawSkyBolt(context, bolt, frame, camera.position(), across, clouds);
+            }
+        }
+    }
+
+    private static void drawSkyBolt(LevelRenderContext context, SkyBolt bolt, int frame, Vec3 camera,
+                                    Vec3 across, float clouds) {
+        Vec3 foot = bolt.socket.subtract(camera);
+        Vec3 side = across.scale(bolt.heavy ? 8 : 4);
+        // Fade the last stretch well above the clouds, including when clouds are turned off.
+        double fadeY = Float.isFinite(clouds) ? Math.max(88, clouds + 20 - bolt.socket.y) : 88;
+        double height = fadeY + 100;
+        Vec3 middle = foot.add(0, fadeY, 0);
+        Vec3 top = foot.add(0, height, 0);
+        float u0 = (frame % 4 + .5f / 256) / 4;
+        float u1 = u0 + (1f - 1f / 256) / 4;
+        float vTop = (frame / 4 + .5f / 256) / 3;
+        float vFoot = (frame / 4 + StormFx.WRATH_BOLT.pivotY) / 3;
+        float vMiddle = Mth.lerp((float) (fadeY / height), vFoot, vTop);
+        var texture = InfinityGauntlet.id("textures/particle/stormbreaker/wrath_bolt.png");
+        context.submitNodeCollector().submitCustomGeometry(context.poseStack(), RenderTypes.entityTranslucentEmissive(texture), (pose, out) -> {
+            boltQuad(out, pose, foot, middle, side, u0, u1, vFoot, vMiddle, 0xFFFFFFFF);
+            boltQuad(out, pose, middle, top, side, u0, u1, vMiddle, vTop, 0x00FFFFFF);
+        });
+    }
+
+    private static void boltQuad(VertexConsumer out, PoseStack.Pose pose, Vec3 from, Vec3 to, Vec3 side,
+                                 float u0, float u1, float v0, float v1, int topColor) {
+        boltVertex(out, pose, from.subtract(side), u0, v0, 0xFFFFFFFF);
+        boltVertex(out, pose, from.add(side), u1, v0, 0xFFFFFFFF);
+        boltVertex(out, pose, to.add(side), u1, v1, topColor);
+        boltVertex(out, pose, to.subtract(side), u0, v1, topColor);
+    }
+
+    private static void boltVertex(VertexConsumer out, PoseStack.Pose pose, Vec3 at, float u, float v, int color) {
+        out.addVertex(pose, (float) at.x, (float) at.y, (float) at.z).setColor(color).setUv(u, v)
+                .setOverlay(OverlayTexture.NO_OVERLAY).setLight(LightCoordsUtil.FULL_BRIGHT).setNormal(pose, 0, 1, 0);
     }
 
     private static JsonObject clip(String name) {
