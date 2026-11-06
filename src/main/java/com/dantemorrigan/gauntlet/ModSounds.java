@@ -38,6 +38,7 @@ public final class ModSounds {
 	public static final SoundEvent TRIBUNAL_SURRENDER = register("tribunal.surrender");
 	public static final SoundEvent TRIBUNAL_DEFEAT = register("tribunal.defeat");
 	public static final SoundEvent TRIBUNAL_MUSIC = register("tribunal.battle_music");
+	public static final SoundEvent DOOM_WARNING = register("doctor_doom.latveria_warning");
 
 	private static SoundEvent register(String name) {
 		Identifier id = InfinityGauntlet.id(name);

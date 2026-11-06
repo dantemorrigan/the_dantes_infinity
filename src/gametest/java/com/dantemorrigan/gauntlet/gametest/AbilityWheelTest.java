@@ -101,7 +101,7 @@ public class AbilityWheelTest implements FabricClientGameTest {
             server.runOnServer(s->{var p=s.getPlayerList().getPlayers().getFirst();if(SpaceStone.destination(GauntletState.activeGauntlet(p),p.level())!=0)throw new AssertionError("Direct portal destination failed");});
             ctx.getInput().pressKey(GLFW.GLFW_KEY_R);ctx.waitTicks(16);ctx.takeScreenshot("wheel_portal_cast");ctx.getInput().pressKey(GLFW.GLFW_KEY_R);ctx.waitTicks(8);
             // The mystery destination is the only portal selection that opens a scene immediately.
-            server.runCommand("execute as @p run tp @s 0 -60 0 0 0");
+            server.runCommand("execute as @p run tp @s 0.0 -60.0 0.0 0 0");
             choose(ctx,Ability.PORTAL,0);
             open(ctx);
             ctx.getInput().pressKey(GLFW.GLFW_KEY_RIGHT);
@@ -112,8 +112,18 @@ public class AbilityWheelTest implements FabricClientGameTest {
             ctx.takeScreenshot("latveria_mystery_destination");
             ctx.getInput().pressKey(GLFW.GLFW_KEY_ENTER);
             ctx.waitFor(mc -> mc.screen == null && AbilityInput.latveriaActive(), 100);
-            ctx.waitTicks(24);
-            ctx.takeScreenshot("latveria_doom_appears");
+            ctx.waitTicks(SpaceStone.LATVERIA_ARRIVE + 36);
+            ctx.takeScreenshot("latveria_doom_materializes");
+            server.runOnServer(s -> {
+                var player = s.getPlayerList().getPlayers().getFirst();
+                if (!SpaceStone.latveriaActive(player) || SpaceStone.latveriaSealed(player) || Math.abs(player.getZ()) > 0.05) {
+                    throw new AssertionError("Doom pushed or sealed Latveria before finishing his entrance");
+                }
+            });
+            ctx.waitTicks(SpaceStone.LATVERIA_PUSH_TICK - SpaceStone.LATVERIA_ARRIVE - 36 + 14);
+            ctx.takeScreenshot("latveria_doom_warning");
+            ctx.waitTicks(SpaceStone.LATVERIA_DEPART - SpaceStone.LATVERIA_PUSH_TICK + 4);
+            ctx.takeScreenshot("latveria_doom_dissolves");
             ctx.waitFor(mc -> AbilityInput.latveriaSealed(), 150);
             server.runOnServer(s -> {
                 var player = s.getPlayerList().getPlayers().getFirst();

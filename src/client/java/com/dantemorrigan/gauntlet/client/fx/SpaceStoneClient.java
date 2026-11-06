@@ -20,6 +20,8 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.client.renderer.texture.OverlayTexture;
+import net.minecraft.core.particles.DustParticleOptions;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.ARGB;
 import net.minecraft.util.LightCoordsUtil;
@@ -43,6 +45,8 @@ public final class SpaceStoneClient {
 			new KeyMapping("key.infinity_gauntlet.space_blink", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_UNKNOWN, ClientPower.CATEGORY));
 
 	private static final int OPEN = 8, CLOSE = 8;
+	private static final DustParticleOptions EMERALD = new DustParticleOptions(0x61c976, 1.15f);
+	private static final DustParticleOptions PALE_GOLD = new DustParticleOptions(0xe6ce8b, 0.75f);
 
 	private static final class ClientPortal {
 		final Vec3 center;
@@ -84,6 +88,10 @@ public final class SpaceStoneClient {
 		PORTALS.values().removeIf(p -> p.level != mc.level || ++p.age > p.life + 2);
 		RandomSource rnd = mc.level.getRandom();
 		for (ClientPortal p : PORTALS.values()) {
+			if (SpaceStone.LATVERIA.equals(p.dest)) {
+				if (mc.player != null && mc.player.position().distanceToSqr(p.center) < 32 * 32) latveriaParticles(mc.level, p, rnd);
+				continue;
+			}
 			// Loose blue wisps around the rim (fresh particles, never one looping forever).
 			if (p.age % 3 == 0) {
 				double a = rnd.nextDouble() * Math.PI * 2;
@@ -93,6 +101,52 @@ public final class SpaceStoneClient {
 				ClientPower.spawn(ModParticles.SPACE_ENERGY_WISPS, at, 0.8 + rnd.nextDouble() * 0.6, 0, 0);
 			}
 		}
+	}
+
+	private static void latveriaParticles(ClientLevel level, ClientPortal p, RandomSource random) {
+		Vec3 side = right(p.yaw);
+		Vec3 front = Vec3.directionFromRotation(0, p.yaw);
+		boolean arriving = p.age >= SpaceStone.LATVERIA_ARRIVE && p.age < SpaceStone.LATVERIA_VISIBLE;
+		boolean leaving = p.age >= SpaceStone.LATVERIA_DEPART && p.age < SpaceStone.LATVERIA_VANISH;
+		if ((arriving || leaving) && p.age % 2 == 0) {
+			float t = arriving ? (p.age - SpaceStone.LATVERIA_ARRIVE) / (float)(SpaceStone.LATVERIA_VISIBLE - SpaceStone.LATVERIA_ARRIVE)
+					: (p.age - SpaceStone.LATVERIA_DEPART) / (float)(SpaceStone.LATVERIA_VANISH - SpaceStone.LATVERIA_DEPART);
+			float rise = arriving ? t : 1 - t;
+			Vec3 base = p.center.add(front.scale(0.28)).add(0, -1.7, 0);
+			for (int i = 0; i < 5; i++) {
+				double angle = p.age * 0.18 + i * Math.TAU / 5;
+				double radius = 0.62 + 0.18 * random.nextDouble();
+				Vec3 at = base.add(side.scale(Math.cos(angle) * radius))
+						.add(front.scale(Math.sin(angle) * radius)).add(0, rise * 2.4 + random.nextDouble() * 0.35, 0);
+				level.addParticle(i == 0 ? PALE_GOLD : EMERALD, at.x, at.y, at.z, 0, 0.035, 0);
+			}
+			if (p.age % 4 == 0) {
+				Vec3 smoke = base.add(side.scale((random.nextDouble() - 0.5) * 1.8));
+				level.addParticle(ParticleTypes.SMOKE, smoke.x, smoke.y, smoke.z, 0, 0.035, 0);
+			}
+		}
+		int impact = p.age - SpaceStone.LATVERIA_PUSH_TICK;
+		if (impact >= 0 && impact < 12 && impact % 2 == 0) {
+			for (int i = 0; i < 12; i++) {
+				double angle = i * Math.TAU / 12;
+				double radius = 0.35 + impact * 0.13;
+				Vec3 at = p.center.add(front.scale(0.8 + Math.sin(angle) * radius))
+						.add(side.scale(Math.cos(angle) * radius)).add(0, -0.95, 0);
+				level.addParticle(i % 3 == 0 ? PALE_GOLD : EMERALD, at.x, at.y, at.z, 0, 0.025, 0);
+			}
+		}
+		if (p.age % 3 == 0) {
+			float reveal = latveriaReveal(p.age, p.life - p.age);
+			double angle = random.nextDouble() * Math.TAU;
+			Vec3 at = p.center.add(side.scale(Math.cos(angle) * 1.56 * reveal))
+					.add(0, Math.sin(angle) * 1.96 * reveal, 0);
+			level.addParticle(EMERALD, at.x, at.y, at.z, 0, 0.025, 0);
+		}
+	}
+
+	private static float latveriaReveal(float age, float remaining) {
+		float x = Mth.clamp(Math.min(age / SpaceStone.LATVERIA_OPEN_TICKS, remaining / SpaceStone.LATVERIA_CLOSE_TICKS), 0, 1);
+		return x * x * (3 - 2 * x);
 	}
 
 	private static Vec3 right(float yaw) {
@@ -158,12 +212,12 @@ public final class SpaceStoneClient {
 			pose.translate(p.center.x - cam.x, p.center.y - cam.y, p.center.z - cam.z);
 			pose.mulPose(Axis.YP.rotationDegrees(-p.yaw));
 			if (SpaceStone.LATVERIA.equals(p.dest)) {
-				float reveal = Mth.clamp(Math.min(age, closing) / OPEN, 0, 1);
+				float reveal = latveriaReveal(age, closing);
 				pose.pushPose();
 				pose.scale(s * reveal, s * reveal, s);
 				latveriaWindow(ctx, pose, age, reveal);
 				pose.popPose();
-				DoomTeaserRenderer.render(ctx, pose, age, closing);
+				DoomTeaserRenderer.render(ctx, pose, age);
 				pose.popPose();
 				continue;
 			}

@@ -4,6 +4,7 @@ import com.dantemorrigan.gauntlet.GauntletConfig;
 import com.dantemorrigan.gauntlet.GauntletState;
 import com.dantemorrigan.gauntlet.InfinityGauntlet;
 import com.dantemorrigan.gauntlet.ModComponents;
+import com.dantemorrigan.gauntlet.ModSounds;
 import com.dantemorrigan.gauntlet.Stone;
 import com.dantemorrigan.gauntlet.net.ModNetwork;
 import com.dantemorrigan.gauntlet.net.ModStatus;
@@ -55,8 +56,11 @@ public final class SpaceStone {
 	private static final int OPEN_TICKS = 8, CLOSE_TICKS = 8;
 	public static final int LATVERIA_OPTION = DESTINATIONS.length;
 	public static final String LATVERIA = "latveria";
-	public static final int LATVERIA_PUSH_TICK = 42;
-	private static final int LATVERIA_PORTAL = -2, LATVERIA_LIFETIME = 88;
+	// Shared clock for the portal, apparition, knockback and voiced warning.
+	public static final int LATVERIA_OPEN_TICKS = 24, LATVERIA_ARRIVE = 28, LATVERIA_VISIBLE = 92;
+	public static final int LATVERIA_PUSH_TICK = 130, LATVERIA_DEPART = 193, LATVERIA_VANISH = 229;
+	public static final int LATVERIA_CLOSE_TICKS = 24;
+	private static final int LATVERIA_PORTAL = -2, LATVERIA_LIFETIME = LATVERIA_VANISH + LATVERIA_CLOSE_TICKS;
 	private static final AttachmentType<Boolean> LATVERIA_SEEN = AttachmentRegistry.<Boolean>builder()
 			.persistent(Codec.BOOL).copyOnDeath().buildAndRegister(InfinityGauntlet.id("latveria_seen"));
 
@@ -209,12 +213,20 @@ public final class SpaceStone {
 	}
 
 	private static void tickLatveria(MinecraftServer server, Portal portal) {
+		if (portal.age == LATVERIA_DEPART) {
+			portal.level.playSound(null, BlockPos.containing(portal.center),
+					SoundEvents.PORTAL_TRIGGER, SoundSource.PLAYERS, 0.65f, 0.55f);
+		}
 		if (portal.age > LATVERIA_PUSH_TICK) return;
 		ServerPlayer owner = server.getPlayerList().getPlayer(portal.owner);
 		if (owner == null || !owner.isAlive() || owner.isSpectator() || owner.level() != portal.level
 				|| owner.position().distanceToSqr(portal.center) > 64) {
 			portal.life = portal.age; // An interrupted preview can be attempted again.
 			return;
+		}
+		if (portal.age == LATVERIA_ARRIVE) {
+			portal.level.playSound(null, BlockPos.containing(portal.center),
+					SoundEvents.WARDEN_EMERGE, SoundSource.PLAYERS, 0.65f, 0.72f);
 		}
 		if (portal.age != LATVERIA_PUSH_TICK) return;
 		Vec3 away = owner.position().subtract(portal.center).multiply(1, 0, 1);
@@ -225,7 +237,9 @@ public final class SpaceStone {
 		Component line = Component.translatable("msg.infinity_gauntlet.latveria.doom");
 		owner.sendSystemMessage(line);
 		ModStatus.send(owner, line);
-		portal.level.playSound(null, BlockPos.containing(portal.center), SoundEvents.WARDEN_SONIC_BOOM, SoundSource.PLAYERS, 0.65f, 0.65f);
+		BlockPos origin = BlockPos.containing(portal.center);
+		portal.level.playSound(null, origin, SoundEvents.WARDEN_SONIC_BOOM, SoundSource.PLAYERS, 0.24f, 0.65f);
+		portal.level.playSound(null, origin, ModSounds.DOOM_WARNING, SoundSource.PLAYERS, 1.35f, 1f);
 	}
 
 	private static Portal open(ServerLevel level, Vec3 center, float yaw, int dest, UUID owner, int life) {

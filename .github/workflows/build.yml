@@ -37,6 +37,7 @@ jobs:
         timeout-minutes: 12
         env:
           LIBGL_ALWAYS_SOFTWARE: 'true'
+          ALSOFT_DRIVERS: 'null'
         run: xvfb-run -a ./gradlew runClientGameTest -PonlyTest=AbilityWheelTest
       - name: Infinity Snap client regression
         timeout-minutes: 8
