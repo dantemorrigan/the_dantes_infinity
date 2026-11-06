@@ -131,6 +131,7 @@ Testing the new controls: `xvfb-run -a ./gradlew runClientGameTest -PonlyTest=Ab
   turns inside out along your path and gaze. The ground on both sides of your gaze folds into walls, buildings twist, water hangs
   in the air. **Walk and turn your head**: the rift moves and turns with you. Eligible mobs and PvP targets in the vortex burst into red butterflies, and flying arrows turn
   into petals. **Release R** (open fist): the twisted blocks (ground, buildings, and suspended water) remain physically twisted in the world forever.
+- Thanos takes a small hit once per cast when caught in the vortex.
 - Radius and block limit are in the config (`reality*`).
 - Select Reality Strike and press **R** — a stone strike on the ground: a red wave spreads from the fist. Affected mobs dissolve into red butterflies without drops. Eligible players take lethal damage unless protected. The Ender Dragon, Wither, your pets and named mobs are spared, and Thanos takes damage. The ground within `realityStrikeRadius` (10) becomes redstone blocks, with fire in places. This change is **real** and stays. Cooldown `realityStrikeCooldownTicks`.
 

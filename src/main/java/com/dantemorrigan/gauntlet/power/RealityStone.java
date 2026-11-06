@@ -4,6 +4,7 @@ import com.dantemorrigan.gauntlet.CoopRules;
 import com.dantemorrigan.gauntlet.GauntletConfig;
 import com.dantemorrigan.gauntlet.GauntletState;
 import com.dantemorrigan.gauntlet.Stone;
+import com.dantemorrigan.gauntlet.boss.Thanos;
 import com.dantemorrigan.gauntlet.net.ModNetwork;
 import com.dantemorrigan.gauntlet.net.ModStatus;
 import com.dantemorrigan.gauntlet.space.SpaceManager;
@@ -48,14 +49,16 @@ import java.util.UUID;
 
 /**
  * Reality stone — Reality Inversion ("Изнанка реальности"). Can be performed while moving: the distortion vortex
- * follows the caster, anyone who enters it (mobs and players alike) is turned into red butterflies, flying projectiles
- * become petals, and when the caster finishes using the ability all twisted ground, buildings and water remain
+ * follows the caster. Affected mobs and players turn into red butterflies, Thanos takes damage, and flying projectiles
+ * become petals. When the caster finishes using the ability, all twisted ground, buildings and water remain
  * physically twisted in the world forever.
  */
 public final class RealityStone {
 	public static final String TAG = "infinity_gauntlet_reality";
 	public static final int T_CRACKS = 12, T_FOLD = 20, FOLD_TICKS = 20;
 	public static final float INNER = 2.5f;
+
+	private static final float THANOS_BASE_DAMAGE = 4f;
 
 	private static final int PLACE_FLAGS = Block.UPDATE_CLIENTS | Block.UPDATE_KNOWN_SHAPE | Block.UPDATE_SUPPRESS_DROPS | Block.UPDATE_SKIP_ON_PLACE;
 
@@ -86,6 +89,7 @@ public final class RealityStone {
 		int tick;
 		final Map<BlockPos, BlockEntry> entries = new LinkedHashMap<>();
 		final Set<Long> capturedColumns = new HashSet<>();
+		final Set<UUID> damagedTitans = new HashSet<>();
 
 		Session(ServerLevel level, Vec3 center, float yaw) {
 			this.level = level;
@@ -326,13 +330,20 @@ public final class RealityStone {
 			}
 			double r = cfg.realityRadius;
 			AABB box = new AABB(s.center, s.center).inflate(r, r * 0.75, r);
-			// Everyone who enters the distortion vortex (mobs and players alike) turns into butterflies permanently.
+			// Scan the vortex for new targets while the caster moves.
 			if (s.tick % 3 == 0) {
 				for (LivingEntity entity : s.level.getEntitiesOfClass(LivingEntity.class, box, e -> e != player && e.isAlive() && !e.isSpectator()
 						&& !MindStone.holdsEntity(e) && !SoulStone.isExtracting(e)
-						&& !(e instanceof EnderDragon) && !(e instanceof WitherBoss) && !(e instanceof com.dantemorrigan.gauntlet.boss.Thanos)
+						&& !(e instanceof EnderDragon) && !(e instanceof WitherBoss)
 						&& !(e instanceof OwnableEntity o && player.getUUID().equals(o.getOwnerReference() != null ? o.getOwnerReference().getUUID() : null))
 						&& CoopRules.canAffect(player, e) && e.position().distanceTo(s.center) <= r)) {
+					if (entity instanceof Thanos thanos) {
+						if (!s.damagedTitans.contains(thanos.getUUID()) && GauntletDamage.hurt(s.level, thanos, player,
+								player.damageSources().playerAttack(player), THANOS_BASE_DAMAGE)) {
+							s.damagedTitans.add(thanos.getUUID());
+						}
+						continue;
+					}
 					Vec3 at = entity.position().add(0, entity.getBbHeight() / 2, 0);
 					send(s.level, at, new ModNetwork.RealityFx(3, at, new Vec3(entity.getBbWidth(), entity.getBbHeight(), 0)));
 					send(s.level, at, new ModNetwork.RealityFx(0, at, Vec3.ZERO));
