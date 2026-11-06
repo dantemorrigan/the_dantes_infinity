@@ -6,6 +6,7 @@ import com.dantemorrigan.gauntlet.GauntletState;
 import com.dantemorrigan.gauntlet.Stone;
 import com.dantemorrigan.gauntlet.boss.Thanos;
 import com.dantemorrigan.gauntlet.net.ModNetwork;
+import com.dantemorrigan.gauntlet.stones.MindZombie;
 import com.dantemorrigan.gauntlet.net.ModStatus;
 import com.dantemorrigan.gauntlet.space.SpaceManager;
 import com.dantemorrigan.gauntlet.uru.GauntletDamage;
@@ -344,6 +345,7 @@ public final class RealityStone {
 						}
 						continue;
 					}
+					if (entity instanceof MindZombie zombie && !zombie.defeatedByReality(s.level, player)) continue;
 					Vec3 at = entity.position().add(0, entity.getBbHeight() / 2, 0);
 					send(s.level, at, new ModNetwork.RealityFx(3, at, new Vec3(entity.getBbWidth(), entity.getBbHeight(), 0)));
 					send(s.level, at, new ModNetwork.RealityFx(0, at, Vec3.ZERO));

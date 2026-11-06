@@ -28,6 +28,8 @@ public final class InfinityBeamClient {
     public static final KeyMapping BEAM = KeyMappingHelper.registerKeyMapping(new KeyMapping(
             "key.infinity_gauntlet.infinity_beam", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_UNKNOWN, ClientPower.CATEGORY));
     private static final Map<Integer, Visual> BEAMS = new HashMap<>();
+    private static final Map<Integer, Visual> TIME_FLOWS = new HashMap<>();
+    private static final Identifier TIME_FLOW_BODY = InfinityGauntlet.id("textures/particle/time_flow_ribbon.png");
     private static final List<Puff> PUFFS = new ArrayList<>();
     private static final int[] COLORS = {0xA23BFF, 0x168CFF, 0xEF293E, 0xFFE157, 0x32E268, 0xFF981F};
     private static boolean held;
@@ -53,19 +55,35 @@ public final class InfinityBeamClient {
                 v.previousEnd = v.state.to(); v.state = s; v.received = ticks;
             }
         });
+        ClientPlayNetworking.registerGlobalReceiver(ModNetwork.TimeFlowFx.TYPE, (packet, ctx) -> {
+            var state = packet.beam();
+            if (state.age() < 0) TIME_FLOWS.remove(state.entityId());
+            else {
+                Visual visual = TIME_FLOWS.computeIfAbsent(state.entityId(), id -> new Visual(state));
+                visual.previousEnd = visual.state.to();
+                visual.state = state;
+                visual.received = ticks;
+            }
+        });
         ClientPlayConnectionEvents.DISCONNECT.register((h, mc) -> {
-            BEAMS.clear(); PUFFS.clear(); held = false; level = null;
+            BEAMS.clear(); TIME_FLOWS.clear(); PUFFS.clear(); held = false; level = null;
         });
         ClientTickEvents.END_CLIENT_TICK.register(mc -> {
             ticks++;
-            if (level != mc.level) { BEAMS.clear(); PUFFS.clear(); level = mc.level; }
+            if (level != mc.level) { BEAMS.clear(); TIME_FLOWS.clear(); PUFFS.clear(); level = mc.level; }
             boolean down = mc.player != null && mc.screen == null && BEAM.isDown()
                     && !Cutscene.inputLocked() && !TimeRewindClient.inputLocked();
             if (mc.player != null && down != held) ClientPlayNetworking.send(new ModNetwork.BeamAction(down));
             held = down;
             BEAMS.values().removeIf(v -> ticks - v.received > 10);
+            TIME_FLOWS.values().removeIf(v -> ticks - v.received > 10);
             PUFFS.removeIf(p -> ticks - p.start > 16);
             if (mc.player != null) {
+                Visual flow = TIME_FLOWS.get(mc.player.getId());
+                com.dantemorrigan.gauntlet.client.StatusHud.persistent("time_flow", flow == null ? null
+                        : net.minecraft.network.chat.Component.translatable("msg.infinity_gauntlet.time_flow.firing",
+                        String.format(Locale.ROOT, "%.1f", Math.max(0, (flow.state.duration() - flow.state.age()
+                                - Math.min(2, ticks - flow.received)) / 20f))));
                 Visual v = BEAMS.get(mc.player.getId());
                 if (v != null) {
                     float age = v.state.age() + Math.min(2, ticks - v.received);
@@ -144,11 +162,48 @@ public final class InfinityBeamClient {
             billboard(ctx, camera, from, right, up, (float)(.9 * power), texture("muzzle", frame), 0xFFFFFFFF);
             billboard(ctx, camera, end, right, up, (float)(2.1 * power), texture("impact", ((int)age/2)%4), 0xFFFFFFFF);
         }
+        for (Visual flow : TIME_FLOWS.values()) renderTimeFlow(ctx, mc, camera, partial, flow);
         for (Puff puff : PUFFS) {
             int age = ticks - puff.start;
             billboard(ctx, camera, puff.pos, right, up, 1.7f, texture("residual", Math.min(3, age/4)), 0xDFFFFFFF);
         }
     }
+    private static void renderTimeFlow(LevelRenderContext ctx, Minecraft mc, Vec3 camera, float partial, Visual flow) {
+        var state = flow.state;
+        var entity = mc.level.getEntity(state.entityId());
+        if (entity == null) return;
+        float progress = Math.min(1, (ticks - flow.received + partial) / 2f);
+        float age = state.age() + progress * 2;
+        Vec3 from = FistPosition.of(entity, partial);
+        Vec3 end = flow.previousEnd.lerp(state.to(), progress);
+        Vec3 line = end.subtract(from);
+        double length = line.length();
+        if (length < .1 || state.from().distanceToSqr(state.to()) < .01) return;
+        Vec3 direction = line.scale(1 / length);
+        Vec3 axis = Math.abs(direction.y) > .95 ? new Vec3(1, 0, 0) : new Vec3(0, 1, 0);
+        Vec3 a = direction.cross(axis).normalize(), b = direction.cross(a).normalize();
+        double fade = Math.max(.1, Math.min(1, Math.min((age + 1) / 4, (state.duration() - age) / 7)));
+        double width = .26 * fade * (1 + .07 * Math.sin(age * .7));
+        ribbon(ctx, camera, from, end, a, width, TIME_FLOW_BODY, 0xEFFFFFFF, 0, 1);
+        ribbon(ctx, camera, from, end, b, width, TIME_FLOW_BODY, 0xCFFFFFFF, 0, 1);
+
+        // Two counterposed strands wind toward the point of impact.
+        for (int strand = 0; strand < 2; strand++) {
+            Vec3 previous = from;
+            int segments = (int) Math.ceil(length);
+            for (int i = 1; i <= segments; i++) {
+                double distance = length * i / segments;
+                double phase = distance * 1.1 - age * .28 + strand * Math.PI;
+                double radius = .35 * fade * Math.min(1, Math.min(distance, length - distance));
+                Vec3 point = from.add(direction.scale(distance))
+                        .add(a.scale(Math.cos(phase) * radius)).add(b.scale(Math.sin(phase) * radius));
+                Vec3 side = point.subtract(previous).cross(camera.subtract(previous)).normalize();
+                ribbon(ctx, camera, previous, point, side, .055 * fade, TIME_FLOW_BODY, 0xB0B8FFD3, 0, 1);
+                previous = point;
+            }
+        }
+    }
+
     private static void billboard(LevelRenderContext ctx, Vec3 camera, Vec3 center, Vec3 right, Vec3 up,
                                   float half, Identifier tex, int color) {
         quad(ctx, camera, center.subtract(right.scale(half)).subtract(up.scale(half)),
