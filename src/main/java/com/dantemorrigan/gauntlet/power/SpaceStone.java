@@ -113,7 +113,7 @@ public final class SpaceStone {
 	private static void syncPortals(ServerPlayer player) {
 		VIEW_LEVELS.put(player.getUUID(), player.level());
 		for (Portal portal : PORTALS) {
-			if (portal.level == player.level()) ServerPlayNetworking.send(player, portal.packet());
+			if (portal.level == player.level()) sendPortal(player, portal);
 		}
 	}
 
@@ -245,8 +245,17 @@ public final class SpaceStone {
 	private static Portal open(ServerLevel level, Vec3 center, float yaw, int dest, UUID owner, int life) {
 		Portal p = new Portal(nextId++, level, center, yaw, dest, owner, life);
 		PORTALS.add(p);
-		for (ServerPlayer sp : level.players()) ServerPlayNetworking.send(sp, p.packet());
+		for (ServerPlayer sp : level.players()) sendPortal(sp, p);
 		return p;
+	}
+
+	private static void sendPortal(ServerPlayer viewer, Portal portal) {
+		ServerPlayNetworking.send(viewer, portal.packet());
+		if (portal.dest != LATVERIA_PORTAL || !ServerPlayNetworking.canSend(viewer, ModNetwork.LatveriaLook.TYPE)) return;
+		ServerPlayer owner = portal.level.getServer().getPlayerList().getPlayer(portal.owner);
+		if (owner != null && owner.level() == portal.level) {
+			ServerPlayNetworking.send(viewer, new ModNetwork.LatveriaLook(portal.id, owner.getId()));
+		}
 	}
 
 	/** Cancel portals anchored to the destroyed world's geometry. */

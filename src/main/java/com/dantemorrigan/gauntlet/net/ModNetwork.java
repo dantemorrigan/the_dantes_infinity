@@ -211,6 +211,14 @@ public final class ModNetwork {
 		@Override public Type<PortalOpen> type() { return TYPE; }
 	}
 
+	/** The Latveria apparition looks at the player who opened its portal. */
+	public record LatveriaLook(int portalId, int playerId) implements CustomPacketPayload {
+		public static final Type<LatveriaLook> TYPE = newType("latveria_look");
+		public static final StreamCodec<ByteBuf, LatveriaLook> CODEC = StreamCodec.composite(
+				ByteBufCodecs.VAR_INT, LatveriaLook::portalId, ByteBufCodecs.VAR_INT, LatveriaLook::playerId, LatveriaLook::new);
+		@Override public Type<LatveriaLook> type() { return TYPE; }
+	}
+
 	public record PortalClose(int id) implements CustomPacketPayload {
 		public static final Type<PortalClose> TYPE = newType("portal_close");
 		public static final StreamCodec<ByteBuf, PortalClose> CODEC = StreamCodec.composite(ByteBufCodecs.VAR_INT, PortalClose::id, PortalClose::new);
@@ -473,6 +481,7 @@ public final class ModNetwork {
 		PayloadTypeRegistry.serverboundPlay().register(SpaceAction.TYPE, SpaceAction.CODEC);
 		PayloadTypeRegistry.clientboundPlay().register(PortalOpen.TYPE, PortalOpen.CODEC);
 		PayloadTypeRegistry.clientboundPlay().register(PortalClose.TYPE, PortalClose.CODEC);
+		PayloadTypeRegistry.clientboundPlay().register(LatveriaLook.TYPE, LatveriaLook.CODEC);
 		PayloadTypeRegistry.clientboundPlay().register(SpaceFx.TYPE, SpaceFx.CODEC);
 		PayloadTypeRegistry.clientboundPlay().register(CelestialSync.TYPE, CelestialSync.CODEC);
 		PayloadTypeRegistry.clientboundPlay().register(MeteorSpawn.TYPE, MeteorSpawn.CODEC);

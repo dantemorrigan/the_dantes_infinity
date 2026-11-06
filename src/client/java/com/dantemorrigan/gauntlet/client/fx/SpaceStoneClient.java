@@ -53,6 +53,7 @@ public final class SpaceStoneClient {
 		final float yaw;
 		final String dest;
 		int age, life;
+		int lookTarget = -1;
 		ClientLevel level;
 
 		ClientPortal(Vec3 center, float yaw, String dest, int age, int left, ClientLevel level) {
@@ -71,6 +72,10 @@ public final class SpaceStoneClient {
 		ClientTickEvents.END_CLIENT_TICK.register(SpaceStoneClient::tick);
 		ClientPlayNetworking.registerGlobalReceiver(ModNetwork.PortalOpen.TYPE, (p, ctx) ->
 				PORTALS.put(p.id(), new ClientPortal(p.pos(), p.yaw(), p.dest(), p.age(), p.ticksLeft(), Minecraft.getInstance().level)));
+		ClientPlayNetworking.registerGlobalReceiver(ModNetwork.LatveriaLook.TYPE, (p, ctx) -> {
+			ClientPortal portal = PORTALS.get(p.portalId());
+			if (portal != null) portal.lookTarget = p.playerId();
+		});
 		ClientPlayNetworking.registerGlobalReceiver(ModNetwork.PortalClose.TYPE, (p, ctx) -> PORTALS.remove(p.id()));
 		ClientPlayNetworking.registerGlobalReceiver(ModNetwork.SpaceFx.TYPE, (p, ctx) -> teleportFx(p.from(), p.to()));
 		ClientPlayConnectionEvents.DISCONNECT.register((h, mc) -> mc.execute(PORTALS::clear));
@@ -213,11 +218,17 @@ public final class SpaceStoneClient {
 			pose.mulPose(Axis.YP.rotationDegrees(-p.yaw));
 			if (SpaceStone.LATVERIA.equals(p.dest)) {
 				float reveal = latveriaReveal(age, closing);
-				pose.pushPose();
-				pose.scale(s * reveal, s * reveal, s);
-				latveriaWindow(ctx, pose, age, reveal);
-				pose.popPose();
-				DoomTeaserRenderer.render(ctx, pose, age);
+				float yawRadians = (float)Math.toRadians(p.yaw);
+				int visibleSide = cam.subtract(p.center).yRot(yawRadians).z < 0 ? -1 : 1;
+				if (reveal > 0) {
+					pose.pushPose();
+					pose.scale(s * reveal, s * reveal, s);
+					latveriaWindow(ctx, pose, age, reveal, visibleSide);
+					pose.popPose();
+				}
+				var owner = mc.level.getEntity(p.lookTarget);
+				Vec3 eyes = owner == null ? null : owner.getEyePosition(partial).subtract(p.center).yRot(yawRadians);
+				DoomTeaserRenderer.render(ctx, pose, age, eyes);
 				pose.popPose();
 				continue;
 			}
@@ -233,19 +244,18 @@ public final class SpaceStoneClient {
 	}
 
 	/** The reference image is clipped by the aperture mesh, with an animated emerald rim. */
-	private static void latveriaWindow(LevelRenderContext ctx, PoseStack pose, float age, float reveal) {
+	private static void latveriaWindow(LevelRenderContext ctx, PoseStack pose, float age, float reveal, int side) {
 		var picture = RenderTypes.entityTranslucentEmissive(tex("portal_latveria"));
 		ctx.submitNodeCollector().submitCustomGeometry(pose, picture, (p, out) -> {
 			int color = ARGB.colorFromFloat(reveal, 1, 1, 1);
 			for (int i = 0; i < 32; i++) {
 				float low = (i - 16) / 16f, high = (i + 1 - 16) / 16f;
 				float a = (float)Math.sqrt(1 - low * low), b = (float)Math.sqrt(1 - high * high);
-				for (int side = 1; side >= -1; side -= 2) {
-					apertureVertex(out, p, -a * side, low, color, side);
-					apertureVertex(out, p, a * side, low, color, side);
-					apertureVertex(out, p, b * side, high, color, side);
-					apertureVertex(out, p, -b * side, high, color, side);
-				}
+				// Submit one face: the translucent pipeline can draw both coplanar sides.
+				apertureVertex(out, p, -a * side, low, color, side);
+				apertureVertex(out, p, a * side, low, color, side);
+				apertureVertex(out, p, b * side, high, color, side);
+				apertureVertex(out, p, -b * side, high, color, side);
 			}
 		});
 		// The existing portal particle frame has an opaque white center texel for tinting.
@@ -255,9 +265,9 @@ public final class SpaceStoneClient {
 				float pulse = 0.5f + 0.5f * Mth.sin(a * 5 - age * 0.23f);
 				int edge = ARGB.colorFromFloat(reveal * (0.85f + 0.15f * pulse),
 						0.16f + pulse * 0.29f, 0.53f + pulse * 0.28f, 0.25f + pulse * 0.09f);
-				ringSegment(out, p, a, b, 0.92f, 1.07f + 0.045f * pulse, edge);
+				ringSegment(out, p, a, b, 0.92f, 1.07f + 0.045f * pulse, edge, side);
 				ringSegment(out, p, a, b, 1.055f, 1.14f + 0.045f * pulse,
-						ARGB.colorFromFloat(0.22f * reveal, 0.57f, 0.84f, 0.24f));
+						ARGB.colorFromFloat(0.22f * reveal, 0.57f, 0.84f, 0.24f), side);
 			}
 		});
 	}
@@ -267,14 +277,12 @@ public final class SpaceStoneClient {
 		v(out, p, x * 0.74f, y * 0.94f, 0, 0.58f + x * side * 0.312f, 0.5f - y * 0.5f, color, side);
 	}
 
-	private static void ringSegment(VertexConsumer out, PoseStack.Pose p, float a, float b, float inner, float outer, int color) {
-		for (int side = 1; side >= -1; side -= 2) {
-			float start = side > 0 ? a : b, end = side > 0 ? b : a;
-			ringVertex(out, p, start, inner, color, side);
-			ringVertex(out, p, start, outer, color, side);
-			ringVertex(out, p, end, outer, color, side);
-			ringVertex(out, p, end, inner, color, side);
-		}
+	private static void ringSegment(VertexConsumer out, PoseStack.Pose p, float a, float b, float inner, float outer, int color, int side) {
+		float start = side > 0 ? a : b, end = side > 0 ? b : a;
+		ringVertex(out, p, start, inner, color, side);
+		ringVertex(out, p, start, outer, color, side);
+		ringVertex(out, p, end, outer, color, side);
+		ringVertex(out, p, end, inner, color, side);
 	}
 
 	private static void ringVertex(VertexConsumer out, PoseStack.Pose p, float angle, float radius, int color, int side) {

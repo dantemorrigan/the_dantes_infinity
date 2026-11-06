@@ -11,6 +11,8 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.util.ARGB;
 import net.minecraft.util.LightCoordsUtil;
 import net.minecraft.util.Mth;
+import net.minecraft.world.phys.Vec3;
+import org.joml.Vector3f;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -28,7 +30,7 @@ public final class DoomTeaserRenderer {
 		private static final Map<String, GeoAnimation> CLIPS = GeoAnimation.load(ANIMATIONS);
 	}
 
-	public static void render(LevelRenderContext ctx, PoseStack pose, float age) {
+	public static void render(LevelRenderContext ctx, PoseStack pose, float age, Vec3 targetEyes) {
 		if (age <= SpaceStone.LATVERIA_ARRIVE || age >= SpaceStone.LATVERIA_VANISH) return;
 		float arrive = progress(age, SpaceStone.LATVERIA_ARRIVE, SpaceStone.LATVERIA_VISIBLE);
 		float leave = progress(age, SpaceStone.LATVERIA_DEPART, SpaceStone.LATVERIA_VANISH);
@@ -45,9 +47,12 @@ public final class DoomTeaserRenderer {
 		} else {
 			apply(bones, "intro", (1 - leave) * 5);
 		}
+		double feet = -(SpaceStone.PORTAL_SIZE / 2 - 0.1);
+		double forward = Mth.lerp(opacity, -0.7, 0.72);
+		if (targetEyes != null) lookAt(bones, targetEyes, feet, forward, opacity);
 		pose.pushPose();
 		// The portal's transform already faces its owner. Turn the -Z model toward that side.
-		pose.translate(0, -(SpaceStone.PORTAL_SIZE / 2 - 0.1), Mth.lerp(opacity, -0.7, 0.72));
+		pose.translate(0, feet, forward);
 		pose.mulPose(Axis.YP.rotationDegrees(180));
 		int color = ARGB.colorFromFloat(opacity, 0.58f + opacity * 0.42f, 1, 0.69f + opacity * 0.31f);
 		var renderType = opacity >= 1 ? RenderTypes.entityCutout(TEXTURE) : RenderTypes.entityTranslucent(TEXTURE);
@@ -55,6 +60,26 @@ public final class DoomTeaserRenderer {
 				Assets.MODEL_DATA.render(ThanosRenderer.stack(p), out, bones, LightCoordsUtil.FULL_BRIGHT,
 						OverlayTexture.NO_OVERLAY, (b, c) -> color));
 		pose.popPose();
+	}
+
+	private static void lookAt(Map<String, GeoModel.BonePose> bones, Vec3 target, double feet, double forward, float weight) {
+		GeoModel.Bone head = Assets.MODEL_DATA.bone("head");
+		if (head == null) return;
+		PoseStack frame = new PoseStack();
+		frame.translate(0, feet, forward);
+		frame.mulPose(Axis.YP.rotationDegrees(180));
+		// Aim in the animated body's space so a lean or a twist during the gesture does not turn his eyes away.
+		if (head.parent != null) Assets.MODEL_DATA.transformTo(frame, head.parent.name, bones);
+		Vector3f offset = frame.last().pose().invert().transformPosition(new Vector3f((float)target.x, (float)target.y, (float)target.z));
+		// Eye sockets sit above and in front of the neck pivot in the Doom model.
+		offset.sub(head.px / 16f, (head.py + 5.35f) / 16f, (head.pz - 3.8f) / 16f);
+		if (offset.lengthSquared() < 0.0001f) return;
+		// GeoModel negates the authored angles; the unrotated head faces -Z.
+		float yaw = (float)Math.toDegrees(Math.atan2(offset.x, -offset.z));
+		float pitch = (float)-Math.toDegrees(Math.atan2(offset.y, Math.hypot(offset.x, offset.z)));
+		GeoModel.BonePose aim = bones.computeIfAbsent(head.name, key -> new GeoModel.BonePose());
+		aim.ry = Mth.lerp(weight, aim.ry, Mth.clamp(yaw, -65, 65));
+		aim.rx = Mth.lerp(weight, aim.rx, Mth.clamp(pitch, -35, 35));
 	}
 
 	private static float progress(float age, int start, int end) {
