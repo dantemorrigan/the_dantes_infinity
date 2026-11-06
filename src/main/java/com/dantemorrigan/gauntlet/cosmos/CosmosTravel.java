@@ -106,6 +106,7 @@ public final class CosmosTravel {
         }
         if (!equipped(p)) { ModStatus.send(p, Component.translatable("cosmos.infinity_gauntlet.need_stone")); return; }
         if (action == 0 && !inCosmos(p) && flightDim(p)) {
+            com.dantemorrigan.gauntlet.stormbreaker.Stormbreaker.releaseFlight(p);
             var a = p.getAbilities();
             p.setAttached(FLIGHT, new Flight(p.position().add(0,1,0), a.mayfly, a.flying, a.getFlyingSpeed()));
             enable(p);

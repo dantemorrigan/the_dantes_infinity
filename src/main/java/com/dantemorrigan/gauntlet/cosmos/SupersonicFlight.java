@@ -145,6 +145,7 @@ public final class SupersonicFlight {
             Vec3 away=entity.position().subtract(point); double distance=away.length();
             double force=Math.max(0,1-distance/(radius*1.8));
             com.dantemorrigan.gauntlet.uru.GauntletDamage.hurt(level,entity,p,p.damageSources().playerAttack(p),(float)(28*force));
+            if (entity instanceof ServerPlayer guarded && com.dantemorrigan.gauntlet.stormbreaker.Stormbreaker.guarded(guarded)) force *= .36;
             Vec3 push=away.lengthSqr()<.01?normal:away.normalize();
             entity.push(push.x*force*1.8,Math.max(.25,push.y)*force*1.8,push.z*force*1.8);entity.hurtMarked=true;
         }

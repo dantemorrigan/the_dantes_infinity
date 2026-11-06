@@ -12,6 +12,7 @@ public final class ModCreativeTab {
 			.title(Component.translatable("itemGroup.infinity_gauntlet"))
 			.icon(() -> new ItemStack(ModItems.GAUNTLET))
 			.displayItems((params, output) -> {
+				output.accept(ModItems.STORMBREAKER);
 				output.accept(ModItems.GAUNTLET);
 				output.accept(ModItems.POWER_STONE);
 				output.accept(ModItems.SPACE_STONE);

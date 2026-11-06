@@ -1,0 +1,19 @@
+{
+  "model": {
+    "type": "minecraft:select",
+    "property": "minecraft:display_context",
+    "cases": [
+      {
+        "when": "gui",
+        "model": {
+          "type": "minecraft:model",
+          "model": "infinity_gauntlet:item/stormbreaker_icon_charged"
+        }
+      }
+    ],
+    "fallback": {
+      "type": "minecraft:model",
+      "model": "infinity_gauntlet:item/stormbreaker_3d_charged"
+    }
+  }
+}

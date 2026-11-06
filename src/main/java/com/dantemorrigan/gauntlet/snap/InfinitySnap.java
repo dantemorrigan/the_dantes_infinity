@@ -198,6 +198,10 @@ public final class InfinitySnap {
 			ModNetwork.SnapFx fade = new ModNetwork.SnapFx(0, ERASE_TICK - SNAP_TICK);
 			for (ServerPlayer viewer : server.getPlayerList().getPlayers()) {
 				if (!affected(viewer)) continue;
+				if (viewer != owner && com.dantemorrigan.gauntlet.stormbreaker.Stormbreaker.guarded(viewer)) {
+					com.dantemorrigan.gauntlet.stormbreaker.Stormbreaker.guardFlash(viewer, owner);
+					continue;
+				}
 				viewer.setAttached(RECORD, new SnapRecord(cast.event, viewer.level().dimension(), viewer.position(),
 						viewer.getYRot(), viewer.getXRot(), viewer == owner ? Optional.of(cast.before) : Optional.empty()));
 				CosmosTravel.suspendForEvent(viewer);

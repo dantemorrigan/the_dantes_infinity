@@ -21,6 +21,12 @@ Requirements: **Java 25**. Build: `./gradlew build` → `build/libs/infinity_gau
 - **Uru armor** follows iron armor recipes and is repaired with Uru ingots. A complete set reduces damage from a full gauntlet and loses durability when absorbing a hit.
 - All six Infinity Stones have survival sources below.
 
+## Stormbreaker
+- Craft the axe from five Uru ingots, a Nether Star and a jungle log. The rows are **Uru / Uru / Nether Star**, **Uru / Uru / Uru**, **empty / jungle log / empty**. The first player to use it becomes its sole owner for that world.
+- Hold it in your main hand. **Left click** chains three attacks or starts a lightning wall when you strike the top of a block. **Right click** calls a lightning strike. **X** throws it, **H** calls Heaven’s Wrath, and **J** toggles flight. You can rebind the keys in Controls.
+- The flying axe cuts through breakable blocks where block changes are permitted. It returns to its owner when the path is blocked or they change dimensions. If the inventory is full, it returns as soon as a slot is available. After death, right click the planted axe to reclaim it.
+- Holding the bound axe gives strength and reduces incoming gauntlet damage. It also wards off Mind and Soul control and hostile Snap or Planet Destruction transfers.
+
 ## Finding the Power Stone
 - Now and then (first after ~20 min, then every 20–50 min of world time) a **meteor shower** falls 60–110 blocks from a player in the Overworld; nearby players get a HUD + chat notice with the direction.
 - The last meteor is **purple**: it leaves a purple meteorite (diamond pickaxe) with **the Orb** in its core. Taking the Orb out stops the showers for good; a meteorite you ignore **loses its Orb when the next shower starts** (so a stone is never duplicated). During a shower the sky and the sun take on a red cast. Right-click opens it and the Power Stone goes into the backpack. A second Orb opens empty.

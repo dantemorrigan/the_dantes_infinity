@@ -19,9 +19,22 @@ public abstract class HumanoidModelMixin {
 	@Inject(method = "setupAnim(Lnet/minecraft/client/renderer/entity/state/HumanoidRenderState;)V", at = @At("TAIL"))
 	private void infinityGauntlet$gesture(HumanoidRenderState state, CallbackInfo ci) {
 		if (!(state instanceof AvatarRenderState avatar)) return;
+        HumanoidModel<?> model = (HumanoidModel<?>) (Object) this;
+        var mc = net.minecraft.client.Minecraft.getInstance();
+        var motion = com.dantemorrigan.gauntlet.client.stormbreaker.StormbreakerClient.pose(
+                avatar.id, mc.getDeltaTracker().getGameTimeDeltaPartialTick(false));
+        if (motion != null && mc.level != null
+                && mc.level.getEntity(avatar.id) instanceof net.minecraft.world.entity.player.Player player
+                && player.getMainHandItem().is(com.dantemorrigan.gauntlet.ModItems.STORMBREAKER)) {
+            boolean leftHand = state.mainArm == net.minecraft.world.entity.HumanoidArm.LEFT;
+            ModelPart axeArm = leftHand ? model.leftArm : model.rightArm;
+            var rotation = motion.rotation();
+            axeArm.xRot += (float) Math.toRadians(rotation.x * .9);
+            axeArm.yRot += (float) Math.toRadians(rotation.y * (leftHand ? -.7 : .7));
+            axeArm.zRot += (float) Math.toRadians(rotation.z * (leftHand ? -.65 : .65));
+        }
 		GauntletGestureClient.Pose gesture = GauntletGestureClient.pose(avatar.id);
 		if (gesture == null) return;
-		HumanoidModel<?> model = (HumanoidModel<?>) (Object) this;
 		boolean left = state.mainArm.getOpposite() == net.minecraft.world.entity.HumanoidArm.LEFT;
 		ModelPart arm = left ? model.leftArm : model.rightArm;
 		float side = left ? 1 : -1, lift = gesture.lift();

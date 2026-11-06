@@ -21,6 +21,12 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public abstract class SkyRendererMixin {
 	@Inject(method = "extractRenderState", at = @At("RETURN"))
 	private void infinityGauntlet$tint(ClientLevel level, float partialTicks, Camera camera, SkyRenderState state, CallbackInfo ci) {
+        float storm = com.dantemorrigan.gauntlet.client.stormbreaker.StormbreakerClient.skyFactor(camera.position(), partialTicks);
+        if (storm > 0) {
+            state.skyColor = ARGB.srgbLerp(storm * .78f, state.skyColor, 0xFF142448);
+            state.sunriseAndSunsetColor = ARGB.srgbLerp(storm, state.sunriseAndSunsetColor, 0);
+            state.starBrightness *= 1 - storm;
+        }
         float amber = com.dantemorrigan.gauntlet.client.quest.SoulQuestClient.amber();
         if (amber > 0) {
             state.skyColor = ARGB.srgbLerp(amber, state.skyColor, 0xFFE07A22);
@@ -56,7 +62,9 @@ public abstract class SkyRendererMixin {
 	private void infinityGauntlet$redSky(PoseStack poseStack, float sunAngle, float moonAngle, float starAngle, MoonPhase moonPhase,
 			float rainBrightness, float starBrightness, CallbackInfo ci) {
         com.dantemorrigan.gauntlet.client.cosmos.CosmosRenderer.sky(com.dantemorrigan.gauntlet.client.cosmos.CosmosClient.atmosphere());
-		CelestialSky.drawRedSky(poseStack, Minecraft.getInstance().getDeltaTracker().getGameTimeDeltaPartialTick(false));
+		float partial = Minecraft.getInstance().getDeltaTracker().getGameTimeDeltaPartialTick(false);
+		CelestialSky.drawRedSky(poseStack, partial);
+        com.dantemorrigan.gauntlet.client.stormbreaker.StormbreakerClient.drawClouds(poseStack, partial);
 	}
 
 	@Inject(method = "renderSunMoonAndStars", at = @At("TAIL"))
@@ -100,6 +108,12 @@ public abstract class SkyRendererMixin {
 			ci.cancel();
 		}
 	}
+
+    @Inject(method = "renderEndSky", at = @At("TAIL"))
+    private void infinityGauntlet$stormEndSky(CallbackInfo ci) {
+        com.dantemorrigan.gauntlet.client.stormbreaker.StormbreakerClient.drawClouds(
+                new PoseStack(), Minecraft.getInstance().getDeltaTracker().getGameTimeDeltaPartialTick(false));
+    }
 
 	@Inject(method = "renderEndFlash", at = @At("HEAD"), cancellable = true)
 	private void infinityGauntlet$noEndFlash(PoseStack poseStack, float intensity, float xAngle, float yAngle, CallbackInfo ci) {

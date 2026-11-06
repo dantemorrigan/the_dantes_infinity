@@ -339,7 +339,19 @@ public final class CelestialApocalypse {
 		RandomSource rnd = level.getRandom();
 		BlockState ground = level.getBlockState(BlockPos.containing(m.to()).below());
 		float power = Mth.lerp((m.size() + rnd.nextFloat()) / 3f, cfg.craterPowerMin, cfg.craterPowerMax);
-		level.explode(null, m.to().x, m.to().y + 0.5, m.to().z, power, cfg.abilityBlockChanges,
+        var guard = new net.minecraft.world.level.ExplosionDamageCalculator() {
+            @Override
+            public float getEntityDamageAmount(net.minecraft.world.level.Explosion explosion, net.minecraft.world.entity.Entity entity, float exposure) {
+                float damage = super.getEntityDamageAmount(explosion, entity, exposure);
+                if (damage > 0 && entity instanceof ServerPlayer player
+                        && com.dantemorrigan.gauntlet.stormbreaker.Stormbreaker.guarded(player)) {
+                    com.dantemorrigan.gauntlet.stormbreaker.Stormbreaker.guardFlash(player, null);
+                    return damage * .36f;
+                }
+                return damage;
+            }
+        };
+		level.explode(null, null, guard, m.to().x, m.to().y + 0.5, m.to().z, power, cfg.abilityBlockChanges,
 				cfg.abilityBlockChanges ? Level.ExplosionInteraction.TNT : Level.ExplosionInteraction.NONE);
 		// Extra fires around the crater rim.
 		int radius = Math.round(power) + 2;

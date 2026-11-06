@@ -19,6 +19,22 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 /** First person: a worn (off-hand) gauntlet is drawn as the player's arm wearing it, not as a held item. */
 @Mixin(ItemInHandRenderer.class)
 public abstract class ItemInHandRendererMixin {
+    @Inject(method = "renderArmWithItem", at = @At("HEAD"))
+    private void infinityGauntlet$stormbreakerStart(AbstractClientPlayer player, float frameInterp, float xRot, InteractionHand hand, float attack,
+            ItemStack item, float inverseArmHeight, PoseStack pose, SubmitNodeCollector collector, int light, CallbackInfo ci) {
+        if (!item.is(ModItems.STORMBREAKER)) return;
+        pose.pushPose();
+        HumanoidArm arm = hand == InteractionHand.MAIN_HAND ? player.getMainArm() : player.getMainArm().getOpposite();
+        com.dantemorrigan.gauntlet.client.stormbreaker.StormbreakerClient.firstPerson(
+                pose, player.getId(), frameInterp, arm == HumanoidArm.LEFT);
+    }
+
+    @Inject(method = "renderArmWithItem", at = @At("RETURN"))
+    private void infinityGauntlet$stormbreakerEnd(AbstractClientPlayer player, float frameInterp, float xRot, InteractionHand hand, float attack,
+            ItemStack item, float inverseArmHeight, PoseStack pose, SubmitNodeCollector collector, int light, CallbackInfo ci) {
+        if (item.is(ModItems.STORMBREAKER)) pose.popPose();
+    }
+
 	@Shadow
 	protected abstract void renderPlayerArm(PoseStack poseStack, SubmitNodeCollector submitNodeCollector, int lightCoords, float inverseArmHeight, float attackValue, HumanoidArm arm);
 

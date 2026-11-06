@@ -58,6 +58,13 @@ public abstract class FogRendererMixin {
 			fog.renderDistanceStart = Math.min(fog.renderDistanceStart, fog.renderDistanceStart + (0f - fog.renderDistanceStart) * mist);
 			fog.renderDistanceEnd = Math.min(fog.renderDistanceEnd, fog.renderDistanceEnd + (24f - fog.renderDistanceEnd) * mist);
 		}
+        float storm = com.dantemorrigan.gauntlet.client.stormbreaker.StormbreakerClient.skyFactor(camera.position(), partialFog);
+        if (storm > 0) {
+            FogData fog = cir.getReturnValue();
+            fog.color.set(fog.color.x + (.12f - fog.color.x) * storm * .42f,
+                    fog.color.y + (.21f - fog.color.y) * storm * .42f,
+                    fog.color.z + (.37f - fog.color.z) * storm * .42f, fog.color.w);
+        }
         float altitude = com.dantemorrigan.gauntlet.client.cosmos.CosmosClient.atmosphere();
         if (altitude > 0) {
             FogData fog=cir.getReturnValue();

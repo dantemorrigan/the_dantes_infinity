@@ -1,0 +1,1210 @@
+{
+  "schema": 1,
+  "ticks_per_second": 20,
+  "hand_pivot_model_units": [
+    8,
+    8,
+    8
+  ],
+  "axes": {
+    "x": "right",
+    "y": "up",
+    "z": "forward"
+  },
+  "clips": {
+    "combo_1": {
+      "duration_ticks": 13,
+      "anchor": "hand",
+      "interpolation": "linear",
+      "keyframes": [
+        {
+          "tick": 0,
+          "rotation_xyz_deg": [
+            0,
+            0,
+            0
+          ],
+          "translation_xyz_blocks": [
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "tick": 3,
+          "rotation_xyz_deg": [
+            -11,
+            -47,
+            -23
+          ],
+          "translation_xyz_blocks": [
+            -0.12,
+            0.1,
+            -0.14
+          ]
+        },
+        {
+          "tick": 6,
+          "rotation_xyz_deg": [
+            7,
+            67,
+            35
+          ],
+          "translation_xyz_blocks": [
+            0.19,
+            -0.02,
+            0.25
+          ]
+        },
+        {
+          "tick": 9,
+          "rotation_xyz_deg": [
+            12,
+            30,
+            22
+          ],
+          "translation_xyz_blocks": [
+            0.12,
+            0,
+            0.13
+          ]
+        },
+        {
+          "tick": 13,
+          "rotation_xyz_deg": [
+            0,
+            0,
+            0
+          ],
+          "translation_xyz_blocks": [
+            0,
+            0,
+            0
+          ]
+        }
+      ],
+      "cues": [
+        {
+          "tick": 4,
+          "asset": "combo_1",
+          "attach_to": "hand",
+          "size_blocks": 2.4
+        },
+        {
+          "tick": 6,
+          "asset": "impact",
+          "attach_to": "contact",
+          "size_blocks": 0.8
+        }
+      ],
+      "next_input_window": [
+        8,
+        13
+      ]
+    },
+    "combo_2": {
+      "duration_ticks": 14,
+      "anchor": "hand",
+      "interpolation": "linear",
+      "keyframes": [
+        {
+          "tick": 0,
+          "rotation_xyz_deg": [
+            0,
+            0,
+            0
+          ],
+          "translation_xyz_blocks": [
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "tick": 3,
+          "rotation_xyz_deg": [
+            22,
+            65,
+            45
+          ],
+          "translation_xyz_blocks": [
+            0.22,
+            -0.18,
+            -0.1
+          ]
+        },
+        {
+          "tick": 7,
+          "rotation_xyz_deg": [
+            -20,
+            -62,
+            -34
+          ],
+          "translation_xyz_blocks": [
+            -0.22,
+            0.16,
+            0.2
+          ]
+        },
+        {
+          "tick": 10,
+          "rotation_xyz_deg": [
+            -7,
+            -24,
+            -15
+          ],
+          "translation_xyz_blocks": [
+            -0.11,
+            0.05,
+            0.06
+          ]
+        },
+        {
+          "tick": 14,
+          "rotation_xyz_deg": [
+            0,
+            0,
+            0
+          ],
+          "translation_xyz_blocks": [
+            0,
+            0,
+            0
+          ]
+        }
+      ],
+      "cues": [
+        {
+          "tick": 4,
+          "asset": "combo_2",
+          "attach_to": "hand",
+          "size_blocks": 2.55
+        },
+        {
+          "tick": 7,
+          "asset": "impact",
+          "attach_to": "contact",
+          "size_blocks": 1
+        }
+      ],
+      "next_input_window": [
+        9,
+        14
+      ]
+    },
+    "combo_3": {
+      "duration_ticks": 21,
+      "anchor": "hand",
+      "interpolation": "linear",
+      "keyframes": [
+        {
+          "tick": 0,
+          "rotation_xyz_deg": [
+            0,
+            0,
+            0
+          ],
+          "translation_xyz_blocks": [
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "tick": 6,
+          "rotation_xyz_deg": [
+            -72,
+            9,
+            -16
+          ],
+          "translation_xyz_blocks": [
+            0.03,
+            0.43,
+            -0.24
+          ]
+        },
+        {
+          "tick": 10,
+          "rotation_xyz_deg": [
+            74,
+            -8,
+            9
+          ],
+          "translation_xyz_blocks": [
+            0,
+            -0.24,
+            0.35
+          ]
+        },
+        {
+          "tick": 14,
+          "rotation_xyz_deg": [
+            33,
+            0,
+            5
+          ],
+          "translation_xyz_blocks": [
+            0,
+            -0.12,
+            0.14
+          ]
+        },
+        {
+          "tick": 21,
+          "rotation_xyz_deg": [
+            0,
+            0,
+            0
+          ],
+          "translation_xyz_blocks": [
+            0,
+            0,
+            0
+          ]
+        }
+      ],
+      "cues": [
+        {
+          "tick": 7,
+          "asset": "combo_3",
+          "attach_to": "hand",
+          "size_blocks": 2.8
+        },
+        {
+          "tick": 10,
+          "asset": "impact",
+          "attach_to": "contact",
+          "size_blocks": 1.4
+        }
+      ]
+    },
+    "throw_release": {
+      "duration_ticks": 12,
+      "anchor": "hand",
+      "interpolation": "linear",
+      "keyframes": [
+        {
+          "tick": 0,
+          "rotation_xyz_deg": [
+            0,
+            0,
+            0
+          ],
+          "translation_xyz_blocks": [
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "tick": 5,
+          "rotation_xyz_deg": [
+            -53,
+            14,
+            -19
+          ],
+          "translation_xyz_blocks": [
+            0.02,
+            0.32,
+            -0.31
+          ]
+        },
+        {
+          "tick": 8,
+          "rotation_xyz_deg": [
+            35,
+            -16,
+            22
+          ],
+          "translation_xyz_blocks": [
+            0.04,
+            0.05,
+            0.35
+          ]
+        },
+        {
+          "tick": 12,
+          "rotation_xyz_deg": [
+            0,
+            0,
+            0
+          ],
+          "translation_xyz_blocks": [
+            0,
+            0,
+            0
+          ]
+        }
+      ],
+      "cues": [],
+      "detach_tick": 8,
+      "release_to": "throw_out"
+    },
+    "throw_out": {
+      "duration_ticks": 12,
+      "anchor": "projectile",
+      "interpolation": "linear",
+      "keyframes": [
+        {
+          "tick": 0,
+          "rotation_xyz_deg": [
+            0,
+            0,
+            0
+          ],
+          "translation_xyz_blocks": [
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "tick": 12,
+          "rotation_xyz_deg": [
+            0,
+            0,
+            -360
+          ],
+          "translation_xyz_blocks": [
+            0,
+            0,
+            0
+          ]
+        }
+      ],
+      "cues": [
+        {
+          "tick": 0,
+          "asset": "throw_out",
+          "attach_to": "projectile_tail",
+          "size_blocks": 2.75
+        }
+      ],
+      "loop": true,
+      "align_to_velocity": true
+    },
+    "throw_return": {
+      "duration_ticks": 9,
+      "anchor": "projectile",
+      "interpolation": "linear",
+      "keyframes": [
+        {
+          "tick": 0,
+          "rotation_xyz_deg": [
+            0,
+            0,
+            0
+          ],
+          "translation_xyz_blocks": [
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "tick": 9,
+          "rotation_xyz_deg": [
+            0,
+            0,
+            360
+          ],
+          "translation_xyz_blocks": [
+            0,
+            0,
+            0
+          ]
+        }
+      ],
+      "cues": [
+        {
+          "tick": 0,
+          "asset": "throw_return",
+          "attach_to": "projectile_tail",
+          "size_blocks": 2.3
+        }
+      ],
+      "loop": true,
+      "align_to_velocity": true
+    },
+    "throw_break": {
+      "duration_ticks": 10,
+      "anchor": "contact",
+      "interpolation": "linear",
+      "keyframes": [],
+      "cues": [
+        {
+          "tick": 0,
+          "asset": "impact",
+          "attach_to": "contact",
+          "size_blocks": 1.2
+        },
+        {
+          "tick": 0,
+          "asset": "block_shards",
+          "attach_to": "contact",
+          "size_blocks": 1.6,
+          "tint_from": "broken_block"
+        }
+      ]
+    },
+    "throw_catch": {
+      "duration_ticks": 10,
+      "anchor": "hand",
+      "interpolation": "linear",
+      "keyframes": [
+        {
+          "tick": 0,
+          "rotation_xyz_deg": [
+            0,
+            0,
+            17
+          ],
+          "translation_xyz_blocks": [
+            0.13,
+            0.02,
+            0.15
+          ]
+        },
+        {
+          "tick": 3,
+          "rotation_xyz_deg": [
+            -10,
+            0,
+            -6
+          ],
+          "translation_xyz_blocks": [
+            0,
+            0,
+            -0.1
+          ]
+        },
+        {
+          "tick": 10,
+          "rotation_xyz_deg": [
+            0,
+            0,
+            0
+          ],
+          "translation_xyz_blocks": [
+            0,
+            0,
+            0
+          ]
+        }
+      ],
+      "cues": [
+        {
+          "tick": 0,
+          "asset": "catch",
+          "attach_to": "hand",
+          "size_blocks": 1
+        }
+      ]
+    },
+    "takeoff": {
+      "duration_ticks": 14,
+      "anchor": "hand",
+      "interpolation": "linear",
+      "keyframes": [
+        {
+          "tick": 0,
+          "rotation_xyz_deg": [
+            0,
+            0,
+            0
+          ],
+          "translation_xyz_blocks": [
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "tick": 5,
+          "rotation_xyz_deg": [
+            -33,
+            0,
+            8
+          ],
+          "translation_xyz_blocks": [
+            0.1,
+            0.38,
+            0
+          ]
+        },
+        {
+          "tick": 9,
+          "rotation_xyz_deg": [
+            -58,
+            0,
+            8
+          ],
+          "translation_xyz_blocks": [
+            0.12,
+            0.43,
+            0.24
+          ]
+        },
+        {
+          "tick": 14,
+          "rotation_xyz_deg": [
+            -36,
+            0,
+            6
+          ],
+          "translation_xyz_blocks": [
+            0.12,
+            0.34,
+            0.17
+          ]
+        }
+      ],
+      "cues": [
+        {
+          "tick": 5,
+          "asset": "takeoff",
+          "attach_to": "feet",
+          "size_blocks": 2.8
+        },
+        {
+          "tick": 6,
+          "asset": "lightning_hit",
+          "attach_to": "launch_origin",
+          "size_blocks": 2.1
+        }
+      ]
+    },
+    "flight": {
+      "duration_ticks": 16,
+      "anchor": "hand",
+      "interpolation": "linear",
+      "keyframes": [
+        {
+          "tick": 0,
+          "rotation_xyz_deg": [
+            -36,
+            0,
+            6
+          ],
+          "translation_xyz_blocks": [
+            0.12,
+            0.34,
+            0.17
+          ]
+        },
+        {
+          "tick": 8,
+          "rotation_xyz_deg": [
+            -33,
+            0,
+            8
+          ],
+          "translation_xyz_blocks": [
+            0.12,
+            0.38,
+            0.2
+          ]
+        },
+        {
+          "tick": 16,
+          "rotation_xyz_deg": [
+            -36,
+            0,
+            6
+          ],
+          "translation_xyz_blocks": [
+            0.12,
+            0.34,
+            0.17
+          ]
+        }
+      ],
+      "cues": [
+        {
+          "tick": 0,
+          "asset": "flight_wake",
+          "attach_to": "weapon_tail",
+          "size_blocks": 3.4
+        }
+      ],
+      "loop": true
+    },
+    "lightning_cast": {
+      "duration_ticks": 18,
+      "anchor": "hand",
+      "interpolation": "linear",
+      "keyframes": [
+        {
+          "tick": 0,
+          "rotation_xyz_deg": [
+            0,
+            0,
+            0
+          ],
+          "translation_xyz_blocks": [
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "tick": 6,
+          "rotation_xyz_deg": [
+            -58,
+            0,
+            13
+          ],
+          "translation_xyz_blocks": [
+            0,
+            0.27,
+            0.05
+          ]
+        },
+        {
+          "tick": 9,
+          "rotation_xyz_deg": [
+            33,
+            0,
+            -8
+          ],
+          "translation_xyz_blocks": [
+            0.08,
+            -0.06,
+            0.27
+          ]
+        },
+        {
+          "tick": 18,
+          "rotation_xyz_deg": [
+            0,
+            0,
+            0
+          ],
+          "translation_xyz_blocks": [
+            0,
+            0,
+            0
+          ]
+        }
+      ],
+      "cues": [
+        {
+          "tick": 7,
+          "asset": "wrath_target",
+          "attach_to": "target_ground",
+          "size_blocks": 1.7,
+          "stop_tick": 10
+        },
+        {
+          "tick": 10,
+          "asset": "lightning_hit",
+          "attach_to": "target_ground",
+          "size_blocks": 5.0
+        }
+      ]
+    },
+    "ground_slam": {
+      "duration_ticks": 30,
+      "anchor": "hand",
+      "interpolation": "linear",
+      "keyframes": [
+        {
+          "tick": 0,
+          "rotation_xyz_deg": [
+            0,
+            0,
+            0
+          ],
+          "translation_xyz_blocks": [
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "tick": 6,
+          "rotation_xyz_deg": [
+            -66,
+            0,
+            5
+          ],
+          "translation_xyz_blocks": [
+            0,
+            0.32,
+            -0.21
+          ]
+        },
+        {
+          "tick": 10,
+          "rotation_xyz_deg": [
+            92,
+            0,
+            0
+          ],
+          "translation_xyz_blocks": [
+            0,
+            -0.37,
+            0.35
+          ]
+        },
+        {
+          "tick": 16,
+          "rotation_xyz_deg": [
+            29,
+            0,
+            0
+          ],
+          "translation_xyz_blocks": [
+            0,
+            -0.11,
+            0.14
+          ]
+        },
+        {
+          "tick": 23,
+          "rotation_xyz_deg": [
+            0,
+            0,
+            0
+          ],
+          "translation_xyz_blocks": [
+            0,
+            0,
+            0
+          ]
+        }
+      ],
+      "cues": [
+        {
+          "tick": 10,
+          "asset": "impact",
+          "attach_to": "ground_origin",
+          "size_blocks": 2.2
+        },
+        {
+          "tick": 10,
+          "asset": "block_shards",
+          "attach_to": "ground_origin",
+          "size_blocks": 1.7
+        },
+        {
+          "tick": 11,
+          "asset": "ground_wall",
+          "attach_to": "terrain_sample",
+          "size_blocks": 3.7,
+          "forward_blocks": 1.5
+        },
+        {
+          "tick": 13,
+          "asset": "ground_wall",
+          "attach_to": "terrain_sample",
+          "size_blocks": 3.7,
+          "forward_blocks": 3.1
+        },
+        {
+          "tick": 15,
+          "asset": "ground_wall",
+          "attach_to": "terrain_sample",
+          "size_blocks": 3.7,
+          "forward_blocks": 4.7
+        },
+        {
+          "tick": 17,
+          "asset": "ground_wall",
+          "attach_to": "terrain_sample",
+          "size_blocks": 3.7,
+          "forward_blocks": 6.300000000000001
+        },
+        {
+          "tick": 19,
+          "asset": "ground_wall",
+          "attach_to": "terrain_sample",
+          "size_blocks": 3.7,
+          "forward_blocks": 7.9
+        },
+        {
+          "tick": 21,
+          "asset": "ground_wall",
+          "attach_to": "terrain_sample",
+          "size_blocks": 3.7,
+          "forward_blocks": 9.5
+        }
+      ]
+    },
+    "embedded_drop": {
+      "duration_ticks": 16,
+      "anchor": "world",
+      "interpolation": "linear",
+      "keyframes": [
+        {
+          "tick": 0,
+          "rotation_xyz_deg": [
+            0,
+            0,
+            139
+          ],
+          "translation_xyz_blocks": [
+            0,
+            0.74,
+            0
+          ]
+        },
+        {
+          "tick": 7,
+          "rotation_xyz_deg": [
+            0,
+            0,
+            174
+          ],
+          "translation_xyz_blocks": [
+            0,
+            0.11,
+            0
+          ]
+        },
+        {
+          "tick": 10,
+          "rotation_xyz_deg": [
+            0,
+            0,
+            180
+          ],
+          "translation_xyz_blocks": [
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "tick": 16,
+          "rotation_xyz_deg": [
+            0,
+            0,
+            176
+          ],
+          "translation_xyz_blocks": [
+            0,
+            0,
+            0
+          ]
+        }
+      ],
+      "cues": [
+        {
+          "tick": 10,
+          "asset": "impact",
+          "attach_to": "ground_anchor",
+          "size_blocks": 0.9
+        }
+      ],
+      "pivot_model_units": [
+        -7,
+        30.8,
+        8
+      ],
+      "continue_to": "embedded_idle"
+    },
+    "embedded_idle": {
+      "duration_ticks": 48,
+      "anchor": "world",
+      "interpolation": "linear",
+      "keyframes": [
+        {
+          "tick": 0,
+          "rotation_xyz_deg": [
+            0,
+            0,
+            176
+          ],
+          "translation_xyz_blocks": [
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "tick": 48,
+          "rotation_xyz_deg": [
+            0,
+            0,
+            176
+          ],
+          "translation_xyz_blocks": [
+            0,
+            0,
+            0
+          ]
+        }
+      ],
+      "cues": [
+        {
+          "tick": 0,
+          "asset": "embedded_idle",
+          "attach_to": "socket",
+          "size_blocks": 0.63,
+          "start_frame": 0,
+          "stop_tick": 24
+        }
+      ],
+      "pivot_model_units": [
+        -7,
+        30.8,
+        8
+      ],
+      "loop": true
+    },
+    "owner_reclaim": {
+      "duration_ticks": 15,
+      "anchor": "world",
+      "interpolation": "linear",
+      "keyframes": [
+        {
+          "tick": 0,
+          "rotation_xyz_deg": [
+            0,
+            0,
+            176
+          ],
+          "translation_xyz_blocks": [
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "tick": 6,
+          "rotation_xyz_deg": [
+            0,
+            0,
+            163
+          ],
+          "translation_xyz_blocks": [
+            0,
+            0.42,
+            0
+          ]
+        },
+        {
+          "tick": 12,
+          "rotation_xyz_deg": [
+            0,
+            0,
+            85
+          ],
+          "translation_xyz_blocks": [
+            0,
+            0.6,
+            0
+          ]
+        }
+      ],
+      "cues": [
+        {
+          "tick": 2,
+          "asset": "reclaim",
+          "attach_to": "socket",
+          "size_blocks": 1.4
+        }
+      ],
+      "attach_to_hand_tick": 12
+    },
+    "ownership_denied": {
+      "duration_ticks": 9,
+      "anchor": "world",
+      "interpolation": "linear",
+      "keyframes": [],
+      "cues": [
+        {
+          "tick": 0,
+          "asset": "ownership_denied",
+          "attach_to": "socket",
+          "size_blocks": 0.8,
+          "visibility": "interacting_viewer"
+        }
+      ]
+    },
+    "guard_hit": {
+      "duration_ticks": 10,
+      "anchor": "contact",
+      "interpolation": "linear",
+      "keyframes": [],
+      "cues": [
+        {
+          "tick": 0,
+          "asset": "gauntlet_guard",
+          "attach_to": "incoming_contact_plane",
+          "size_blocks": 1.85,
+          "orient_against": "incoming_vector"
+        }
+      ]
+    },
+    "heavens_wrath": {
+      "duration_ticks": 113,
+      "anchor": "hand",
+      "interpolation": "linear",
+      "keyframes": [
+        {
+          "tick": 0,
+          "rotation_xyz_deg": [
+            0,
+            0,
+            0
+          ],
+          "translation_xyz_blocks": [
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "tick": 14,
+          "rotation_xyz_deg": [
+            -60,
+            4,
+            -8
+          ],
+          "translation_xyz_blocks": [
+            0.08,
+            0.3,
+            -0.1
+          ]
+        },
+        {
+          "tick": 28,
+          "rotation_xyz_deg": [
+            -77,
+            0,
+            0
+          ],
+          "translation_xyz_blocks": [
+            0,
+            0.44,
+            0.04
+          ]
+        },
+        {
+          "tick": 34,
+          "rotation_xyz_deg": [
+            18,
+            0,
+            0
+          ],
+          "translation_xyz_blocks": [
+            0.02,
+            0.03,
+            0.18
+          ]
+        },
+        {
+          "tick": 48,
+          "rotation_xyz_deg": [
+            0,
+            0,
+            0
+          ],
+          "translation_xyz_blocks": [
+            0,
+            0,
+            0
+          ]
+        }
+      ],
+      "cues": [
+        {
+          "tick": 0,
+          "asset": "storm_clouds",
+          "attach_to": "camera_sky",
+          "opacity_keys": [
+            [
+              0,
+              0
+            ],
+            [
+              24,
+              0.78
+            ],
+            [
+              86,
+              0.78
+            ],
+            [
+              112,
+              0
+            ]
+          ],
+          "stop_tick": 113
+        },
+        {
+          "tick": 12,
+          "asset": "wrath_target",
+          "attach_to": "target_ground",
+          "size_blocks": 3.8,
+          "stop_tick": 85
+        },
+        {
+          "tick": 36,
+          "asset": "wrath_bolt",
+          "attach_to": "strike_point",
+          "size_blocks": 10,
+          "index": 0
+        },
+        {
+          "tick": 50,
+          "asset": "wrath_bolt",
+          "attach_to": "strike_point",
+          "size_blocks": 13,
+          "index": 1
+        },
+        {
+          "tick": 65,
+          "asset": "wrath_bolt",
+          "attach_to": "strike_point",
+          "size_blocks": 16,
+          "index": 2
+        },
+        {
+          "tick": 83,
+          "asset": "wrath_bolt",
+          "attach_to": "strike_point",
+          "size_blocks": 20,
+          "index": 3
+        },
+        {
+          "tick": 38,
+          "asset": "impact",
+          "attach_to": "strike_point",
+          "size_blocks": 2.3,
+          "index": 0
+        },
+        {
+          "tick": 52,
+          "asset": "impact",
+          "attach_to": "strike_point",
+          "size_blocks": 2.7,
+          "index": 1
+        },
+        {
+          "tick": 67,
+          "asset": "impact",
+          "attach_to": "strike_point",
+          "size_blocks": 3.2,
+          "index": 2
+        },
+        {
+          "tick": 85,
+          "asset": "impact",
+          "attach_to": "strike_point",
+          "size_blocks": 4.5,
+          "index": 3
+        }
+      ],
+      "strike_ticks": [
+        36,
+        50,
+        65,
+        83
+      ],
+      "sky_flash_opacity": 0.14
+    }
+  }
+}

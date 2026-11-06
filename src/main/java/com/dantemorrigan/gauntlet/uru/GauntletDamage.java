@@ -3,6 +3,7 @@ package com.dantemorrigan.gauntlet.uru;
 import com.dantemorrigan.gauntlet.GauntletConfig;
 import com.dantemorrigan.gauntlet.GauntletState;
 import com.dantemorrigan.gauntlet.InfinityGauntlet;
+import com.dantemorrigan.gauntlet.stormbreaker.Stormbreaker;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
@@ -36,6 +37,20 @@ public final class GauntletDamage {
 		// Thanos fears the gauntlet above all else: every ability of a worn gauntlet hits him hard (see Thanos#hurtByGauntlet).
 		if (target instanceof com.dantemorrigan.gauntlet.boss.Thanos thanos && attacker != null && !GauntletState.activeGauntlet(attacker).isEmpty()) {
 			return thanos.hurtByGauntlet(level, attacker, amount, fullGauntlet(attacker));
+		}
+		if (target instanceof ServerPlayer player && player != attacker && Stormbreaker.guarded(player)) {
+			boolean full = attacker != null && fullGauntlet(attacker);
+			GauntletConfig cfg = GauntletConfig.get();
+			float incoming = amount >= LETHAL ? cfg.uruLethalIncoming
+					: amount * (full ? Math.max(0, cfg.fullGauntletDamageMultiplier) : 1);
+			if (incoming <= 0) return false;
+			DamageSource source = full ? new DamageSource(level.registryAccess().lookupOrThrow(Registries.DAMAGE_TYPE).getOrThrow(INFINITY), attacker) : normal;
+			boolean uru = full && cfg.uruDamageFactor < .36f && UruArmor.fullSet(player);
+			float taken = Math.max(1, incoming * (uru ? cfg.uruDamageFactor : .36f));
+			if (!player.hurtServer(level, source, taken)) return false;
+			if (uru) UruArmor.absorbed(level, player, incoming - taken);
+			Stormbreaker.guardFlash(player, attacker);
+			return true;
 		}
 		if (!(target instanceof LivingEntity living) || attacker == null || !fullGauntlet(attacker)
 				|| !(living instanceof Player || UruArmor.fullSet(living))) {

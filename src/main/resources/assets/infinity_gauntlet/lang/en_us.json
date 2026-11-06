@@ -498,5 +498,14 @@
   "guide.infinity_gauntlet.p16.6": " (language, wheel mode, HUD, shake, flash).\n\nLost the book? ",
   "guide.infinity_gauntlet.p16.7": "/gauntlet_guide",
   "guide.infinity_gauntlet.p16.8": ".\n\n",
-  "guide.infinity_gauntlet.p16.9": "Use the power wisely."
+  "guide.infinity_gauntlet.p16.9": "Use the power wisely.",
+  "item.infinity_gauntlet.stormbreaker": "Stormbreaker",
+  "tooltip.infinity_gauntlet.stormbreaker": "Nidavellir’s Uru axe. Left click to swing or slam the ground. Right click to call lightning.",
+  "key.infinity_gauntlet.stormbreaker_throw": "Throw Stormbreaker",
+  "key.infinity_gauntlet.stormbreaker_wrath": "Heaven’s Wrath",
+  "key.infinity_gauntlet.stormbreaker_flight": "Stormbreaker flight",
+  "stormbreaker.infinity_gauntlet.bound": "Stormbreaker has bound itself to you.",
+  "stormbreaker.infinity_gauntlet.already_bound": "Stormbreaker answers only to its chosen wielder.",
+  "stormbreaker.infinity_gauntlet.inventory_full": "Free an inventory slot to reclaim Stormbreaker.",
+  "death.attack.stormbreaker": "%1$s was struck down by %2$s with Stormbreaker"
 }

@@ -75,6 +75,7 @@ public class InfinityGauntlet implements ModInitializer {
 		com.dantemorrigan.gauntlet.extractor.StoneExtraction.init();
 		com.dantemorrigan.gauntlet.meteor.MeteorStream.init();
 		ServerPlayNetworking.registerGlobalReceiver(ModNetwork.GestureStart.TYPE, (payload, context) -> GauntletGesture.start(context.player()));
+		com.dantemorrigan.gauntlet.stormbreaker.Stormbreaker.init();
 		LOGGER.info("Infinity Gauntlet loaded");
 	}
 

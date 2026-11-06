@@ -498,5 +498,14 @@
   "guide.infinity_gauntlet.p16.6": " (язык, колесо, HUD, тряска, вспышки).\n\nПотерял книгу? ",
   "guide.infinity_gauntlet.p16.7": "/gauntlet_guide",
   "guide.infinity_gauntlet.p16.8": ".\n\n",
-  "guide.infinity_gauntlet.p16.9": "Распоряжайся силой мудро."
+  "guide.infinity_gauntlet.p16.9": "Распоряжайся силой мудро.",
+  "item.infinity_gauntlet.stormbreaker": "Гром-Секира",
+  "tooltip.infinity_gauntlet.stormbreaker": "Уру из Нидавеллира. ЛКМ — удар или волна по земле. ПКМ — молния.",
+  "key.infinity_gauntlet.stormbreaker_throw": "Бросок Гром-Секиры",
+  "key.infinity_gauntlet.stormbreaker_wrath": "Ярость небес",
+  "key.infinity_gauntlet.stormbreaker_flight": "Полёт Гром-Секиры",
+  "stormbreaker.infinity_gauntlet.bound": "Гром-Секира выбрала тебя.",
+  "stormbreaker.infinity_gauntlet.already_bound": "Гром-Секира подчиняется только своему владельцу.",
+  "stormbreaker.infinity_gauntlet.inventory_full": "Освободи ячейку, чтобы поднять Гром-Секиру.",
+  "death.attack.stormbreaker": "%1$s пал от Гром-Секиры игрока %2$s"
 }

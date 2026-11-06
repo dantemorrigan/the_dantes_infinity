@@ -175,7 +175,7 @@ public final class MindStone {
 		Vec3 end = eye.add(look.scale(reach));
 		AABB box = player.getBoundingBox().expandTowards(look.scale(reach)).inflate(1.5);
 		EntityHitResult hit = ProjectileUtil.getEntityHitResult(player, eye, end, box,
-				e -> e instanceof LivingEntity l && l.isAlive() && !e.isSpectator() && (!(e instanceof Player) || allowPlayers && CoopRules.canAffect(player, e)) && !e.entityTags().contains(RealityStone.TAG) && !isBoss(e), reach * reach);
+				e -> e instanceof LivingEntity l && l.isAlive() && !e.isSpectator() && (!(e instanceof Player) || allowPlayers && CoopRules.canControlWithGauntlet(player, e)) && !e.entityTags().contains(RealityStone.TAG) && !isBoss(e), reach * reach);
 		return hit != null ? (LivingEntity) hit.getEntity() : null;
 	}
 
@@ -415,7 +415,7 @@ public final class MindStone {
 
 	private static boolean playerHoldValid(ServerPlayer owner, ServerPlayer victim, Hold hold) {
 		return GauntletConfig.get().mindPlayerGrab && hold.tick < 40 && !victim.isShiftKeyDown()
-				&& victim.level().getEntity(victim.getUUID()) == victim && CoopRules.canAffect(owner, victim)
+				&& victim.level().getEntity(victim.getUUID()) == victim && CoopRules.canControlWithGauntlet(owner, victim)
 				&& owner.hasLineOfSight(victim);
 	}
 

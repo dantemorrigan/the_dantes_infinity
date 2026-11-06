@@ -83,6 +83,7 @@ public final class GauntletEffects {
 		ServerTickEvents.END_SERVER_TICK.register(GauntletEffects::tick);
 		ServerLivingEntityEvents.ALLOW_DAMAGE.register((entity, source, amount) -> {
 			if (entity instanceof ServerPlayer player && state(player).phase == Phase.AWAKENED) {
+				if (source.is(com.dantemorrigan.gauntlet.stormbreaker.Stormbreaker.DAMAGE)) return true;
 				return source.is(DamageTypeTags.BYPASSES_INVULNERABILITY); // only /kill, void
 			}
 			return true;

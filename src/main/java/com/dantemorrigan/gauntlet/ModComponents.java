@@ -32,6 +32,11 @@ public final class ModComponents {
 			InfinityGauntlet.id("extractor_stone"),
 			DataComponentType.<Integer>builder().persistent(Codec.INT).networkSynchronized(ByteBufCodecs.VAR_INT).build());
 
+	/** The world record invalidates old copies when the original returns or is reclaimed. */
+	public static final DataComponentType<String> STORMBREAKER_SEAL = Registry.register(BuiltInRegistries.DATA_COMPONENT_TYPE,
+			InfinityGauntlet.id("stormbreaker_seal"),
+			DataComponentType.<String>builder().persistent(Codec.STRING).networkSynchronized(ByteBufCodecs.STRING_UTF8).build());
+
 	public static void init() {}
 
 	private ModComponents() {}

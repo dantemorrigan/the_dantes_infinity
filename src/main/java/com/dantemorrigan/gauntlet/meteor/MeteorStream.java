@@ -315,6 +315,17 @@ public final class MeteorStream {
 				return blocks && CoopRules.canEdit(owner, level, pos);
 			}
 
+            @Override
+            public float getEntityDamageAmount(Explosion explosion, Entity entity, float exposure) {
+                float damage = super.getEntityDamageAmount(explosion, entity, exposure);
+                if (damage > 0 && entity instanceof ServerPlayer player
+                        && com.dantemorrigan.gauntlet.stormbreaker.Stormbreaker.guarded(player)) {
+                    com.dantemorrigan.gauntlet.stormbreaker.Stormbreaker.guardFlash(player, owner);
+                    return damage * .36f;
+                }
+                return damage;
+            }
+
 			@Override
 			public boolean shouldDamageEntity(Explosion explosion, Entity entity) {
 				if (owner != null && entity == owner) return false; // the caster is immune to their own stream

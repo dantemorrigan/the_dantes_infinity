@@ -142,7 +142,8 @@ public final class PowerAbility {
 			Vec3 push = e.position().subtract(impact).multiply(1, 0, 1);
 			if (push.lengthSqr() < 1.0e-4) push = player.getLookAngle().multiply(1, 0, 1);
 			push = push.normalize().scale(cfg.strikeKnockback * charge * falloff);
-			e.push(push.x, 0.35 + 0.3 * charge * falloff, push.z);
+            double brace = e instanceof ServerPlayer guarded && com.dantemorrigan.gauntlet.stormbreaker.Stormbreaker.guarded(guarded) ? .36 : 1;
+			e.push(push.x * brace, (0.35 + 0.3 * charge * falloff) * brace, push.z * brace);
 			e.hurtMarked = true;
 		}
 		player.getCooldowns().addCooldown(gauntlet, cfg.strikeCooldownTicks);

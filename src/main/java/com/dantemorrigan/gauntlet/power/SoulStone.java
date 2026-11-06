@@ -121,7 +121,7 @@ public final class SoulStone {
 			if (target == null || busy(target) || !player.hasLineOfSight(target)) return;
 			POINT_CD.put(player.getUUID(), now + cfg.soulPointCooldownTicks);
 			if (target instanceof ServerPlayer victim) {
-				if (victim.isShiftKeyDown()) return;
+				if (victim.isShiftKeyDown() || !CoopRules.canControlWithGauntlet(player, victim)) return;
 				ACTIVE.add(new Extraction(player.getUUID(), target, 0, POINT_EXTRACT, 0));
 				ModStatus.send(victim, Component.translatable("ability.infinity_gauntlet.soul_escape"));
 			}
@@ -257,7 +257,7 @@ public final class SoulStone {
 		GauntletConfig config = GauntletConfig.get();
 		ItemStack gauntlet = GauntletState.activeGauntlet(owner);
 		if (!config.soulPlayerDrain || gauntlet.isEmpty() || !GauntletState.inserted(gauntlet).contains(Stone.SOUL)
-				|| owner.level().getEntity(victim.getUUID()) != victim || !CoopRules.canAffect(owner, victim)
+				|| owner.level().getEntity(victim.getUUID()) != victim || !CoopRules.canControlWithGauntlet(owner, victim)
 				|| victim.isShiftKeyDown() || victim.distanceToSqr(owner) > config.soulRange * config.soulRange
 				|| !owner.hasLineOfSight(victim)) return true;
 		Vec3 from = victim.getEyePosition(), to = owner.getEyePosition();

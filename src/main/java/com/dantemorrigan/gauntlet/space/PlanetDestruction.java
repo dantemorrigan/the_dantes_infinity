@@ -119,6 +119,10 @@ public final class PlanetDestruction {
 		List<ServerPlayer> candidates = cfg.planetDestructionAllPlayers ? new ArrayList<>(server.getPlayerList().getPlayers().stream().filter(PlanetDestruction::inVanillaDimension).toList())
 				: cfg.transferWholeDimension ? level.players() : level.getPlayers(p -> p.distanceToSqr(impact) <= cfg.participantRadius * cfg.participantRadius);
 		for (ServerPlayer p : candidates) {
+			if (p != activator && com.dantemorrigan.gauntlet.stormbreaker.Stormbreaker.guarded(p)) {
+				com.dantemorrigan.gauntlet.stormbreaker.Stormbreaker.guardFlash(p, activator);
+				continue;
+			}
 			if (p == activator || !isBusy(p) && !p.hasAttached(com.dantemorrigan.gauntlet.snap.InfinitySnap.RECORD) && !p.isSpectator() && p.isAlive()) event.participants.add(p.getUUID());
 		}
 		event.participants.add(activator.getUUID());

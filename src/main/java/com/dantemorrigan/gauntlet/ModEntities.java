@@ -39,6 +39,13 @@ public final class ModEntities {
 			EntityType.Builder.<com.dantemorrigan.gauntlet.boss.ThanosSword>of(com.dantemorrigan.gauntlet.boss.ThanosSword::new, MobCategory.MISC)
 					.sized(1.4f, 0.5f).clientTrackingRange(10).updateInterval(1).noSave().noSummon().noLootTable().build(THANOS_SWORD_KEY));
 
+	private static final ResourceKey<EntityType<?>> STORMBREAKER_KEY = ResourceKey.create(Registries.ENTITY_TYPE, InfinityGauntlet.id("stormbreaker"));
+	public static final EntityType<com.dantemorrigan.gauntlet.stormbreaker.StormbreakerEntity> STORMBREAKER =
+			Registry.register(BuiltInRegistries.ENTITY_TYPE, STORMBREAKER_KEY,
+					EntityType.Builder.<com.dantemorrigan.gauntlet.stormbreaker.StormbreakerEntity>of(
+							com.dantemorrigan.gauntlet.stormbreaker.StormbreakerEntity::new, MobCategory.MISC)
+							.sized(.95f, 1.8f).clientTrackingRange(12).updateInterval(1).noSave().noSummon().noLootTable().build(STORMBREAKER_KEY));
+
 	public static void init() {
 		FabricDefaultAttributeRegistry.register(THANOS, com.dantemorrigan.gauntlet.boss.Thanos.createAttributes());
 		FabricDefaultAttributeRegistry.register(GAUNTLET_DOLL, GauntletDoll.createAttributes());

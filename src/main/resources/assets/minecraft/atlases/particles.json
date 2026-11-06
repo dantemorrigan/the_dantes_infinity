@@ -1,0 +1,1338 @@
+{
+  "sources": [
+    {
+      "type": "minecraft:unstitch",
+      "resource": "infinity_gauntlet:particle/stormbreaker/combo_1",
+      "divisor_x": 512,
+      "divisor_y": 384,
+      "regions": [
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/combo_1_0",
+          "x": 0,
+          "y": 0,
+          "width": 128,
+          "height": 128
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/combo_1_1",
+          "x": 128,
+          "y": 0,
+          "width": 128,
+          "height": 128
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/combo_1_2",
+          "x": 256,
+          "y": 0,
+          "width": 128,
+          "height": 128
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/combo_1_3",
+          "x": 384,
+          "y": 0,
+          "width": 128,
+          "height": 128
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/combo_1_4",
+          "x": 0,
+          "y": 128,
+          "width": 128,
+          "height": 128
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/combo_1_5",
+          "x": 128,
+          "y": 128,
+          "width": 128,
+          "height": 128
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/combo_1_6",
+          "x": 256,
+          "y": 128,
+          "width": 128,
+          "height": 128
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/combo_1_7",
+          "x": 384,
+          "y": 128,
+          "width": 128,
+          "height": 128
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/combo_1_8",
+          "x": 0,
+          "y": 256,
+          "width": 128,
+          "height": 128
+        }
+      ]
+    },
+    {
+      "type": "minecraft:unstitch",
+      "resource": "infinity_gauntlet:particle/stormbreaker/combo_2",
+      "divisor_x": 512,
+      "divisor_y": 384,
+      "regions": [
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/combo_2_0",
+          "x": 0,
+          "y": 0,
+          "width": 128,
+          "height": 128
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/combo_2_1",
+          "x": 128,
+          "y": 0,
+          "width": 128,
+          "height": 128
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/combo_2_2",
+          "x": 256,
+          "y": 0,
+          "width": 128,
+          "height": 128
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/combo_2_3",
+          "x": 384,
+          "y": 0,
+          "width": 128,
+          "height": 128
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/combo_2_4",
+          "x": 0,
+          "y": 128,
+          "width": 128,
+          "height": 128
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/combo_2_5",
+          "x": 128,
+          "y": 128,
+          "width": 128,
+          "height": 128
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/combo_2_6",
+          "x": 256,
+          "y": 128,
+          "width": 128,
+          "height": 128
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/combo_2_7",
+          "x": 384,
+          "y": 128,
+          "width": 128,
+          "height": 128
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/combo_2_8",
+          "x": 0,
+          "y": 256,
+          "width": 128,
+          "height": 128
+        }
+      ]
+    },
+    {
+      "type": "minecraft:unstitch",
+      "resource": "infinity_gauntlet:particle/stormbreaker/combo_3",
+      "divisor_x": 512,
+      "divisor_y": 384,
+      "regions": [
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/combo_3_0",
+          "x": 0,
+          "y": 0,
+          "width": 128,
+          "height": 128
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/combo_3_1",
+          "x": 128,
+          "y": 0,
+          "width": 128,
+          "height": 128
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/combo_3_2",
+          "x": 256,
+          "y": 0,
+          "width": 128,
+          "height": 128
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/combo_3_3",
+          "x": 384,
+          "y": 0,
+          "width": 128,
+          "height": 128
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/combo_3_4",
+          "x": 0,
+          "y": 128,
+          "width": 128,
+          "height": 128
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/combo_3_5",
+          "x": 128,
+          "y": 128,
+          "width": 128,
+          "height": 128
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/combo_3_6",
+          "x": 256,
+          "y": 128,
+          "width": 128,
+          "height": 128
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/combo_3_7",
+          "x": 384,
+          "y": 128,
+          "width": 128,
+          "height": 128
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/combo_3_8",
+          "x": 0,
+          "y": 256,
+          "width": 128,
+          "height": 128
+        }
+      ]
+    },
+    {
+      "type": "minecraft:unstitch",
+      "resource": "infinity_gauntlet:particle/stormbreaker/lightning_hit",
+      "divisor_x": 768,
+      "divisor_y": 576,
+      "regions": [
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/lightning_hit_0",
+          "x": 0,
+          "y": 0,
+          "width": 192,
+          "height": 192
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/lightning_hit_1",
+          "x": 192,
+          "y": 0,
+          "width": 192,
+          "height": 192
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/lightning_hit_2",
+          "x": 384,
+          "y": 0,
+          "width": 192,
+          "height": 192
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/lightning_hit_3",
+          "x": 576,
+          "y": 0,
+          "width": 192,
+          "height": 192
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/lightning_hit_4",
+          "x": 0,
+          "y": 192,
+          "width": 192,
+          "height": 192
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/lightning_hit_5",
+          "x": 192,
+          "y": 192,
+          "width": 192,
+          "height": 192
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/lightning_hit_6",
+          "x": 384,
+          "y": 192,
+          "width": 192,
+          "height": 192
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/lightning_hit_7",
+          "x": 576,
+          "y": 192,
+          "width": 192,
+          "height": 192
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/lightning_hit_8",
+          "x": 0,
+          "y": 384,
+          "width": 192,
+          "height": 192
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/lightning_hit_9",
+          "x": 192,
+          "y": 384,
+          "width": 192,
+          "height": 192
+        }
+      ]
+    },
+    {
+      "type": "minecraft:unstitch",
+      "resource": "infinity_gauntlet:particle/stormbreaker/wrath_bolt",
+      "divisor_x": 1024,
+      "divisor_y": 768,
+      "regions": [
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/wrath_bolt_0",
+          "x": 0,
+          "y": 0,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/wrath_bolt_1",
+          "x": 256,
+          "y": 0,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/wrath_bolt_2",
+          "x": 512,
+          "y": 0,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/wrath_bolt_3",
+          "x": 768,
+          "y": 0,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/wrath_bolt_4",
+          "x": 0,
+          "y": 256,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/wrath_bolt_5",
+          "x": 256,
+          "y": 256,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/wrath_bolt_6",
+          "x": 512,
+          "y": 256,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/wrath_bolt_7",
+          "x": 768,
+          "y": 256,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/wrath_bolt_8",
+          "x": 0,
+          "y": 512,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/wrath_bolt_9",
+          "x": 256,
+          "y": 512,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/wrath_bolt_10",
+          "x": 512,
+          "y": 512,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/wrath_bolt_11",
+          "x": 768,
+          "y": 512,
+          "width": 256,
+          "height": 256
+        }
+      ]
+    },
+    {
+      "type": "minecraft:unstitch",
+      "resource": "infinity_gauntlet:particle/stormbreaker/ground_wall",
+      "divisor_x": 896,
+      "divisor_y": 672,
+      "regions": [
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/ground_wall_0",
+          "x": 0,
+          "y": 0,
+          "width": 224,
+          "height": 224
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/ground_wall_1",
+          "x": 224,
+          "y": 0,
+          "width": 224,
+          "height": 224
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/ground_wall_2",
+          "x": 448,
+          "y": 0,
+          "width": 224,
+          "height": 224
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/ground_wall_3",
+          "x": 672,
+          "y": 0,
+          "width": 224,
+          "height": 224
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/ground_wall_4",
+          "x": 0,
+          "y": 224,
+          "width": 224,
+          "height": 224
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/ground_wall_5",
+          "x": 224,
+          "y": 224,
+          "width": 224,
+          "height": 224
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/ground_wall_6",
+          "x": 448,
+          "y": 224,
+          "width": 224,
+          "height": 224
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/ground_wall_7",
+          "x": 672,
+          "y": 224,
+          "width": 224,
+          "height": 224
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/ground_wall_8",
+          "x": 0,
+          "y": 448,
+          "width": 224,
+          "height": 224
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/ground_wall_9",
+          "x": 224,
+          "y": 448,
+          "width": 224,
+          "height": 224
+        }
+      ]
+    },
+    {
+      "type": "minecraft:unstitch",
+      "resource": "infinity_gauntlet:particle/stormbreaker/throw_out",
+      "divisor_x": 768,
+      "divisor_y": 384,
+      "regions": [
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/throw_out_0",
+          "x": 0,
+          "y": 0,
+          "width": 192,
+          "height": 192
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/throw_out_1",
+          "x": 192,
+          "y": 0,
+          "width": 192,
+          "height": 192
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/throw_out_2",
+          "x": 384,
+          "y": 0,
+          "width": 192,
+          "height": 192
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/throw_out_3",
+          "x": 576,
+          "y": 0,
+          "width": 192,
+          "height": 192
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/throw_out_4",
+          "x": 0,
+          "y": 192,
+          "width": 192,
+          "height": 192
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/throw_out_5",
+          "x": 192,
+          "y": 192,
+          "width": 192,
+          "height": 192
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/throw_out_6",
+          "x": 384,
+          "y": 192,
+          "width": 192,
+          "height": 192
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/throw_out_7",
+          "x": 576,
+          "y": 192,
+          "width": 192,
+          "height": 192
+        }
+      ]
+    },
+    {
+      "type": "minecraft:unstitch",
+      "resource": "infinity_gauntlet:particle/stormbreaker/throw_return",
+      "divisor_x": 768,
+      "divisor_y": 384,
+      "regions": [
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/throw_return_0",
+          "x": 0,
+          "y": 0,
+          "width": 192,
+          "height": 192
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/throw_return_1",
+          "x": 192,
+          "y": 0,
+          "width": 192,
+          "height": 192
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/throw_return_2",
+          "x": 384,
+          "y": 0,
+          "width": 192,
+          "height": 192
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/throw_return_3",
+          "x": 576,
+          "y": 0,
+          "width": 192,
+          "height": 192
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/throw_return_4",
+          "x": 0,
+          "y": 192,
+          "width": 192,
+          "height": 192
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/throw_return_5",
+          "x": 192,
+          "y": 192,
+          "width": 192,
+          "height": 192
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/throw_return_6",
+          "x": 384,
+          "y": 192,
+          "width": 192,
+          "height": 192
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/throw_return_7",
+          "x": 576,
+          "y": 192,
+          "width": 192,
+          "height": 192
+        }
+      ]
+    },
+    {
+      "type": "minecraft:unstitch",
+      "resource": "infinity_gauntlet:particle/stormbreaker/flight_wake",
+      "divisor_x": 768,
+      "divisor_y": 384,
+      "regions": [
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/flight_wake_0",
+          "x": 0,
+          "y": 0,
+          "width": 192,
+          "height": 192
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/flight_wake_1",
+          "x": 192,
+          "y": 0,
+          "width": 192,
+          "height": 192
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/flight_wake_2",
+          "x": 384,
+          "y": 0,
+          "width": 192,
+          "height": 192
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/flight_wake_3",
+          "x": 576,
+          "y": 0,
+          "width": 192,
+          "height": 192
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/flight_wake_4",
+          "x": 0,
+          "y": 192,
+          "width": 192,
+          "height": 192
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/flight_wake_5",
+          "x": 192,
+          "y": 192,
+          "width": 192,
+          "height": 192
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/flight_wake_6",
+          "x": 384,
+          "y": 192,
+          "width": 192,
+          "height": 192
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/flight_wake_7",
+          "x": 576,
+          "y": 192,
+          "width": 192,
+          "height": 192
+        }
+      ]
+    },
+    {
+      "type": "minecraft:unstitch",
+      "resource": "infinity_gauntlet:particle/stormbreaker/impact",
+      "divisor_x": 512,
+      "divisor_y": 384,
+      "regions": [
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/impact_0",
+          "x": 0,
+          "y": 0,
+          "width": 128,
+          "height": 128
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/impact_1",
+          "x": 128,
+          "y": 0,
+          "width": 128,
+          "height": 128
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/impact_2",
+          "x": 256,
+          "y": 0,
+          "width": 128,
+          "height": 128
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/impact_3",
+          "x": 384,
+          "y": 0,
+          "width": 128,
+          "height": 128
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/impact_4",
+          "x": 0,
+          "y": 128,
+          "width": 128,
+          "height": 128
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/impact_5",
+          "x": 128,
+          "y": 128,
+          "width": 128,
+          "height": 128
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/impact_6",
+          "x": 256,
+          "y": 128,
+          "width": 128,
+          "height": 128
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/impact_7",
+          "x": 384,
+          "y": 128,
+          "width": 128,
+          "height": 128
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/impact_8",
+          "x": 0,
+          "y": 256,
+          "width": 128,
+          "height": 128
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/impact_9",
+          "x": 128,
+          "y": 256,
+          "width": 128,
+          "height": 128
+        }
+      ]
+    },
+    {
+      "type": "minecraft:unstitch",
+      "resource": "infinity_gauntlet:particle/stormbreaker/block_shards",
+      "divisor_x": 512,
+      "divisor_y": 384,
+      "regions": [
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/block_shards_0",
+          "x": 0,
+          "y": 0,
+          "width": 128,
+          "height": 128
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/block_shards_1",
+          "x": 128,
+          "y": 0,
+          "width": 128,
+          "height": 128
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/block_shards_2",
+          "x": 256,
+          "y": 0,
+          "width": 128,
+          "height": 128
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/block_shards_3",
+          "x": 384,
+          "y": 0,
+          "width": 128,
+          "height": 128
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/block_shards_4",
+          "x": 0,
+          "y": 128,
+          "width": 128,
+          "height": 128
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/block_shards_5",
+          "x": 128,
+          "y": 128,
+          "width": 128,
+          "height": 128
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/block_shards_6",
+          "x": 256,
+          "y": 128,
+          "width": 128,
+          "height": 128
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/block_shards_7",
+          "x": 384,
+          "y": 128,
+          "width": 128,
+          "height": 128
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/block_shards_8",
+          "x": 0,
+          "y": 256,
+          "width": 128,
+          "height": 128
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/block_shards_9",
+          "x": 128,
+          "y": 256,
+          "width": 128,
+          "height": 128
+        }
+      ]
+    },
+    {
+      "type": "minecraft:unstitch",
+      "resource": "infinity_gauntlet:particle/stormbreaker/catch",
+      "divisor_x": 512,
+      "divisor_y": 384,
+      "regions": [
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/catch_0",
+          "x": 0,
+          "y": 0,
+          "width": 128,
+          "height": 128
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/catch_1",
+          "x": 128,
+          "y": 0,
+          "width": 128,
+          "height": 128
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/catch_2",
+          "x": 256,
+          "y": 0,
+          "width": 128,
+          "height": 128
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/catch_3",
+          "x": 384,
+          "y": 0,
+          "width": 128,
+          "height": 128
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/catch_4",
+          "x": 0,
+          "y": 128,
+          "width": 128,
+          "height": 128
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/catch_5",
+          "x": 128,
+          "y": 128,
+          "width": 128,
+          "height": 128
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/catch_6",
+          "x": 256,
+          "y": 128,
+          "width": 128,
+          "height": 128
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/catch_7",
+          "x": 384,
+          "y": 128,
+          "width": 128,
+          "height": 128
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/catch_8",
+          "x": 0,
+          "y": 256,
+          "width": 128,
+          "height": 128
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/catch_9",
+          "x": 128,
+          "y": 256,
+          "width": 128,
+          "height": 128
+        }
+      ]
+    },
+    {
+      "type": "minecraft:unstitch",
+      "resource": "infinity_gauntlet:particle/stormbreaker/reclaim",
+      "divisor_x": 512,
+      "divisor_y": 384,
+      "regions": [
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/reclaim_0",
+          "x": 0,
+          "y": 0,
+          "width": 128,
+          "height": 128
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/reclaim_1",
+          "x": 128,
+          "y": 0,
+          "width": 128,
+          "height": 128
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/reclaim_2",
+          "x": 256,
+          "y": 0,
+          "width": 128,
+          "height": 128
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/reclaim_3",
+          "x": 384,
+          "y": 0,
+          "width": 128,
+          "height": 128
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/reclaim_4",
+          "x": 0,
+          "y": 128,
+          "width": 128,
+          "height": 128
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/reclaim_5",
+          "x": 128,
+          "y": 128,
+          "width": 128,
+          "height": 128
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/reclaim_6",
+          "x": 256,
+          "y": 128,
+          "width": 128,
+          "height": 128
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/reclaim_7",
+          "x": 384,
+          "y": 128,
+          "width": 128,
+          "height": 128
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/reclaim_8",
+          "x": 0,
+          "y": 256,
+          "width": 128,
+          "height": 128
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/reclaim_9",
+          "x": 128,
+          "y": 256,
+          "width": 128,
+          "height": 128
+        }
+      ]
+    },
+    {
+      "type": "minecraft:unstitch",
+      "resource": "infinity_gauntlet:particle/stormbreaker/takeoff",
+      "divisor_x": 512,
+      "divisor_y": 384,
+      "regions": [
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/takeoff_0",
+          "x": 0,
+          "y": 0,
+          "width": 128,
+          "height": 128
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/takeoff_1",
+          "x": 128,
+          "y": 0,
+          "width": 128,
+          "height": 128
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/takeoff_2",
+          "x": 256,
+          "y": 0,
+          "width": 128,
+          "height": 128
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/takeoff_3",
+          "x": 384,
+          "y": 0,
+          "width": 128,
+          "height": 128
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/takeoff_4",
+          "x": 0,
+          "y": 128,
+          "width": 128,
+          "height": 128
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/takeoff_5",
+          "x": 128,
+          "y": 128,
+          "width": 128,
+          "height": 128
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/takeoff_6",
+          "x": 256,
+          "y": 128,
+          "width": 128,
+          "height": 128
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/takeoff_7",
+          "x": 384,
+          "y": 128,
+          "width": 128,
+          "height": 128
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/takeoff_8",
+          "x": 0,
+          "y": 256,
+          "width": 128,
+          "height": 128
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/takeoff_9",
+          "x": 128,
+          "y": 256,
+          "width": 128,
+          "height": 128
+        }
+      ]
+    },
+    {
+      "type": "minecraft:unstitch",
+      "resource": "infinity_gauntlet:particle/stormbreaker/gauntlet_guard",
+      "divisor_x": 512,
+      "divisor_y": 384,
+      "regions": [
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/gauntlet_guard_0",
+          "x": 0,
+          "y": 0,
+          "width": 128,
+          "height": 128
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/gauntlet_guard_1",
+          "x": 128,
+          "y": 0,
+          "width": 128,
+          "height": 128
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/gauntlet_guard_2",
+          "x": 256,
+          "y": 0,
+          "width": 128,
+          "height": 128
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/gauntlet_guard_3",
+          "x": 384,
+          "y": 0,
+          "width": 128,
+          "height": 128
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/gauntlet_guard_4",
+          "x": 0,
+          "y": 128,
+          "width": 128,
+          "height": 128
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/gauntlet_guard_5",
+          "x": 128,
+          "y": 128,
+          "width": 128,
+          "height": 128
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/gauntlet_guard_6",
+          "x": 256,
+          "y": 128,
+          "width": 128,
+          "height": 128
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/gauntlet_guard_7",
+          "x": 384,
+          "y": 128,
+          "width": 128,
+          "height": 128
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/gauntlet_guard_8",
+          "x": 0,
+          "y": 256,
+          "width": 128,
+          "height": 128
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/gauntlet_guard_9",
+          "x": 128,
+          "y": 256,
+          "width": 128,
+          "height": 128
+        }
+      ]
+    },
+    {
+      "type": "minecraft:unstitch",
+      "resource": "infinity_gauntlet:particle/stormbreaker/ownership_denied",
+      "divisor_x": 512,
+      "divisor_y": 384,
+      "regions": [
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/ownership_denied_0",
+          "x": 0,
+          "y": 0,
+          "width": 128,
+          "height": 128
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/ownership_denied_1",
+          "x": 128,
+          "y": 0,
+          "width": 128,
+          "height": 128
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/ownership_denied_2",
+          "x": 256,
+          "y": 0,
+          "width": 128,
+          "height": 128
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/ownership_denied_3",
+          "x": 384,
+          "y": 0,
+          "width": 128,
+          "height": 128
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/ownership_denied_4",
+          "x": 0,
+          "y": 128,
+          "width": 128,
+          "height": 128
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/ownership_denied_5",
+          "x": 128,
+          "y": 128,
+          "width": 128,
+          "height": 128
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/ownership_denied_6",
+          "x": 256,
+          "y": 128,
+          "width": 128,
+          "height": 128
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/ownership_denied_7",
+          "x": 384,
+          "y": 128,
+          "width": 128,
+          "height": 128
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/ownership_denied_8",
+          "x": 0,
+          "y": 256,
+          "width": 128,
+          "height": 128
+        }
+      ]
+    },
+    {
+      "type": "minecraft:unstitch",
+      "resource": "infinity_gauntlet:particle/stormbreaker/embedded_idle",
+      "divisor_x": 512,
+      "divisor_y": 256,
+      "regions": [
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/embedded_idle_0",
+          "x": 0,
+          "y": 0,
+          "width": 128,
+          "height": 128
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/embedded_idle_1",
+          "x": 128,
+          "y": 0,
+          "width": 128,
+          "height": 128
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/embedded_idle_2",
+          "x": 256,
+          "y": 0,
+          "width": 128,
+          "height": 128
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/embedded_idle_3",
+          "x": 384,
+          "y": 0,
+          "width": 128,
+          "height": 128
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/embedded_idle_4",
+          "x": 0,
+          "y": 128,
+          "width": 128,
+          "height": 128
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/embedded_idle_5",
+          "x": 128,
+          "y": 128,
+          "width": 128,
+          "height": 128
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/embedded_idle_6",
+          "x": 256,
+          "y": 128,
+          "width": 128,
+          "height": 128
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/embedded_idle_7",
+          "x": 384,
+          "y": 128,
+          "width": 128,
+          "height": 128
+        }
+      ]
+    },
+    {
+      "type": "minecraft:unstitch",
+      "resource": "infinity_gauntlet:particle/stormbreaker/wrath_target",
+      "divisor_x": 512,
+      "divisor_y": 384,
+      "regions": [
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/wrath_target_0",
+          "x": 0,
+          "y": 0,
+          "width": 128,
+          "height": 128
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/wrath_target_1",
+          "x": 128,
+          "y": 0,
+          "width": 128,
+          "height": 128
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/wrath_target_2",
+          "x": 256,
+          "y": 0,
+          "width": 128,
+          "height": 128
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/wrath_target_3",
+          "x": 384,
+          "y": 0,
+          "width": 128,
+          "height": 128
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/wrath_target_4",
+          "x": 0,
+          "y": 128,
+          "width": 128,
+          "height": 128
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/wrath_target_5",
+          "x": 128,
+          "y": 128,
+          "width": 128,
+          "height": 128
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/wrath_target_6",
+          "x": 256,
+          "y": 128,
+          "width": 128,
+          "height": 128
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/wrath_target_7",
+          "x": 384,
+          "y": 128,
+          "width": 128,
+          "height": 128
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/wrath_target_8",
+          "x": 0,
+          "y": 256,
+          "width": 128,
+          "height": 128
+        },
+        {
+          "sprite": "infinity_gauntlet:stormbreaker/wrath_target_9",
+          "x": 128,
+          "y": 256,
+          "width": 128,
+          "height": 128
+        }
+      ]
+    }
+  ]
+}

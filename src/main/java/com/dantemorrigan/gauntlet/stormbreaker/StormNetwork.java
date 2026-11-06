@@ -1,0 +1,47 @@
+package com.dantemorrigan.gauntlet.stormbreaker;
+
+import com.dantemorrigan.gauntlet.InfinityGauntlet;
+import io.netty.buffer.ByteBuf;
+import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
+import net.fabricmc.fabric.api.networking.v1.PlayerLookup;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
+import net.minecraft.network.codec.ByteBufCodecs;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.phys.Vec3;
+
+public final class StormNetwork {
+    public static final int THROW = 0, WRATH = 1, FLIGHT = 2, AIR_SWING = 3;
+
+    public record Action(int action) implements CustomPacketPayload {
+        public static final Type<Action> TYPE = new Type<>(InfinityGauntlet.id("stormbreaker_action"));
+        public static final StreamCodec<ByteBuf, Action> CODEC =
+                StreamCodec.composite(ByteBufCodecs.VAR_INT, Action::action, Action::new);
+        @Override public Type<Action> type() { return TYPE; }
+    }
+
+    public record Visual(int entity, String clip, int elapsed, Vec3 origin) implements CustomPacketPayload {
+        public static final Type<Visual> TYPE = new Type<>(InfinityGauntlet.id("stormbreaker_visual"));
+        public static final StreamCodec<ByteBuf, Visual> CODEC = StreamCodec.composite(
+                ByteBufCodecs.VAR_INT, Visual::entity, ByteBufCodecs.STRING_UTF8, Visual::clip,
+                ByteBufCodecs.VAR_INT, Visual::elapsed, Vec3.STREAM_CODEC, Visual::origin, Visual::new);
+        @Override public Type<Visual> type() { return TYPE; }
+    }
+
+    static void init() {
+        PayloadTypeRegistry.serverboundPlay().register(Action.TYPE, Action.CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(Visual.TYPE, Visual.CODEC);
+        ServerPlayNetworking.registerGlobalReceiver(Action.TYPE, (packet, context) ->
+                Stormbreaker.action(context.player(), packet.action()));
+    }
+
+    static void visual(ServerPlayer owner, String clip, int elapsed, Vec3 origin) {
+        var payload = new Visual(owner.getId(), clip, elapsed, origin);
+        for (ServerPlayer viewer : PlayerLookup.around(owner.level(), origin, 110)) {
+            if (ServerPlayNetworking.canSend(viewer, Visual.TYPE)) ServerPlayNetworking.send(viewer, payload);
+        }
+    }
+
+    private StormNetwork() {}
+}
