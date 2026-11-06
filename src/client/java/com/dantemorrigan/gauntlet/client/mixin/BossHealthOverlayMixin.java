@@ -49,6 +49,7 @@ abstract class BossHealthOverlayMixin {
 	private static BossBarArt infinityGauntlet$art(BossEvent event) {
 		if (!(event.getName().getContents() instanceof TranslatableContents title)) return null;
 		return switch (title.getKey()) {
+			case "entity.infinity_gauntlet.living_tribunal" -> BossBarArt.TRIBUNAL;
 			case "entity.infinity_gauntlet.loki" -> BossBarArt.LOKI;
 			case "boss.infinity_gauntlet.loki.rage" -> BossBarArt.FENRIR;
 			default -> null;

@@ -30,7 +30,7 @@ public final class LivingTribunal extends Monster {
     }
 	public static final int ARRIVAL = 0, BATTLE = 1, VERDICT = 2, DEPARTURE = 3;
 	public static final int EDICT=1, GRAVITY=2, NOVA=3, VOLLEY=4, WAVE=5, LANCE=6, PRISON=7;
-	public static final int INTRO_TICKS = 130, VERDICT_TICKS = 160, SHATTER_TICK = 105, WINDUP = 34;
+	public static final int INTRO_TICKS = 180, VERDICT_TICKS = 160, SHATTER_TICK = 105, WINDUP = 34;
 	private static final EntityDataAccessor<Integer> CHALLENGER = SynchedEntityData.defineId(LivingTribunal.class, EntityDataSerializers.INT);
 	private static final EntityDataAccessor<Integer> PHASE = SynchedEntityData.defineId(LivingTribunal.class, EntityDataSerializers.INT);
 	private static final EntityDataAccessor<Integer> AGE = SynchedEntityData.defineId(LivingTribunal.class, EntityDataSerializers.INT);
@@ -43,6 +43,9 @@ public final class LivingTribunal extends Monster {
 	int nextAttack = 18;
 	long exposedUntil;
     private boolean gauntletHit;
+    private long damageWindow=-20;
+    private float windowDamage;
+    public static final int DEATH_TICKS=100, EXPLOSION_TICK=55;
     public boolean hurtByGauntlet(ServerLevel level,ServerPlayer owner,float amount) {
         gauntletHit=true;try{return hurtServer(level,level.damageSources().playerAttack(owner),amount);}finally{gauntletHit=false;}
     }
@@ -111,9 +114,15 @@ public final class LivingTribunal extends Monster {
 	public boolean hurtServer(ServerLevel level, DamageSource source, float amount) {
 		if (phase() != BATTLE || !(source.getEntity() instanceof ServerPlayer player)
 				|| !TribunalEncounter.isChallenger(this, player) || !(amount > 0) || !Float.isFinite(amount)) return false;
-		float resistance = gauntletHit ? (level.getGameTime()<exposedUntil?.85f:.55f) : .14f;
+		boolean exposed=level.getGameTime()<exposedUntil;
+        if(level.getGameTime()-damageWindow>=20){damageWindow=level.getGameTime();windowDamage=0;}
+        // Shared across every spell and beam slice: stacking casts cannot erase the boss in two volleys.
+        float hit=Math.min(Math.min(amount,100)*(gauntletHit?(exposed?.32f:.18f):.10f),Math.max(0,(exposed?14:8)-windowDamage));
+        if(hit<=0)return false;
+        float before=getHealth();
         if(gauntletHit) invulnerableTime=0;
-        return super.hurtServer(level, source, Math.min(amount,100)*resistance);
+        boolean result=super.hurtServer(level,source,hit);
+        windowDamage+=Math.max(0,before-getHealth());return result;
 	}
 
 	@Override
@@ -125,6 +134,14 @@ public final class LivingTribunal extends Monster {
 
 	@Override
 	protected void tickDeath() {
-		if (++deathTime >= 55 && level() instanceof ServerLevel) discard();
+		++deathTime;
+        if(level() instanceof ServerLevel level){
+            if(deathTime==EXPLOSION_TICK){
+                Vec3 at=position().add(0,53,0);
+                level.sendParticles(net.minecraft.core.particles.ParticleTypes.END_ROD,at.x,at.y,at.z,180,25,40,25,.8);
+                level.playSound(null,net.minecraft.core.BlockPos.containing(at),net.minecraft.sounds.SoundEvents.GENERIC_EXPLODE.value(),net.minecraft.sounds.SoundSource.HOSTILE,6,.5f);
+            }
+            if(deathTime>=DEATH_TICKS)discard();
+        }
 	}
 }

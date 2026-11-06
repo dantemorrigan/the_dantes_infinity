@@ -14,7 +14,7 @@ import net.minecraft.world.phys.Vec3;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 
 public final class TribunalClient {
-	private static LivingTribunal nearby;
+	private static LivingTribunal nearby, departing;
 	private static ClientLevel level;
 	private static ThanosClient.Music music;
 	private static int ticks, musicAt, lastPhase = -1, lastAge;
@@ -57,9 +57,11 @@ public final class TribunalClient {
 			ticks++;
             BOLTS.values().removeIf(b->++b.age>b.duration);
 			shake *= .84f;
-			nearby = mc.player == null || mc.level == null ? null
-					: mc.level.getEntitiesOfClass(LivingTribunal.class, mc.player.getBoundingBox().inflate(340),
-							boss -> boss.isAlive() && boss.challenger() == mc.player.getId() && boss.phase() != LivingTribunal.DEPARTURE).stream().findFirst().orElse(null);
+            java.util.List<LivingTribunal> actors=mc.player==null || mc.level==null?java.util.List.of():mc.level.getEntitiesOfClass(
+                LivingTribunal.class,mc.player.getBoundingBox().inflate(340),boss->boss.challenger()==mc.player.getId());
+            nearby=actors.stream().filter(boss->boss.isAlive() && boss.phase()!=LivingTribunal.DEPARTURE).findFirst().orElse(null);
+            departing=actors.stream().filter(boss->boss.phase()==LivingTribunal.DEPARTURE).findFirst().orElse(null);
+            if(departing!=null && departing.deathTime>=LivingTribunal.EXPLOSION_TICK && departing.deathTime<LivingTribunal.EXPLOSION_TICK+3)shake=1;
 			if (music != null && (music.isStopped() || ticks - musicAt > 40 && !mc.getSoundManager().isActive(music))) { music.halt(); music = null; }
 			if (nearby != null && mc.player.isAlive()) {
 				if (music == null || music.fading()) {
@@ -82,10 +84,14 @@ public final class TribunalClient {
 			} else { lastPhase = -1; if (music != null) music.fadeOut(45); }
 		});
 		HudElementRegistry.addLast(InfinityGauntlet.id("tribunal_cinematic"), (g, partial) -> {
+            if(departing!=null) {
+                float t=(departing.deathTime+partial.getGameTimeDeltaPartialTick(false)-LivingTribunal.EXPLOSION_TICK)/12f;
+                if(t>=0 && t<1)g.fill(0,0,g.guiWidth(),g.guiHeight(),ARGB.color((int)(210*(1-t)*(1-t)),255,247,225));
+            }
 			LivingTribunal boss = nearby;
 			if (boss == null) return;
             if(boss.phase()==LivingTribunal.BATTLE) {
-                if(boss.attack()>0) g.centeredText(Minecraft.getInstance().font,Component.translatable("tribunal.infinity_gauntlet.attack."+boss.attack()),g.guiWidth()/2,36,0xffffdfa0);
+                if(boss.attack()>0) g.centeredText(Minecraft.getInstance().font,Component.translatable("tribunal.infinity_gauntlet.attack."+boss.attack()),g.guiWidth()/2,58,0xffffdfa0);
                 return;
             }
 			int age = boss.sceneAge();
@@ -118,7 +124,7 @@ public final class TribunalClient {
 	}
 	private static void reset() {
 		if (music != null) music.halt();
-		BOLTS.clear(); music = null; nearby = null; level = null; lastPhase = -1; shake = 0;
+		BOLTS.clear(); music = null; nearby = null; departing=null; level = null; lastPhase = -1; shake = 0;
 	}
 
 	private TribunalClient() {}

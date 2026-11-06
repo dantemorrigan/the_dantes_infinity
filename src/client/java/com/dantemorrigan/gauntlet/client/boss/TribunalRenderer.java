@@ -54,7 +54,7 @@ public final class TribunalRenderer extends EntityRenderer<LivingTribunal, Tribu
 		final ItemStackRenderState gauntlet = new ItemStackRenderState();
 	}
 
-	@Override protected net.minecraft.world.phys.AABB getBoundingBoxForCulling(LivingTribunal e) { return e.getBoundingBox().inflate(30); }
+	@Override protected net.minecraft.world.phys.AABB getBoundingBoxForCulling(LivingTribunal e) { return e.getBoundingBox().inflate(150); }
 
 	@Override public State createRenderState() { return new State(); }
 
@@ -81,25 +81,29 @@ public final class TribunalRenderer extends EntityRenderer<LivingTribunal, Tribu
 	@Override
 	public void submit(State state, PoseStack pose, SubmitNodeCollector collector, CameraRenderState camera) {
 		loadModel();
-		float reveal = state.phase == LivingTribunal.ARRIVAL ? smooth((state.ticks - 20) / 85) : 1;
-		float fade = state.phase == LivingTribunal.DEPARTURE ? 1 - smooth(state.death / 52) : 1;
+		float reveal = state.phase == LivingTribunal.ARRIVAL ? smooth((state.ticks - 36) / 100) : 1;
+		float fade = state.phase == LivingTribunal.DEPARTURE ? 1 - smooth((state.death-48) / 37) : 1;
 		float rise = 0;
         Vec3 forward=Vec3.directionFromRotation(0,state.yaw);
-        Vec3 emerge=state.phase==LivingTribunal.ARRIVAL?forward.scale(-84*(1-reveal)):Vec3.ZERO;
+        Vec3 emerge=state.phase==LivingTribunal.ARRIVAL?forward.scale(-112*(1-reveal)):Vec3.ZERO;
         Vec3 plane=state.base.subtract(Minecraft.getInstance().gameRenderer.getMainCamera().position()).add(forward.scale(-36));
         Vec3 normal=forward.reverse();
         GeoModel.Clip clip=state.phase==LivingTribunal.ARRIVAL?new GeoModel.Clip((float)normal.x,0,(float)normal.z,(float)normal.dot(plane)):null;
 		if (state.phase == LivingTribunal.ARRIVAL) {
-			float radius = 65 * smooth(state.ticks / 18) * (1 - smooth((state.ticks - 104) / 26));
+			float radius = 122 * smooth(state.ticks / 32) * (1 - smooth((state.ticks - 146) / 34));
 			Vec3 behind = Vec3.directionFromRotation(0, state.yaw).scale(-36).add(0, 53, 0);
 			portal(pose,collector,HOLE,behind,radius,state.yaw,0,0xffffffff);
-			portal(pose,collector,HALO,behind,radius*1.15f,state.yaw,state.ticks*2.1f,0xe6ffffff);
+			portal(pose,collector,HALO,behind,radius*1.15f,state.yaw,state.ticks*.6f,0xe6ffffff);
+            portal(pose,collector,HALO,behind,radius*1.3f,state.yaw,-state.ticks*.4f,0x887e74ed);
 		}
 		Map<String, GeoModel.BonePose> bones = bones(state, reveal);
         if(state.attack>0) {
             for(boolean left:new boolean[]{false,true}) {
                 Vec3 palm=com.dantemorrigan.gauntlet.boss.TribunalPose.palm(state.yaw,state.ageInTicks,state.phase,state.attack,state.ticks,left);
-                billboard(pose,collector,HALO,palm,3.5f+smooth(state.ticks/34)*3.5f,state.ticks*4,0xffaadeff);
+                float charge=12+smooth(state.ticks/34)*10;
+                billboard(pose,collector,HALO,palm,charge,state.ticks*1.5f,0xffaadeff);
+                billboard(pose,collector,EDICT,palm,charge*.8f,-state.ticks*2,0xfff6db9b);
+                sphere(pose,collector,palm,charge*.55f,0x99d3ecff);
                 if(left && (state.attack==LivingTribunal.GRAVITY || state.attack==LivingTribunal.PRISON || state.attack==LivingTribunal.WAVE))
                     beam(pose,collector,palm,state.mark.subtract(state.base),.35f,0x99d9aaff);
             }
@@ -111,13 +115,22 @@ public final class TribunalRenderer extends EntityRenderer<LivingTribunal, Tribu
 			modelTransform(pose, state.yaw, rise);
 			int tint = ARGB.color((int) (fade * 255), 255, 255, 255);
 			collector.submitCustomGeometry(pose, fade < .99f ? RenderTypes.entityTranslucent(GOLD) : RenderTypes.entityCutout(GOLD),
-					(p, out) -> model.renderClipped(ThanosRenderer.stack(p), out, bones, LightCoordsUtil.FULL_BRIGHT,
-							OverlayTexture.NO_OVERLAY, (bone, cube) -> GLOW.contains(cube) ? 0 : tint,clip));
+					(p, out) -> drawBody(p,out,bones,(bone,cube)->GLOW.contains(cube)?0:tint,clip,state));
 			collector.order(1).submitCustomGeometry(pose, RenderTypes.entityTranslucentEmissive(EMISSIVE),
-					(p, out) -> model.renderClipped(ThanosRenderer.stack(p), out, bones, LightCoordsUtil.FULL_BRIGHT,
-							OverlayTexture.NO_OVERLAY, (bone, cube) -> GLOW.contains(cube) ? tint : 0,clip));
+					(p, out) -> drawBody(p,out,bones,(bone,cube)->GLOW.contains(cube)?tint:0,clip,state));
 			pose.popPose();
 		}
+        if(state.phase==LivingTribunal.DEPARTURE) {
+            Vec3 center=new Vec3(0,53,0);
+            float collapse=smooth(state.death/55);
+            billboard(pose,collector,HALO,center,8+30*collapse,state.death*3,ARGB.color((int)(221*(1-smooth((state.death-55)/45))),233,229,255));
+            if(state.death>=LivingTribunal.EXPLOSION_TICK) {
+                float t=(state.death-LivingTribunal.EXPLOSION_TICK)/45;
+                int color=ARGB.color((int)(255*(1-t)),255,243,210);
+                blast(pose,collector,center,20+160*t,color);
+                sphere(pose,collector,center,8+130*t,color);
+            }
+        }
 		if (state.attack > 0) {
 			Vec3 at = state.mark.subtract(state.base);
 			float radius = state.attack == LivingTribunal.NOVA ? 30 : state.attack == LivingTribunal.GRAVITY ? 18 : state.attack == LivingTribunal.PRISON ? 24 : state.attack == LivingTribunal.LANCE ? 5 : 10;
@@ -159,22 +172,27 @@ public final class TribunalRenderer extends EntityRenderer<LivingTribunal, Tribu
 		super.submit(state, pose, collector, camera);
 	}
 
+    private static void drawBody(PoseStack.Pose p,VertexConsumer out,Map<String,GeoModel.BonePose> bones,GeoModel.CubeTint tint,GeoModel.Clip clip,State state) {
+        if(state.phase==LivingTribunal.DEPARTURE) model.renderFragments(ThanosRenderer.stack(p),out,bones,LightCoordsUtil.FULL_BRIGHT,OverlayTexture.NO_OVERLAY,tint,state.death);
+        else model.renderClipped(ThanosRenderer.stack(p),out,bones,LightCoordsUtil.FULL_BRIGHT,OverlayTexture.NO_OVERLAY,tint,clip);
+    }
+
 	private static Map<String, GeoModel.BonePose> bones(State state, float reveal) {
 		Map<String, GeoModel.BonePose> bones = new HashMap<>();
 		float reach = state.phase == LivingTribunal.VERDICT ? smooth(state.ticks / 28)
 				: state.attack > 0 ? Mth.sin(Mth.PI * Mth.clamp(state.ticks / 48, 0, 1)) : 0;
-		float open = state.phase == LivingTribunal.ARRIVAL ? Mth.sin(reveal * Mth.PI) : 0;
-		bone(bones, "right_arm", -70 * reach - 9 * open, -14 * reach, -10 - 24 * open);
-		bone(bones, "left_arm", -28 * reach - 9 * open, 0, 10 + 24 * open);
+		float open = state.phase == LivingTribunal.ARRIVAL ? Mth.sin(reveal*Mth.PI) : 0;
+		bone(bones, "right_arm", -70 * reach - 9 * open, -14 * reach, -10 - 8 * open);
+		bone(bones, "left_arm", -28 * reach - 9 * open, 0, 10 + 8 * open);
 		bone(bones, "right_forearm", -27 * reach, 0, 0);
 		bone(bones, "left_forearm", -16 * reach, 0, 0);
 		bone(bones, "right_hand", 19 * smooth((state.ticks - 87) / 18) * reach, 0, 0);
-		bone(bones, "head", state.phase == LivingTribunal.DEPARTURE ? 32 * smooth(state.death / 52) : 8 * reach,
+		bone(bones, "head", state.phase == LivingTribunal.DEPARTURE ? 32 * smooth(state.death / 52) : state.phase==LivingTribunal.ARRIVAL?22*(1-reveal):8 * reach,
 				6 * Mth.sin(state.ageInTicks * .048f), 0);
 		bone(bones, "body", 0, 0, 2 * Mth.sin(state.ageInTicks * .039f));
         if(state.phase==LivingTribunal.ARRIVAL) {
-            bone(bones,"right_leg",-20*Mth.sin(reveal*Mth.PI),0,0);
-            bone(bones,"left_leg",12*Mth.sin(reveal*Mth.PI),0,0);
+            bone(bones,"right_leg",-5*Mth.sin(reveal*Mth.PI),0,0);
+            bone(bones,"left_leg",3*Mth.sin(reveal*Mth.PI),0,0);
         }
 
 		return bones;

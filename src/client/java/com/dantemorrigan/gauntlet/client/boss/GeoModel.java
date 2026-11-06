@@ -183,6 +183,27 @@ public final class GeoModel {
 	// ------------------------------------------------------------------ drawing
 
 
+    /** Deterministic cube debris; called only for the Tribunal's victory sequence. */
+    public void renderFragments(PoseStack pose,VertexConsumer out,Map<String,BonePose> poses,int light,int overlay,CubeTint tint,float age) {
+        for(Bone bone:bones.values()) {
+            pose.pushPose();transformTo(pose,bone.name,poses);
+            for(Cube c:bone.cubes) {
+                int color=tint.color(bone,c);if(color==0)continue;
+                float t=Math.max(0,age-10-c.seed*14)/55f;
+                var center=c.center().mul(1f/16);
+                var direction=new Vector3f(center.x,center.y-2.3f,center.z);
+                if(direction.lengthSquared()<.01)direction.set(0,0,-1);
+                direction.normalize().mul(t*t*2.8f);
+                pose.pushPose();pose.translate(center.x+direction.x,center.y+direction.y,center.z+direction.z);
+                pose.mulPose(com.mojang.math.Axis.YP.rotationDegrees(t*(80+c.seed*150)));
+                pose.mulPose(com.mojang.math.Axis.XP.rotationDegrees(t*(40+c.seed*100)));
+                float scale=Math.max(.03f,1-t*.65f);pose.scale(scale,scale,scale);pose.translate(-center.x,-center.y,-center.z);
+                cube(out,pose.last(),c,color,light,overlay,null);pose.popPose();
+            }
+            pose.popPose();
+        }
+    }
+
     public record Clip(float nx,float ny,float nz,float offset) {
         float distance(Vector3f p){return p.x*nx+p.y*ny+p.z*nz-offset;}
     }
