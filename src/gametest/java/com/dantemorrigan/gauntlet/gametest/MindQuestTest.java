@@ -19,6 +19,8 @@ import net.minecraft.world.entity.ExperienceOrb;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.level.Level;
+import net.minecraft.core.BlockPos;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
@@ -196,6 +198,38 @@ public class MindQuestTest implements FabricClientGameTest {
 			if (server.computeOnServer(s -> !s.overworld().getEntitiesOfClass(Loki.class, city, Loki::isAlive).isEmpty())) {
 				throw new AssertionError("Loki or his illusions remained after the encounter");
 			}
+			server.runCommand("gauntlet loki reset");
+			ctx.waitTicks(105);
+			server.runOnServer(s -> {
+				var level = s.overworld();
+				var bosses = level.getEntitiesOfClass(Loki.class, city, e -> e.isAlive() && !e.isIllusion());
+				if (bosses.size() != 1) throw new AssertionError("Reset did not bring back one city Loki");
+				Loki replay = bosses.getFirst();
+				replay.hurtServer(level, level.damageSources().playerAttack(player(s)), 1000f);
+				if (replay.isAlive()) throw new AssertionError("City replay could not be defeated");
+			});
+			ctx.waitTicks(75);
+			server.runOnServer(s -> {
+				var level = s.overworld();
+				if (!level.getEntitiesOfClass(Loki.class, city, Loki::isAlive).isEmpty()
+						|| level.getEntitiesOfClass(ItemEntity.class, city, item -> item.getItem().is(ModItems.MIND_STONE)).size() != 1) {
+					throw new AssertionError("City replay produced another Loki or Mind Stone");
+				}
+			});
+
+			server.runCommand("execute in minecraft:the_nether run forceload add 0 0");
+			BlockPos netherSpawn = new BlockPos(0, 135, 0);
+			for (int i = 0; i < 200 && !server.computeOnServer(s -> s.getLevel(Level.NETHER).isPositionEntityTicking(netherSpawn)); i += 10) {
+				ctx.waitTicks(10);
+			}
+			server.runCommand("execute in minecraft:the_nether positioned 0.5 135 0.5 run gauntlet loki spawn");
+			server.runOnServer(s -> {
+				var nether = s.getLevel(Level.NETHER);
+				var bosses = nether.getEntitiesOfClass(Loki.class, new AABB(netherSpawn).inflate(5), Loki::isAlive);
+				if (bosses.size() != 1 || MindQuest.isCurrentBoss(bosses.getFirst())) {
+					throw new AssertionError("Spawn command did not create a standalone Loki in the Nether");
+				}
+			});
 			InfinityGauntlet.LOGGER.info("Loki quest smoke passed");
 		}
 	}

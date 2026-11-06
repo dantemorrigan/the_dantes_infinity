@@ -177,6 +177,7 @@ Testing the new controls: `xvfb-run -a ./gradlew runClientGameTest -PonlyTest=Ab
 | `/gauntlet power_shower` | start a Power meteor shower now (Overworld) |
 | `/gauntlet reality_fog` | wrap you in the Reality Stone's red mist (Nether) |
 | `/gauntlet thanos start\|now\|spawn\|stop\|reset` | Thanos: with a warning / at once / already fighting / send away / allow him again |
+| `/gauntlet loki reset\|spawn` | Reset the Ruined City fight or spawn a standalone Loki at the command location in any dimension. The standalone fight grants no quest loot. |
 
 ## Settings
 `config/infinity_gauntlet.json`: strike damage/radius/knockback/cooldown, ultimate charge and cooldown,

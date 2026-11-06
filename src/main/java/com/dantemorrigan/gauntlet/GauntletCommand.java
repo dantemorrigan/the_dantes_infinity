@@ -8,7 +8,9 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
 
+import com.dantemorrigan.gauntlet.boss.Loki;
 import com.dantemorrigan.gauntlet.net.ModNetwork;
+import com.dantemorrigan.gauntlet.stones.MindQuest;
 import com.dantemorrigan.gauntlet.power.PowerAbility;
 import com.dantemorrigan.gauntlet.space.FragmentCapture;
 import com.dantemorrigan.gauntlet.space.PlanetDestruction;
@@ -126,6 +128,14 @@ public final class GauntletCommand {
 									ctx.getSource().sendSuccess(() -> Component.literal("Thanos can come again"), true);
 									return 1;
 								})))
+						.then(Commands.literal("loki")
+								.then(Commands.literal("spawn").executes(ctx -> spawnLoki(ctx.getSource())))
+								.then(Commands.literal("reset").executes(ctx -> {
+									var source = ctx.getSource();
+									MindQuest.resetLoki(source.getServer());
+									source.sendSuccess(() -> Component.translatable("command.infinity_gauntlet.loki.reset"), true);
+									return 1;
+								})))
 						.then(Commands.literal("mind_quest")
 								.then(Commands.literal("tp").executes(ctx -> tpTrial(ctx.getSource(), "mind")))
 								.then(Commands.literal("city_here").executes(ctx -> {
@@ -227,13 +237,22 @@ public final class GauntletCommand {
 
 	static final List<String> TP_TRIALS = List.of("time", "time_clock", "mind", "soul", "soul_summit", "space", "space_rift");
 
-	/** Teleports the player directly to the start of a stone trial (building its temple/city/tower if not yet built). */
+	private static int spawnLoki(CommandSourceStack source) {
+		if (Loki.spawnStandalone(source.getLevel(), source.getPosition(), source.getRotation().y) == null) {
+			source.sendFailure(Component.translatable("command.infinity_gauntlet.loki.spawn_failed"));
+			return 0;
+		}
+		source.sendSuccess(() -> Component.translatable("command.infinity_gauntlet.loki.spawn"), true);
+		return 1;
+	}
+
 	private static int summonLoki(ServerPlayer player) {
 		if (com.dantemorrigan.gauntlet.stones.MindQuest.summonLoki(player)) return 1;
 		player.sendSystemMessage(Component.translatable("msg.infinity_gauntlet.mind_quest.summon_unavailable"));
 		return 0;
 	}
 
+	/** Teleports the player directly to the start of a stone trial (building its temple/city/tower if not yet built). */
 	private static int tpTrial(CommandSourceStack source, String trial) throws CommandSyntaxException {
 		ServerPlayer player = source.getPlayerOrException();
 		var server = source.getServer();

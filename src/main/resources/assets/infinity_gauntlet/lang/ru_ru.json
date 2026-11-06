@@ -560,5 +560,8 @@
   "guide.infinity_gauntlet.p19.3": "Q",
   "guide.infinity_gauntlet.p19.4": " или смерть оставляют секиру в земле. Забрать её может владелец. ",
   "guide.infinity_gauntlet.p19.5": "K",
-  "guide.infinity_gauntlet.p19.6": " призывает её из других измерений и бездны.\nВ руке даёт силу и снижает урон Перчатки."
+  "guide.infinity_gauntlet.p19.6": " призывает её из других измерений и бездны.\nВ руке даёт силу и снижает урон Перчатки.",
+  "command.infinity_gauntlet.loki.spawn": "Локи призван.",
+  "command.infinity_gauntlet.loki.reset": "Локи снова может появиться в Разрушенном городе.",
+  "command.infinity_gauntlet.loki.spawn_failed": "Не удалось призвать Локи. Нужно свободное место и лёгкая сложность или выше."
 }

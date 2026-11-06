@@ -17,6 +17,7 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.util.Mth;
 import net.minecraft.world.BossEvent;
+import net.minecraft.world.Difficulty;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.entity.EntitySpawnReason;
@@ -274,6 +275,35 @@ public final class Loki extends Monster {
 			}
 		}
 		return null;
+	}
+
+	/** Starts an independent fight at the command's location, outside the Mind Stone quest. */
+	public static Loki spawnStandalone(ServerLevel level, Vec3 origin, float facing) {
+		if (level.getDifficulty() == Difficulty.PEACEFUL) return null;
+		Loki boss = ModEntities.LOKI.create(level, EntitySpawnReason.COMMAND);
+		if (boss == null) return null;
+		Vec3 forward = Vec3.directionFromRotation(0, facing);
+		for (int turn : new int[]{0, 90, -90, 180}) {
+			Vec3 offset = forward.yRot(turn * Mth.DEG_TO_RAD).scale(3);
+			BlockPos base = BlockPos.containing(origin.add(offset));
+			for (int dy : new int[]{0, 1, -1, 2, -2}) {
+				Vec3 at = Vec3.atBottomCenterOf(base.above(dy));
+				if (safeFooting(level, at)) return placeStandalone(level, boss, at, yawTo(at, origin));
+			}
+		}
+		// The command also works in mid-air when the execution position has no nearby floor.
+		return placeStandalone(level, boss, origin, facing);
+	}
+
+	private static Loki placeStandalone(ServerLevel level, Loki boss, Vec3 at, float yaw) {
+		BlockPos pos = BlockPos.containing(at);
+		if (!level.hasChunkAt(pos) || !level.getWorldBorder().isWithinBounds(pos)) return null;
+		boss.snapTo(at.x, at.y, at.z, yaw, 0);
+		boss.setYBodyRot(yaw);
+		if (!level.noCollision(boss.getBoundingBox()) || level.containsAnyLiquid(boss.getBoundingBox())) return null;
+		if (!level.addFreshEntity(boss)) return null;
+		LokiFx.send(level, LokiFx.Effect.TELEPORT_IN, at, yaw);
+		return boss;
 	}
 
 	public static boolean safeFooting(ServerLevel level, Vec3 at) {

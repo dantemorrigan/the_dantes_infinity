@@ -59,6 +59,8 @@ public final class MindQuest {
 
 	private static final AttachmentType<UUID> BOSS = AttachmentRegistry.<UUID>builder()
 			.persistent(UUIDUtil.CODEC).buildAndRegister(InfinityGauntlet.id("mind_loki"));
+	private static final AttachmentType<Boolean> LOKI_REPLAY = AttachmentRegistry.<Boolean>builder()
+			.persistent(Codec.BOOL).buildAndRegister(InfinityGauntlet.id("mind_loki_replay"));
 	private static final AttachmentType<Reward> REWARD = AttachmentRegistry.<Reward>builder()
 			.persistent(Reward.CODEC).buildAndRegister(InfinityGauntlet.id("mind_loki_reward"));
 
@@ -221,15 +223,13 @@ public final class MindQuest {
 
 	private static void tick(MinecraftServer server) {
 		ServerLevel level = server.overworld();
-		if (StoneRegistry.released(server, Stone.MIND)) {
-			arrival = null;
+		boolean stoneReleased = StoneRegistry.released(server, Stone.MIND);
+		if (stoneReleased) {
 			level.removeAttached(REWARD);
-			UUID id = level.getAttached(BOSS);
-			if (id != null) {
-				level.removeAttached(BOSS);
-				if (level.getEntity(id) instanceof Loki loki && loki.isAlive()) loki.discard();
+			if (!Boolean.TRUE.equals(level.getAttached(LOKI_REPLAY))) {
+				clearLoki(level);
+				return;
 			}
-			return;
 		}
 		Reward reward = level.getAttached(REWARD);
 		if (reward != null) {
@@ -279,13 +279,15 @@ public final class MindQuest {
 	public static void onLokiDefeated(ServerLevel level, Loki loki) {
 		if (!isCurrentBoss(loki)) return;
 		level.removeAttached(BOSS);
-		if (StoneRegistry.released(level.getServer(), Stone.MIND) || level.getAttached(REWARD) != null) return;
+		level.removeAttached(LOKI_REPLAY);
 		Vec3 at = loki.position();
 		BlockPos city = MindCity.site(level.getServer());
 		if (at.y < city.getY() - 4) at = MindCity.plazaStand(city);
-		level.setAttached(REWARD, new Reward(at, level.getGameTime() + REWARD_TICKS));
-		LokiFx.send(level, LokiFx.Effect.ESSENCE_COLLECT, at, 0);
-		level.playSound(null, BlockPos.containing(at), SoundEvents.AMETHYST_BLOCK_RESONATE, SoundSource.HOSTILE, 2.1f, 1.05f);
+		if (!StoneRegistry.released(level.getServer(), Stone.MIND) && level.getAttached(REWARD) == null) {
+			level.setAttached(REWARD, new Reward(at, level.getGameTime() + REWARD_TICKS));
+			LokiFx.send(level, LokiFx.Effect.ESSENCE_COLLECT, at, 0);
+			level.playSound(null, BlockPos.containing(at), SoundEvents.AMETHYST_BLOCK_RESONATE, SoundSource.HOSTILE, 2.1f, 1.05f);
+		}
 		ExperienceOrb.award(level, at.add(0, 0.4, 0), Loki.EXPERIENCE);
 		for (ServerPlayer player : level.players()) {
 			if (!player.isSpectator() && player.distanceToSqr(at) <= 48 * 48) ModAdvancements.award(player, "defeat_loki");
@@ -349,16 +351,31 @@ public final class MindQuest {
 		level.setAttached(ALIVE, ids);
 	}
 
+	/** Restarts the city encounter while preserving zombie progress and the world's unique Mind Stone. */
+	public static void resetLoki(MinecraftServer server) {
+		ServerLevel level = server.overworld();
+		clearLoki(level);
+		if (StoneRegistry.released(server, Stone.MIND) || level.getAttached(REWARD) != null) {
+			level.setAttached(LOKI_REPLAY, true);
+		}
+	}
+
+	private static void clearLoki(ServerLevel level) {
+		arrival = null;
+		UUID boss = level.getAttached(BOSS);
+		if (boss == null) return;
+		level.removeAttached(BOSS);
+		if (level.getEntity(boss) instanceof Loki loki && loki.isAlive()) loki.discard();
+	}
+
 	/** Resets the Mind Stone quest when the Mind Stone is forgotten or stones are reset. */
 	public static void reset(MinecraftServer server) {
 		ServerLevel overworld = server.overworld();
 		overworld.removeAttached(DEFEATED);
 		overworld.removeAttached(ALIVE);
-		arrival = null;
+		clearLoki(overworld);
 		overworld.removeAttached(REWARD);
-		UUID boss = overworld.getAttached(BOSS);
-		overworld.removeAttached(BOSS);
-		if (boss != null && overworld.getEntity(boss) instanceof Loki loki) loki.discard();
+		overworld.removeAttached(LOKI_REPLAY);
 		if (!MindCity.built(server)) return;
 		BlockPos site = MindCity.site(server);
 		if (overworld.hasChunkAt(site)) {

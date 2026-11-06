@@ -560,5 +560,8 @@
   "guide.infinity_gauntlet.p19.3": "Q",
   "guide.infinity_gauntlet.p19.4": " or death plants the axe. Only the owner can recover it. ",
   "guide.infinity_gauntlet.p19.5": "K",
-  "guide.infinity_gauntlet.p19.6": " recalls it from any dimension or the void.\nIn hand, it gives strength and softens gauntlet hits."
+  "guide.infinity_gauntlet.p19.6": " recalls it from any dimension or the void.\nIn hand, it gives strength and softens gauntlet hits.",
+  "command.infinity_gauntlet.loki.spawn": "Loki was spawned.",
+  "command.infinity_gauntlet.loki.reset": "Loki can return to the Ruined City.",
+  "command.infinity_gauntlet.loki.spawn_failed": "Could not spawn Loki here. Choose a clear spot on Easy difficulty or higher."
 }
