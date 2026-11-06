@@ -420,13 +420,15 @@ public final class MindQuest {
 		UUID boss = level.getAttached(BOSS);
 		if (boss == null) return;
 		level.removeAttached(BOSS);
-		if (level.getEntity(boss) instanceof Loki loki && loki.isAlive()) loki.discard();
+		if (level.getEntity(boss) instanceof Loki loki) loki.discard();
 	}
 
 	private static void restartAfterDefeat(MinecraftServer server) {
 		ServerLevel level = server.overworld();
 		BlockPos site = MindCity.site(server);
 		MindArena.open(server);
+		UUID boss = level.getAttached(BOSS);
+		if (boss != null && level.getEntity(boss) instanceof Loki loki && loki.isDeadOrDying()) return;
 		clearLoki(level);
 		if (defeatedCount(server) < TOTAL_ZOMBIES) level.removeAttached(DEFEATED);
 		level.removeAttached(ALIVE);

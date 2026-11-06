@@ -50,7 +50,10 @@ public final class LokiClient {
 		for (LokiFx.Effect effect : LokiFx.Effect.values()) {
 			String texture = switch (effect) {
 				case BARRAGE_MARK -> "bind_mark";
-				case BARRAGE_IMPACT -> "roar";
+				case BARRAGE_IMPACT, TRANSFORM_ROAR -> "roar";
+				case TRANSFORM_REVEAL -> "rage_pulse";
+				case DEFEAT_CINEMATIC -> "transform";
+				case DEFEAT_DUST -> "essence_collect";
 				default -> effect.name().toLowerCase(Locale.ROOT);
 			};
 			TEXTURES.put(effect, InfinityGauntlet.id("textures/loki/" + texture + ".png"));
@@ -71,6 +74,23 @@ public final class LokiClient {
 			if (mc.level == null || mc.level != level) return;
 			float a = goldTint(mc.gameRenderer.getMainCamera().position(), delta.getGameTimeDeltaPartialTick(false));
 			if (a > 0) graphics.fill(0, 0, graphics.guiWidth(), graphics.guiHeight(), ARGB.colorFromFloat(a * .25f, 1, .84f, .39f));
+			float partial = delta.getGameTimeDeltaPartialTick(false);
+			float defeat = defeatAge(mc, partial);
+			float stage = defeat >= 0 ? defeat : transformationAge(mc, partial);
+			if (stage >= 0) {
+				int duration = defeat >= 0 ? Loki.DEATH_TICKS : Loki.TRANSFORMATION_TICKS;
+				int reveal = defeat >= 0 ? Loki.REVERT_TICK : Loki.REVEAL_TICK;
+				float envelope = Mth.clamp(Math.min(stage / 13, (duration - stage) / 13), 0, 1);
+				int w = graphics.guiWidth(), h = graphics.guiHeight();
+				int edge = Math.round(h * .09f * envelope);
+				if (edge > 0) {
+					graphics.fill(0, 0, w, edge, 0xf0080f0d);
+					graphics.fill(0, h - edge, w, h, 0xf0080f0d);
+				}
+				float flash = Math.max(0, 1 - Math.abs(stage - reveal) / 8) * .27f;
+				int tint = ARGB.colorFromFloat((envelope * .08f + flash) * Mth.clamp(GauntletConfig.get().flashIntensity, 0, 1), .20f, .76f, .48f);
+				graphics.fill(0, edge, w, h - edge, tint);
+			}
 		});
 	}
 
@@ -105,6 +125,31 @@ public final class LokiClient {
 		}
 	}
 
+	private static float transformationAge(Minecraft mc, float partial) {
+		for (Cue cue : CUES) {
+			if (cue.fx.effect() == LokiFx.Effect.TRANSFORM) return cue.age(partial);
+		}
+		// Clients that enter tracking range midway get the same phase from the entity snapshot.
+		for (var entity : level.entitiesForRendering()) {
+			if (entity instanceof Loki loki && loki.transformationTicks() > 0
+					&& mc.gameRenderer.getMainCamera().position().distanceToSqr(loki.position()) <= 80 * 80) {
+				return Loki.TRANSFORMATION_TICKS - loki.transformationTicks() + partial;
+			}
+		}
+		return -1;
+	}
+
+	private static float defeatAge(Minecraft mc, float partial) {
+		for (Cue cue : CUES) {
+			if (cue.fx.effect() == LokiFx.Effect.DEFEAT_CINEMATIC) return cue.age(partial);
+		}
+		for (var entity : level.entitiesForRendering()) {
+			if (entity instanceof Loki loki && !loki.isIllusion() && loki.isDeadOrDying()
+					&& mc.gameRenderer.getMainCamera().position().distanceToSqr(loki.position()) <= 80 * 80) return loki.deathTime + partial;
+		}
+		return -1;
+	}
+
 	public static float goldTint(Vec3 camera, float partial) {
 		if (level == null || level != Minecraft.getInstance().level) return 0;
 		float strength = 0;
@@ -133,6 +178,7 @@ public final class LokiClient {
 			float u1 = ((frame + 1) * 128 - .5f) / ATLAS_WIDTH;
 			float fade = effect.loop ? Mth.clamp((effect.ticks - age) / 11, 0, 1) : 1;
 			if (effect == LokiFx.Effect.GOLD_WORLD_WASH) fade *= GauntletConfig.get().flashIntensity;
+			if (effect == LokiFx.Effect.DEFEAT_CINEMATIC) fade *= .65f;
 			int color = ARGB.color((int) (255 * Mth.clamp(fade, 0, 1)), 255, 255, 255);
 			Vec3 origin = fx.position().subtract(camera);
 			if (effect == LokiFx.Effect.WARD) {
@@ -145,13 +191,18 @@ public final class LokiClient {
 			pose.pushPose();
 			pose.translate(origin.x, origin.y + effect.yOffset, origin.z);
 			if (effect == LokiFx.Effect.ROAR_WARN || effect == LokiFx.Effect.ROAR || effect == LokiFx.Effect.PAW_WARN
-					|| effect == LokiFx.Effect.BARRAGE_MARK || effect == LokiFx.Effect.BARRAGE_IMPACT) {
+					|| effect == LokiFx.Effect.BARRAGE_MARK || effect == LokiFx.Effect.BARRAGE_IMPACT || effect == LokiFx.Effect.TRANSFORM_ROAR) {
 				pose.mulPose(Axis.YP.rotationDegrees(-fx.yaw() + 180));
 				pose.mulPose(Axis.XP.rotationDegrees(90));
 			} else if (effect == LokiFx.Effect.PORTAL_OPEN || effect == LokiFx.Effect.PORTAL_LOOP || effect == LokiFx.Effect.DAGGER_SLASH) {
 				pose.mulPose(Axis.YP.rotationDegrees(-fx.yaw()));
 			} else {
 				pose.mulPose(mc.gameRenderer.getMainCamera().rotation());
+			}
+			if (effect == LokiFx.Effect.TRANSFORM) {
+				pose.mulPose(Axis.ZP.rotationDegrees(age * 3.6f));
+				float contraction = 1.2f - .55f * Mth.clamp(age / Loki.REVEAL_TICK, 0, 1);
+				pose.scale(contraction, contraction, 1);
 			}
 			float r = effect.size * 0.5f;
 			ctx.submitNodeCollector().submitCustomGeometry(pose, RenderTypes.entityTranslucentEmissive(TEXTURES.get(effect)), (p, out) -> {

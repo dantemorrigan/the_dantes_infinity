@@ -47,6 +47,11 @@ import java.util.UUID;
 
 public final class Loki extends Monster {
 	public static final int INTRO_TICKS = 22;
+	public static final int TRANSFORMATION_TICKS = 76;
+	public static final int REVEAL_TICK = 39;
+	public static final int DEATH_TICKS = 84;
+	public static final int REVERT_TICK = 24;
+	public static final int DISSOLVE_TICK = 52;
 	public enum Attack {
 		DAGGER(7, 5), BOLT(15, 8), GROUNDING(18, 8), BITE(10, 9), PAW(17, 12), ROAR(24, 13), BARRAGE(24, 12);
 
@@ -69,6 +74,7 @@ public final class Loki extends Monster {
 	private static final EntityDataAccessor<Integer> STRIKE = SynchedEntityData.defineId(Loki.class, EntityDataSerializers.INT);
 
 	private static final EntityDataAccessor<Integer> ATTACK = SynchedEntityData.defineId(Loki.class, EntityDataSerializers.INT);
+	private static final EntityDataAccessor<Integer> SHIFT = SynchedEntityData.defineId(Loki.class, EntityDataSerializers.INT);
 	private static final EntityDataAccessor<Integer> WARD = SynchedEntityData.defineId(Loki.class, EntityDataSerializers.INT);
 
 	private final ServerBossEvent bar = new ServerBossEvent(UUID.randomUUID(), Component.translatable("entity.infinity_gauntlet.loki"),
@@ -86,7 +92,6 @@ public final class Loki extends Monster {
 	private int spellCooldown = 20;
 	private int wardCooldown = 45;
 	private int roarCooldown = 40;
-	private int shiftTicks;
 	private int attackCycle;
 	private UUID attackTarget;
 	private Vec3 aim;
@@ -112,7 +117,7 @@ public final class Loki extends Monster {
 	@Override
 	protected void defineSynchedData(SynchedEntityData.Builder builder) {
 		super.defineSynchedData(builder);
-		builder.define(ILLUSION, false).define(ENRAGED, false).define(INTRO, 0).define(STRIKE, 0).define(ATTACK, 0).define(WARD, 0);
+		builder.define(ILLUSION, false).define(ENRAGED, false).define(INTRO, 0).define(STRIKE, 0).define(ATTACK, 0).define(WARD, 0).define(SHIFT, 0);
 	}
 
 	public void startEncounter(BlockPos city) {
@@ -125,6 +130,7 @@ public final class Loki extends Monster {
 	public int introTicks() { return entityData.get(INTRO); }
 	public int strikeTicks() { return entityData.get(STRIKE); }
 	public Attack attack() { return ATTACKS[entityData.get(ATTACK)]; }
+	public int transformationTicks() { return entityData.get(SHIFT); }
 	public int wardTicks() { return entityData.get(WARD); }
 
 	@Override
@@ -165,6 +171,7 @@ public final class Loki extends Monster {
 		super.addAdditionalSaveData(output);
 		if (arena != null) output.store("LokiArena", BlockPos.CODEC, arena);
 		output.putBoolean("LokiEnraged", isEnraged());
+		output.putInt("LokiShift", transformationTicks());
 	}
 
 	@Override
@@ -172,6 +179,7 @@ public final class Loki extends Monster {
 		super.readAdditionalSaveData(input);
 		arena = input.read("LokiArena", BlockPos.CODEC).orElse(null);
 		if (input.getBooleanOr("LokiEnraged", false)) applyRage();
+		entityData.set(SHIFT, Mth.clamp(input.getIntOr("LokiShift", 0), 0, TRANSFORMATION_TICKS));
 	}
 
 	@Override
@@ -188,12 +196,14 @@ public final class Loki extends Monster {
 		}
 		if (!isIllusion()) {
 			bar.setProgress(getHealth() / getMaxHealth());
-			if (!isEnraged() && getHealth() <= getMaxHealth() * PHASE_THRESHOLD) enrage(level);
+			if (!isEnraged() && transformationTicks() == 0 && getHealth() <= getMaxHealth() * PHASE_THRESHOLD) {
+				beginTransformation(level);
+			}
 			if (wardTicks() > 0) entityData.set(WARD, wardTicks() - 1);
 			if (wardCooldown > 0) wardCooldown--;
 			if (perchCooldown > 0) perchCooldown--;
-			if (shiftTicks > 0) {
-				shiftTicks--;
+			if (transformationTicks() > 0) {
+				tickTransformation(level);
 				return;
 			}
 		}
@@ -485,24 +495,41 @@ public final class Loki extends Monster {
 		bar.setName(Component.translatable("boss.infinity_gauntlet.loki.rage"));
 	}
 
-	private void enrage(ServerLevel level) {
-		Vec3 old = position();
-		Vec3 at = findTransformationSpace(level);
+	private void beginTransformation(ServerLevel level) {
 		getNavigation().stop();
+		setTarget(null);
+		setPos(findTransformationSpace(level));
 		setDeltaMovement(Vec3.ZERO);
-		setPos(at);
-		applyRage();
-		shiftTicks = 25;
 		perchUntil = 0;
 		perchReturn = null;
 		entityData.set(INTRO, 0);
 		entityData.set(STRIKE, 0);
 		entityData.set(WARD, 0);
-		cloneCooldown = 12;
-		roarCooldown = 12;
-		LokiFx.send(level, LokiFx.Effect.TRANSFORM, old, getYRot());
-		if (at.distanceToSqr(old) > 1) LokiFx.send(level, LokiFx.Effect.TRANSFORM, at, getYRot());
-		level.playSound(null, blockPosition(), SoundEvents.RAVAGER_ROAR, SoundSource.HOSTILE, 3.8f, .6f);
+		entityData.set(SHIFT, TRANSFORMATION_TICKS);
+		LokiFx.send(level, LokiFx.Effect.TRANSFORM, position(), getYRot());
+		level.playSound(null, blockPosition(), SoundEvents.ILLUSIONER_PREPARE_MIRROR, SoundSource.HOSTILE, 2.4f, .57f);
+	}
+
+	private void tickTransformation(ServerLevel level) {
+		int left = transformationTicks() - 1;
+		entityData.set(SHIFT, left);
+		setDeltaMovement(0, Math.min(0, getDeltaMovement().y), 0);
+		int age = TRANSFORMATION_TICKS - left;
+		if (age == REVEAL_TICK && !isEnraged()) {
+			applyRage();
+			LokiFx.send(level, LokiFx.Effect.TRANSFORM_REVEAL, position(), getYRot());
+			level.playSound(null, blockPosition(), SoundEvents.AMETHYST_BLOCK_RESONATE, SoundSource.HOSTILE, 3.2f, .58f);
+			level.sendParticles(net.minecraft.core.particles.ParticleTypes.SOUL_FIRE_FLAME,
+					getX(), getY() + 1.7, getZ(), 48, 2.2, 1.25, 2.2, .04);
+		}
+		if (age == 61) {
+			LokiFx.send(level, LokiFx.Effect.TRANSFORM_ROAR, position(), getYRot());
+			level.playSound(null, blockPosition(), SoundEvents.RAVAGER_ROAR, SoundSource.HOSTILE, 4, .52f);
+		}
+		if (left == 0) {
+			cloneCooldown = 12;
+			roarCooldown = 12;
+		}
 	}
 
 	private Vec3 findTransformationSpace(ServerLevel level) {
@@ -614,7 +641,7 @@ public final class Loki extends Monster {
 	@Override
 	public boolean hurtServer(ServerLevel level, DamageSource source, float amount) {
 		if (source.is(DamageTypes.GENERIC_KILL)) return super.hurtServer(level, source, amount);
-		if (introTicks() > 0 || shiftTicks > 0) return false;
+		if (introTicks() > 0 || transformationTicks() > 0) return false;
 		if (amount <= 0) return super.hurtServer(level, source, amount);
 		if (isIllusion()) return super.hurtServer(level, source, Math.max(amount, 20));
 		boolean weakPoint = source.is(DamageTypes.ARROW) || source.is(DamageTypeTags.IS_EXPLOSION);
@@ -645,7 +672,36 @@ public final class Loki extends Monster {
 			return;
 		}
 		bar.removeAllPlayers();
-		MindQuest.onLokiDefeated(level, this);
+		getNavigation().stop();
+		entityData.set(SHIFT, 0);
+		entityData.set(STRIKE, 0);
+		entityData.set(WARD, 0);
+		LokiFx.send(level, LokiFx.Effect.DEFEAT_CINEMATIC, position(), getYRot());
+	}
+
+	@Override
+	protected void tickDeath() {
+		deathTime++;
+		setDeltaMovement(0, Math.min(0, getDeltaMovement().y), 0);
+		if (!(level() instanceof ServerLevel level)) return;
+		if (deathTime == REVERT_TICK) {
+			entityData.set(ENRAGED, false);
+			LokiFx.send(level, LokiFx.Effect.TRANSFORM_REVEAL, position(), getYRot());
+			level.playSound(null, blockPosition(), SoundEvents.AMETHYST_BLOCK_RESONATE, SoundSource.HOSTILE, 2, .65f);
+		}
+		if (deathTime == 41) level.playSound(null, blockPosition(), SoundEvents.ARMOR_EQUIP_CHAIN.value(), SoundSource.HOSTILE, 1.3f, .65f);
+		if (deathTime == DISSOLVE_TICK) LokiFx.send(level, LokiFx.Effect.DEFEAT_DUST, position(), getYRot());
+		if (deathTime >= DISSOLVE_TICK && deathTime % 3 == 0) {
+			var gold = new net.minecraft.core.particles.DustParticleOptions(0xffdb76, 1.15f);
+			var jade = new net.minecraft.core.particles.DustParticleOptions(0x52df8e, 1);
+			float rise = (deathTime - DISSOLVE_TICK) / (float) (DEATH_TICKS - DISSOLVE_TICK);
+			level.sendParticles(gold, getX(), getY() + .28 + rise * 1.05, getZ(), 20, .38, .19, .31, .05);
+			level.sendParticles(jade, getX(), getY() + .45 + rise * .9, getZ(), 13, .4, .24, .32, .04);
+		}
+		if (deathTime >= DEATH_TICKS && !isRemoved()) {
+			MindQuest.onLokiDefeated(level, this);
+			remove(RemovalReason.KILLED);
+		}
 	}
 
 	private void shatter(ServerLevel level) {

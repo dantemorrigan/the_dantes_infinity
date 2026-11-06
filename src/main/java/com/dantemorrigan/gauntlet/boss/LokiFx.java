@@ -27,14 +27,18 @@ public record LokiFx(Effect effect, Vec3 position, float yaw, int recipient) imp
 		WARD(40, true, 2.8f, 1.25f),
 		SPELL_MARK(15, false, 3.5f, 0),
 		BIND_MARK(18, false, 4.7f, 0),
-		TRANSFORM(28, false, 8.1f, 2.1f),
+		TRANSFORM(Loki.TRANSFORMATION_TICKS, false, 9.6f, 2.1f),
 		ROAR_WARN(24, false, 24, .12f),
 		ROAR(20, false, 24, .18f),
 		PAW_WARN(17, false, 13, .12f),
 		CLAW(12, false, 7.3f, 1.35f),
 		FANGS(11, false, 5.2f, 1.28f),
 		BARRAGE_MARK(24, false, 12.2f, .08f),
-		BARRAGE_IMPACT(14, false, 9.6f, .14f);
+		BARRAGE_IMPACT(14, false, 9.6f, .14f),
+		TRANSFORM_REVEAL(20, false, 10, 2),
+		TRANSFORM_ROAR(20, false, 24, .16f),
+		DEFEAT_CINEMATIC(Loki.DEATH_TICKS, false, 6, 1.5f),
+		DEFEAT_DUST(32, false, 5.6f, 1.45f);
 
 		public final int ticks;
 		public final boolean loop;

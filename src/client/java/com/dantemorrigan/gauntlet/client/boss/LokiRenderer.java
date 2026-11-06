@@ -27,7 +27,7 @@ public final class LokiRenderer extends EntityRenderer<Loki, LokiRenderer.State>
 	private GeoModel model, fenrir;
 
 	public static final class State extends EntityRenderState {
-		float yaw, headYaw, pitch, stride, walkSpeed, strike, intro, death;
+		float yaw, headYaw, pitch, stride, walkSpeed, strike, intro, death, shift;
 		boolean rage, illusion, hurt;
 		Loki.Attack attack;
 	}
@@ -59,8 +59,9 @@ public final class LokiRenderer extends EntityRenderer<Loki, LokiRenderer.State>
 		int total = state.attack.windup + state.attack.recovery;
 		state.strike = loki.strikeTicks() > 0 ? (total - loki.strikeTicks() + partial) / total : -1;
 		state.intro = loki.introTicks() > 0 ? Loki.INTRO_TICKS - loki.introTicks() + partial : -1;
-		state.death = loki.isDeadOrDying() ? Mth.clamp((loki.deathTime + partial) / 20f, 0, 1) : 0;
+		state.death = loki.isDeadOrDying() ? loki.deathTime + partial : -1;
 		state.rage = loki.isEnraged();
+		state.shift = loki.transformationTicks() == 0 ? -1 : Loki.TRANSFORMATION_TICKS - loki.transformationTicks() + partial;
 		state.illusion = loki.isIllusion();
 		state.hurt = loki.hurtTime > 0 && !loki.isDeadOrDying();
 	}
@@ -77,15 +78,31 @@ public final class LokiRenderer extends EntityRenderer<Loki, LokiRenderer.State>
 		pose.pushPose();
 		pose.mulPose(Axis.YP.rotationDegrees(180f - state.yaw));
 		if (!state.rage) pose.scale(.78f, 1.015f, .85f);
-		if (state.death > 0) pose.mulPose(Axis.ZP.rotationDegrees(state.death * (state.rage ? -25 : -65)));
+		if (state.rage && state.shift >= 0) {
+			float rise = Mth.clamp((state.shift - Loki.REVEAL_TICK) / 19f, 0, 1);
+			float scale = Mth.lerp(rise * (2 - rise), .42f, 1);
+			pose.scale(scale, scale, scale);
+		}
+		if (state.death >= 0 && state.rage) {
+			float retreat = Mth.clamp((state.death - 8) / (Loki.REVERT_TICK - 8), 0, 1);
+			float scale = Mth.lerp(retreat * retreat, 1, .48f);
+			pose.scale(scale, scale, scale);
+		}
 		Identifier tex = state.illusion ? ILLUSION : state.rage ? FENRIR : NORMAL;
 		float fade = state.intro >= 0 ? Mth.clamp(state.intro / 6f, 0.1f, 1f) : 1f;
-		fade *= 1f - state.death;
-		boolean translucent = state.illusion || fade < 0.995f;
+		if (state.shift >= 0) {
+			fade *= state.rage ? Mth.clamp((state.shift - Loki.REVEAL_TICK + 3) / 9f, 0, 1)
+					: 1 - Mth.clamp((state.shift - 29) / 10f, 0, 1);
+		}
+		if (state.death >= 0) {
+			fade *= state.rage ? 1 - Mth.clamp((state.death - 15) / 11, 0, 1)
+					: Mth.clamp((state.death - Loki.REVERT_TICK + 2) / 8, 0, 1);
+		}
+		boolean translucent = state.illusion || state.death >= 0 || fade < .995f;
 		int color = ARGB.color((int) (255 * fade), 255, 255, 255);
 		int overlay = OverlayTexture.pack(OverlayTexture.u(0), OverlayTexture.v(state.hurt));
 		collector.submitCustomGeometry(pose, translucent ? RenderTypes.entityTranslucent(tex) : RenderTypes.entityCutout(tex),
-				(p, out) -> geometry.render(ThanosRenderer.stack(p), out, bones, state.lightCoords, overlay, (bone, cube) -> color));
+				(p, out) -> geometry.render(ThanosRenderer.stack(p), out, bones, state.lightCoords, overlay, (bone, cube) -> dissolveTint(state, cube, color)));
 		if (state.rage) {
 			collector.order(1).submitCustomGeometry(pose, RenderTypes.entityTranslucentEmissive(EYES),
 					(p, out) -> geometry.render(ThanosRenderer.stack(p), out, bones, LightCoordsUtil.FULL_BRIGHT,
@@ -93,6 +110,16 @@ public final class LokiRenderer extends EntityRenderer<Loki, LokiRenderer.State>
 		}
 		pose.popPose();
 		super.submit(state, pose, collector, camera);
+	}
+
+	private static int dissolveTint(State state, GeoModel.Cube cube, int color) {
+		if (state.death < Loki.DISSOLVE_TICK) return color;
+		float progress = (state.death - Loki.DISSOLVE_TICK) / (Loki.DEATH_TICKS - Loki.DISSOLVE_TICK);
+		float threshold = cube.centerY / 46f * .65f + cube.seed * .2f;
+		float alpha = 1 - Mth.clamp((progress - threshold) / .14f, 0, 1);
+		if (alpha == 0) return 0;
+		int a = (int) (255 * alpha);
+		return progress > threshold ? ARGB.color(a, 251, 219, 113) : ARGB.color(a, 255, 255, 255);
 	}
 
 	private static void humanoidPose(State state, Map<String, GeoModel.BonePose> bones) {
@@ -103,6 +130,31 @@ public final class LokiRenderer extends EntityRenderer<Loki, LokiRenderer.State>
 		rotate(bones, "left_coat", -walk * 22, 0, 0);
 		rotate(bones, "cape", 7 + state.walkSpeed * 25 + Mth.sin(state.ageInTicks * .16f) * 4, 0, walk * 6);
 		rotate(bones, "head", -state.pitch, state.headYaw, 0);
+		if (state.death >= 0) {
+			float kneel = Mth.clamp((state.death - Loki.REVERT_TICK) / 18, 0, 1);
+			kneel *= 2 - kneel;
+			rotate(bones, "body", 15 * kneel, 0, 0);
+			bones.get("body").oy = -9 * kneel;
+			rotate(bones, "head", 30 * kneel, 0, 0);
+			rotate(bones, "right_leg", -76 * kneel, 0, 0);
+			rotate(bones, "left_leg", -76 * kneel, 0, 0);
+			rotate(bones, "right_arm", 16 * kneel, 0, -8);
+			rotate(bones, "left_arm", 16 * kneel, 0, 8);
+			return;
+		}
+		if (state.shift >= 0) {
+			float kneel = Mth.clamp(state.shift / 25f, 0, 1);
+			float flare = Mth.clamp((state.shift - 26) / 12f, 0, 1);
+			rotate(bones, "body", 21 * kneel - 30 * flare, 0, 0);
+			bones.get("body").oy = -5 * kneel + 3 * flare;
+			rotate(bones, "head", 35 * kneel - 68 * flare, 0, 0);
+			rotate(bones, "right_leg", -53 * kneel, 0, 0);
+			rotate(bones, "left_leg", 48 * kneel, 0, 0);
+			rotate(bones, "right_arm", 32 * kneel + 51 * flare, 0, -23 - 24 * flare);
+			rotate(bones, "left_arm", 32 * kneel + 51 * flare, 0, 23 + 24 * flare);
+			return;
+		}
+
 		if (state.strike >= 0 && state.attack == Loki.Attack.DAGGER) {
 			float swing = attackPose(state);
 			rotate(bones, "body", 0, 35 * swing, 0);
@@ -131,6 +183,26 @@ public final class LokiRenderer extends EntityRenderer<Loki, LokiRenderer.State>
 		float yaw = Mth.clamp(state.headYaw, -35, 35);
 		rotate(bones, "head", pitch + breath * 2, yaw, 0);
 		rotate(bones, "jaw", -3 + breath * 2, 0, 0);
+		if (state.death >= 0) {
+			float slump = Mth.clamp(state.death / Loki.REVERT_TICK, 0, 1);
+			rotate(bones, "body", -12 * slump, 0, 0);
+			bones.get("body").oy = -10 * slump;
+			rotate(bones, "head", -27 * slump, 0, 0);
+			rotate(bones, "front_l", -33 * slump, 0, 0);
+			rotate(bones, "front_r", -33 * slump, 0, 0);
+			return;
+		}
+		if (state.shift >= 0) {
+			float rise = 1 - Mth.clamp((state.shift - Loki.REVEAL_TICK) / 18f, 0, 1);
+			float howl = Mth.sin(Mth.PI * Mth.clamp((state.shift - 53) / 23f, 0, 1));
+			rotate(bones, "body", -14 * rise + 8 * howl, 0, 0);
+			rotate(bones, "head", -20 * rise + 31 * howl, 0, 0);
+			rotate(bones, "jaw", -4 - 43 * howl, 0, 0);
+			rotate(bones, "front_l", -24 * rise, 0, 0);
+			rotate(bones, "front_r", 24 * rise, 0, 0);
+			return;
+		}
+
 		if (state.strike < 0) return;
 
 		float swing = attackPose(state);

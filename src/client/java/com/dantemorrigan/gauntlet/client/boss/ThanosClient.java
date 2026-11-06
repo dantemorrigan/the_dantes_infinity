@@ -19,7 +19,6 @@ import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
-import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.resources.sounds.AbstractTickableSoundInstance;
@@ -50,8 +49,6 @@ import java.util.List;
  * The server only sends cues ({@link ModNetwork.ThanosFx}); timing and motion are local.
  */
 public final class ThanosClient {
-	private static final Identifier BAR_FRAME = InfinityGauntlet.id("textures/gui/thanos/boss_frame.png");
-	private static final Identifier BAR_FILL = InfinityGauntlet.id("textures/gui/thanos/boss_fill.png");
 	private static final Identifier RED_SUN = InfinityGauntlet.id("textures/environment/thanos/red_sun.png");
 	private static final Identifier[] BEAM = frames("arrival_beam"), RIFT = frames("nether_rift"), RIFT_CLOSE = frames("rift_close"), RAY = frames("dragon_ray");
 	/** Ship model units -> blocks. */
@@ -724,6 +721,10 @@ public final class ThanosClient {
 		return best;
 	}
 
+	public static boolean hasBossBar() {
+		return barShown > .01f || boss() != null;
+	}
+
 	private static void hud(GuiGraphicsExtractor g, float partial) {
 		Minecraft mc = Minecraft.getInstance();
 		if (mc.player == null || mc.options.hideGui) return;
@@ -731,23 +732,19 @@ public final class ThanosClient {
 		float want = t != null && !(t.isDeadOrDying() && t.deathTime > Thanos.DUST_START) ? 1 : 0;
 		barShown += Mth.clamp(want - barShown, -0.05f, 0.08f);
 		int w = g.guiWidth();
-		int x = (w - 182) / 2, y = 16;
+		int y = 15;
 		if (barShown > 0.01f) {
 			float hp = t == null ? 0 : Mth.clamp(t.getHealth() / t.getMaxHealth(), 0, 1);
 			barHealth = hp;
 			barLag = barLag > hp ? Math.max(hp, barLag - 0.004f) : hp;
 			int a = (int) (255 * barShown);
-			Component name = Component.translatable("entity.infinity_gauntlet.thanos.title").withStyle(ChatFormatting.BOLD);
-			int nw = mc.font.width(name);
-			int gold = ARGB.color(a, 0xF2, 0xC2, 0x5A);
-			g.text(mc.font, name, (w - nw) / 2, y - 11, gold, true);
-			g.blit(RenderPipelines.GUI_TEXTURED, BAR_FRAME, x, y, 0, 0, 182, 9, 182, 9, 182, 9, ARGB.color(a, 255, 255, 255));
-			int lag = (int) (182 * barLag), fill = (int) (182 * barHealth);
-			if (lag > fill) g.blit(RenderPipelines.GUI_TEXTURED, BAR_FILL, x + fill, y, fill, 0, lag - fill, 9, lag - fill, 9, 182, 9, ARGB.color(a, 255, 240, 220));
 			boolean enraged = t != null && t.flag(Thanos.FLAG_ENRAGED);
-			float pulse = enraged ? 0.75f + 0.25f * Mth.sin((ticks + partial) * 0.3f) : 1f;
-			int fc = enraged ? ARGB.color(a, 255, (int) (150 * pulse), (int) (150 * pulse)) : ARGB.color(a, 255, 255, 255);
-			if (fill > 0) g.blit(RenderPipelines.GUI_TEXTURED, BAR_FILL, x, y, 0, 0, fill, 9, fill, 9, 182, 9, fc);
+			Component name = Component.translatable(enraged ? "boss.infinity_gauntlet.thanos.rage" : "entity.infinity_gauntlet.thanos.title")
+					.withStyle(ChatFormatting.BOLD);
+			int nw = mc.font.width(name);
+			int gold = ARGB.color(a, 0xf2, 0xc2, 0x5a);
+			g.text(mc.font, name, (w - nw) / 2, y - 11, gold, true);
+			(enraged ? BossBarArt.THANOS_RAGE : BossBarArt.THANOS).draw(g, y - 4, barHealth, barLag, a);
 		}
 		if (captionLine >= 0 && ticks < captionUntil) {
 			float fade = Mth.clamp((captionUntil - ticks - partial) / 20f, 0, 1);
@@ -755,7 +752,7 @@ public final class ThanosClient {
 					.append(Component.literal(": ").withStyle(ChatFormatting.GRAY))
 					.append(Component.translatable("thanos.infinity_gauntlet.line." + captionLine).withStyle(ChatFormatting.WHITE, ChatFormatting.ITALIC));
 			int lw = mc.font.width(line);
-			int cy = y + (barShown > 0.01f ? 14 : 0);
+			int cy = y + (barShown > 0.01f ? 33 : 0);
 			int ba = (int) (150 * fade);
 			g.fill((w - lw) / 2 - 6, cy - 3, (w + lw) / 2 + 6, cy + 11, ARGB.color(ba, 12, 6, 20));
 			g.text(mc.font, line, (w - lw) / 2, cy, ARGB.color((int) (255 * fade), 255, 255, 255), true);

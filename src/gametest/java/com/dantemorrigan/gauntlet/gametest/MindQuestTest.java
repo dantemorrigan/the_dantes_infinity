@@ -269,7 +269,14 @@ public class MindQuestTest implements FabricClientGameTest {
 				player(s).teleportTo(plaza.x, plaza.y + 1, plaza.z + 8);
 				boss.setHealth(boss.getMaxHealth() * .4f);
 			});
-			for (int i = 0; i < 120; i += 4) {
+			ctx.waitFor(mc -> {
+				var entity = mc.level.getEntitiesOfClass(Loki.class, city, e -> !e.isIllusion()).stream().findFirst();
+				return entity.filter(e -> e.transformationTicks() > 0 && !e.isEnraged()).isPresent();
+			}, 80);
+			ctx.takeScreenshot("loki_transformation");
+			ctx.waitFor(mc -> mc.level.getEntitiesOfClass(Loki.class, city, e -> e.isEnraged()
+					&& e.transformationTicks() > 0 && e.getBbHeight() >= 3.5f).size() == 1, 100);
+			for (int i = 0; i < 170; i += 4) {
 				if (server.computeOnServer(s -> player(s).hasEffect(net.minecraft.world.effect.MobEffects.SLOWNESS))) break;
 				ctx.waitTicks(4);
 			}
@@ -301,8 +308,17 @@ public class MindQuestTest implements FabricClientGameTest {
 				player(s).lookAt(net.minecraft.commands.arguments.EntityAnchorArgument.Anchor.EYES, boss.getEyePosition());
 				boss.hurtServer(level, level.damageSources().playerAttack(player(s)), 1000f);
 				if (boss.isAlive()) throw new AssertionError("Loki survived the finishing hit");
-				if (level.getEntitiesOfClass(ExperienceOrb.class, boss.getBoundingBox().inflate(4), orb -> orb.getValue() >= 73).isEmpty()) {
-					throw new AssertionError("Loki did not drop high-value XP orbs");
+			});
+			ctx.waitFor(mc -> mc.level.getEntitiesOfClass(Loki.class, city, e -> e.isDeadOrDying()
+					&& !e.isEnraged() && e.deathTime >= 42).size() == 1, 110);
+			ctx.takeScreenshot("loki_defeat_kneel");
+			server.runOnServer(s -> {
+				if (StoneRegistry.released(s, Stone.MIND)) throw new AssertionError("Stone released during the defeat cinematic");
+			});
+			ctx.waitFor(mc -> mc.level.getEntitiesOfClass(Loki.class, city, e -> !e.isIllusion()).isEmpty(), 150);
+			server.runOnServer(s -> {
+				if (s.overworld().getEntitiesOfClass(ExperienceOrb.class, city, orb -> orb.getValue() >= 73).isEmpty()) {
+					throw new AssertionError("Loki did not drop high-value XP orbs after the defeat scene");
 				}
 			});
 			ctx.waitTicks(35);
@@ -342,7 +358,8 @@ public class MindQuestTest implements FabricClientGameTest {
 				if (!replay.isAlive()) throw new AssertionError("A hit skipped the Fenrir phase");
 				replay.setHealth(replay.getMaxHealth() * .4f);
 			});
-			ctx.waitTicks(42);
+			ctx.waitFor(mc -> mc.level.getEntitiesOfClass(Loki.class, city,
+					e -> e.isEnraged() && e.transformationTicks() == 0).size() == 1, 130);
 			server.runOnServer(s -> {
 				var level = s.overworld();
 				Loki replay = level.getEntitiesOfClass(Loki.class, city, e -> e.isAlive() && !e.isIllusion()).getFirst();
@@ -350,7 +367,7 @@ public class MindQuestTest implements FabricClientGameTest {
 				replay.hurtServer(level, level.damageSources().playerAttack(player(s)), 1000f);
 				if (replay.isAlive()) throw new AssertionError("City replay could not be defeated in the Fenrir phase");
 			});
-			ctx.waitTicks(75);
+			ctx.waitTicks(98);
 			server.runOnServer(s -> {
 				var level = s.overworld();
 				if (!level.getEntitiesOfClass(Loki.class, city, Loki::isAlive).isEmpty()
