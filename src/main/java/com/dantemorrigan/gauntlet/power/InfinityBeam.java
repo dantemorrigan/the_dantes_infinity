@@ -62,7 +62,7 @@ public final class InfinityBeam {
     }
     public static void request(ServerPlayer p, boolean start) {
         if (!start) { cancel(p); return; }
-        if (active(p)) return;
+        if (active(p) || TimeFlow.active(p)) return;
         ItemStack g = GauntletState.activeGauntlet(p);
         if (!ready(p, g) || p.isUsingItem()) {
             com.dantemorrigan.gauntlet.net.ModStatus.send(p, Component.translatable("msg.infinity_gauntlet.need.beam"));
@@ -206,7 +206,7 @@ public final class InfinityBeam {
                 c.level.sendParticles(ParticleTypes.LAVA, body.x, body.y, body.z, 6, 0.25, 0.3, 0.25, 0.02);
                 var src = c.owner.damageSources().playerAttack(c.owner);
                 GauntletDamage.hurt(c.level, target, c.owner, src, Float.MAX_VALUE);
-                if (target.isAlive()) {
+                if (target.isAlive() && !(target instanceof com.dantemorrigan.gauntlet.stones.MindZombie)) {
                     target.setHealth(0f);
                     target.die(src);
                     if (target.isAlive()) target.kill(c.level);

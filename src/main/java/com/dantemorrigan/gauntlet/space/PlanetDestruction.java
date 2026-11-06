@@ -4,6 +4,10 @@ import com.dantemorrigan.gauntlet.GauntletConfig;
 import com.dantemorrigan.gauntlet.GauntletState;
 import com.dantemorrigan.gauntlet.InfinityGauntlet;
 import com.dantemorrigan.gauntlet.Stone;
+import com.dantemorrigan.gauntlet.boss.Loki;
+import com.dantemorrigan.gauntlet.boss.Thanos;
+import com.dantemorrigan.gauntlet.boss.ThanosEncounter;
+import com.dantemorrigan.gauntlet.stones.MindQuest;
 import com.dantemorrigan.gauntlet.net.ModNetwork;
 import com.dantemorrigan.gauntlet.net.ModStatus;
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
@@ -16,6 +20,8 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.boss.wither.WitherBoss;
 import net.minecraft.world.phys.Vec3;
 
 import java.util.ArrayList;
@@ -98,13 +104,21 @@ public final class PlanetDestruction {
 		return GauntletState.inserted(GauntletState.activeGauntlet(player)).contains(Stone.TIME);
 	}
 
+	public static boolean bossBlocksDestruction(ServerPlayer player) {
+		if (ThanosEncounter.running() || MindQuest.lokiEncounterRunning(player.level().getServer())) return true;
+
+		// Summoned bosses can fight outside their scripted arenas.
+		return !player.level().getEntitiesOfClass(Mob.class, player.getBoundingBox().inflate(96),
+				mob -> !mob.isRemoved() && (mob instanceof Loki loki && !loki.isIllusion()
+						|| mob instanceof Thanos || mob instanceof WitherBoss)).isEmpty();
+	}
+
 	/** Start the event. The caller validates the Power Stone, mode, charge and cooldown. */
 	public static boolean start(ServerPlayer activator, Vec3 impact) {
 		if (!GauntletConfig.get().allowPlanetDestruction || !EVENTS.isEmpty()
 				|| activator.hasAttached(com.dantemorrigan.gauntlet.snap.InfinitySnap.RECORD)) return false;
-		// Never during Thanos's visit, and not in the End (the server decides, whatever the client asked).
-		if (com.dantemorrigan.gauntlet.boss.ThanosEncounter.running()) {
-			com.dantemorrigan.gauntlet.net.ModStatus.send(activator, Component.translatable("ability.infinity_gauntlet.reason.thanos"));
+		if (bossBlocksDestruction(activator)) {
+			ModStatus.send(activator, Component.translatable("ability.infinity_gauntlet.reason.boss_fight"));
 			return false;
 		}
 		if (activator.level().dimension().equals(net.minecraft.world.level.Level.END)) {

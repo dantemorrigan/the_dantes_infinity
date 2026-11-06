@@ -117,6 +117,11 @@ public final class MindQuest {
 		});
 	}
 
+	/** The city fight includes Loki's portal arrival and defeat animation. */
+	public static boolean lokiEncounterRunning(MinecraftServer server) {
+		return arrival != null || server.overworld().getAttached(BOSS) != null;
+	}
+
 	public static boolean isCurrentBoss(Loki loki) {
 		return loki.level() instanceof ServerLevel level && loki.getUUID().equals(level.getAttached(BOSS));
 	}

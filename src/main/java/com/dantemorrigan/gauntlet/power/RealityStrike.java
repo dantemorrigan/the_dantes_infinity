@@ -5,6 +5,7 @@ import com.dantemorrigan.gauntlet.GauntletConfig;
 import com.dantemorrigan.gauntlet.GauntletState;
 import com.dantemorrigan.gauntlet.Stone;
 import com.dantemorrigan.gauntlet.net.ModNetwork;
+import com.dantemorrigan.gauntlet.stones.MindZombie;
 import com.dantemorrigan.gauntlet.net.ModStatus;
 import com.dantemorrigan.gauntlet.space.SpaceManager;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
@@ -210,6 +211,7 @@ public final class RealityStrike {
 					com.dantemorrigan.gauntlet.uru.GauntletDamage.hurt(w.level, mob, owner, owner.damageSources().playerAttack(owner), LOOSE_DAMAGE * 4);
 					continue;
 				}
+				if (mob instanceof MindZombie zombie && !zombie.defeatedByReality(w.level, owner)) continue;
 				Vec3 at = mob.position().add(0, mob.getBbHeight() / 2, 0);
 				send(w.level, at, new ModNetwork.RealityFx(3, at, new Vec3(mob.getBbWidth(), mob.getBbHeight(), 0)));
 				w.level.playSound(null, mob.blockPosition(), SoundEvents.AMETHYST_CLUSTER_BREAK, SoundSource.HOSTILE, 1.0F, 1.4F);

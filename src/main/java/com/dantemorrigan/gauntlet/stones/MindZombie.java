@@ -5,6 +5,8 @@ import com.dantemorrigan.gauntlet.Stone;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import com.dantemorrigan.gauntlet.uru.GauntletDamage;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.DifficultyInstance;
@@ -101,6 +103,12 @@ public class MindZombie extends Zombie {
 			alertCityHivemind(level, attacker);
 		}
 		return hurt;
+	}
+
+	/** Reality effects must trigger an attributed death before removing the model. */
+	public boolean defeatedByReality(ServerLevel level, ServerPlayer caster) {
+		return GauntletDamage.hurt(level, this, caster, caster.damageSources().playerAttack(caster), Float.MAX_VALUE)
+				&& !isAlive();
 	}
 
 	@Override
