@@ -20,7 +20,7 @@ import org.lwjgl.glfw.GLFW;
 import java.nio.file.*;
 import java.util.*;
 
-/** Exactly one activation edge, explicit release/cancel; selection alone never activates anything. */
+/** Ability selection, activation edges and the separate Latveria preview. */
 public final class AbilityInput {
     public static final KeyMapping WHEEL=KeyMappingHelper.registerKeyMapping(new KeyMapping("key.infinity_gauntlet.ability_wheel",InputConstants.Type.KEYSYM,GLFW.GLFW_KEY_V,ClientPower.CATEGORY));
     public static final KeyMapping FAVORITES = KeyMappingHelper.registerKeyMapping(new KeyMapping(
@@ -49,6 +49,8 @@ public final class AbilityInput {
     public static int holding() { return holding; }
     public static int route() { return route; }
     public static int portal() { return portal; }
+    public static boolean latveriaActive() { return states.has("latveriaActive") && states.get("latveriaActive").getAsBoolean(); }
+    public static boolean latveriaSealed() { return states.has("latveriaSealed") && states.get("latveriaSealed").getAsBoolean(); }
     public static int powerCharge() { return selected.power() && button?charge:0; }
     public static Ability last(Stone s) { return LAST.getOrDefault(s,Ability.of(s,CosmosClient.inCosmos()).getFirst()); }
     public static String reason(Ability a) {
@@ -76,7 +78,10 @@ public final class AbilityInput {
     }
     public static void choose(Ability a,int destination) {
         if(!selectable(a)) return;
-        cancel();selected=a;if(a.stone!=null) LAST.put(a.stone,a);
+        cancel();
+        if (a != Ability.PORTAL || destination != com.dantemorrigan.gauntlet.power.SpaceStone.LATVERIA_OPTION) {
+            selected=a;if(a.stone!=null) LAST.put(a.stone,a);
+        }
         ClientPlayNetworking.send(new ModNetwork.AbilitySelect(a.id,destination));releaseGate=true;
     }
     public static void inventory() {cancel();ClientPlayNetworking.send(new ModNetwork.AbilitySelect("inventory",-1));}

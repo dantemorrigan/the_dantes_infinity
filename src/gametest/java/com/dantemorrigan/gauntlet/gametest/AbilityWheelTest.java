@@ -100,6 +100,47 @@ public class AbilityWheelTest implements FabricClientGameTest {
 
             server.runOnServer(s->{var p=s.getPlayerList().getPlayers().getFirst();if(SpaceStone.destination(GauntletState.activeGauntlet(p),p.level())!=0)throw new AssertionError("Direct portal destination failed");});
             ctx.getInput().pressKey(GLFW.GLFW_KEY_R);ctx.waitTicks(16);ctx.takeScreenshot("wheel_portal_cast");ctx.getInput().pressKey(GLFW.GLFW_KEY_R);ctx.waitTicks(8);
+            // The mystery destination is the only portal selection that opens a scene immediately.
+            server.runCommand("execute as @p run tp @s 0 -60 0 0 0");
+            choose(ctx,Ability.PORTAL,0);
+            open(ctx);
+            ctx.getInput().pressKey(GLFW.GLFW_KEY_RIGHT);
+            ctx.getInput().pressKey(GLFW.GLFW_KEY_LEFT);
+            ctx.getInput().releaseKey(GLFW.GLFW_KEY_V);
+            ctx.waitTicks(5);
+            for (int i = 0; i < 4; i++) ctx.getInput().pressKey(GLFW.GLFW_KEY_RIGHT);
+            ctx.takeScreenshot("latveria_mystery_destination");
+            ctx.getInput().pressKey(GLFW.GLFW_KEY_ENTER);
+            ctx.waitFor(mc -> mc.screen == null && AbilityInput.latveriaActive(), 100);
+            ctx.waitTicks(24);
+            ctx.takeScreenshot("latveria_doom_appears");
+            ctx.waitFor(mc -> AbilityInput.latveriaSealed(), 150);
+            server.runOnServer(s -> {
+                var player = s.getPlayerList().getPlayers().getFirst();
+                if (player.level() != s.overworld() || player.getZ() >= -0.05) {
+                    throw new AssertionError("Doom did not push the player back in the same dimension");
+                }
+                if (!SpaceStone.latveriaSealed(player) || SpaceStone.latveriaActive(player)) {
+                    throw new AssertionError("Latveria did not seal after the scene");
+                }
+                AbilityController.select(player, Ability.PORTAL.id, SpaceStone.LATVERIA_OPTION);
+                if (SpaceStone.latveriaActive(player) || SpaceStone.destination(GauntletState.activeGauntlet(player), player.level()) != 0) {
+                    throw new AssertionError("The sealed teaser replayed or changed the normal destination");
+                }
+            });
+            open(ctx);
+            ctx.getInput().pressKey(GLFW.GLFW_KEY_RIGHT);
+            ctx.getInput().pressKey(GLFW.GLFW_KEY_LEFT);
+            ctx.getInput().releaseKey(GLFW.GLFW_KEY_V);
+            ctx.waitTicks(5);
+            for (int i = 0; i < 4; i++) ctx.getInput().pressKey(GLFW.GLFW_KEY_RIGHT);
+            ctx.takeScreenshot("latveria_permanently_sealed");
+            ctx.getInput().pressKey(GLFW.GLFW_KEY_ENTER);
+            ctx.waitTicks(8);
+            if (!ctx.computeOnClient(mc -> mc.screen instanceof AbilityWheelScreen && AbilityInput.latveriaSealed())) {
+                throw new AssertionError("The sealed destination remained selectable");
+            }
+            ctx.runOnClient(mc -> mc.setScreen(null));
             choose(ctx,Ability.FLIGHT,-1);ctx.getInput().pressKey(GLFW.GLFW_KEY_R);ctx.waitTicks(10);
             choose(ctx,Ability.GRAB,-1);
             if(!server.computeOnServer(s->s.getPlayerList().getPlayers().getFirst().hasAttached(CosmosTravel.FLIGHT)))throw new AssertionError("Changing selection stopped flight");

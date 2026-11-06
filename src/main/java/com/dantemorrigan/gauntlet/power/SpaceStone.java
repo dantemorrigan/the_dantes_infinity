@@ -2,9 +2,14 @@ package com.dantemorrigan.gauntlet.power;
 
 import com.dantemorrigan.gauntlet.GauntletConfig;
 import com.dantemorrigan.gauntlet.GauntletState;
+import com.dantemorrigan.gauntlet.InfinityGauntlet;
 import com.dantemorrigan.gauntlet.ModComponents;
 import com.dantemorrigan.gauntlet.Stone;
 import com.dantemorrigan.gauntlet.net.ModNetwork;
+import com.dantemorrigan.gauntlet.net.ModStatus;
+import com.mojang.serialization.Codec;
+import net.fabricmc.fabric.api.attachment.v1.AttachmentRegistry;
+import net.fabricmc.fabric.api.attachment.v1.AttachmentType;
 import com.dantemorrigan.gauntlet.space.SpaceManager;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.networking.v1.PlayerLookup;
@@ -48,13 +53,19 @@ public final class SpaceStone {
 	private static final List<ResourceKey<Level>> DIMS = List.of(Level.NETHER, Level.END, Level.OVERWORLD);
 	public static final float PORTAL_SIZE = 4f; // world quad width (square), cf. portal_presets.json
 	private static final int OPEN_TICKS = 8, CLOSE_TICKS = 8;
+	public static final int LATVERIA_OPTION = DESTINATIONS.length;
+	public static final String LATVERIA = "latveria";
+	public static final int LATVERIA_PUSH_TICK = 42;
+	private static final int LATVERIA_PORTAL = -2, LATVERIA_LIFETIME = 88;
+	private static final AttachmentType<Boolean> LATVERIA_SEEN = AttachmentRegistry.<Boolean>builder()
+			.persistent(Codec.BOOL).copyOnDeath().buildAndRegister(InfinityGauntlet.id("latveria_seen"));
 
 	private static final class Portal {
 		final int id;
 		final ServerLevel level;
 		final Vec3 center;
 		final float yaw;
-		final int dest; // index in DESTINATIONS, -1 = exit portal (visual only)
+		final int dest; // Nonnegative destinations travel. Negative destinations are visual only.
 		final UUID owner;
 		int age;
 		int life;
@@ -70,7 +81,7 @@ public final class SpaceStone {
 		}
 
 		ModNetwork.PortalOpen packet() {
-			return new ModNetwork.PortalOpen(id, center, yaw, dest >= 0 ? DESTINATIONS[dest] : "exit", age, life - age);
+			return new ModNetwork.PortalOpen(id, center, yaw, dest >= 0 ? DESTINATIONS[dest] : dest == LATVERIA_PORTAL ? LATVERIA : "exit", age, life - age);
 		}
 	}
 
@@ -147,6 +158,7 @@ public final class SpaceStone {
 	// ------------------------------------------------------------------ portals
 
 	private static void togglePortal(ServerPlayer player, ItemStack g) {
+		if (latveriaActive(player)) return;
 		for (Portal p : PORTALS) {
 			if (player.getUUID().equals(p.owner) && p.dest >= 0 && p.level == player.level()) {
 				p.life = Math.min(p.life, p.age + CLOSE_TICKS); // close mine
@@ -164,6 +176,56 @@ public final class SpaceStone {
 		GauntletState.setInUse(g, EnumSet.of(Stone.SPACE));
 		com.dantemorrigan.gauntlet.net.ModStatus.send(player, Component.translatable("msg.infinity_gauntlet.portal.open." + name(dest)));
 		player.level().playSound(null, BlockPos.containing(center), SoundEvents.PORTAL_TRIGGER, SoundSource.PLAYERS, 0.8f, 1.6f);
+	}
+
+	public static boolean latveriaActive(ServerPlayer player) {
+		return PORTALS.stream().anyMatch(portal -> portal.dest == LATVERIA_PORTAL
+				&& portal.level == player.level() && player.getUUID().equals(portal.owner));
+	}
+
+	public static boolean latveriaSealed(ServerPlayer player) {
+		return Boolean.TRUE.equals(player.getAttached(LATVERIA_SEEN));
+	}
+
+	/** A portal preview has no target world and never enters the travel path. */
+	public static void glimpseLatveria(ServerPlayer player) {
+		if (latveriaSealed(player) || latveriaActive(player)) return;
+		float yaw = player.getYRot();
+		Vec3 center = player.position().add(Vec3.directionFromRotation(0, yaw).scale(2.5)).add(0, PORTAL_SIZE / 2 - 0.1, 0);
+		ServerLevel level = player.level();
+		if (!level.getWorldBorder().isWithinBounds(BlockPos.containing(center))
+				|| level.clip(new ClipContext(player.getEyePosition(), center, ClipContext.Block.COLLIDER,
+						ClipContext.Fluid.NONE, player)).getType() != HitResult.Type.MISS) {
+			ModStatus.send(player, Component.translatable("ability.infinity_gauntlet.reason.portal_unsafe"));
+			return;
+		}
+		for (Portal portal : PORTALS) {
+			if (portal.dest >= 0 && portal.level == level && player.getUUID().equals(portal.owner)) {
+				portal.life = Math.min(portal.life, portal.age + CLOSE_TICKS);
+			}
+		}
+		open(level, center, yaw + 180, LATVERIA_PORTAL, player.getUUID(), LATVERIA_LIFETIME);
+		level.playSound(null, BlockPos.containing(center), SoundEvents.PORTAL_TRIGGER, SoundSource.PLAYERS, 0.8f, 0.8f);
+	}
+
+	private static void tickLatveria(MinecraftServer server, Portal portal) {
+		if (portal.age > LATVERIA_PUSH_TICK) return;
+		ServerPlayer owner = server.getPlayerList().getPlayer(portal.owner);
+		if (owner == null || !owner.isAlive() || owner.isSpectator() || owner.level() != portal.level
+				|| owner.position().distanceToSqr(portal.center) > 64) {
+			portal.life = portal.age; // An interrupted preview can be attempted again.
+			return;
+		}
+		if (portal.age != LATVERIA_PUSH_TICK) return;
+		Vec3 away = owner.position().subtract(portal.center).multiply(1, 0, 1);
+		if (away.lengthSqr() < 0.01) away = Vec3.directionFromRotation(0, portal.yaw);
+		owner.setDeltaMovement(away.normalize().scale(0.9).add(0, 0.12, 0));
+		owner.hurtMarked = true;
+		owner.setAttached(LATVERIA_SEEN, true);
+		Component line = Component.translatable("msg.infinity_gauntlet.latveria.doom");
+		owner.sendSystemMessage(line);
+		ModStatus.send(owner, line);
+		portal.level.playSound(null, BlockPos.containing(portal.center), SoundEvents.WARDEN_SONIC_BOOM, SoundSource.PLAYERS, 0.65f, 0.65f);
 	}
 
 	private static Portal open(ServerLevel level, Vec3 center, float yaw, int dest, UUID owner, int life) {
@@ -198,6 +260,7 @@ public final class SpaceStone {
 		// Iterate over a copy: travelling opens an exit portal (adds to the list).
 		for (Portal p : new ArrayList<>(PORTALS)) {
 			p.age++;
+			if (p.dest == LATVERIA_PORTAL) tickLatveria(server, p);
 			if (p.age >= p.life) {
 				PORTALS.remove(p);
 				for (ServerPlayer sp : p.level.players()) ServerPlayNetworking.send(sp, new ModNetwork.PortalClose(p.id));

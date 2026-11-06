@@ -4,6 +4,7 @@ import com.dantemorrigan.gauntlet.*;
 import com.dantemorrigan.gauntlet.ability.Ability;
 import com.dantemorrigan.gauntlet.cosmos.*;
 import com.dantemorrigan.gauntlet.client.cosmos.CosmosClient;
+import com.dantemorrigan.gauntlet.power.SpaceStone;
 import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -42,6 +43,11 @@ public final class AbilityWheelScreen extends Screen {
     }
     private static int index(Stone s) {return Arrays.asList(ORDER).indexOf(s);}
     private static int color(Stone s) {return switch(s) {case POWER->0xFFBB72FF;case SPACE->0xFF51B8FF;case REALITY->0xFFFF6678;case MIND->0xFFFFDF63;case TIME->0xFF65E79D;case SOUL->0xFFFFAB58;};}
+    private int portalCount() {
+        var player=Minecraft.getInstance().player;
+        return SpaceStone.DESTINATIONS.length + (player!=null
+                && GauntletState.inserted(GauntletState.activeGauntlet(player)).contains(Stone.SPACE) ? 1 : 0);
+    }
     private void pointer(double mx,double my) {
         if(mx==mouseX && my==mouseY) return;
         mouseX=mx;mouseY=my;keyboard=null;hovered=null;target=-1;
@@ -49,8 +55,8 @@ public final class AbilityWheelScreen extends Screen {
             for(int i=0;i<CosmosRoutes.ALL.size();i++) {int[] r=destinationBounds(i);if(mx>=r[0] && mx<r[0]+r[2] && my>=r[1] && my<r[1]+r[3]) target=i;}
             return;
         }
-        if(submenu!=0) {
-            int count=submenu==1?3:CosmosRoutes.ALL.size();
+        if(submenu==1) {
+            int count=portalCount();
             for(int i=0;i<count;i++) {double a=Math.toRadians(-90+360.0*i/count);if(hit(mx,my,Math.cos(a)*115,Math.sin(a)*115,29)) target=i;}
             return;
         }
@@ -87,13 +93,19 @@ public final class AbilityWheelScreen extends Screen {
     }
     @Override public void onClose() {finished=true;Minecraft.getInstance().setScreen(null);}
     @Override public boolean keyReleased(KeyEvent event) {
-        if(event.key()==KeyMappingHelper.getBoundKeyOf(AbilityInput.WHEEL).getValue() && !GauntletConfig.get().abilityWheelToggle) {finish();return true;}
+        if(event.key()==KeyMappingHelper.getBoundKeyOf(AbilityInput.WHEEL).getValue() && !GauntletConfig.get().abilityWheelToggle) {
+            if(submenu!=1 || target!=SpaceStone.LATVERIA_OPTION) finish();
+            return true;
+        }
         return true;
     }
     @Override public boolean keyPressed(KeyEvent event) {
         int key=event.key();
         if(key==GLFW.GLFW_KEY_ESCAPE) {if(submenu!=0){submenu=0;target=-1;}else onClose();return true;}
-        if(key==KeyMappingHelper.getBoundKeyOf(AbilityInput.WHEEL).getValue() && GauntletConfig.get().abilityWheelToggle) {finish();return true;}
+        if(key==KeyMappingHelper.getBoundKeyOf(AbilityInput.WHEEL).getValue() && GauntletConfig.get().abilityWheelToggle) {
+            if(submenu!=1 || target!=SpaceStone.LATVERIA_OPTION) finish();
+            return true;
+        }
         int favoriteSlot = AbilityFavorites.slotForKey(key);
         if (submenu == 0 && favoriteSlot >= 0) {
             Ability ability = keyboard != null ? keyboard : hovered;
@@ -106,7 +118,7 @@ public final class AbilityWheelScreen extends Screen {
         }
         if(key==GLFW.GLFW_KEY_TAB || key==GLFW.GLFW_KEY_RIGHT || key==GLFW.GLFW_KEY_LEFT || key==GLFW.GLFW_KEY_DOWN || key==GLFW.GLFW_KEY_UP) {
             int direction=key==GLFW.GLFW_KEY_LEFT||key==GLFW.GLFW_KEY_UP?-1:1;
-            if(submenu!=0) target=Math.floorMod(target+direction,submenu==1?3:CosmosRoutes.ALL.size());
+            if(submenu!=0) target=Math.floorMod(target+direction,submenu==1?portalCount():CosmosRoutes.ALL.size());
             else {var list=new ArrayList<>(Ability.of(stone,CosmosClient.inCosmos()));list.add(Ability.BEAM);list.add(Ability.SNAP);Ability a=keyboard==null?(hovered==null?AbilityInput.last(stone):hovered):keyboard;keyboard=list.get(Math.floorMod(list.indexOf(a)+direction,list.size()));}
             return true;
         }
@@ -131,6 +143,7 @@ public final class AbilityWheelScreen extends Screen {
     }
     private boolean destinationAllowed(int i) {
         if(submenu==2)return AbilityInput.selectable(Ability.WARP);
+        if(i==SpaceStone.LATVERIA_OPTION) return i<portalCount() && !AbilityInput.latveriaActive() && !AbilityInput.latveriaSealed();
         var l=Minecraft.getInstance().level;
         return AbilityInput.selectable(Ability.PORTAL) && l!=null && !(i==0&&l.dimension().equals(Level.NETHER)||i==1&&l.dimension().equals(Level.END)||i==2&&l.dimension().equals(Level.OVERWORLD));
     }
@@ -158,13 +171,27 @@ public final class AbilityWheelScreen extends Screen {
             button(g,140,135,null,Ability.SNAP,(keyboard!=null?keyboard:hovered)==Ability.SNAP,AbilityInput.selectable(Ability.SNAP),Stone.MIND,48);
             button(g,0,0,GauntletState.activeGauntlet(Minecraft.getInstance().player),null,false,true,stone,68);
         } else {
-            int count=submenu==1?3:CosmosRoutes.ALL.size();
+            int count=portalCount();
             for(int i=0;i<count;i++) {
                 double a=Math.toRadians(-90+360.0*i/count);double x=Math.cos(a)*115,y=Math.sin(a)*115;
-                button(g,x,y,null,null,i==target,destinationAllowed(i),Stone.SPACE,54);
-                blit(g,"icons_64/"+(submenu==1?"portal_"+new String[]{"nether","end","overworld"}[i]:destinationIcon(CosmosRoutes.ALL.get(i).id())),(float)(cx()+(x-16)*scale()),(float)(cy()+(y-16)*scale()),32*scale(),32*scale(),64,64);
-                Component label=submenu==1?Component.translatable("ability.infinity_gauntlet.dimension."+new String[]{"nether","end","overworld"}[i]):Component.translatable("cosmos.infinity_gauntlet."+CosmosRoutes.ALL.get(i).id());
-                text(g,label,(int)(cx()+x*scale()),(int)(cy()+(y+34)*scale()),destinationAllowed(i)?0xFFDEE8F9:0xFF85818A);
+                boolean enabled=destinationAllowed(i);
+                button(g,x,y,null,null,i==target,enabled,Stone.SPACE,54);
+                Component label;
+                if(i==SpaceStone.LATVERIA_OPTION) {
+                    boolean sealed=AbilityInput.latveriaSealed();
+                    g.pose().pushMatrix();
+                    g.pose().translate((float)(cx()+x*scale()),(float)(cy()+y*scale()));
+                    g.pose().scale(2*scale(),2*scale());
+                    text(g,Component.literal(sealed?"×":"?").withStyle(net.minecraft.ChatFormatting.BOLD),0,-4,
+                        sealed?0xFF85818A:0xFFC7E69E);
+                    g.pose().popMatrix();
+                    label=sealed?Component.translatable("ability.infinity_gauntlet.dimension.latveria"):Component.empty();
+                } else {
+                    String id=SpaceStone.DESTINATIONS[i];
+                    blit(g,"icons_64/portal_"+id,(float)(cx()+(x-16)*scale()),(float)(cy()+(y-16)*scale()),32*scale(),32*scale(),64,64);
+                    label=Component.translatable("ability.infinity_gauntlet.dimension."+id);
+                }
+                text(g,label,(int)(cx()+x*scale()),(int)(cy()+(y+34)*scale()),enabled?0xFFDEE8F9:0xFF85818A);
             }
             button(g,0,0,null,null,false,true,Stone.SPACE,62);
             blit(g,"icons_64/back",(int)(cx()-16*scale()),(int)(cy()-16*scale()),32*scale(),32*scale(),64,64);
@@ -189,7 +216,9 @@ public final class AbilityWheelScreen extends Screen {
                 : Component.translatable("ability.infinity_gauntlet.favorites_bound", slot + 1);
             tooltipLine(g, binding, firstLine + 20, 0xFFF4D68D);
         } else {
-            tooltipLine(g, Component.translatable("ability.infinity_gauntlet.pick_destination"), firstLine, 0xFFDED7EA);
+            String key=submenu==1 && target==SpaceStone.LATVERIA_OPTION && AbilityInput.latveriaSealed()
+                ?"ability.infinity_gauntlet.latveria_sealed":"ability.infinity_gauntlet.pick_destination";
+            tooltipLine(g, Component.translatable(key), firstLine, 0xFFDED7EA);
         }
         tooltipLine(g, Component.translatable("ability.infinity_gauntlet.wheel_help",
             AbilityInput.WHEEL.getTranslatedKeyMessage()), firstLine + 30, 0xFF9BA7BB);

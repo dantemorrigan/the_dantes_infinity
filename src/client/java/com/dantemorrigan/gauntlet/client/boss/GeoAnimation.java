@@ -4,6 +4,7 @@ import com.dantemorrigan.gauntlet.InfinityGauntlet;
 import com.dantemorrigan.gauntlet.client.fx.VfxPresets;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import net.minecraft.resources.Identifier;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -26,10 +27,14 @@ public final class GeoAnimation {
 	}
 
 	public static Map<String, GeoAnimation> load(String file) {
+		return load(InfinityGauntlet.id("thanos/" + file));
+	}
+
+	public static Map<String, GeoAnimation> load(Identifier file) {
 		Map<String, GeoAnimation> out = new HashMap<>();
-		JsonObject root = VfxPresets.readJson(InfinityGauntlet.id("thanos/" + file));
+		JsonObject root = VfxPresets.readJson(file);
 		if (root == null || !root.has("animations")) {
-			InfinityGauntlet.LOGGER.warn("Missing Thanos animations {}", file);
+			InfinityGauntlet.LOGGER.warn("Missing model animations {}", file);
 			return out;
 		}
 		for (Map.Entry<String, JsonElement> e : root.getAsJsonObject("animations").entrySet()) {

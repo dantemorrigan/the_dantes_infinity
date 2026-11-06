@@ -20,7 +20,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import java.util.*;
 
-/** A chosen ability never executes until a separate activation packet. Server owns charge and readiness. */
+/** Server authority for ability selection, casts and the one-shot Latveria preview. */
 public final class AbilityController {
     private static final AttachmentType<String> SELECTED=AttachmentRegistry.<String>builder().persistent(Codec.STRING)
         .buildAndRegister(InfinityGauntlet.id("selected_ability"));
@@ -111,6 +111,15 @@ public final class AbilityController {
         Ability a=Ability.byId(id);if(a==null || a==Ability.DESTINATIONS) { sync(p);return; }
         // Selection is always available; readiness is checked only when casting.
         if(!p.isAlive() || GauntletState.activeGauntlet(p).isEmpty()) {sync(p);return;}
+        if (a == Ability.PORTAL && destination == SpaceStone.LATVERIA_OPTION) {
+            if (!SpaceStone.latveriaSealed(p) && !SpaceStone.latveriaActive(p) && reasonIgnoringCooldown(p, a)) {
+                cancel(p);
+                MindStone.drop(p);
+                SpaceStone.glimpseLatveria(p);
+            }
+            sync(p);
+            return;
+        }
         if(destination!=-1) {
             if(a==Ability.PORTAL) { if(!SpaceStone.selectDestination(p,destination)) return; }
             else if(a==Ability.WARP) { if(!CosmosTravel.selectDestination(p,destination)) return; }
@@ -214,6 +223,9 @@ public final class AbilityController {
     }
     private static void sync(ServerPlayer p) {
         JsonObject state=new JsonObject();
+        boolean previewing = SpaceStone.latveriaActive(p);
+        state.addProperty("latveriaActive", previewing);
+        state.addProperty("latveriaSealed", !previewing && SpaceStone.latveriaSealed(p));
         for(Ability a:Ability.values()) {
             JsonObject entry=new JsonObject();entry.addProperty("reason",reason(p,a));entry.addProperty("cooldown",cooldown(p,a));state.add(a.id,entry);
         }

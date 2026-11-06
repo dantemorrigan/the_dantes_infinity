@@ -2,6 +2,7 @@ package com.dantemorrigan.gauntlet.client.fx;
 
 import com.dantemorrigan.gauntlet.InfinityGauntlet;
 import com.dantemorrigan.gauntlet.ModParticles;
+import com.dantemorrigan.gauntlet.client.boss.DoomTeaserRenderer;
 import com.dantemorrigan.gauntlet.net.ModNetwork;
 import com.dantemorrigan.gauntlet.power.SpaceStone;
 import com.mojang.blaze3d.platform.InputConstants;
@@ -156,6 +157,16 @@ public final class SpaceStoneClient {
 			pose.pushPose();
 			pose.translate(p.center.x - cam.x, p.center.y - cam.y, p.center.z - cam.z);
 			pose.mulPose(Axis.YP.rotationDegrees(-p.yaw));
+			if (SpaceStone.LATVERIA.equals(p.dest)) {
+				float reveal = Mth.clamp(Math.min(age, closing) / OPEN, 0, 1);
+				pose.pushPose();
+				pose.scale(s * reveal, s * reveal, s);
+				latveriaWindow(ctx, pose, age, reveal);
+				pose.popPose();
+				DoomTeaserRenderer.render(ctx, pose, age, closing);
+				pose.popPose();
+				continue;
+			}
 			pose.scale(s, s, s);
 			// Painted destination window (rim included), slightly behind; then the animated cobalt rim on top.
 			if (!p.dest.equals("exit") && windowAlpha > 0) {
@@ -165,6 +176,56 @@ public final class SpaceStoneClient {
 			quad(ctx, pose, RenderTypes.entityTranslucentEmissive(rim), 1.0f, 0.0f, 0xFFFFFFFF);
 			pose.popPose();
 		}
+	}
+
+	/** The reference image is clipped by the aperture mesh, with an animated emerald rim. */
+	private static void latveriaWindow(LevelRenderContext ctx, PoseStack pose, float age, float reveal) {
+		var picture = RenderTypes.entityTranslucentEmissive(tex("portal_latveria"));
+		ctx.submitNodeCollector().submitCustomGeometry(pose, picture, (p, out) -> {
+			int color = ARGB.colorFromFloat(reveal, 1, 1, 1);
+			for (int i = 0; i < 32; i++) {
+				float low = (i - 16) / 16f, high = (i + 1 - 16) / 16f;
+				float a = (float)Math.sqrt(1 - low * low), b = (float)Math.sqrt(1 - high * high);
+				for (int side = 1; side >= -1; side -= 2) {
+					apertureVertex(out, p, -a * side, low, color, side);
+					apertureVertex(out, p, a * side, low, color, side);
+					apertureVertex(out, p, b * side, high, color, side);
+					apertureVertex(out, p, -b * side, high, color, side);
+				}
+			}
+		});
+		// The existing portal particle frame has an opaque white center texel for tinting.
+		ctx.submitNodeCollector().submitCustomGeometry(pose, RenderTypes.entityTranslucentEmissive(tex("portal_idle_0")), (p, out) -> {
+			for (int i = 0; i < 40; i++) {
+				float a = (float)(i * Math.TAU / 40), b = (float)((i + 1) * Math.TAU / 40);
+				float pulse = 0.5f + 0.5f * Mth.sin(a * 5 - age * 0.23f);
+				int edge = ARGB.colorFromFloat(reveal * (0.85f + 0.15f * pulse),
+						0.16f + pulse * 0.29f, 0.53f + pulse * 0.28f, 0.25f + pulse * 0.09f);
+				ringSegment(out, p, a, b, 0.92f, 1.07f + 0.045f * pulse, edge);
+				ringSegment(out, p, a, b, 1.055f, 1.14f + 0.045f * pulse,
+						ARGB.colorFromFloat(0.22f * reveal, 0.57f, 0.84f, 0.24f));
+			}
+		});
+	}
+
+	private static void apertureVertex(VertexConsumer out, PoseStack.Pose p, float x, float y, int color, int side) {
+		// The wide reference is cropped horizontally, preserving its proportions in the oval.
+		v(out, p, x * 0.74f, y * 0.94f, 0, 0.58f + x * side * 0.312f, 0.5f - y * 0.5f, color, side);
+	}
+
+	private static void ringSegment(VertexConsumer out, PoseStack.Pose p, float a, float b, float inner, float outer, int color) {
+		for (int side = 1; side >= -1; side -= 2) {
+			float start = side > 0 ? a : b, end = side > 0 ? b : a;
+			ringVertex(out, p, start, inner, color, side);
+			ringVertex(out, p, start, outer, color, side);
+			ringVertex(out, p, end, outer, color, side);
+			ringVertex(out, p, end, inner, color, side);
+		}
+	}
+
+	private static void ringVertex(VertexConsumer out, PoseStack.Pose p, float angle, float radius, int color, int side) {
+		v(out, p, Mth.cos(angle) * radius * 0.74f, Mth.sin(angle) * radius * 0.94f,
+				side * 0.01f, 0.5f, 0.5f, color, side);
 	}
 
 	/** Upright square, both sides; the back side uses mirrored U so the picture is never seen mirrored. */
