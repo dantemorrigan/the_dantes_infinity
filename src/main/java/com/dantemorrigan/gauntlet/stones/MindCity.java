@@ -370,7 +370,6 @@ public final class MindCity {
 		overgrowCity(level, site, rnd);
 
 		level.setAttached(BUILT, true);
-		MindQuest.ensureZombies(level, site);
 		InfinityGauntlet.LOGGER.info("Ruined City built at {}", site);
 	}
 

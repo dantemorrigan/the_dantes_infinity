@@ -29,6 +29,7 @@ public final class CoopRules {
     public static boolean canEdit(ServerPlayer actor, ServerLevel level, BlockPos pos) {
         return GauntletConfig.get().abilityBlockChanges && actor != null && actor.isAlive()
             && !actor.isSpectator() && actor.level() == level && level.hasChunkAt(pos)
+            && !com.dantemorrigan.gauntlet.stones.MindArena.protects(level, pos)
             && level.getWorldBorder().isWithinBounds(pos) && level.mayInteract(actor, pos);
     }
 }

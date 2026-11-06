@@ -43,7 +43,7 @@ Requirements: **Java 25**. Build: `./gradlew build` → `build/libs/infinity_gau
 - Art: pack `01_Space_Quest`. Test: `xvfb-run -a ./gradlew runClientGameTest -PonlyTest=SpaceQuestTest`.
 
 ## Finding the Reality Stone
-- In the Nether a player may be wrapped in **red mist** (checked once a minute, `realityFogChancePerMinute`); the Reality Stone darts through it and flees when approached. **Hit it in melee** to catch it, or **shoot it with an arrow**: the mist scatters and the stone falls next to the player. After `realityFogSeconds` it slips away. Once per world.
+- Once a minute, nearby Nether players get one shared roll for red mist (`realityFogChancePerMinute`). One mist event and one stone can exist at a time. The first player to hit the stone in melee or with an arrow gets it.
 - Art: pack `02_Reality_Quest` (layered fog density map, stone trail, arrow hit, fog dispel). Debug: `/gauntlet reality_fog`. Smoke test: `-PonlyTest=RealityFogTest`.
 
 ## Finding the Soul Stone
@@ -58,9 +58,9 @@ Requirements: **Java 25**. Build: `./gradlew build` → `build/libs/infinity_gau
 
 ## Finding the Mind Stone
 - Across villages, ruins, temples, dungeons, mineshafts, and from cartographers and wandering traders, you can find the **Map to the Ruined City** (right-click to unroll). It marks the single **Ruined City** in the world.
-- The city is overgrown with vines and moss, filled with crumbling stone ruins and **10 loot chests** with varied treasure. Roaming its streets are **10 smart Mind Zombies** glowing with yellow Mind Stone essence — they do not burn in sunlight, move fast, coordinate telepathically, and leap over rubble.
+- Entering the city seals the arena and spawns **10 Mind Zombies**. The barrier blocks escape by teleporting, flying or digging. Environmental damage cannot advance the fight.
 - After the **10th Mind Zombie** falls, golden light washes over the city and a portal opens. **Loki** steps out, teleports around the ruins and lunges with his daggers. Each illusion breaks in one hit. Below 45% health, Loki moves faster, teleports more often and summons up to three copies at a time.
-- **Arrows, explosions and Infinity Stone attacks** deal extra damage to Loki. After his defeat, the essence gathers into the **Mind Stone**, which drops where he fell alongside **650 XP**.
+- **Arrows, explosions and Infinity Stone attacks** deal extra damage to Loki. After the fight, the closest participant receives the **Mind Stone**, the barrier opens, and **650 XP** drops where Loki fell.
 - Advancements: **Nice Try, Loki** for shattering an illusion and **God of Mischief** for defeating Loki. Debug: `/gauntlet mind_quest city_here | locate | map | summon`. Smoke test: `-PonlyTest=MindQuestTest`.
 
 ## Final boss: Thanos

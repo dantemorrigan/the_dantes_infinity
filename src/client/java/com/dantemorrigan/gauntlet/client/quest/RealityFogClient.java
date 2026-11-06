@@ -20,7 +20,7 @@ import net.minecraft.world.phys.Vec3;
 
 /**
  * The red mist (pack 02_Reality_Quest): red fog colour plus layers of the pack's translucent density map
- * ("quest_reality_fog" frames) as camera-facing quads at several distances, drifting slowly around the player.
+ * ("quest_reality_fog" frames) as quads drifting around the shared world-space center.
  */
 public final class RealityFogClient {
 	/** Distance, quads per ring, quad half-size, opacity of each layer. */
@@ -31,14 +31,22 @@ public final class RealityFogClient {
 	}
 
 	private static boolean on;
+	private static Vec3 center = Vec3.ZERO, target = Vec3.ZERO;
 	private static float factor;
 	private static int ticks;
 
 	public static void init() {
-		ClientPlayNetworking.registerGlobalReceiver(ModNetwork.RealityFogFx.TYPE, (packet, ctx) -> on = packet.on());
+		ClientPlayNetworking.registerGlobalReceiver(ModNetwork.RealityFogFx.TYPE, (packet, ctx) -> {
+			if (packet.on()) {
+				target = packet.center();
+				if (!on) center = target;
+			}
+			on = packet.on();
+		});
 		ClientPlayConnectionEvents.DISCONNECT.register((h, mc) -> { on = false; factor = 0; });
 		ClientTickEvents.END_CLIENT_TICK.register(mc -> {
 			ticks++;
+			if (on) center = center.lerp(target, .24);
 			// Fades in slowly, out a bit faster (the alpha falloff after fog_dispel).
 			factor += ((on ? 1f : 0f) - factor) * (on ? 0.04f : 0.07f);
 			if (factor < 0.002f) factor = 0;
@@ -54,7 +62,7 @@ public final class RealityFogClient {
 		if (factor <= 0 || mc.level == null || mc.player == null) return;
 		float partial = mc.getDeltaTracker().getGameTimeDeltaPartialTick(false);
 		float t = ticks + partial;
-		Vec3 cam = mc.gameRenderer.getMainCamera().position();
+		Vec3 anchor = center.subtract(mc.gameRenderer.getMainCamera().position());
 		PoseStack pose = ctx.poseStack();
 		for (int layer = 0; layer < LAYERS.length; layer++) {
 			float dist = LAYERS[layer][0], half = LAYERS[layer][2];
@@ -69,7 +77,7 @@ public final class RealityFogClient {
 				double y = Math.sin(t * 0.02 + i * 1.7 + layer) * 1.2 - 0.4;
 				Identifier frame = FRAMES[(int) ((t / 6f) + i * 3 + layer * 2) % 8];
 				pose.pushPose();
-				pose.translate(Math.cos(rad) * dist, y, Math.sin(rad) * dist);
+				pose.translate(anchor.x + Math.cos(rad) * dist, anchor.y + y, anchor.z + Math.sin(rad) * dist);
 				pose.mulPose(Axis.YP.rotationDegrees(-yaw - 90));
 				ctx.submitNodeCollector().submitCustomGeometry(pose, RenderTypes.entityTranslucentEmissive(frame), (p, b) -> {
 					v(b, p, -half, -half, 0, 1, color, 1);

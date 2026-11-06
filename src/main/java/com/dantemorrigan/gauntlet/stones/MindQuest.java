@@ -80,22 +80,29 @@ public final class MindQuest {
 	 */
 	private static final AttachmentType<List<String>> ALIVE = AttachmentRegistry.<List<String>>builder()
 			.persistent(Codec.STRING.listOf()).buildAndRegister(InfinityGauntlet.id("mind_zombies_alive"));
-	/** True while the quest itself clears its zombies (reset): that is not a defeat. */
-	private static boolean clearing;
-
 	private static Arrival arrival;
 
 	public static void init() {
 		LokiFx.init();
+		MindArena.init();
 		ServerLifecycleEvents.SERVER_STOPPED.register(s -> arrival = null);
 		ServerTickEvents.END_SERVER_TICK.register(MindQuest::tick);
+		ServerEntityEvents.ENTITY_LOAD.register((entity, level) -> {
+			if (entity instanceof MindZombie zombie && (!MindArena.active(level.getServer())
+					|| level != level.getServer().overworld()
+					|| !MindArena.inside(MindCity.site(level.getServer()), zombie.position()))) zombie.discard();
+		});
 		ServerEntityEvents.ENTITY_UNLOAD.register((entity, level) -> {
 			if (entity.getRemovalReason() != Entity.RemovalReason.DISCARDED) return;
-			if (!clearing && entity instanceof MindZombie zombie && !zombie.isDeadOrDying()) {
-				if (level.getDifficulty() == Difficulty.PEACEFUL) untrackZombie(level, zombie);
-				else onMindZombieKilled(level, zombie, null);
-			}
+			if (entity instanceof MindZombie zombie) untrackZombie(level.getServer().overworld(), zombie);
 			if (entity instanceof Loki loki && isCurrentBoss(loki)) level.removeAttached(BOSS);
+		});
+		ServerLivingEntityEvents.ALLOW_DAMAGE.register((entity, source, amount) -> {
+			if (!(entity.level() instanceof ServerLevel level) || !MindArena.active(level.getServer())
+					|| !(entity instanceof MindZombie || entity instanceof Loki loki && loki.isCityEncounter())) return true;
+			return source.getEntity() instanceof ServerPlayer player && MindArena.fighter(player)
+					&& level == level.getServer().overworld()
+					&& MindArena.inside(MindCity.site(level.getServer()), entity.position());
 		});
 		ServerLivingEntityEvents.AFTER_DEATH.register((entity, source) -> {
 			if (entity instanceof MindZombie zombie && entity.level() instanceof ServerLevel level) {
@@ -122,17 +129,8 @@ public final class MindQuest {
 		MinecraftServer server = level.getServer();
 		if (level != server.overworld() || !MindCity.built(server) || StoneRegistry.released(server, Stone.MIND)
 				|| defeatedCount(server) >= TOTAL_ZOMBIES) return;
-		if (level.getAttached(ALIVE) != null) {
-			if (!untrackZombie(level, zombie)) return;
-		} else if (zombie.blockPosition().distSqr(MindCity.site(server)) > 96 * 96) {
-			return;
-		}
-
-		ServerPlayer player = killer;
-		if (player == null && zombie.getLastHurtByMob() instanceof ServerPlayer hurtBy) player = hurtBy;
-		if (player == null && zombie.getRemovalReason() == Entity.RemovalReason.DISCARDED
-				&& level.getNearestPlayer(zombie, 64) instanceof ServerPlayer nearest) player = nearest;
-		if (player == null) return;
+		if (!untrackZombie(level, zombie) || killer == null || !MindArena.fighter(killer)
+				|| !MindArena.inside(MindCity.site(server), zombie.position())) return;
 
 		int defeated = defeatedCount(server) + 1;
 		level.setAttached(DEFEATED, defeated);
@@ -140,8 +138,8 @@ public final class MindQuest {
 		level.sendParticles(ModParticles.QUEST_MIND_ESSENCE, zombie.getX(), zombie.getY() + 1, zombie.getZ(), 2, 0.25, 0.35, 0.25, 0);
 		level.playSound(null, zombie.blockPosition(), SoundEvents.AMETHYST_BLOCK_CHIME, SoundSource.HOSTILE, 1.5f, 1.1f);
 
-		ModStatus.send(player, Component.translatable("msg.infinity_gauntlet.mind_quest.progress", defeated, TOTAL_ZOMBIES));
-		if (defeated == TOTAL_ZOMBIES) startArrival(level, MindCity.site(server), player);
+		ModStatus.send(killer, Component.translatable("msg.infinity_gauntlet.mind_quest.progress", defeated, TOTAL_ZOMBIES));
+		if (defeated == TOTAL_ZOMBIES) startArrival(level, MindCity.site(server), killer);
 	}
 
 	private static boolean untrackZombie(ServerLevel level, MindZombie zombie) {
@@ -204,7 +202,7 @@ public final class MindQuest {
 						Vec3 center = portal.add(0, 1.5, 0);
 						Vec3 offset = center.subtract(eye);
 						double distance = offset.length();
-						if (distance < 3.5 || !Loki.safeFooting(level, portal)) continue;
+						if (distance < 3.5 || !MindArena.inside(site, portal) || !Loki.safeFooting(level, portal)) continue;
 						float yaw = Loki.yawTo(portal, player.position());
 						if (!Loki.safeFooting(level, portal.add(Vec3.directionFromRotation(0, yaw).scale(1.3)))) continue;
 						double score = Math.abs(distance - 9) + Math.abs(y - base.getY()) * 2 - offset.normalize().dot(look) * 6;
@@ -224,27 +222,52 @@ public final class MindQuest {
 	private static void tick(MinecraftServer server) {
 		ServerLevel level = server.overworld();
 		boolean stoneReleased = StoneRegistry.released(server, Stone.MIND);
+		boolean replay = Boolean.TRUE.equals(level.getAttached(LOKI_REPLAY));
 		if (stoneReleased) {
+			if (MindArena.sealed(server)) MindArena.open(server);
 			level.removeAttached(REWARD);
-			if (!Boolean.TRUE.equals(level.getAttached(LOKI_REPLAY))) {
+			if (!replay) {
 				clearLoki(level);
 				return;
 			}
 		}
+		if (!MindCity.built(server)) return;
+		BlockPos site = MindCity.site(server);
+		if (!stoneReleased && !MindArena.active(server) && level.getDifficulty() != Difficulty.PEACEFUL && MindArena.begin(level, site)) {
+			level.removeAttached(ALIVE); // Adopt in-bounds zombies from saves that predate the barrier.
+			ensureZombies(level, site);
+		}
+		boolean sealed = MindArena.active(server);
+		if (sealed) {
+			MindArena.tick(level, site);
+			keepInside(level, site);
+		}
 		Reward reward = level.getAttached(REWARD);
 		if (reward != null) {
 			revealReward(level, reward);
-			return;
-		}
-		if (!MindCity.built(server)) return;
-		BlockPos site = MindCity.site(server);
-		if (arrival != null) {
+		} else if (arrival != null) {
 			runArrival(level, site);
-		} else if (level.getGameTime() % 40 == 0 && level.hasChunkAt(site)) {
-			ServerPlayer nearby = level.getNearestPlayer(site.getX(), site.getY(), site.getZ(), 64, false) instanceof ServerPlayer player ? player : null;
-			if (nearby == null || nearby.isSpectator()) return;
+		} else if ((sealed || replay) && level.getGameTime() % 40 == 0 && level.hasChunkAt(site)) {
+			ServerPlayer fighter = sealed ? level.players().stream().filter(MindArena::fighter).findFirst().orElse(null)
+					: level.getNearestPlayer(site.getX(), site.getY(), site.getZ(), 64, false) instanceof ServerPlayer p ? p : null;
+			if (fighter == null || fighter.isSpectator()) return;
 			if (remainingCount(server) > 0) ensureZombies(level, site);
-			else startArrival(level, site, nearby);
+			else startArrival(level, site, fighter);
+		}
+	}
+
+	private static void keepInside(ServerLevel level, BlockPos site) {
+		for (String id : level.getAttachedOrElse(ALIVE, List.of())) {
+			if (level.getEntity(UUID.fromString(id)) instanceof MindZombie zombie && !MindArena.inside(site, zombie.position())) {
+				zombie.discard(); // No essence; a replacement spawns inside.
+			}
+		}
+		UUID boss = level.getAttached(BOSS);
+		if (boss != null && level.getEntity(boss) instanceof Loki loki && loki.isAlive()
+				&& !MindArena.inside(site, loki.position())) {
+			Vec3 stand = MindCity.plazaStand(site);
+			loki.setPos(stand);
+			loki.setDeltaMovement(Vec3.ZERO);
 		}
 	}
 
@@ -282,7 +305,7 @@ public final class MindQuest {
 		level.removeAttached(LOKI_REPLAY);
 		Vec3 at = loki.position();
 		BlockPos city = MindCity.site(level.getServer());
-		if (at.y < city.getY() - 4) at = MindCity.plazaStand(city);
+		if (!MindArena.inside(city, at)) at = MindCity.plazaStand(city);
 		if (!StoneRegistry.released(level.getServer(), Stone.MIND) && level.getAttached(REWARD) == null) {
 			level.setAttached(REWARD, new Reward(at, level.getGameTime() + REWARD_TICKS));
 			LokiFx.send(level, LokiFx.Effect.ESSENCE_COLLECT, at, 0);
@@ -298,12 +321,26 @@ public final class MindQuest {
 		Vec3 at = reward.position();
 		BlockPos pos = BlockPos.containing(at);
 		if (level.getGameTime() < reward.revealTick() || !level.isPositionEntityTicking(pos)) return;
-		ItemEntity stone = new ItemEntity(level, at.x, at.y + 0.45, at.z, new ItemStack(ModItems.MIND_STONE), 0, 0.16, 0);
-		stone.setDefaultPickUpDelay();
-		stone.setUnlimitedLifetime();
-		stone.setInvulnerable(true);
-		if (!level.addFreshEntity(stone)) return;
-		StoneRegistry.markReleased(level.getServer(), Stone.MIND);
+		MinecraftServer server = level.getServer();
+		ItemStack rewardStack = new ItemStack(ModItems.MIND_STONE);
+		if (MindArena.active(server)) {
+			ServerPlayer recipient = level.players().stream().filter(MindArena::fighter)
+					.min(java.util.Comparator.comparingDouble(player -> player.distanceToSqr(at))).orElse(null);
+			if (recipient == null) return;
+			if (!recipient.getInventory().add(rewardStack)) {
+				ItemStack held = recipient.getMainHandItem();
+				recipient.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, rewardStack);
+				if (!held.isEmpty()) OrbItem.giveIntoBackpack(recipient, held);
+			}
+			MindArena.open(server);
+		} else {
+			ItemEntity stone = new ItemEntity(level, at.x, at.y + 0.45, at.z, rewardStack, 0, 0.16, 0);
+			stone.setDefaultPickUpDelay();
+			stone.setUnlimitedLifetime();
+			stone.setInvulnerable(true);
+			if (!level.addFreshEntity(stone)) return;
+		}
+		StoneRegistry.markReleased(server, Stone.MIND);
 		level.removeAttached(REWARD);
 		LokiFx.send(level, LokiFx.Effect.MIND_STONE_REVEAL, at, 0);
 		level.playSound(null, pos, ModSounds.STONE_INSERT, SoundSource.PLAYERS, 2.2f, 1.0f);
@@ -314,7 +351,7 @@ public final class MindQuest {
 	}
 
 	/** Ensures the remaining undefeated Mind Zombies exist: only those lost without being defeated are ever replaced. */
-	public static void ensureZombies(ServerLevel level, BlockPos site) {
+	private static void ensureZombies(ServerLevel level, BlockPos site) {
 		MinecraftServer server = level.getServer();
 		if (StoneRegistry.released(server, Stone.MIND) || level.getDifficulty() == Difficulty.PEACEFUL) return;
 		int needed = remainingCount(server);
@@ -324,7 +361,7 @@ public final class MindQuest {
 		if (ids == null) {
 			// First time (or a world from before): the zombies that already stand around the city are the quest's zombies.
 			ids = new ArrayList<>();
-			for (MindZombie z : level.getEntitiesOfClass(MindZombie.class, new AABB(site).inflate(MindCity.R_BLEND + 64.0), MindZombie::isAlive)) {
+			for (MindZombie z : level.getEntitiesOfClass(MindZombie.class, new AABB(site).inflate(MindCity.R_FLAT + 1), z -> z.isAlive() && MindArena.inside(site, z.position()))) {
 				if (ids.size() < needed) ids.add(z.getUUID().toString());
 			}
 		} else {
@@ -373,21 +410,16 @@ public final class MindQuest {
 		ServerLevel overworld = server.overworld();
 		overworld.removeAttached(DEFEATED);
 		overworld.removeAttached(ALIVE);
+		MindArena.open(server);
 		clearLoki(overworld);
 		overworld.removeAttached(REWARD);
 		overworld.removeAttached(LOKI_REPLAY);
 		if (!MindCity.built(server)) return;
 		BlockPos site = MindCity.site(server);
 		if (overworld.hasChunkAt(site)) {
-			clearing = true;
-			try {
-				for (MindZombie z : overworld.getEntitiesOfClass(MindZombie.class, new AABB(site).inflate(MindCity.R_BLEND + 64.0), e -> true)) {
-					z.discard();
-				}
-			} finally {
-				clearing = false;
+			for (MindZombie zombie : overworld.getEntitiesOfClass(MindZombie.class, new AABB(site).inflate(MindCity.R_BLEND + 64.0))) {
+				zombie.discard();
 			}
-			ensureZombies(overworld, site);
 		}
 	}
 

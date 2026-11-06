@@ -17,22 +17,23 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.EntitySpawnReason;
-import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 /**
- * Reality Stone: in the Nether a player may be wrapped in red mist, with the Reality Stone darting through it.
- * A melee hit on the fleeing stone catches it; an arrow scatters the mist and drops the stone at the player's feet.
- * If nobody catches it in time, it slips away (the mist can come back later). One stone per world.
+ * One Nether mist event can be active in the world. Nearby players share its spawn roll and pursue one stone.
+ * The first player to hit the stone in melee or with an arrow gets it.
  */
 public final class RealityFog {
-	private record Event(UUID player, RealityWisp wisp, long end) {}
+	private static final double GROUP_RANGE = 24, WISP_RANGE = 64;
+	private record Event(RealityWisp wisp, long end, Set<UUID> viewers) {}
 
 	private static Event event;
 
@@ -47,10 +48,13 @@ public final class RealityFog {
 	private static void tick(MinecraftServer server) {
 		long now = server.overworld().getGameTime();
 		if (event != null) {
-			ServerPlayer p = server.getPlayerList().getPlayer(event.player());
-			if (p == null || event.wisp().isRemoved() || p.level() != event.wisp().level() || now >= event.end()) {
-				if (p != null && !event.wisp().isRemoved()) ModStatus.send(p, Component.translatable("msg.infinity_gauntlet.reality.escaped"));
-				end(server, p, false);
+			if (event.wisp().isRemoved() || now >= event.end()) {
+				end(server, false);
+			} else if (now % 5 == 0 && event.wisp().level() instanceof ServerLevel level) {
+				ServerPlayer anchor = nearestPlayer(event.wisp());
+				List<ServerPlayer> group = groups(level.players()).stream()
+						.filter(players -> players.contains(anchor)).findFirst().orElse(List.of());
+				syncViewers(server, group);
 			}
 			return;
 		}
@@ -58,71 +62,122 @@ public final class RealityFog {
 		if (now % 1200 != 0 || !cfg.realityFogEnabled || StoneRegistry.found(server, Stone.REALITY)) return;
 		ServerLevel nether = server.getLevel(Level.NETHER);
 		if (nether == null) return;
-		for (ServerPlayer p : nether.players()) {
-			if (p.isAlive() && !p.isSpectator() && nether.getRandom().nextFloat() < cfg.realityFogChancePerMinute) {
-				start(p);
-				return;
-			}
+		List<List<ServerPlayer>> groups = groups(nether.players());
+		// Shuffle clusters so that a group later in the player list has the same chance to be selected.
+		for (int i = groups.size() - 1; i > 0; i--) java.util.Collections.swap(groups, i, nether.getRandom().nextInt(i + 1));
+		for (List<ServerPlayer> group : groups) {
+			if (nether.getRandom().nextFloat() < cfg.realityFogChancePerMinute && start(group)) return;
 		}
 	}
 
-	/** Wraps the player in the mist and releases the stone near them. */
+	static List<List<ServerPlayer>> groups(List<ServerPlayer> players) {
+		List<ServerPlayer> remaining = new ArrayList<>(players.stream().filter(RealityFog::eligible).toList());
+		List<List<ServerPlayer>> groups = new ArrayList<>();
+		while (!remaining.isEmpty()) {
+			List<ServerPlayer> group = new ArrayList<>();
+			group.add(remaining.removeFirst());
+			for (int i = 0; i < group.size(); i++) {
+				ServerPlayer neighbor = group.get(i);
+				for (var it = remaining.iterator(); it.hasNext();) {
+					ServerPlayer candidate = it.next();
+					if (neighbor.distanceToSqr(candidate) <= GROUP_RANGE * GROUP_RANGE) {
+						group.add(candidate);
+						it.remove();
+					}
+				}
+			}
+			groups.add(group);
+		}
+		return groups;
+	}
+
+	private static boolean eligible(ServerPlayer p) {
+		return p.isAlive() && !p.isSpectator();
+	}
+
+	/** Operator preview starts the same event around the chosen player and their nearby group. */
 	public static boolean start(ServerPlayer p) {
+		for (List<ServerPlayer> group : groups(p.level().players())) {
+			if (group.contains(p)) return start(group);
+		}
+		return false;
+	}
+
+	private static boolean start(List<ServerPlayer> group) {
 		if (event != null) return false;
-		ServerLevel level = (ServerLevel) p.level();
+		ServerLevel level = group.getFirst().level();
+		MinecraftServer server = level.getServer();
+		if (StoneRegistry.released(server, Stone.REALITY)) return false;
 		RealityWisp wisp = ModEntities.REALITY_WISP.create(level, EntitySpawnReason.EVENT);
 		if (wisp == null) return false;
-		Vec3 at = p.getEyePosition().add(p.getLookAngle().multiply(1, 0, 1).normalize().scale(7)).add(0, 1, 0);
-		wisp.setPos(at);
-		wisp.setOwner(p.getUUID());
-		level.addFreshEntity(wisp);
-		event = new Event(p.getUUID(), wisp, level.getGameTime() + GauntletConfig.get().realityFogSeconds * 20L);
-		ServerPlayNetworking.send(p, new ModNetwork.RealityFogFx(true));
-		level.playSound(null, p.blockPosition(), SoundEvents.AMBIENT_CRIMSON_FOREST_MOOD.value(), SoundSource.AMBIENT, 2.0F, 0.6F);
-		level.playSound(null, p.blockPosition(), com.dantemorrigan.gauntlet.ModSounds.STONE_OMINOUS, SoundSource.AMBIENT, 1.5F, 1.0F);
-		ModStatus.send(p, Component.translatable("msg.infinity_gauntlet.reality.fog"));
+		Vec3 sum = Vec3.ZERO;
+		for (ServerPlayer player : group) sum = sum.add(player.getEyePosition());
+		Vec3 center = sum.scale(1.0 / group.size());
+		ServerPlayer nearest = group.stream().min(java.util.Comparator.comparingDouble(p -> p.distanceToSqr(center))).orElseThrow();
+		Vec3 origin = nearest.getEyePosition().add(nearest.getLookAngle().multiply(1, 0, 1).normalize().scale(6)).add(0, 1, 0);
+		wisp.setPos(origin);
+		if (!level.addFreshEntity(wisp)) return false;
+		event = new Event(wisp, server.overworld().getGameTime() + GauntletConfig.get().realityFogSeconds * 20L, new HashSet<>());
+		syncViewers(server, group);
+		level.playSound(null, wisp.blockPosition(), SoundEvents.AMBIENT_CRIMSON_FOREST_MOOD.value(), SoundSource.AMBIENT, 2.0F, 0.6F);
+		level.playSound(null, wisp.blockPosition(), com.dantemorrigan.gauntlet.ModSounds.STONE_OMINOUS, SoundSource.AMBIENT, 1.5F, 1.0F);
 		return true;
 	}
 
-	/** Melee: the stone is caught straight into the backpack. */
-	static void caught(RealityWisp wisp, ServerPlayer p) {
-		if (event == null || event.wisp() != wisp) { wisp.discard(); return; }
-		ServerLevel level = (ServerLevel) wisp.level();
-		level.sendParticles(ModParticles.QUEST_REALITY_ARROW_HIT, wisp.getX(), wisp.getY(), wisp.getZ(), 1, 0, 0, 0, 0);
-		level.playSound(null, wisp.blockPosition(), SoundEvents.AMETHYST_BLOCK_BREAK, SoundSource.PLAYERS, 2.0F, 0.6F);
-		if (StoneRegistry.markReleased(level.getServer(), Stone.REALITY)) {
-			OrbItem.giveIntoBackpack(p, new ItemStack(ModItems.REALITY_STONE));
-			ModStatus.send(p, Component.translatable("msg.infinity_gauntlet.reality.caught"));
-		}
-		end(level.getServer(), level.getServer().getPlayerList().getPlayer(event.player()), true);
+	static ServerPlayer nearestPlayer(RealityWisp wisp) {
+		if (event == null || event.wisp() != wisp || !(wisp.level() instanceof ServerLevel level)) return null;
+		return level.players().stream().filter(p -> eligible(p) && p.distanceToSqr(wisp) <= WISP_RANGE * WISP_RANGE)
+				.min(java.util.Comparator.comparingDouble(p -> p.distanceToSqr(wisp))).orElse(null);
 	}
 
-	/** Arrow: the mist scatters and the stone falls next to the player. */
-	static void shot(RealityWisp wisp) {
-		if (event == null || event.wisp() != wisp) { wisp.discard(); return; }
-		ServerLevel level = (ServerLevel) wisp.level();
-		ServerPlayer p = level.getServer().getPlayerList().getPlayer(event.player());
-		level.sendParticles(ModParticles.QUEST_REALITY_ARROW_HIT, wisp.getX(), wisp.getY(), wisp.getZ(), 1, 0, 0, 0, 0);
-		level.playSound(null, wisp.blockPosition(), SoundEvents.GLASS_BREAK, SoundSource.PLAYERS, 2.0F, 0.7F);
-		if (p != null && StoneRegistry.markReleased(level.getServer(), Stone.REALITY)) {
-			Vec3 drop = p.position().add(p.getLookAngle().multiply(1, 0, 1).normalize().scale(1.5)).add(0, 2.5, 0);
-			ItemEntity stone = new ItemEntity(level, drop.x, drop.y, drop.z, new ItemStack(ModItems.REALITY_STONE), 0, -0.1, 0);
-			stone.setGlowingTag(true);
-			level.addFreshEntity(stone);
-			ModStatus.send(p, Component.translatable("msg.infinity_gauntlet.reality.shot"));
+	private static void syncViewers(MinecraftServer server, List<ServerPlayer> group) {
+		Set<UUID> viewers = event.viewers();
+		Set<UUID> current = new HashSet<>();
+		Vec3 sum = Vec3.ZERO;
+		for (ServerPlayer p : group) {
+			current.add(p.getUUID());
+			sum = sum.add(p.getEyePosition());
 		}
-		end(level.getServer(), p, true);
+		viewers.removeIf(id -> {
+			if (current.contains(id)) return false;
+			ServerPlayer p = server.getPlayerList().getPlayer(id);
+			if (p != null) ServerPlayNetworking.send(p, new ModNetwork.RealityFogFx(false, Vec3.ZERO));
+			return true;
+		});
+		if (group.isEmpty()) return;
+		var update = new ModNetwork.RealityFogFx(true, sum.scale(1.0 / group.size()));
+		for (ServerPlayer p : group) {
+			ServerPlayNetworking.send(p, update);
+			if (viewers.add(p.getUUID())) ModStatus.send(p, Component.translatable("msg.infinity_gauntlet.reality.fog"));
+		}
 	}
 
-	private static void end(MinecraftServer server, ServerPlayer p, boolean dispel) {
-		if (event == null) return;
-		if (!event.wisp().isRemoved()) event.wisp().discard();
+	static boolean caught(RealityWisp wisp, ServerPlayer player, boolean shot) {
+		if (event == null || event.wisp() != wisp || !eligible(player) || player.level() != wisp.level()) return false;
+		ServerLevel level = player.level();
+		if (!StoneRegistry.markReleased(level.getServer(), Stone.REALITY)) return false;
+		level.sendParticles(ModParticles.QUEST_REALITY_ARROW_HIT, wisp.getX(), wisp.getY(), wisp.getZ(), 1, 0, 0, 0, 0);
+		level.playSound(null, wisp.blockPosition(), shot ? SoundEvents.GLASS_BREAK : SoundEvents.AMETHYST_CLUSTER_BREAK,
+				SoundSource.PLAYERS, 2.0F, 0.6F);
+		OrbItem.giveIntoBackpack(player, new ItemStack(ModItems.REALITY_STONE));
+		ModStatus.send(player, Component.translatable(shot ? "msg.infinity_gauntlet.reality.shot" : "msg.infinity_gauntlet.reality.caught"));
+		end(level.getServer(), true);
+		return true;
+	}
+
+	private static void end(MinecraftServer server, boolean caught) {
+		Event ended = event;
 		event = null;
-		if (p != null) {
-			ServerPlayNetworking.send(p, new ModNetwork.RealityFogFx(false));
-			if (dispel) {
-				((ServerLevel) p.level()).sendParticles(ModParticles.QUEST_REALITY_FOG_DISPEL, p.getX(), p.getY() + 1.2, p.getZ(), 1, 0, 0, 0, 0);
-				p.level().playSound(null, p.blockPosition(), SoundEvents.BEACON_DEACTIVATE, SoundSource.AMBIENT, 1.5F, 0.6F);
+		if (!ended.wisp().isRemoved()) ended.wisp().discard();
+		for (UUID id : ended.viewers()) {
+			ServerPlayer p = server.getPlayerList().getPlayer(id);
+			if (p == null) continue;
+			ServerPlayNetworking.send(p, new ModNetwork.RealityFogFx(false, Vec3.ZERO));
+			if (caught) {
+				p.level().sendParticles(ModParticles.QUEST_REALITY_FOG_DISPEL, p.getX(), p.getY() + 1.2, p.getZ(), 1, 0, 0, 0, 0);
+				p.level().playSound(null, p.blockPosition(), SoundEvents.BEACON_DEACTIVATE, SoundSource.PLAYERS, 2.0F, 0.6F);
+			} else {
+				ModStatus.send(p, Component.translatable("msg.infinity_gauntlet.reality.escaped"));
 			}
 		}
 	}

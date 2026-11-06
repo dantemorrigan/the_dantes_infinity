@@ -26,7 +26,7 @@ import net.minecraft.world.phys.Vec3;
 
 import java.util.List;
 
-/** Smoke: Ruined City built, map unrolled, 10 sun-immune Mind Zombies, Loki’s portal and rage, illusions, both advancements, and a single Mind Stone drop. */
+/** Smoke: Ruined City built, map unrolled, 10 sun-immune Mind Zombies, Loki’s portal and rage, illusions, both advancements, and a single Mind Stone reward. */
 public class MindQuestTest implements FabricClientGameTest {
 	private static net.minecraft.server.level.ServerPlayer player(net.minecraft.server.MinecraftServer s) {
 		return s.getPlayerList().getPlayers().getFirst();
@@ -57,7 +57,7 @@ public class MindQuestTest implements FabricClientGameTest {
 
 			// Teleport to the natural Ruined City site (without forceBuild) and verify chunks shape and build the city.
 			var site = server.computeOnServer(MindCity::site);
-			server.runCommand("tp @p " + (site.getX() + 0.5) + " " + (site.getY() + 10) + " " + (site.getZ() + 22.5) + " 180 18");
+			server.runCommand("tp @p " + (site.getX() + 0.5) + " " + (site.getY() + 10) + " " + (site.getZ() + MindCity.R_FLAT + 3.5) + " 180 18");
 			ctx.waitTicks(45);
 			sp.getClientLevel().waitForChunksRender();
 			if (!server.computeOnServer(MindCity::built)) {
@@ -65,6 +65,19 @@ public class MindQuestTest implements FabricClientGameTest {
 			}
 			ctx.takeScreenshot("mind_ruined_city");
 
+			server.runOnServer(s -> {
+				if (!s.overworld().getEntitiesOfClass(MindZombie.class, new AABB(site).inflate(48)).isEmpty()) {
+					throw new AssertionError("Mind Zombies appeared before a player entered the city");
+				}
+			});
+			Vec3 stand = MindCity.entranceStand(site);
+			server.runCommand("gamemode survival @p");
+			server.runOnServer(s -> {
+				var p = player(s);
+				p.addEffect(new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.RESISTANCE, 800, 4));
+				p.teleportTo(stand.x, stand.y, stand.z);
+			});
+			ctx.waitTicks(10);
 			// Verify 10 Mind Zombies are present in the city and do not burn in midday sunlight.
 			int zombieCount = server.computeOnServer(s -> {
 				var level = s.overworld();
@@ -78,10 +91,23 @@ public class MindQuestTest implements FabricClientGameTest {
 				throw new AssertionError("Expected 10 Mind Zombies in the Ruined City, found " + zombieCount);
 			}
 
-			Vec3 stand = MindCity.entranceStand(site);
-			server.runCommand("tp @p " + stand.x + " " + stand.y + " " + stand.z + " 180 4");
-			ctx.waitTicks(16);
-			sp.getClientLevel().waitForChunksRender();
+			server.runOnServer(s -> {
+				var p = player(s);
+				var level = s.overworld();
+				var before = p.position();
+				p.teleportTo(site.getX() + 40, before.y, before.z);
+				if (!p.position().equals(before)) throw new AssertionError("Player teleported through the arena wall");
+				p.teleportTo(before.x, site.getY() + 40, before.z);
+				if (!p.position().equals(before)) throw new AssertionError("Player teleported above the arena");
+				var nether = s.getLevel(net.minecraft.world.level.Level.NETHER);
+				var exit = new net.minecraft.world.level.portal.TeleportTransition(nether, before, Vec3.ZERO, 0, 0,
+						net.minecraft.world.level.portal.TeleportTransition.DO_NOTHING);
+				if (p.teleport(exit) != null || p.level() != level) throw new AssertionError("Player teleported out of the arena dimension");
+				var zombie = level.getEntitiesOfClass(MindZombie.class, new AABB(site).inflate(48), MindZombie::isAlive).getFirst();
+				if (zombie.hurtServer(level, level.damageSources().fall(), 1000f) || MindQuest.defeatedCount(s) != 0) {
+					throw new AssertionError("Environmental damage bypassed the fight");
+				}
+			});
 			ctx.takeScreenshot("mind_zombies");
 
 			// Defeat the first 9 Mind Zombies; verify progress is 9/10 and stone is not yet released.
@@ -168,7 +194,6 @@ public class MindQuestTest implements FabricClientGameTest {
 				}
 			});
 			ctx.takeScreenshot("loki_rage");
-			server.runCommand("gamemode creative @p");
 
 			server.runOnServer(s -> {
 				var level = s.overworld();
@@ -188,7 +213,11 @@ public class MindQuestTest implements FabricClientGameTest {
 			server.runOnServer(s -> {
 				if (!StoneRegistry.released(s, Stone.MIND)) throw new AssertionError("Defeating Loki did not release the Mind Stone");
 				var stones = s.overworld().getEntitiesOfClass(ItemEntity.class, city, item -> item.getItem().is(ModItems.MIND_STONE));
-				if (stones.size() != 1) throw new AssertionError("Expected one dropped Mind Stone, found " + stones.size());
+				if (!stones.isEmpty() || !player(s).getInventory().contains(item -> item.is(ModItems.MIND_STONE))) {
+					throw new AssertionError("Expected the arena to deliver one Mind Stone to the fighter");
+				}
+				player(s).teleportTo(site.getX() + 40, site.getY() + 5, site.getZ() + .5);
+				if (player(s).getX() < site.getX() + 39) throw new AssertionError("Barrier stayed closed after the reward");
 				var advancement = s.getAdvancements().get(InfinityGauntlet.id("defeat_loki"));
 				if (advancement == null || !player(s).getAdvancements().getOrStartProgress(advancement).isDone()) {
 					throw new AssertionError("Defeating Loki did not award its advancement");
@@ -198,6 +227,7 @@ public class MindQuestTest implements FabricClientGameTest {
 			if (server.computeOnServer(s -> !s.overworld().getEntitiesOfClass(Loki.class, city, Loki::isAlive).isEmpty())) {
 				throw new AssertionError("Loki or his illusions remained after the encounter");
 			}
+			server.runOnServer(s -> player(s).teleportTo(stand.x, stand.y, stand.z));
 			server.runCommand("gauntlet loki reset");
 			ctx.waitTicks(105);
 			server.runOnServer(s -> {
@@ -212,7 +242,8 @@ public class MindQuestTest implements FabricClientGameTest {
 			server.runOnServer(s -> {
 				var level = s.overworld();
 				if (!level.getEntitiesOfClass(Loki.class, city, Loki::isAlive).isEmpty()
-						|| level.getEntitiesOfClass(ItemEntity.class, city, item -> item.getItem().is(ModItems.MIND_STONE)).size() != 1) {
+						|| !level.getEntitiesOfClass(ItemEntity.class, city, item -> item.getItem().is(ModItems.MIND_STONE)).isEmpty()
+						|| player(s).getInventory().countItem(ModItems.MIND_STONE) != 1) {
 					throw new AssertionError("City replay produced another Loki or Mind Stone");
 				}
 			});

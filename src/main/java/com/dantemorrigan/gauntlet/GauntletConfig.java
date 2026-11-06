@@ -154,7 +154,7 @@ public final class GauntletConfig {
 
 	// ---- Finding the Reality Stone (server) ----
 	public boolean realityFogEnabled = true;
-	/** Chance, checked once a minute per player in the Nether, that the red mist comes. */
+	/** Chance, checked once a minute per nearby group in the Nether, that the red mist comes. */
 	public float realityFogChancePerMinute = 0.08f;
 	/** How long the stone stays in the mist before it slips away. */
 	public int realityFogSeconds = 75;

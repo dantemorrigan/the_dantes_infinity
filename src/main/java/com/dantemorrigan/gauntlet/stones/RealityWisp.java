@@ -13,14 +13,12 @@ import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
 import net.minecraft.world.phys.Vec3;
 
-import java.util.UUID;
 
 /**
- * The Reality Stone loose in the red mist: darts around its player, flees when they get close. A melee hit
- * catches it, an arrow knocks it down (see RealityFog). Never saved: the mist ends with the session.
+ * The Reality Stone loose in the red mist: darts around the group and flees from the closest player. A melee hit
+ * or a player-fired arrow catches it (see RealityFog). Never saved: the mist ends with the session.
  */
 public final class RealityWisp extends Entity {
-	private UUID owner;
 	private Vec3 goal;
 	private int retarget;
 
@@ -29,8 +27,6 @@ public final class RealityWisp extends Entity {
 		this.noPhysics = true;
 	}
 
-	void setOwner(UUID owner) { this.owner = owner; }
-
 	@Override
 	public void tick() {
 		super.tick();
@@ -38,8 +34,8 @@ public final class RealityWisp extends Entity {
 			if (tickCount % 2 == 0) level().addParticle(ModParticles.QUEST_REALITY_STONE_TRAIL, getX(), getY() + 0.25, getZ(), 0, 0, 0);
 			return;
 		}
-		ServerPlayer p = owner == null ? null : ((ServerLevel) level()).getServer().getPlayerList().getPlayer(owner);
-		if (p == null || p.level() != level() || p.distanceToSqr(this) > 64 * 64) { discard(); return; }
+		ServerPlayer p = RealityFog.nearestPlayer(this);
+		if (p == null) { discard(); return; }
 		Vec3 pos = position();
 		double toPlayer = pos.distanceTo(p.getEyePosition());
 		if (toPlayer < 4.0) {
@@ -63,16 +59,10 @@ public final class RealityWisp extends Entity {
 	@Override
 	public boolean hurtServer(ServerLevel level, DamageSource source, float amount) {
 		if (isRemoved()) return false;
+		if (!(source.getEntity() instanceof ServerPlayer player)) return false;
 		Entity direct = source.getDirectEntity();
-		if (direct instanceof AbstractArrow) {
-			RealityFog.shot(this);
-			return true;
-		}
-		if (source.getEntity() instanceof ServerPlayer player && direct == player) {
-			RealityFog.caught(this, player);
-			return true;
-		}
-		return false;
+		if (direct instanceof AbstractArrow) return RealityFog.caught(this, player, true);
+		return direct == player && RealityFog.caught(this, player, false);
 	}
 
 	@Override public boolean isPickable() { return true; }

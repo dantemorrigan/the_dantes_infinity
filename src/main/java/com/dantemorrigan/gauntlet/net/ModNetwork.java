@@ -298,10 +298,11 @@ public final class ModNetwork {
 	}
 
 	/** A HUD notice. It travels as a component so translations are resolved by the CLIENT (dedicated servers have no mod lang files). */
-	/** S2C: the red mist of the Reality Stone quest wraps (true) or leaves (false) this player. */
-	public record RealityFogFx(boolean on) implements CustomPacketPayload {
+	/** S2C: visibility and shared world-space center of the Reality Stone mist. */
+	public record RealityFogFx(boolean on, Vec3 center) implements CustomPacketPayload {
 		public static final Type<RealityFogFx> TYPE = newType("reality_fog");
-		public static final StreamCodec<ByteBuf, RealityFogFx> CODEC = StreamCodec.composite(ByteBufCodecs.BOOL, RealityFogFx::on, RealityFogFx::new);
+		public static final StreamCodec<ByteBuf, RealityFogFx> CODEC = StreamCodec.composite(ByteBufCodecs.BOOL, RealityFogFx::on,
+				Vec3.STREAM_CODEC, RealityFogFx::center, RealityFogFx::new);
 		@Override public Type<RealityFogFx> type() { return TYPE; }
 	}
 

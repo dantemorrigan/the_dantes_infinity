@@ -12,7 +12,9 @@
 		"StormbreakerResultMixin",
 		"StormbreakerCraftClickMixin",
 		"StormbreakerCrafterMixin",
-		"StormbreakerDropMixin"
+		"StormbreakerDropMixin",
+		"MindArenaTeleportMixin",
+		"MindArenaMovementMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1

@@ -2,6 +2,7 @@ package com.dantemorrigan.gauntlet.boss;
 
 import com.dantemorrigan.gauntlet.ModAdvancements;
 import com.dantemorrigan.gauntlet.ModEntities;
+import com.dantemorrigan.gauntlet.stones.MindArena;
 import com.dantemorrigan.gauntlet.stones.MindQuest;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -39,7 +40,6 @@ public final class Loki extends Monster {
 	public static final int INTRO_TICKS = 22;
 	public static final int WINDUP = 7;
 	public static final int EXPERIENCE = 650;
-	private static final int ARENA_RADIUS = 42;
 	private static final int CLONE_LIFETIME = 105;
 	private static final EntityDataAccessor<Boolean> ILLUSION = SynchedEntityData.defineId(Loki.class, EntityDataSerializers.BOOLEAN);
 	private static final EntityDataAccessor<Boolean> ENRAGED = SynchedEntityData.defineId(Loki.class, EntityDataSerializers.BOOLEAN);
@@ -127,7 +127,7 @@ public final class Loki extends Monster {
 	@Override
 	protected void customServerAiStep(ServerLevel level) {
 		super.customServerAiStep(level);
-		if (arena != null && !MindQuest.isCurrentBoss(this)) {
+		if (arena != null && !isIllusion() && !MindQuest.isCurrentBoss(this)) {
 			discard();
 			return;
 		}
@@ -222,10 +222,12 @@ public final class Loki extends Monster {
 		return closest;
 	}
 
+	public boolean isCityEncounter() {
+		return arena != null;
+	}
+
 	private boolean insideArena(Vec3 at) {
-		double dx = at.x - arena.getX() - 0.5;
-		double dz = at.z - arena.getZ() - 0.5;
-		return dx * dx + dz * dz <= ARENA_RADIUS * ARENA_RADIUS && Math.abs(at.y - arena.getY()) <= 20;
+		return MindArena.inside(arena, at);
 	}
 
 	private void applyRage() {
@@ -253,6 +255,7 @@ public final class Loki extends Monster {
 			if (copy == null) continue;
 			copy.entityData.set(ILLUSION, true);
 			copy.illusionOwner = getUUID();
+			copy.arena = arena;
 			copy.getAttribute(Attributes.MAX_HEALTH).setBaseValue(1);
 			copy.getAttribute(Attributes.ATTACK_DAMAGE).setBaseValue(3);
 			copy.setHealth(1);
