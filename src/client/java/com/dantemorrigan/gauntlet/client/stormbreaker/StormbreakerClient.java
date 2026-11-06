@@ -18,6 +18,7 @@ import com.mojang.blaze3d.platform.InputConstants;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
+import net.fabricmc.fabric.api.event.client.player.ClientPreAttackCallback;
 import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
@@ -31,7 +32,7 @@ import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.util.ARGB;
 import net.minecraft.util.Mth;
-import net.minecraft.world.phys.HitResult;
+
 import net.minecraft.world.phys.Vec3;
 import org.joml.Vector3f;
 import org.lwjgl.glfw.GLFW;
@@ -43,10 +44,11 @@ public final class StormbreakerClient {
     private static final KeyMapping THROW = key("throw", GLFW.GLFW_KEY_X);
     private static final KeyMapping WRATH = key("wrath", GLFW.GLFW_KEY_H);
     private static final KeyMapping FLIGHT = key("flight", GLFW.GLFW_KEY_J);
+    private static final KeyMapping RECALL = key("recall", GLFW.GLFW_KEY_K);
     private static final Map<Integer, Animation> ANIMATIONS = new HashMap<>();
     private static final Map<String, Long> COOLDOWNS = new HashMap<>();
     private static ClientLevel level;
-    private static boolean attackDown;
+    private static boolean primaryActive, flightDown, recallDown;
     private static JsonObject clips;
     private static Storm storm;
 
@@ -59,6 +61,14 @@ public final class StormbreakerClient {
         for (StormFx fx : StormFx.values()) register(fx);
         ClientPlayNetworking.registerGlobalReceiver(StormNetwork.Visual.TYPE, (packet, context) -> receive(packet));
         ClientPlayConnectionEvents.DISCONNECT.register((handler, mc) -> reset(null));
+        ClientPreAttackCallback.EVENT.register((mc, player, clicks) -> {
+            if (!canUse(mc) || !player.getMainHandItem().is(ModItems.STORMBREAKER)) return false;
+            if (clicks > 0 && !primaryActive) {
+                primaryActive = true;
+                send(StormNetwork.PRIMARY_START);
+            }
+            return true;
+        });
         ClientTickEvents.END_CLIENT_TICK.register(StormbreakerClient::tick);
         HudElementRegistry.addLast(InfinityGauntlet.id("stormbreaker"), (g, delta) -> hud(g));
     }
@@ -98,7 +108,9 @@ public final class StormbreakerClient {
     private static void reset(ClientLevel next) {
         level = next;
         storm = null;
-        attackDown = false;
+        primaryActive = false;
+        flightDown = FLIGHT.isDown();
+        recallDown = RECALL.isDown();
         ANIMATIONS.clear();
         COOLDOWNS.clear();
         clips = null;
@@ -110,24 +122,38 @@ public final class StormbreakerClient {
         long now = level.getGameTime();
         ANIMATIONS.values().removeIf(a -> now - a.start > a.length);
         if (storm != null && now - storm.start > 113) storm = null;
-        boolean use = mc.player.getMainHandItem().is(ModItems.STORMBREAKER) && mc.player.isAlive()
-                && !mc.player.isSpectator() && mc.screen == null && mc.isWindowActive()
-                && !Cutscene.inputLocked() && !TimeRewindClient.inputLocked()
-                && ClientPlayNetworking.canSend(StormNetwork.Action.TYPE);
-        consume(THROW, StormNetwork.THROW, use);
-        consume(WRATH, StormNetwork.WRATH, use);
-        consume(FLIGHT, StormNetwork.FLIGHT, use);
-        boolean attack = mc.options.keyAttack.isDown();
-        if (use && attack && !attackDown && mc.hitResult != null && mc.hitResult.getType() == HitResult.Type.MISS) {
-            ClientPlayNetworking.send(new StormNetwork.Action(StormNetwork.AIR_SWING));
+        boolean controls = canUse(mc);
+        boolean held = controls && mc.player.getMainHandItem().is(ModItems.STORMBREAKER);
+        if (consume(THROW) && held) send(StormNetwork.THROW);
+        if (consume(WRATH) && held) send(StormNetwork.WRATH);
+        boolean flightClick = consume(FLIGHT);
+        boolean recallClick = consume(RECALL);
+        if (!flightDown && flightClick && held) send(StormNetwork.FLIGHT);
+        if (!recallDown && recallClick && controls) send(StormNetwork.RECALL);
+        flightDown = FLIGHT.isDown();
+        recallDown = RECALL.isDown();
+        if (primaryActive && (!held || !mc.options.keyAttack.isDown())) {
+            primaryActive = false;
+            if (ClientPlayNetworking.canSend(StormNetwork.Action.TYPE)) {
+                send(held ? StormNetwork.PRIMARY_RELEASE : StormNetwork.PRIMARY_CANCEL);
+            }
         }
-        attackDown = attack;
     }
 
-    private static void consume(KeyMapping key, int action, boolean use) {
+    private static boolean canUse(Minecraft mc) {
+        return mc.player != null && mc.player.isAlive() && !mc.player.isSpectator() && mc.screen == null && mc.isWindowActive()
+                && !Cutscene.inputLocked() && !TimeRewindClient.inputLocked()
+                && ClientPlayNetworking.canSend(StormNetwork.Action.TYPE);
+    }
+
+    private static void send(int action) {
+        ClientPlayNetworking.send(new StormNetwork.Action(action));
+    }
+
+    private static boolean consume(KeyMapping key) {
         boolean pressed = false;
         while (key.consumeClick()) pressed = true;
-        if (use && pressed) ClientPlayNetworking.send(new StormNetwork.Action(action));
+        return pressed;
     }
 
     private static void receive(StormNetwork.Visual packet) {
@@ -138,6 +164,11 @@ public final class StormbreakerClient {
         if ("stop".equals(packet.clip())) {
             if (storm != null && storm.owner == packet.entity()) storm = null;
             ANIMATIONS.remove(packet.entity());
+            return;
+        }
+        if ("ground_cancel".equals(packet.clip())) {
+            Animation animation = ANIMATIONS.get(packet.entity());
+            if (animation != null && "ground_charge".equals(animation.clip)) ANIMATIONS.remove(packet.entity());
             return;
         }
         JsonObject clip = clip(packet.clip());
@@ -186,6 +217,7 @@ public final class StormbreakerClient {
             if (age <= to) {
                 float from = last.get("tick").getAsFloat();
                 float fraction = Mth.clamp((age - from) / (to - from), 0, 1);
+                if (animation.clip.startsWith("combo_")) fraction *= fraction * (3 - 2 * fraction);
                 return new Pose(vec(last, "rotation_xyz_deg").lerp(vec(next, "rotation_xyz_deg"), fraction),
                         vec(last, "translation_xyz_blocks").lerp(vec(next, "translation_xyz_blocks"), fraction));
             }
@@ -218,31 +250,53 @@ public final class StormbreakerClient {
                 * (float) Mth.clamp((112 - camera.distanceTo(storm.center)) / 45, 0, 1);
     }
 
+    public static float activeSky(float partial) {
+        return skyFactor(Minecraft.getInstance().gameRenderer.getMainCamera().position(), partial);
+    }
+
     public static void drawClouds(PoseStack pose, float partial) {
-        Minecraft mc = Minecraft.getInstance();
-        float factor = skyFactor(mc.gameRenderer.getMainCamera().position(), partial);
+        float factor = activeSky(partial);
         if (factor < .01f) return;
-        int frame = ((int) (level.getGameTime() - storm.start) / 4) & 7;
-        float u0 = (frame % 4) / 4f + .001f, v0 = (frame / 4) / 2f + .002f;
-        float u1 = u0 + .248f, v1 = v0 + .496f;
-        var tex = InfinityGauntlet.id("textures/environment/stormbreaker_clouds.png");
-        int color = ARGB.colorFromFloat(.95f * factor, 1, 1, 1);
-        CelestialSky.draw(pose, tex, buf -> {
+        float age = level.getGameTime() - storm.start + partial;
+        float flash = 0;
+        for (int strike : new int[]{36, 50, 65, 83}) {
+            float since = age - strike;
+            if (since >= 0 && since < 5) flash = Math.max(flash, 1 - since / 5);
+        }
+        drawCloudDome(pose, 152, age * .00048f, 0, factor, .62f + flash * .38f);
+        drawCloudDome(pose, 128, -age * .00032f, .57f, factor * .54f, .58f + flash * .42f);
+    }
+
+    private static void drawCloudDome(PoseStack pose, float radius, float drift, float rotation, float alpha, float light) {
+        var texture = InfinityGauntlet.id("textures/environment/stormbreaker_clouds.png");
+        int color = ARGB.colorFromFloat(alpha, light * .82f, light * .94f, light);
+        CelestialSky.draw(pose, texture, buffer -> {
             var matrix = pose.last().pose();
-            for (int i = 0; i < 8; i++) {
-                double a = i * Math.PI / 4, b = (i + 1) * Math.PI / 4;
-                float x1 = (float) Math.cos(a), z1 = (float) Math.sin(a);
-                float x2 = (float) Math.cos(b), z2 = (float) Math.sin(b);
-                buf.addVertex(matrix, x1 * 145, -7, z1 * 145).setUv(u0, v1).setColor(color);
-                buf.addVertex(matrix, x2 * 145, -7, z2 * 145).setUv(u1, v1).setColor(color);
-                buf.addVertex(matrix, x2 * 36, 139, z2 * 36).setUv(u1, v0).setColor(color);
-                buf.addVertex(matrix, x1 * 36, 139, z1 * 36).setUv(u0, v0).setColor(color);
-                buf.addVertex(matrix, x1 * 36, 139, z1 * 36).setUv(u0, v0).setColor(color);
-                buf.addVertex(matrix, x2 * 36, 139, z2 * 36).setUv(u1, v0).setColor(color);
-                buf.addVertex(matrix, x2 * 145, -7, z2 * 145).setUv(u1, v1).setColor(color);
-                buf.addVertex(matrix, x1 * 145, -7, z1 * 145).setUv(u0, v1).setColor(color);
+            // Concentric strips close at radius zero. Planar UVs stay continuous across the entire cap.
+            for (int ring = 0; ring < 6; ring++) {
+                float inner = ring / 6f, outer = (ring + 1) / 6f;
+                for (int i = 0; i < 24; i++) {
+                    double a = i * Math.TAU / 24, b = (i + 1) * Math.TAU / 24;
+                    cloudVertex(buffer, matrix, radius, outer, a, drift, rotation, color);
+                    cloudVertex(buffer, matrix, radius, outer, b, drift, rotation, color);
+                    cloudVertex(buffer, matrix, radius, inner, b, drift, rotation, color);
+                    cloudVertex(buffer, matrix, radius, inner, a, drift, rotation, color);
+                    cloudVertex(buffer, matrix, radius, inner, a, drift, rotation, color);
+                    cloudVertex(buffer, matrix, radius, inner, b, drift, rotation, color);
+                    cloudVertex(buffer, matrix, radius, outer, b, drift, rotation, color);
+                    cloudVertex(buffer, matrix, radius, outer, a, drift, rotation, color);
+                }
             }
         });
+    }
+
+    private static void cloudVertex(com.mojang.blaze3d.vertex.BufferBuilder buffer, org.joml.Matrix4f matrix,
+            float radius, float distance, double angle, float drift, float rotation, int color) {
+        float x = distance * (float) Math.cos(angle), z = distance * (float) Math.sin(angle);
+        float y = (float) Math.sqrt(1 - distance * distance);
+        float u = .5f + distance * .42f * (float) Math.cos(angle + rotation) + drift;
+        float v = .5f + distance * .42f * (float) Math.sin(angle + rotation);
+        buffer.addVertex(matrix, x * radius, y * radius * .84f - 11, z * radius).setUv(u, v).setColor(color);
     }
 
     private static void hud(GuiGraphicsExtractor g) {
@@ -255,6 +309,13 @@ public final class StormbreakerClient {
                 WRATH.getTranslatedKeyMessage().getString(), FLIGHT.getTranslatedKeyMessage().getString(), ""};
         int x = g.guiWidth() - 132, y = g.guiHeight() - 45;
         g.fill(x - 4, y - 2, x + 126, y + 27, 0xC30A1729);
+        Animation charge = ANIMATIONS.get(mc.player.getId());
+        if (charge != null && "ground_charge".equals(charge.clip)) {
+            float fill = Mth.clamp((level.getGameTime() - charge.start)
+                    / (float) com.dantemorrigan.gauntlet.stormbreaker.Stormbreaker.GROUND_MAX_CHARGE, 0, 1);
+            g.fill(x - 4, y - 5, x + 126, y - 2, 0xE021394E);
+            g.fill(x - 4, y - 5, x - 4 + Math.round(130 * fill), y - 2, 0xFF83E4FF);
+        }
         for (int i = 0; i < icons.length; i++) {
             String id = icons[i];
             boolean cooldown = (bound || i == icons.length - 1) && level.getGameTime() < COOLDOWNS.getOrDefault(id, 0L);

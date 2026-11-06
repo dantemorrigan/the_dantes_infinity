@@ -11,7 +11,8 @@
 		"StormbreakerCraftingMixin",
 		"StormbreakerResultMixin",
 		"StormbreakerCraftClickMixin",
-		"StormbreakerCrafterMixin"
+		"StormbreakerCrafterMixin",
+		"StormbreakerDropMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1

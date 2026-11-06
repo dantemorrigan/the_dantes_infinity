@@ -22,6 +22,8 @@ import net.fabricmc.fabric.api.event.player.AttackEntityCallback;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.particles.BlockParticleOption;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
@@ -33,6 +35,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.damagesource.DamageSource;
@@ -69,6 +72,9 @@ public final class Stormbreaker {
     private static final Identifier STRENGTH = InfinityGauntlet.id("stormbreaker_strength");
     private static final int HELD = 0, IN_FLIGHT = 1, IN_GROUND = 2, FALLING = 3;
     private static final int SKY_FALL_TICKS = 28, PULL_TICKS = 12;
+    public static final int GROUND_MAX_CHARGE = 24;
+    private static final int GROUND_MIN_CHARGE = 6;
+    private static final double WRATH_RADIUS = 20, LIGHTNING_RADIUS = 7;
     private static final int[] STRIKES = {36, 50, 65, 83};
     private static final StormFx[] COMBO = {StormFx.COMBO_1, StormFx.COMBO_2, StormFx.COMBO_3};
     private static final int[] SWING_TICKS = {9, 10, 16};
@@ -99,6 +105,7 @@ public final class Stormbreaker {
         StormbreakerEntity display;
         Flight flight;
         Wave wave;
+        GroundCharge groundCharge;
         Cast cast;
         Release release;
         Swing swing;
@@ -109,28 +116,38 @@ public final class Stormbreaker {
     }
 
     private static final class Flight {
-        final Vec3 direction;
+        final boolean recall;
         final Set<UUID> hit = new HashSet<>();
+        float yaw;
         int age;
-        Flight(Vec3 direction) { this.direction = direction; }
+        Flight(float yaw, boolean recall) {
+            this.yaw = yaw;
+            this.recall = recall;
+        }
     }
 
     private record Swing(ServerLevel level, int start, int combo, Vec3 direction, UUID target) {}
 
     private record Pull(UUID player, int finish) {}
 
-    private record Release(ServerLevel level, int tick, Vec3 direction) {}
+    private record Release(ServerLevel level, int tick, float yaw) {}
+    private record GroundCharge(ServerLevel level, Vec3 ground, int started) {}
 
     private static final class Wave {
         final ServerLevel level;
         final Vec3 start, direction;
         final int tick;
+        final int crests;
+        final float power;
         final Set<UUID> hit = new HashSet<>();
-        Wave(ServerLevel level, Vec3 start, Vec3 direction, int tick) {
+        final Set<BlockPos> broken = new HashSet<>();
+        Wave(ServerLevel level, Vec3 start, Vec3 direction, int tick, float power) {
             this.level = level;
             this.start = start;
             this.direction = direction;
             this.tick = tick;
+            this.power = power;
+            this.crests = 9 + Math.round(power * 7);
         }
     }
 
@@ -160,13 +177,6 @@ public final class Stormbreaker {
         AttackBlockCallback.EVENT.register((player, level, hand, pos, side) -> {
             if (hand != InteractionHand.MAIN_HAND || !player.getMainHandItem().is(ModItems.STORMBREAKER)
                     || !(player instanceof ServerPlayer p) || p.isSpectator()) return InteractionResult.PASS;
-            HitResult picked = PowerAbility.pick(p, 5);
-            if (side == Direction.UP && picked instanceof BlockHitResult block
-                    && block.getType() == HitResult.Type.BLOCK && pos.equals(block.getBlockPos())) {
-                slam(p, block.getLocation());
-            } else {
-                swing(p, null);
-            }
             return InteractionResult.FAIL;
         });
     }
@@ -251,6 +261,15 @@ public final class Stormbreaker {
     }
 
     static void action(ServerPlayer p, int action) {
+        if (action == StormNetwork.RECALL) {
+            recall(p);
+            return;
+        }
+        if (action == StormNetwork.PRIMARY_CANCEL) {
+            Session s = SESSIONS.get(server(p));
+            if (s != null && s.groundCharge != null) cancelGroundCharge(p, s);
+            return;
+        }
         if (!mainHand(p)) return;
         switch (action) {
             case StormNetwork.THROW -> startThrow(p);
@@ -259,7 +278,21 @@ public final class Stormbreaker {
             case StormNetwork.AIR_SWING -> {
                 if (PowerAbility.pick(p, 4.5).getType() == HitResult.Type.MISS) swing(p, null);
             }
+            case StormNetwork.PRIMARY_START -> primary(p);
+            case StormNetwork.PRIMARY_RELEASE -> releaseGroundCharge(p);
             default -> { }
+        }
+    }
+
+    private static void primary(ServerPlayer p) {
+        HitResult hit = PowerAbility.pick(p, 5);
+        if (hit instanceof EntityHitResult entity && entity.getEntity() instanceof LivingEntity living) {
+            swing(p, living);
+        } else if (hit instanceof BlockHitResult block && block.getType() == HitResult.Type.BLOCK
+                && block.getDirection() == Direction.UP) {
+            startGroundCharge(p, block.getLocation());
+        } else {
+            swing(p, null);
         }
     }
 
@@ -267,7 +300,7 @@ public final class Stormbreaker {
         if (!ready(p)) return;
         Session s = session(p);
         int tick = server(p).getTickCount();
-        if (tick < s.nextSwing || s.release != null) return;
+        if (tick < s.nextSwing || s.release != null || s.groundCharge != null) return;
         int index = tick - s.lastSwing > 24 ? 0 : s.combo;
         s.lastSwing = tick;
         s.nextSwing = tick + SWING_TICKS[index];
@@ -282,17 +315,23 @@ public final class Stormbreaker {
         int index = swing.combo;
         int age = now - swing.start;
         Vec3 forward = swing.direction;
-        Vec3 arc = p.getEyePosition().add(forward.scale(1.4)).add(0, -.38, 0);
-        if (age == (index == 2 ? 7 : 4)) {
-            COMBO[index].play(p.level(), arc, 2.4 + .2 * index);
-            sound(p.level(), p.position(), SoundEvents.PLAYER_ATTACK_SWEEP, 1.1f, 1.35f - index * .21f);
+        Vec3 arc = p.getEyePosition().add(forward.scale(1.8)).add(0, -.42, 0);
+        if (age == SWING_CONTACT[index] - 2) {
+            COMBO[index].play(p.level(), arc, 2.65 + .25 * index);
+            sound(p.level(), p.position(), SoundEvents.TRIDENT_RIPTIDE_1.value(), .65f, 1.20f - index * .16f);
+            sound(p.level(), arc, SoundEvents.WIND_CHARGE_THROW, .48f, 1.35f - index * .17f);
         }
         if (age < SWING_CONTACT[index]) return;
         s.swing = null;
         Entity direct = swing.target == null ? null : p.level().getEntity(swing.target);
         if (direct instanceof LivingEntity living && living.isAlive() && p.hasLineOfSight(living)
                 && p.distanceToSqr(living) < 30.25 && strike(p, living, 10 + index * 4, forward, .28 + index * .16)) {
-            StormFx.IMPACT.play(p.level(), direct.getBoundingBox().getCenter(), .85 + index * .3);
+            Vec3 impact = direct.getBoundingBox().getCenter();
+            StormFx.IMPACT.play(p.level(), impact, 1.05 + index * .35);
+            sound(p.level(), impact, SoundEvents.TRIDENT_HIT, .9f, .91f - index * .12f);
+            sound(p.level(), impact, index == 2 ? SoundEvents.MACE_SMASH_GROUND_HEAVY : SoundEvents.ANVIL_HIT,
+                    index == 2 ? 1.2f : .6f, .74f + index * .06f);
+            if (index == 2) StormFx.LIGHTNING_HIT.play(p.level(), living.position(), 4.5);
         }
         if (index != 1) return;
         for (LivingEntity target : targets(p.level(), arc, 2.1, 1.4)) {
@@ -303,39 +342,105 @@ public final class Stormbreaker {
         }
     }
 
-    private static void slam(ServerPlayer p, Vec3 ground) {
+    private static void startGroundCharge(ServerPlayer p, Vec3 ground) {
         if (!ready(p)) return;
         Session s = session(p);
         int now = server(p).getTickCount();
-        if (now < s.waveReady || now < s.nextSwing || s.release != null) return;
+        if (now < s.waveReady || now < s.nextSwing || s.release != null || s.groundCharge != null) return;
+        s.groundCharge = new GroundCharge(p.level(), ground, now);
+        StormNetwork.visual(p, "ground_charge", 0, ground);
+        sound(p.level(), p.position(), SoundEvents.TRIDENT_RIPTIDE_1.value(), .85f, .55f);
+    }
+
+    private static void cancelGroundCharge(ServerPlayer p, Session s) {
+        s.groundCharge = null;
+        StormNetwork.visual(p, "ground_cancel", 0, p.position());
+    }
+
+    private static void releaseGroundCharge(ServerPlayer p) {
+        Session s = session(p);
+        GroundCharge charge = s.groundCharge;
+        if (charge == null) return;
+        cancelGroundCharge(p, s);
+        if (charge.level != p.level() || !ready(p) || p.distanceToSqr(charge.ground) > 49) return;
+        int now = server(p).getTickCount();
+        int held = now - charge.started;
+        if (held < GROUND_MIN_CHARGE) {
+            swing(p, null);
+            return;
+        }
+        float power = Math.min(1, (held - GROUND_MIN_CHARGE) / (float) (GROUND_MAX_CHARGE - GROUND_MIN_CHARGE));
         s.waveReady = now + 65;
         s.nextSwing = Math.max(s.nextSwing, now + 20);
-        Vec3 direction = Vec3.directionFromRotation(0, p.getYRot()).normalize();
-        s.wave = new Wave(p.level(), ground, direction, now);
-        StormNetwork.visual(p, "ground_slam", 0, ground);
+        Vec3 direction = Vec3.directionFromRotation(0, p.getYRot());
+        s.wave = new Wave(p.level(), charge.ground, direction, now, power);
+        StormNetwork.visual(p, "ground_slam", 0, charge.ground);
+    }
+
+    private static void tickGroundCharge(ServerPlayer p, Session s, int now) {
+        GroundCharge charge = s.groundCharge;
+        if (charge.level != p.level() || !mainHand(p) || !guarded(p) || p.distanceToSqr(charge.ground) > 49) {
+            cancelGroundCharge(p, s);
+            return;
+        }
+        int age = now - charge.started;
+        if (age % 7 == 0) StormFx.TAKEOFF.play(p.level(), charge.ground.add(0, .06, 0),
+                1.2 + Math.min(age, GROUND_MAX_CHARGE) / 12.0);
     }
 
     private static void tickWave(ServerPlayer p, Session s, int now) {
         Wave w = s.wave;
         int age = now - w.tick;
-        if (w.level != p.level() || age > 24) { s.wave = null; return; }
-        if (age == 10) {
-            sound(w.level, w.start, SoundEvents.MACE_SMASH_GROUND_HEAVY, 1.3f, .7f);
-            StormFx.IMPACT.play(w.level, w.start.add(0, .15, 0), 2.2);
-            StormFx.BLOCK_SHARDS.play(w.level, w.start.add(0, .22, 0), 1.7);
+        int crest = age - 7;
+        if (w.level != p.level() || crest >= w.crests * 2) { s.wave = null; return; }
+        if (crest == 0) {
+            sound(w.level, w.start, SoundEvents.MACE_SMASH_GROUND_HEAVY, 2.2f, .54f);
+            sound(w.level, w.start, SoundEvents.GENERIC_EXPLODE.value(), 1.5f, .76f);
+            StormFx.IMPACT.play(w.level, w.start.add(0, .2, 0), 4.2);
+            StormFx.TAKEOFF.play(w.level, w.start.add(0, .06, 0), 5.5);
+            StormFx.LIGHTNING_HIT.play(w.level, w.start, 8);
         }
-        if (age < 11 || age > 21 || (age & 1) == 0) return;
-        Vec3 center = w.start.add(w.direction.scale(1.5 + (age - 11) * .8));
+        if (crest < 0 || (crest & 1) != 0) return;
+        Vec3 center = w.start.add(w.direction.scale(crest * .92));
         Vec3 lateral = new Vec3(-w.direction.z, 0, w.direction.x);
+        double spread = 1.6 + w.power;
         for (int lane = -1; lane <= 1; lane++) {
-            Vec3 sample = center.add(lateral.scale(lane * 2));
-            Vec3 surface = surface(w.level, sample, 3, 5);
+            Vec3 sample = center.add(lateral.scale(lane * spread));
+            Vec3 surface = surface(w.level, sample, 4, 7);
             if (surface == null) continue;
-            StormFx.GROUND_WALL.play(w.level, surface, 2.6, w.direction);
-            for (LivingEntity target : targets(w.level, surface.add(0, .75, 0), 1.5, 1.45)) {
-                if (!w.hit.contains(target.getUUID()) && strike(p, target, 15, w.direction, .85)) w.hit.add(target.getUUID());
+            StormFx.GROUND_WALL.play(w.level, surface, 3.9 + w.power, w.direction);
+            if ((crest & 3) == 0) StormFx.LIGHTNING_HIT.play(w.level, surface, 3.7 + w.power * 2);
+            tearGround(p, w, surface, lateral.scale(lane * .14));
+            if (lane == 0 && crest > 0) {
+                Vec3 between = surface(w.level, sample.subtract(w.direction.scale(.92)), 4, 7);
+                if (between != null) tearGround(p, w, between, Vec3.ZERO);
+            }
+            for (LivingEntity target : targets(w.level, surface.add(0, .8, 0), 1.8, 2.2)) {
+                if (!w.hit.contains(target.getUUID()) && strike(p, target, 15 + 9 * w.power, w.direction, 1.15)) {
+                    w.hit.add(target.getUUID());
+                }
             }
         }
+        if (crest % 6 == 0) sound(w.level, center, SoundEvents.WIND_CHARGE_BURST.value(), .85f, .62f);
+    }
+
+    private static void tearGround(ServerPlayer p, Wave wave, Vec3 surface, Vec3 sideways) {
+        ServerLevel level = wave.level;
+        BlockPos floor = BlockPos.containing(surface.add(0, -.04, 0));
+        var state = level.getBlockState(floor);
+        if (state.isAir()) return;
+        level.sendParticles(new BlockParticleOption(ParticleTypes.BLOCK, state),
+                surface.x, surface.y + .22, surface.z, 13, .5, .36, .5, .23);
+        if (!CoopRules.canEdit(p, level, floor) || state.hasBlockEntity() || !state.getFluidState().isEmpty()
+                || state.getDestroySpeed(level, floor) < 0
+                || !wave.broken.add(new BlockPos(floor.getX(), 0, floor.getZ()))
+                || !level.destroyBlock(floor, false, p)) return;
+        var debris = com.dantemorrigan.gauntlet.mixin.FallingBlockEntityAccessor.infinityGauntlet$create(
+                level, floor.getX() + .5, surface.y + .2, floor.getZ() + .5, state);
+        debris.disableDrop();
+        debris.setDeltaMovement(wave.direction.scale(.42 + wave.power * .14)
+                .add(sideways).add(0, .53 + level.getRandom().nextDouble() * .28, 0));
+        level.addFreshEntity(debris);
     }
 
     static void lightning(ServerPlayer p) { beginCast(p, false); }
@@ -344,7 +449,7 @@ public final class Stormbreaker {
         if (!ready(p)) return;
         Session s = session(p);
         int now = server(p).getTickCount();
-        if (s.cast != null || s.release != null || now < (wrath ? s.wrathReady : s.lightningReady)) return;
+        if (s.cast != null || s.release != null || s.groundCharge != null || now < (wrath ? s.wrathReady : s.lightningReady)) return;
         HitResult picked = PowerAbility.pick(p, wrath ? 52 : 36);
         Entity target = picked instanceof EntityHitResult hit && CoopRules.canAffect(p, hit.getEntity()) ? hit.getEntity() : null;
         Vec3 point = target == null ? picked.getLocation() : target.position();
@@ -367,38 +472,59 @@ public final class Stormbreaker {
         Entity target = cast.target == null ? null : cast.level.getEntity(cast.target);
         Vec3 point = target != null && target.isAlive() && CoopRules.canAffect(p, target)
                 && target.position().distanceToSqr(cast.point) <= 48 * 48 ? target.position() : cast.point;
-        Vec3 ground = surface(cast.level, point, 2, 7);
+        Vec3 ground = surface(cast.level, point, 3, 80);
         if (ground == null) ground = point;
         if (cast.wrath ? age >= 12 && age <= 82 && (age - 12) % 10 == 0 : age == 7) {
-            StormFx.WRATH_TARGET.play(cast.level, ground.add(0, .05, 0), cast.wrath ? 3.8 : 1.8);
+            StormFx.WRATH_TARGET.play(cast.level, ground.add(0, .05, 0),
+                    2 * (cast.wrath ? WRATH_RADIUS : LIGHTNING_RADIUS));
         }
         if (cast.wrath && age % 20 == 0) StormNetwork.visual(p, "heavens_wrath", age, cast.point);
-        if (!cast.wrath && age == 10) bolt(p, ground, point, -1);
+        if (!cast.wrath && age == 10) bolt(p, ground, -1);
         if (!cast.wrath) return;
         for (int i = 0; i < STRIKES.length; i++) {
-            if (age == STRIKES[i]) bolt(p, ground, point, i);
+            if (age == STRIKES[i]) bolt(p, ground, i);
         }
     }
 
-    private static void bolt(ServerPlayer p, Vec3 ground, Vec3 target, int stage) {
+    private static void bolt(ServerPlayer p, Vec3 ground, int stage) {
         boolean wrath = stage >= 0;
-        double radius = wrath ? 2.3 + stage * .62 : 1.9;
-        (wrath ? StormFx.WRATH_BOLT : StormFx.LIGHTNING_HIT).play(p.level(), ground, wrath ? 10 + stage * 3.4 : 6.0);
-        StormFx.IMPACT.play(p.level(), ground.add(0, .25, 0), radius);
-        sound(p.level(), ground, SoundEvents.LIGHTNING_BOLT_THUNDER, wrath ? 2.1f : 1.25f, wrath ? .91f - stage * .1f : 1.22f);
-        sound(p.level(), ground, SoundEvents.LIGHTNING_BOLT_IMPACT, 1.2f, .92f);
-        for (LivingEntity living : targets(p.level(), target, radius, 2.6)) {
-            Vec3 push = living.position().subtract(target);
-            strike(p, living, wrath ? 11 + stage * 4 : 16, push, wrath ? .36 : .52);
+        double radius = wrath ? WRATH_RADIUS : LIGHTNING_RADIUS;
+        strikeVisual(p.level(), ground, wrath, wrath ? 23 + stage * 3 : 13, wrath ? 7 : 4.5);
+        int branches = wrath ? 6 : 3;
+        for (int i = 0; i < branches; i++) {
+            double angle = i * Math.TAU / branches + (stage + 1) * .47;
+            double offset = radius * (i % 2 == 0 ? .46 : .82);
+            Vec3 sample = ground.add(Math.cos(angle) * offset, 0, Math.sin(angle) * offset);
+            Vec3 impact = surface(p.level(), sample, 12, 20);
+            if (impact != null) strikeVisual(p.level(), impact, wrath, wrath ? 18 + stage * 2 : 8.5, wrath ? 4.5 : 2.7);
         }
+        sound(p.level(), ground, SoundEvents.LIGHTNING_BOLT_THUNDER, wrath ? 3.2f : 1.7f, wrath ? .84f - stage * .08f : 1.1f);
+        sound(p.level(), ground, SoundEvents.LIGHTNING_BOLT_IMPACT, wrath ? 2.0f : 1.3f, .83f);
+        int marked = 0;
+        for (LivingEntity living : targets(p.level(), ground, radius, wrath ? 15 : 8)) {
+            Vec3 push = living.position().subtract(ground);
+            if (push.x * push.x + push.z * push.z > radius * radius) continue;
+            if (strike(p, living, wrath ? 11 + stage * 4 : 16, push, wrath ? .55 : .66) && marked++ < 8) {
+                StormFx.IMPACT.play(p.level(), living.getBoundingBox().getCenter(), wrath ? 2.8 : 1.8);
+                if (wrath && push.horizontalDistanceSqr() > 12) {
+                    StormFx.LIGHTNING_HIT.play(p.level(), living.position(), 11);
+                }
+            }
+        }
+    }
+
+    private static void strikeVisual(ServerLevel level, Vec3 ground, boolean wrath, double height, double size) {
+        (wrath ? StormFx.WRATH_BOLT : StormFx.LIGHTNING_HIT).play(level, ground, height);
+        StormFx.IMPACT.play(level, ground.add(0, .25, 0), size);
+        StormFx.TAKEOFF.play(level, ground.add(0, .05, 0), size * 1.25);
     }
 
     private static void startThrow(ServerPlayer p) {
         if (!ready(p)) return;
         Session s = session(p);
         int now = server(p).getTickCount();
-        if (s.release != null || now < s.throwReady) return;
-        s.release = new Release(p.level(), now + 8, p.getLookAngle());
+        if (s.release != null || s.groundCharge != null || now < s.throwReady) return;
+        s.release = new Release(p.level(), now + 8, p.getYRot());
         s.nextSwing = Math.max(s.nextSwing, now + 12);
         StormNetwork.visual(p, "throw_release", 0, p.position());
     }
@@ -406,12 +532,14 @@ public final class Stormbreaker {
     private static void launch(ServerPlayer p, Session s, Release release) {
         if (release.level != p.level() || !mainHand(p) || !guarded(p)
                 || !matches(p.getMainHandItem(), record(p))) return;
-        Vec3 origin = p.getEyePosition().add(release.direction.scale(.75)).add(0, -.24, 0);
+        Vec3 direction = Vec3.directionFromRotation(0, release.yaw);
+        Vec3 origin = p.getEyePosition().add(direction.scale(.75)).add(0, -.24, 0);
         if (!p.level().hasChunkAt(BlockPos.containing(origin))) return;
         StormbreakerEntity model = spawn(p.level(), origin, StormbreakerEntity.OUTBOUND);
         if (model == null) return;
         s.display = model;
-        s.flight = new Flight(release.direction);
+        s.flight = new Flight(release.yaw, false);
+        model.setYRot(release.yaw);
         s.throwReady = server(p).getTickCount() + 42;
         server(p).overworld().setAttached(RELIC, Relic.at(p, IN_FLIGHT));
         p.getMainHandItem().setCount(0);
@@ -432,25 +560,38 @@ public final class Stormbreaker {
             turn(axe, flight);
         }
         boolean returning = axe.phase() == StormbreakerEntity.RETURNING;
-        Vec3 delta = returning ? hand.subtract(pos) : flight.direction;
-        if (returning && delta.lengthSqr() < 2.9) { returnToOwner(p, s, true); return; }
-        Vec3 direction = delta.normalize();
-        Vec3 next = pos.add(direction.scale(returning ? 2.0 : 1.65));
+        Vec3 toHand = hand.subtract(pos);
+        double horizontal = toHand.horizontalDistance();
+        boolean lifting = flight.recall && flight.age <= 5;
+        if (returning && !lifting && toHand.lengthSqr() < 2.9) { returnToOwner(p, s, true); return; }
+        if (returning && horizontal > .05) {
+            float desired = (float) Math.toDegrees(Math.atan2(-toHand.x, toHand.z));
+            flight.yaw = horizontal < 5 ? desired
+                    : flight.yaw + Mth.clamp(Mth.wrapDegrees(desired - flight.yaw), -24f, 24f);
+        }
+        Vec3 direction = Vec3.directionFromRotation(0, flight.yaw);
+        double rise = returning && (flight.recall || horizontal < 6)
+                ? Mth.clamp(toHand.y * .32, -.95, .95) : 0;
+        double speed = returning ? Math.min(2.45, horizontal) : 1.65;
+        Vec3 next = lifting ? pos.add(direction.scale(.20)).add(0, .45, 0)
+                : pos.add(direction.scale(speed)).add(0, rise, 0);
         if (!p.level().hasChunkAt(BlockPos.containing(next))) {
             if (returning) returnToOwner(p, s, false);
             else turn(axe, flight);
             return;
         }
-        if (!clearPath(p, pos, next)) {
+        if (!flight.recall && !clearPath(p, pos, next)) {
             if (returning) returnToOwner(p, s, false);
             else turn(axe, flight);
             return;
         }
+        axe.setYRot(flight.yaw);
         axe.setDeltaMovement(next.subtract(pos));
         axe.setPos(next.x, next.y, next.z);
         if (flight.age % 3 == 1) {
             (returning ? StormFx.THROW_RETURN : StormFx.THROW_OUT).play(p.level(), next.subtract(direction.scale(1.05)), 2.65, direction);
         }
+        if (flight.recall) return;
         for (LivingEntity target : p.level().getEntitiesOfClass(LivingEntity.class, new AABB(pos, next).inflate(.7), Entity::isAlive)) {
             if (flight.hit.contains(target.getUUID()) || target.getBoundingBox().inflate(.7).clip(pos, next).isEmpty()
                     && !target.getBoundingBox().inflate(.7).contains(pos)) continue;
@@ -510,6 +651,7 @@ public final class Stormbreaker {
         stopFlight(p, s);
         s.cast = null;
         s.wave = null;
+        s.groundCharge = null;
         s.swing = null;
         s.release = null;
         s.flight = null;
@@ -521,12 +663,64 @@ public final class Stormbreaker {
         if (sealed(p.containerMenu.getCarried())) p.containerMenu.setCarried(ItemStack.EMPTY);
         Vec3 site = surface(p.level(), p.position(), 1, 12);
         if (site == null) site = p.position();
+        plant(p, relic, s, site);
+    }
+
+    public static boolean drop(ServerPlayer p, ItemStack stack) {
+        Relic relic = record(p);
+        if (!p.isAlive() || p.isSpectator() || relic == null || relic.phase != HELD
+                || !relic.belongsTo(p) || !matches(stack, relic)) return false;
+        Vec3 front = p.position().add(Vec3.directionFromRotation(0, p.getYRot()).scale(2.3));
+        Vec3 site = surface(p.level(), front, 1, 64);
+        if (site == null) site = surface(p.level(), p.position(), 1, 64);
+        plant(p, relic, session(p), site == null ? p.position() : site);
+        ModStatus.send(p, Component.translatable("stormbreaker.infinity_gauntlet.planted",
+                Component.keybind("key.infinity_gauntlet.stormbreaker_recall")));
+        return true;
+    }
+
+    private static void plant(ServerPlayer p, Relic relic, Session s, Vec3 site) {
+        stopFlight(p, s);
+        if (s.cast != null || s.groundCharge != null) StormNetwork.visual(p, "stop", 0, p.position());
+        s.cast = null;
+        s.wave = null;
+        s.groundCharge = null;
+        s.release = null;
+        s.swing = null;
         server(p).overworld().setAttached(RELIC, new Relic(relic.owner, UUID.randomUUID().toString(),
                 IN_GROUND, p.level().dimension(), site));
         if (p.level().hasChunkAt(BlockPos.containing(site))) {
             s.display = spawn(p.level(), site, StormbreakerEntity.PLANTING);
             s.plantUntil = server(p).getTickCount() + 10;
         }
+    }
+
+    private static void recall(ServerPlayer p) {
+        Relic relic = record(p);
+        if (!p.isAlive() || p.isSpectator() || InfinitySnap.inVoid(p) || relic == null
+                || relic.phase != IN_GROUND || !relic.belongsTo(p)) return;
+        Session s = session(p);
+        if (s.pull != null) return;
+        if (p.getInventory().getFreeSlot() < 0) { status(p, "inventory_full"); return; }
+        Vec3 hand = p.getEyePosition();
+        boolean local = relic.dimension == p.level().dimension() && hand.distanceToSqr(relic.position) <= 80 * 80
+                && p.level().hasChunkAt(BlockPos.containing(relic.position));
+        Vec3 from = local ? relic.position.add(0, 1, 0)
+                : hand.add(Vec3.directionFromRotation(0, p.getYRot()).scale(18)).add(0, 5, 0);
+        if (!p.level().hasChunkAt(BlockPos.containing(from))) from = hand.add(0, 6, 0);
+        StormbreakerEntity axe = spawn(p.level(), from, StormbreakerEntity.RETURNING);
+        if (axe == null) return;
+        removeDisplay(s);
+        Vec3 toHand = hand.subtract(from);
+        float yaw = toHand.horizontalDistanceSqr() > .001
+                ? (float) Math.toDegrees(Math.atan2(-toHand.x, toHand.z)) : p.getYRot();
+        axe.setYRot(yaw);
+        s.display = axe;
+        s.flight = new Flight(yaw, true);
+        storeRelic(server(p), Relic.at(p, IN_FLIGHT));
+        StormFx.LIGHTNING_HIT.play(p.level(), from.add(0, -.5, 0), 10);
+        StormFx.RECLAIM.play(p.level(), from, 3.2);
+        sound(p.level(), from, SoundEvents.TRIDENT_THUNDER.value(), 1.6f, .78f);
     }
 
     static void reclaim(ServerPlayer p, StormbreakerEntity entity) {
@@ -711,7 +905,13 @@ public final class Stormbreaker {
                     sound(level, relic.position, SoundEvents.ANVIL_PLACE, .8f, 1.25f);
                 }
                 if (s.pull != null) { tickPull(server, s, level, now); return; }
-                if (now % 48 == 0) StormFx.EMBEDDED_IDLE.play(level, relic.position.add(.18, .62, 0), .95);
+                if (now % 14 == 0) StormFx.EMBEDDED_IDLE.play(level, relic.position.add(.18, .65, 0), 2.5);
+                if (now % 50 == 0) {
+                    Vec3 socket = relic.position.add(0, .35, 0);
+                    StormFx.LIGHTNING_HIT.play(level, socket, 10);
+                    StormFx.RECLAIM.play(level, socket, 2.8);
+                    sound(level, socket, SoundEvents.LIGHTNING_BOLT_IMPACT, .85f, 1.14f);
+                }
             } else {
                 s.pull = null;
                 removeDisplay(s);
@@ -736,6 +936,7 @@ public final class Stormbreaker {
             s.release = null;
             s.cast = null;
             s.wave = null;
+            s.groundCharge = null;
             s.swing = null;
             return;
         }
@@ -745,7 +946,8 @@ public final class Stormbreaker {
             if (move.lengthSqr() < .025) move = owner.getLookAngle();
             StormFx.FLIGHT_WAKE.play(owner.level(), owner.position().add(0, .65, 0).subtract(move.normalize()), 2.8, move);
         }
-        boolean charged = s.flying || s.cast != null || s.release != null || s.wave != null || s.swing != null;
+        if (s.groundCharge != null) tickGroundCharge(owner, s, now);
+        boolean charged = s.groundCharge != null || s.flying || s.cast != null || s.release != null || s.wave != null || s.swing != null;
         setCharged(owner.getMainHandItem(), relic, charged);
         setCharged(owner.getOffhandItem(), relic, s.flying);
         if (s.release != null && now >= s.release.tick) {

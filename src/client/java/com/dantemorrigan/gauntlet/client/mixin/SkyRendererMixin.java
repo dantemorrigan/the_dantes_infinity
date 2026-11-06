@@ -23,7 +23,7 @@ public abstract class SkyRendererMixin {
 	private void infinityGauntlet$tint(ClientLevel level, float partialTicks, Camera camera, SkyRenderState state, CallbackInfo ci) {
         float storm = com.dantemorrigan.gauntlet.client.stormbreaker.StormbreakerClient.skyFactor(camera.position(), partialTicks);
         if (storm > 0) {
-            state.skyColor = ARGB.srgbLerp(storm * .78f, state.skyColor, 0xFF142448);
+            state.skyColor = ARGB.srgbLerp(storm * .97f, state.skyColor, 0xFF121827);
             state.sunriseAndSunsetColor = ARGB.srgbLerp(storm, state.sunriseAndSunsetColor, 0);
             state.starBrightness *= 1 - storm;
         }
@@ -78,12 +78,14 @@ public abstract class SkyRendererMixin {
 
 	@Inject(method = "renderSun", at = @At("HEAD"), cancellable = true)
 	private void infinityGauntlet$hideSun(float rainBrightness, PoseStack poseStack, CallbackInfo ci) {
-		if (CelestialSky.hideVanilla("sun") || com.dantemorrigan.gauntlet.client.boss.ThanosClient.hideSun()) ci.cancel();
+		if (CelestialSky.hideVanilla("sun") || com.dantemorrigan.gauntlet.client.boss.ThanosClient.hideSun()
+                || com.dantemorrigan.gauntlet.client.stormbreaker.StormbreakerClient.activeSky(0) > .32f) ci.cancel();
 	}
 
 	@Inject(method = "renderMoon", at = @At("HEAD"), cancellable = true)
 	private void infinityGauntlet$hideMoon(MoonPhase moonPhase, float rainBrightness, PoseStack poseStack, CallbackInfo ci) {
-		if (CelestialSky.hideVanilla("moon")) ci.cancel();
+		if (CelestialSky.hideVanilla("moon")
+                || com.dantemorrigan.gauntlet.client.stormbreaker.StormbreakerClient.activeSky(0) > .32f) ci.cancel();
 	}
 
 	/** Dead Space uses skybox "end" only to get a sky pass; we replace the End sky with the space cube-map. */

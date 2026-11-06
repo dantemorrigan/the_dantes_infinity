@@ -13,6 +13,7 @@
 		"ItemModelResolverMixin",
 		"KeyboardInputMixin",
 		"SkyRendererMixin",
+		"StormCloudRendererMixin",
 		"RealityBlockUpdateMixin"
 	],
 	"injectors": {

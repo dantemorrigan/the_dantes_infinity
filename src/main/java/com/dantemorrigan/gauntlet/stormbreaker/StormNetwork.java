@@ -15,6 +15,8 @@ import net.minecraft.world.phys.Vec3;
 public final class StormNetwork {
     public static final int THROW = 0, WRATH = 1, FLIGHT = 2, AIR_SWING = 3;
 
+    public static final int PRIMARY_START = 4, PRIMARY_RELEASE = 5, PRIMARY_CANCEL = 6, RECALL = 7;
+
     public record Action(int action) implements CustomPacketPayload {
         public static final Type<Action> TYPE = new Type<>(InfinityGauntlet.id("stormbreaker_action"));
         public static final StreamCodec<ByteBuf, Action> CODEC =

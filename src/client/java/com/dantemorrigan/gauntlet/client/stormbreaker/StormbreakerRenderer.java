@@ -21,7 +21,7 @@ final class StormbreakerRenderer extends EntityRenderer<StormbreakerEntity, Stor
     static final class State extends EntityRenderState {
         final ItemStackRenderState item = new ItemStackRenderState();
         int phase;
-        float phaseAge;
+        float phaseAge, heading;
     }
 
     private final ItemModelResolver models;
@@ -39,6 +39,7 @@ final class StormbreakerRenderer extends EntityRenderer<StormbreakerEntity, Stor
         super.extractRenderState(entity, state, partial);
         state.phase = entity.phase();
         state.phaseAge = entity.phaseAge(partial);
+        state.heading = entity.getYRot();
         if (stack == null) {
             // Renderer providers run during the initial reload, before item components are bound.
             stack = new ItemStack(ModItems.STORMBREAKER);
@@ -60,10 +61,13 @@ final class StormbreakerRenderer extends EntityRenderer<StormbreakerEntity, Stor
             pose.mulPose(Axis.ZP.rotationDegrees(176 - 37 * settling - 80 * pull * pull));
             // Model origin is at (8, 8, 8); the upper cutting edge touches the terrain.
             pose.translate(15f / 16, -22.8f / 16, 0);
+        } else if (state.phase == StormbreakerEntity.SKYFALL) {
+            pose.mulPose(Axis.YP.rotationDegrees(28));
+            pose.mulPose(Axis.ZP.rotationDegrees(state.ageInTicks * -30));
         } else {
-            pose.mulPose(Axis.YP.rotationDegrees(state.phase == StormbreakerEntity.RETURNING ? -28 : 28));
-            pose.mulPose(Axis.ZP.rotationDegrees(state.ageInTicks
-                    * (state.phase == StormbreakerEntity.RETURNING ? 40 : -30)));
+            pose.mulPose(Axis.YP.rotationDegrees(-state.heading));
+            pose.mulPose(Axis.XP.rotationDegrees(84));
+            pose.mulPose(Axis.ZP.rotationDegrees(state.ageInTicks * -33));
         }
         state.item.submit(pose, collector, state.lightCoords, OverlayTexture.NO_OVERLAY, 0);
         pose.popPose();
