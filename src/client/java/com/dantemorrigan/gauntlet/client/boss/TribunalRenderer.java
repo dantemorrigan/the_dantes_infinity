@@ -35,7 +35,7 @@ public final class TribunalRenderer extends EntityRenderer<LivingTribunal, Tribu
 	private static final Identifier HALO = InfinityGauntlet.id("textures/tribunal/halo.png");
 	private static final Identifier EDICT = InfinityGauntlet.id("textures/tribunal/edict.png");
 	private static final Identifier GEOMETRY = InfinityGauntlet.id("tribunal/tribunal.geo.json");
-	private static final float SCALE = 16;
+	private static final float SCALE = com.dantemorrigan.gauntlet.boss.TribunalSpace.MODEL_SCALE;
 	private static GeoModel model;
 
 	public TribunalRenderer(EntityRendererProvider.Context context) { super(context); }
@@ -56,7 +56,7 @@ public final class TribunalRenderer extends EntityRenderer<LivingTribunal, Tribu
 		super.extractRenderState(boss, state, partial);
 		state.phase = boss.phase();
 		state.attack = boss.attack();
-		state.yaw = boss.getYRot();
+		state.yaw = Mth.rotLerp(partial,boss.yRotO,boss.getYRot());
 		state.ticks = boss.sceneAge() + partial;
 		state.death = boss.deathTime + partial;
 		state.mark = boss.mark();
@@ -64,6 +64,7 @@ public final class TribunalRenderer extends EntityRenderer<LivingTribunal, Tribu
 		if (state.phase == LivingTribunal.VERDICT && state.ticks < LivingTribunal.SHATTER_TICK) {
 			ItemStack stack = new ItemStack(ModItems.GAUNTLET);
 			for (Stone stone : Stone.values()) GauntletState.putStone(stack, new ItemStack(stone.item()));
+			if(state.ticks>=85) stack.set(com.dantemorrigan.gauntlet.ModComponents.SNAPPED,true);
 			stack.set(net.minecraft.core.component.DataComponents.ITEM_MODEL, InfinityGauntlet.id("gauntlet_worn"));
 			Minecraft.getInstance().getItemModelResolver().updateForTopItem(state.gauntlet, stack,
 					ItemDisplayContext.NONE, boss.level(), null, 0);
@@ -75,10 +76,10 @@ public final class TribunalRenderer extends EntityRenderer<LivingTribunal, Tribu
 		if (model == null) model = GeoModel.load(GEOMETRY);
 		float reveal = state.phase == LivingTribunal.ARRIVAL ? smooth((state.ticks - 20) / 85) : 1;
 		float fade = state.phase == LivingTribunal.DEPARTURE ? 1 - smooth(state.death / 52) : reveal;
-		float rise = -30 * (1 - reveal);
+		float rise = -60 * (1 - reveal);
 		if (state.phase == LivingTribunal.ARRIVAL) {
-			float radius = 34 * smooth(state.ticks / 18) * (1 - smooth((state.ticks - 95) / 35));
-			Vec3 behind = Vec3.directionFromRotation(0, state.yaw).scale(-12).add(0, 24, 0);
+			float radius = 65 * smooth(state.ticks / 18) * (1 - smooth((state.ticks - 95) / 35));
+			Vec3 behind = Vec3.directionFromRotation(0, state.yaw).scale(-12).add(0, 53, 0);
 			billboard(pose, collector, HOLE, behind, radius, 0, 0xffffffff);
 			billboard(pose, collector, HALO, behind, radius * 1.15f, state.ticks * 2.1f, 0xe6ffffff);
 		}
@@ -98,13 +99,16 @@ public final class TribunalRenderer extends EntityRenderer<LivingTribunal, Tribu
 		}
 		if (state.attack > 0) {
 			Vec3 at = state.mark.subtract(state.base);
-			float radius = state.attack == 3 ? 20 : state.attack == 2 ? 13 : 8;
-			float opacity = 1 - smooth((state.ticks - LivingTribunal.WINDUP) / 12);
+			float radius = state.attack == LivingTribunal.NOVA ? 30 : state.attack == LivingTribunal.GRAVITY ? 18 : state.attack == LivingTribunal.PRISON ? 24 : state.attack == LivingTribunal.LANCE ? 5 : 10;
+			float opacity = 1 - smooth((state.ticks - (state.attack==LivingTribunal.PRISON?90:state.attack==LivingTribunal.WAVE?70:LivingTribunal.WINDUP)) / 12);
+            if(state.attack==LivingTribunal.WAVE) radius=Math.max(1,(state.ticks-34)*1.6f);
+            if(state.attack==LivingTribunal.VOLLEY) opacity=0;
 			int color = ARGB.color((int) (opacity * 235), 255, 216, 151);
-			billboard(pose, collector, EDICT, at, radius * (state.ticks < LivingTribunal.WINDUP ? 1 : 1.3f),
+			if(state.attack==LivingTribunal.WAVE || state.attack==LivingTribunal.PRISON) sphere(pose,collector,at,radius,color);
+            else billboard(pose, collector, EDICT, at, radius * (state.ticks < LivingTribunal.WINDUP ? 1 : 1.3f),
 					state.ticks * 2, color);
 			// The edict focuses into a cosmic ray; the marked radius is the server's actual hit radius.
-			beam(pose, collector, new Vec3(0, 31, -3), at, state.ticks < LivingTribunal.WINDUP ? .12f : 1.6f,
+			if(state.attack!=LivingTribunal.WAVE && state.attack!=LivingTribunal.PRISON) beam(pose, collector, new Vec3(0, 70, -5), at, state.ticks < LivingTribunal.WINDUP ? .12f : 1.6f,
 					ARGB.color((int) (opacity * (state.ticks < LivingTribunal.WINDUP ? 85 : 255)), 230, 238, 255));
 			if (state.ticks >= LivingTribunal.WINDUP) {
 				billboard(pose, collector, HALO, at, radius * 1.65f, state.ticks * 5, color);
@@ -119,7 +123,7 @@ public final class TribunalRenderer extends EntityRenderer<LivingTribunal, Tribu
 			if (state.ticks < LivingTribunal.SHATTER_TICK) {
 				pose.pushPose();
 				pose.translate(glove.x, glove.y, glove.z);
-				pose.mulPose(Axis.YP.rotationDegrees(state.ticks * 8));
+				pose.mulPose(Axis.YP.rotationDegrees(state.ticks < 85 ? state.ticks * 5 : 65));
 				float scale = 1.2f + progress * 4.8f;
 				pose.scale(scale, scale, scale);
 				state.gauntlet.submit(pose, collector, LightCoordsUtil.FULL_BRIGHT, OverlayTexture.NO_OVERLAY, 0);
@@ -155,12 +159,12 @@ public final class TribunalRenderer extends EntityRenderer<LivingTribunal, Tribu
 		if (model == null) model = GeoModel.load(GEOMETRY);
 		State state = new State();
 		state.phase = boss.phase(); state.attack = boss.attack(); state.ticks = boss.sceneAge() + partial;
-		state.yaw = boss.getYRot(); state.ageInTicks = boss.tickCount + partial;
+		state.yaw = Mth.rotLerp(partial,boss.yRotO,boss.getYRot()); state.ageInTicks = boss.tickCount + partial;
 		PoseStack pose = new PoseStack(); modelTransform(pose, state.yaw, 0);
 		return boss.getPosition(partial).add(new Vec3(model.pivotOf("right_hand", bones(state, 1), pose))).add(palmOffset(state.yaw));
 	}
 
-	private static Vec3 palmOffset(float yaw) { return Vec3.directionFromRotation(0, yaw).scale(4).add(0, 1.5, 0); }
+	private static Vec3 palmOffset(float yaw) { return Vec3.directionFromRotation(0, yaw).scale(12).add(0, 10, 0); }
 
 	private static void modelTransform(PoseStack pose, float yaw, float rise) {
 		pose.translate(0, rise, 0);
@@ -201,6 +205,29 @@ public final class TribunalRenderer extends EntityRenderer<LivingTribunal, Tribu
 		});
 		pose.popPose();
 	}
+
+    /** Three great circles share one submit; the shell represents a true spherical gameplay radius. */
+    public static void sphere(PoseStack pose,SubmitNodeCollector collector,Vec3 at,float radius,int color) {
+        if(radius<=0 || color>>>24==0) return;
+        pose.pushPose();pose.translate(at.x,at.y,at.z);
+        collector.submitCustomGeometry(pose,RenderTypes.entityTranslucentEmissive(InfinityGauntlet.id("textures/tribunal/white.png")),(p,out)-> {
+            for(int axis=0;axis<3;axis++) for(int i=0;i<48;i++) {
+                double a=i*Math.PI/24,b=(i+1)*Math.PI/24;float w=Math.max(.06f,radius*.006f);
+                for(int corner=0;corner<4;corner++) {
+                    double angle=corner<2?a:b;float r=radius+((corner==0||corner==3)?-w:w);
+                    float x=(float)Math.cos(angle)*r,y=(float)Math.sin(angle)*r;
+                    out.addVertex(p,axis==0?0:x,axis==1?0:axis==0?x:y,axis==2?0:axis==0?y:axis==1?y:0)
+                        .setColor(color).setUv(.5f,.5f).setOverlay(OverlayTexture.NO_OVERLAY).setLight(LightCoordsUtil.FULL_BRIGHT).setNormal(p,0,1,0);
+                }
+            }
+        });pose.popPose();
+    }
+
+    public static void energyBolt(PoseStack pose, SubmitNodeCollector collector, Vec3 at, Vec3 velocity) {
+        billboard(pose,collector,HALO,at,2.2f,0,0xffb5ecff);
+        billboard(pose,collector,EDICT,at,1.1f,0,0xffffffff);
+        beam(pose,collector,at.subtract(velocity.scale(3)),at,.5f,0xff8fbdff);
+    }
 
 	private static void vertex(VertexConsumer out, PoseStack.Pose pose, float x, float y, float u, float v, int color) {
 		out.addVertex(pose, x, y, 0).setColor(color).setUv(u, v).setOverlay(OverlayTexture.NO_OVERLAY)

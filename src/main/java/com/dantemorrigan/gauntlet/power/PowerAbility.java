@@ -83,7 +83,7 @@ public final class PowerAbility {
 			com.dantemorrigan.gauntlet.celestial.CelestialApocalypse.resetAim(player);
 			return; // celestial mode works while charging (aim at the sky), release does nothing
 		}
-		HitResult hit = pick(player, cfg.strikeReach);
+		HitResult hit = pick(player, com.dantemorrigan.gauntlet.cosmos.CosmosTravel.inCosmos(player)?CosmicGauntlet.reach(player,170):cfg.strikeReach);
 		if (isUltimate(gauntlet)) {
 			tryUltimate(player, gauntlet, chargeTicks, hit);
 			return;
@@ -139,17 +139,18 @@ public final class PowerAbility {
 			if (e != direct && dist > radius) continue;
 			float falloff = e == direct ? 1f : (float) Math.max(0.25, 1.0 - dist / radius);
 			com.dantemorrigan.gauntlet.uru.GauntletDamage.hurt(level, e, player, player.damageSources().playerAttack(player), damage * falloff);
-			Vec3 push = e.position().subtract(impact).multiply(1, 0, 1);
-			if (push.lengthSqr() < 1.0e-4) push = player.getLookAngle().multiply(1, 0, 1);
+			Vec3 push = e.getBoundingBox().getCenter().subtract(impact).multiply(1, com.dantemorrigan.gauntlet.cosmos.CosmosTravel.inCosmos(player)?1:0, 1);
+			if (push.lengthSqr() < 1.0e-4) push = player.getLookAngle().multiply(1, com.dantemorrigan.gauntlet.cosmos.CosmosTravel.inCosmos(player)?1:0, 1);
 			push = push.normalize().scale(cfg.strikeKnockback * charge * falloff);
             double brace = e instanceof ServerPlayer guarded && com.dantemorrigan.gauntlet.stormbreaker.Stormbreaker.guarded(guarded) ? .36 : 1;
-			e.push(push.x * brace, (0.35 + 0.3 * charge * falloff) * brace, push.z * brace);
+			e.push(push.x * brace, (com.dantemorrigan.gauntlet.cosmos.CosmosTravel.inCosmos(player)?push.y:0.35 + 0.3 * charge * falloff) * brace, push.z * brace);
 			e.hurtMarked = true;
 		}
 		player.getCooldowns().addCooldown(gauntlet, cfg.strikeCooldownTicks);
 		level.playSound(null, impact.x, impact.y, impact.z, SoundEvents.GENERIC_EXPLODE.value(), SoundSource.PLAYERS, 0.8F + charge, 1.3F - 0.4F * charge);
 		level.playSound(null, impact.x, impact.y, impact.z, SoundEvents.MACE_SMASH_GROUND_HEAVY, SoundSource.PLAYERS, 1.0F, 0.8F);
-		sendFx(level, impact, normal, 0.6f + charge);
+		if(com.dantemorrigan.gauntlet.cosmos.CosmosTravel.inCosmos(player)) CosmicGauntlet.fx(player,0,impact,impact,radius,0xffb675ff,25);
+        else sendFx(level, impact, normal, 0.6f + charge);
 	}
 
 	public static void sendFx(ServerLevel level, Vec3 pos, Vec3 normal, float strength) {

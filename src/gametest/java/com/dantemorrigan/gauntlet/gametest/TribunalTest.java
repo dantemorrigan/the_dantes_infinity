@@ -110,8 +110,10 @@ public final class TribunalTest implements FabricClientGameTest {
             ctx.takeScreenshot("tribunal_04_cosmic_ray");
             until(ctx,()->server.computeOnServer(s->TribunalEncounter.awaitingReturn(player(s))),"One-heart verdict never started");
             server.runOnServer(s->{check(player(s).getOffhandItem().isEmpty(),"Gauntlet not confiscated");check(player(s).getHealth()==2,"Verdict did not start at one heart");});
-            ctx.waitTicks(20);ctx.takeScreenshot("tribunal_05_confiscation");
-            until(ctx,()->server.computeOnServer(s->boss(s)!=null && boss(s).sceneAge()>85),"Gauntlet never reached hand");
+            ctx.waitTicks(20);
+            check(ctx.computeOnClient(mc->TribunalClient.inputLocked()),"Giant was not visible/tracked during verdict");
+            ctx.takeScreenshot("tribunal_05_confiscation");
+            until(ctx,()->server.computeOnServer(s->boss(s)!=null && boss(s).sceneAge()>92),"Gauntlet never reached hand");
             ctx.takeScreenshot("tribunal_06_gauntlet_in_hand");
             until(ctx,()->server.computeOnServer(s->boss(s)!=null && boss(s).sceneAge()>LivingTribunal.SHATTER_TICK+3),"No shatter");
             ctx.takeScreenshot("tribunal_07_shatter");

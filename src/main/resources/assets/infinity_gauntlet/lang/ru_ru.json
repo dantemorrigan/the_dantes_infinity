@@ -587,6 +587,13 @@
   "subtitles.infinity_gauntlet.tribunal.surrender": "Сдайся.",
   "subtitles.infinity_gauntlet.tribunal.defeat": "Это невозможно.",
   "tribunal.infinity_gauntlet.awakening": "Дождись пробуждения Перчатки, прежде чем бросать вызов Трибуналу.",
-  "tribunal.infinity_gauntlet.available": "Могущество за пределами Бесконечности ощутило тебя. В космосе введи /tribunal challenge, чтобы бросить вызов Великому Трибуналу.",
-  "death.attack.infinityGauntlet.tribunal": "Великий Трибунал вынес приговор игроку %1$s"
+  "tribunal.infinity_gauntlet.available": "Трибунал ощутил твою силу. Пространство вокруг тебя разрывается…",
+  "death.attack.infinityGauntlet.tribunal": "Великий Трибунал вынес приговор игроку %1$s",
+  "tribunal.infinity_gauntlet.attack.1": "Печать приговора",
+  "tribunal.infinity_gauntlet.attack.2": "Гравитационный колодец",
+  "tribunal.infinity_gauntlet.attack.3": "Сверхновая",
+  "tribunal.infinity_gauntlet.attack.4": "Залп космической энергии",
+  "tribunal.infinity_gauntlet.attack.5": "Сферическая ударная волна",
+  "tribunal.infinity_gauntlet.attack.6": "Копьё правосудия",
+  "tribunal.infinity_gauntlet.attack.7": "Звёздная клетка"
 }

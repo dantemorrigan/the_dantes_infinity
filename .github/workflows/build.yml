@@ -27,6 +27,8 @@ jobs:
         run: java -cp build/classes/java/client src/geometryTest/java/PlanetGeometryCheck.java
       - name: check cosmos navigation
         run: java -cp build/classes/java/main src/geometryTest/java/CosmosRoutesCheck.java
+      - name: check giant planetary clearance
+        run: java -cp build/classes/java/main src/geometryTest/java/TribunalSpaceCheck.java
       - name: validate cosmos textures
         run: python3 scripts/check_cosmos_assets.py
       - name: ability wheel client regression
@@ -45,6 +47,12 @@ jobs:
           LIBGL_ALWAYS_SOFTWARE: 'true'
           ALSOFT_DRIVERS: 'null'
         run: xvfb-run -a ./gradlew runClientGameTest -PonlyTest=TribunalTest
+      - name: Cosmic Tribunal and routes client regression
+        timeout-minutes: 10
+        env:
+          LIBGL_ALWAYS_SOFTWARE: 'true'
+          ALSOFT_DRIVERS: 'null'
+        run: xvfb-run -a ./gradlew runClientGameTest -PonlyTest=TribunalCosmicTest
       - name: cosmos screenshots and logs
         if: always()
         uses: actions/upload-artifact@v7

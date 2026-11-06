@@ -100,7 +100,8 @@ public final class TimeFlow {
             Vec3 from = player.getEyePosition();
             Vec3 direction = player.getLookAngle();
             Vec3 limit = from;
-            for (double distance = .5; distance <= RANGE; distance += .5) {
+            double range = com.dantemorrigan.gauntlet.cosmos.CosmosTravel.inCosmos(player)?CosmicGauntlet.reach(player,170):RANGE;
+            for (double distance = .5; distance <= range; distance += .5) {
                 Vec3 point = from.add(direction.scale(distance));
                 if (!cast.level.hasChunkAt(BlockPos.containing(point))) break;
                 limit = point;

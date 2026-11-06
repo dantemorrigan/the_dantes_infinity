@@ -117,7 +117,7 @@ public final class SoulStone {
 			MASS_CD.put(player.getUUID(), now + cfg.soulMassCooldownTicks);
 		} else {
 			if (now < POINT_CD.getOrDefault(player.getUUID(), 0L) && !player.isCreative()) return;
-			LivingEntity target = MindStone.lookTarget(player, cfg.soulRange, cfg.soulPlayerDrain);
+			LivingEntity target = MindStone.lookTarget(player, com.dantemorrigan.gauntlet.cosmos.CosmosTravel.inCosmos(player)?CosmicGauntlet.reach(player,170):cfg.soulRange, cfg.soulPlayerDrain);
 			if (target == null || busy(target) || !player.hasLineOfSight(target)) return;
 			POINT_CD.put(player.getUUID(), now + cfg.soulPointCooldownTicks);
 			if (target instanceof ServerPlayer victim) {
@@ -153,9 +153,9 @@ public final class SoulStone {
 	}
 
 	private static void mass(ServerPlayer player, ServerLevel level, GauntletConfig cfg) {
-		double r = cfg.soulMassRadius;
+		double r = com.dantemorrigan.gauntlet.cosmos.CosmosTravel.inCosmos(player)?155:cfg.soulMassRadius;
 		Vec3 c = player.position();
-		List<LivingEntity> targets = new ArrayList<>(level.getEntitiesOfClass(LivingEntity.class, new AABB(c, c).inflate(r, r * 0.5, r),
+		List<LivingEntity> targets = new ArrayList<>(level.getEntitiesOfClass(LivingEntity.class, new AABB(c, c).inflate(r, com.dantemorrigan.gauntlet.cosmos.CosmosTravel.inCosmos(player)?r:r*.5, r),
 				e -> e instanceof Enemy && e.isAlive() && !MindStone.isBoss(e) && !e.hasCustomName() && !busy(e) && e.position().distanceTo(c) <= r));
 		targets.sort(Comparator.comparingDouble(e -> e.position().distanceToSqr(c)));
 		if (targets.size() > cfg.soulMassMaxTargets) targets = targets.subList(0, cfg.soulMassMaxTargets);
@@ -258,7 +258,7 @@ public final class SoulStone {
 		ItemStack gauntlet = GauntletState.activeGauntlet(owner);
 		if (!config.soulPlayerDrain || gauntlet.isEmpty() || !GauntletState.inserted(gauntlet).contains(Stone.SOUL)
 				|| owner.level().getEntity(victim.getUUID()) != victim || !CoopRules.canControlWithGauntlet(owner, victim)
-				|| victim.isShiftKeyDown() || victim.distanceToSqr(owner) > config.soulRange * config.soulRange
+				|| victim.isShiftKeyDown() || victim.distanceToSqr(owner) > Math.pow(com.dantemorrigan.gauntlet.cosmos.CosmosTravel.inCosmos(owner)?170:config.soulRange,2)
 				|| !owner.hasLineOfSight(victim)) return true;
 		Vec3 from = victim.getEyePosition(), to = owner.getEyePosition();
 		Vec3 point = from.lerp(to, (tick % 10) / 10.0);

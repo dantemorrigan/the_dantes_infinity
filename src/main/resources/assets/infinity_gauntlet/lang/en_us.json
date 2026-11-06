@@ -587,6 +587,13 @@
   "subtitles.infinity_gauntlet.tribunal.surrender": "Surrender.",
   "subtitles.infinity_gauntlet.tribunal.defeat": "This is impossible.",
   "tribunal.infinity_gauntlet.awakening": "Wait for the Gauntlet to awaken before challenging the Tribunal.",
-  "tribunal.infinity_gauntlet.available": "A presence beyond Infinity senses you. In the cosmos, use /tribunal challenge to face the Living Tribunal.",
-  "death.attack.infinityGauntlet.tribunal": "%1$s was judged by the Living Tribunal"
+  "tribunal.infinity_gauntlet.available": "The Tribunal senses your power. Space begins to tear around you…",
+  "death.attack.infinityGauntlet.tribunal": "%1$s was judged by the Living Tribunal",
+  "tribunal.infinity_gauntlet.attack.1": "Edict of Judgement",
+  "tribunal.infinity_gauntlet.attack.2": "Gravity Well",
+  "tribunal.infinity_gauntlet.attack.3": "Supernova",
+  "tribunal.infinity_gauntlet.attack.4": "Cosmic Volley",
+  "tribunal.infinity_gauntlet.attack.5": "Spherical Shockwave",
+  "tribunal.infinity_gauntlet.attack.6": "Lance of Justice",
+  "tribunal.infinity_gauntlet.attack.7": "Stellar Prison"
 }

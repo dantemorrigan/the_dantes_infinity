@@ -120,7 +120,8 @@ public final class SpaceStone {
 
 	public static void action(ServerPlayer player, int action) {
 		ItemStack g = gauntletWithSpace(player);
-		if (g.isEmpty() || SpaceManager.inSpace(player) || com.dantemorrigan.gauntlet.cosmos.CosmosTravel.inCosmos(player)) return;
+		if (g.isEmpty() || SpaceManager.inSpace(player)) return;
+		if(com.dantemorrigan.gauntlet.cosmos.CosmosTravel.inCosmos(player)) {if(action==2) blink(player,g,40);return;}
 		switch (action) {
 			case 0 -> togglePortal(player, g);
 			case 1 -> {
@@ -321,11 +322,11 @@ public final class SpaceStone {
 		Vec3 eye = player.getEyePosition();
 		Vec3 end = eye.add(player.getLookAngle().scale(range));
 		BlockHitResult hit = player.level().clip(new ClipContext(eye, end, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, player));
-		if (hit.getType() != HitResult.Type.BLOCK) {
+		if (hit.getType() != HitResult.Type.BLOCK && !com.dantemorrigan.gauntlet.cosmos.CosmosTravel.inCosmos(player)) {
 			com.dantemorrigan.gauntlet.net.ModStatus.send(player, Component.translatable("msg.infinity_gauntlet.blink.too_far", String.valueOf(range)));
 			return false;
 		}
-		Vec3 target = standingSpot(player.level(), hit);
+		Vec3 target = com.dantemorrigan.gauntlet.cosmos.CosmosTravel.inCosmos(player) ? player.position().add(player.getLookAngle().scale(CosmicGauntlet.reach(player,range))) : standingSpot(player.level(), hit);
 		if (target == null) {
 			com.dantemorrigan.gauntlet.net.ModStatus.send(player, Component.translatable("msg.infinity_gauntlet.blink.no_space"));
 			return false;

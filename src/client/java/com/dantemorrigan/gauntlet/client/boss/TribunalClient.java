@@ -19,8 +19,25 @@ public final class TribunalClient {
 	private static ThanosClient.Music music;
 	private static int ticks, musicAt, lastPhase = -1, lastAge;
 	private static float shake;
+    private static final java.util.Map<Integer,Flying> BOLTS=new java.util.HashMap<>();
+    private static final class Flying {
+        Vec3 from,to; int age,duration;
+        Flying(com.dantemorrigan.gauntlet.net.ModNetwork.TribunalBolt p) {from=p.from();to=p.to();duration=p.ticks();}
+    }
 
 	public static void init() {
+        net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.registerGlobalReceiver(com.dantemorrigan.gauntlet.net.ModNetwork.TribunalBolt.TYPE,(p,c)-> {
+            if(p.ticks()==0) BOLTS.remove(p.id()); else BOLTS.put(p.id(),new Flying(p));
+        });
+        net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents.COLLECT_SUBMITS.register(context -> {
+            var mc=Minecraft.getInstance(); if(mc.level==null || BOLTS.isEmpty()) return;
+            float partial=mc.getDeltaTracker().getGameTimeDeltaPartialTick(false);
+            Vec3 camera=mc.gameRenderer.getMainCamera().position();
+            for(Flying b:BOLTS.values()) {
+                Vec3 at=b.from.lerp(b.to,Math.min(1,(b.age+partial)/b.duration)).subtract(camera);
+                TribunalRenderer.energyBolt(context.poseStack(),context.submitNodeCollector(),at,b.to.subtract(b.from).scale(1.0/b.duration));
+            }
+        });
 		// Keep dialogue and our cinematic layer; normal combat UI returns as soon as the scene ends.
 		for (var id : java.util.List.of(
 				net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements.CROSSHAIR,
@@ -38,9 +55,10 @@ public final class TribunalClient {
 			if (level != mc.level) { reset(); level = mc.level; }
 			if (mc.isPaused()) return;
 			ticks++;
+            BOLTS.values().removeIf(b->++b.age>b.duration);
 			shake *= .84f;
 			nearby = mc.player == null || mc.level == null ? null
-					: mc.level.getEntitiesOfClass(LivingTribunal.class, mc.player.getBoundingBox().inflate(105),
+					: mc.level.getEntitiesOfClass(LivingTribunal.class, mc.player.getBoundingBox().inflate(340),
 							boss -> boss.isAlive() && boss.challenger() == mc.player.getId() && boss.phase() != LivingTribunal.DEPARTURE).stream().findFirst().orElse(null);
 			if (music != null && (music.isStopped() || ticks - musicAt > 40 && !mc.getSoundManager().isActive(music))) { music.halt(); music = null; }
 			if (nearby != null && mc.player.isAlive()) {
@@ -65,7 +83,11 @@ public final class TribunalClient {
 		});
 		HudElementRegistry.addLast(InfinityGauntlet.id("tribunal_cinematic"), (g, partial) -> {
 			LivingTribunal boss = nearby;
-			if (boss == null || boss.phase() == LivingTribunal.BATTLE) return;
+			if (boss == null) return;
+            if(boss.phase()==LivingTribunal.BATTLE) {
+                if(boss.attack()>0) g.centeredText(Minecraft.getInstance().font,Component.translatable("tribunal.infinity_gauntlet.attack."+boss.attack()),g.guiWidth()/2,36,0xffffdfa0);
+                return;
+            }
 			int age = boss.sceneAge();
 			boolean verdict = boss.phase() == LivingTribunal.VERDICT;
 			int w = g.guiWidth(), h = g.guiHeight();
@@ -96,7 +118,7 @@ public final class TribunalClient {
 	}
 	private static void reset() {
 		if (music != null) music.halt();
-		music = null; nearby = null; level = null; lastPhase = -1; shake = 0;
+		BOLTS.clear(); music = null; nearby = null; level = null; lastPhase = -1; shake = 0;
 	}
 
 	private TribunalClient() {}

@@ -16,7 +16,20 @@ import org.joml.Vector3f;
 import org.joml.Vector3fc;
 
 public final class LivingTribunal extends Monster {
+    private static final net.minecraft.server.level.TicketType TICKETING=net.minecraft.core.Registry.register(
+        net.minecraft.core.registries.BuiltInRegistries.TICKET_TYPE,com.dantemorrigan.gauntlet.InfinityGauntlet.id("tribunal_scene"),
+        new net.minecraft.server.level.TicketType(120,net.minecraft.server.level.TicketType.FLAG_LOADING|net.minecraft.server.level.TicketType.FLAG_SIMULATION));
+    private net.minecraft.world.level.ChunkPos activeChunk;
+    /** Keep only the giant's local chunk neighbourhood active while he moves beyond the player's ticking edge. */
+    public void keepActiveAt(Vec3 position) {
+        if(!(level() instanceof ServerLevel level)) return;
+        var block=net.minecraft.core.BlockPos.containing(position);
+        var next=new net.minecraft.world.level.ChunkPos(block.getX()>>4,block.getZ()>>4);
+        if(activeChunk!=null && !activeChunk.equals(next)) level.getChunkSource().removeTicketWithRadius(TICKETING,activeChunk,2);
+        level.getChunkSource().addTicketWithRadius(TICKETING,next,2);activeChunk=next;
+    }
 	public static final int ARRIVAL = 0, BATTLE = 1, VERDICT = 2, DEPARTURE = 3;
+	public static final int EDICT=1, GRAVITY=2, NOVA=3, VOLLEY=4, WAVE=5, LANCE=6, PRISON=7;
 	public static final int INTRO_TICKS = 130, VERDICT_TICKS = 160, SHATTER_TICK = 105, WINDUP = 34;
 	private static final EntityDataAccessor<Integer> CHALLENGER = SynchedEntityData.defineId(LivingTribunal.class, EntityDataSerializers.INT);
 	private static final EntityDataAccessor<Integer> PHASE = SynchedEntityData.defineId(LivingTribunal.class, EntityDataSerializers.INT);
@@ -79,9 +92,13 @@ public final class LivingTribunal extends Monster {
 		super.tick();
 		if (level() instanceof ServerLevel) bar.setProgress(getHealth() / getMaxHealth());
 		setDeltaMovement(Vec3.ZERO);
+		if(!isRemoved()) keepActiveAt(position());
 	}
 
-	@Override public void remove(RemovalReason reason) { bar.removeAllPlayers(); super.remove(reason); }
+	@Override public void remove(RemovalReason reason) {
+        if(activeChunk!=null && level() instanceof ServerLevel level) level.getChunkSource().removeTicketWithRadius(TICKETING,activeChunk,2);
+        activeChunk=null;bar.removeAllPlayers();super.remove(reason);
+    }
 	@Override public boolean removeWhenFarAway(double distance) { return false; }
 	@Override public boolean isPushable() { return false; }
 	@Override public boolean canUsePortal(boolean passengers) { return false; }

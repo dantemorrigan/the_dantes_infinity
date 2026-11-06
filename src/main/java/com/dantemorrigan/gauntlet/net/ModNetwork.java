@@ -432,7 +432,25 @@ public final class ModNetwork {
 		@Override public Type<PowerShowerFx> type() { return TYPE; }
 	}
 
+    /** A finite, server simulated energy bolt; zero duration removes an impacted bolt. */
+    public record TribunalBolt(int id, Vec3 from, Vec3 to, int ticks) implements CustomPacketPayload {
+        public static final Type<TribunalBolt> TYPE = newType("tribunal_bolt");
+        public static final StreamCodec<ByteBuf, TribunalBolt> CODEC = StreamCodec.composite(ByteBufCodecs.VAR_INT,TribunalBolt::id,
+            Vec3.STREAM_CODEC,TribunalBolt::from,Vec3.STREAM_CODEC,TribunalBolt::to,ByteBufCodecs.VAR_INT,TribunalBolt::ticks,TribunalBolt::new);
+        @Override public Type<TribunalBolt> type() { return TYPE; }
+    }
+
+    public record CosmicFx(int kind,Vec3 from,Vec3 to,float size,int color,int ticks) implements CustomPacketPayload {
+        public static final Type<CosmicFx> TYPE=newType("cosmic_gauntlet_fx");
+        public static final StreamCodec<ByteBuf,CosmicFx> CODEC=StreamCodec.composite(ByteBufCodecs.VAR_INT,CosmicFx::kind,
+            Vec3.STREAM_CODEC,CosmicFx::from,Vec3.STREAM_CODEC,CosmicFx::to,ByteBufCodecs.FLOAT,CosmicFx::size,
+            ByteBufCodecs.INT,CosmicFx::color,ByteBufCodecs.VAR_INT,CosmicFx::ticks,CosmicFx::new);
+        @Override public Type<CosmicFx> type() {return TYPE;}
+    }
+
 	public static void init() {
+        PayloadTypeRegistry.clientboundPlay().register(CosmicFx.TYPE,CosmicFx.CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(TribunalBolt.TYPE,TribunalBolt.CODEC);
 		PayloadTypeRegistry.clientboundPlay().register(PowerShowerFx.TYPE, PowerShowerFx.CODEC);
         PayloadTypeRegistry.serverboundPlay().register(AbilitySelect.TYPE,AbilitySelect.CODEC);
         PayloadTypeRegistry.serverboundPlay().register(AbilityAction.TYPE,AbilityAction.CODEC);

@@ -38,7 +38,7 @@ public final class ModEntities {
 	public static final EntityType<com.dantemorrigan.gauntlet.boss.LivingTribunal> TRIBUNAL = Registry.register(
 			BuiltInRegistries.ENTITY_TYPE, TRIBUNAL_KEY,
 			EntityType.Builder.of(com.dantemorrigan.gauntlet.boss.LivingTribunal::new, MobCategory.MONSTER)
-					.sized(26, 50).eyeHeight(45).fireImmune().clientTrackingRange(16).updateInterval(1)
+					.sized(50, 106).eyeHeight(95).fireImmune().clientTrackingRange(32).updateInterval(1)
 					.noSave().noSummon().noLootTable().build(TRIBUNAL_KEY));
 
 	private static final ResourceKey<EntityType<?>> THANOS_KEY = ResourceKey.create(Registries.ENTITY_TYPE, InfinityGauntlet.id("thanos"));

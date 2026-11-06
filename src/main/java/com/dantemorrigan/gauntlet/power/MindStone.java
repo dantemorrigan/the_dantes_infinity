@@ -147,8 +147,9 @@ public final class MindStone {
 
 		Vec3 eye = player.getEyePosition();
 		Vec3 look = player.getViewVector(1f);
-		BlockHitResult bh = level.clip(new ClipContext(eye, eye.add(look.scale(cfg.mindRange)), ClipContext.Block.OUTLINE, ClipContext.Fluid.NONE, player));
-		double reach = bh.getType() == HitResult.Type.MISS ? cfg.mindRange : bh.getLocation().distanceTo(eye);
+		double mindReach=com.dantemorrigan.gauntlet.cosmos.CosmosTravel.inCosmos(player)?CosmicGauntlet.reach(player,170):cfg.mindRange;
+		BlockHitResult bh = level.clip(new ClipContext(eye, eye.add(look.scale(mindReach)), ClipContext.Block.OUTLINE, ClipContext.Fluid.NONE, player));
+		double reach = bh.getType() == HitResult.Type.MISS ? mindReach : bh.getLocation().distanceTo(eye);
 		LivingEntity target = lookTarget(player, reach, cfg.mindPlayerGrab);
 		if (target != null) {
 			grabMob(player, target);
@@ -288,7 +289,7 @@ public final class MindStone {
 		if (hold.mob != null) {
 			LivingEntity mob = hold.mob;
 			restore(hold);
-			mob.setDeltaMovement(look.scale(cfg.mindMobThrowSpeed).add(0, 0.15, 0));
+			mob.setDeltaMovement(look.scale(cfg.mindMobThrowSpeed).add(0, com.dantemorrigan.gauntlet.cosmos.CosmosTravel.inCosmos(player)?0:0.15, 0));
 			mob.hurtMarked = true;
 			THROWN.add(new ThrownMob(mob, player.level(), player.getUUID(), new HashSet<>(), new int[1], false));
 		} else {
@@ -488,7 +489,7 @@ public final class MindStone {
 		if (!impact && (f.tick > 200 || next.y < f.level.getMinY() - 16)) return true; // lost in the void
 		if (!impact) {
 			f.pos = next;
-			f.vel = f.vel.scale(0.99).add(0, -0.05, 0);
+			f.vel = f.vel.scale(0.99).add(0, f.level.dimension().equals(com.dantemorrigan.gauntlet.cosmos.CosmosTravel.DIMENSION)?0:-0.05, 0);
 			return false;
 		}
 		impact(f, at, owner);

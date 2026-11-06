@@ -41,7 +41,8 @@
       "com.dantemorrigan.gauntlet.gametest.SoulQuestTest",
       "com.dantemorrigan.gauntlet.gametest.TimeQuestTest",
       "com.dantemorrigan.gauntlet.gametest.MindQuestTest",
-      "com.dantemorrigan.gauntlet.gametest.TribunalTest"
+      "com.dantemorrigan.gauntlet.gametest.TribunalTest",
+      "com.dantemorrigan.gauntlet.gametest.TribunalCosmicTest"
     ]
   },
   "depends": {

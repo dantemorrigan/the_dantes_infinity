@@ -45,6 +45,10 @@ public final class AbilityWheelScreen extends Screen {
     private void pointer(double mx,double my) {
         if(mx==mouseX && my==mouseY) return;
         mouseX=mx;mouseY=my;keyboard=null;hovered=null;target=-1;
+        if(submenu==2) {
+            for(int i=0;i<CosmosRoutes.ALL.size();i++) {int[] r=destinationBounds(i);if(mx>=r[0] && mx<r[0]+r[2] && my>=r[1] && my<r[1]+r[3]) target=i;}
+            return;
+        }
         if(submenu!=0) {
             int count=submenu==1?3:CosmosRoutes.ALL.size();
             for(int i=0;i<count;i++) {double a=Math.toRadians(-90+360.0*i/count);if(hit(mx,my,Math.cos(a)*115,Math.sin(a)*115,29)) target=i;}
@@ -117,7 +121,7 @@ public final class AbilityWheelScreen extends Screen {
         pointer(event.x(),event.y());
         if(event.button()==1) {if(submenu!=0){submenu=0;target=-1;}else onClose();return true;}
         if(event.button()!=0)return true;
-        if(hit(event.x(),event.y(),0,0,34)) {
+        if(submenu!=2 && hit(event.x(),event.y(),0,0,34)) {
             if(submenu!=0){submenu=0;target=-1;}else {finished=true;Minecraft.getInstance().setScreen(null);AbilityInput.inventory();}return true;
         }
         Ability a=keyboard!=null?keyboard:hovered;
@@ -132,7 +136,8 @@ public final class AbilityWheelScreen extends Screen {
     }
     @Override public void extractRenderState(GuiGraphicsExtractor g,int mx,int my,float delta) {
         pointer(mx,my);g.fill(0,0,width,height,0x9C090811);
-        text(g,Component.translatable("ability.infinity_gauntlet.wheel").withStyle(net.minecraft.ChatFormatting.BOLD),width/2,8,0xFFF4D68D);
+        tooltipLine(g,Component.translatable("ability.infinity_gauntlet.wheel").withStyle(net.minecraft.ChatFormatting.BOLD),8,0xFFF4D68D);
+        if(submenu==2) { drawDestinations(g); return; }
         blit(g,"wheel_frame",(int)(cx()-128*scale()),(int)(cy()-128*scale()),256*scale(),256*scale(),256,256);
         if(submenu==0) {
             for(int i=0;i<6;i++) {
@@ -188,6 +193,32 @@ public final class AbilityWheelScreen extends Screen {
         }
         tooltipLine(g, Component.translatable("ability.infinity_gauntlet.wheel_help",
             AbilityInput.WHEEL.getTranslatedKeyMessage()), firstLine + 30, 0xFF9BA7BB);
+    }
+
+    /** Shared bounds for rendering, pointer hit testing and resolution regression checks. */
+    public int[] destinationBounds(int index) {
+        int panel=Math.min(420,width-24), gap=6, cell=(panel-gap)/2;
+        int row=Math.max(18,Math.min(42,(height-104)/5));
+        return new int[]{(width-panel)/2+(index%2)*(cell+gap),32+(index/2)*row,cell,row-4};
+    }
+    private void drawDestinations(GuiGraphicsExtractor g) {
+        var font=Minecraft.getInstance().font;
+        for(int i=0;i<CosmosRoutes.ALL.size();i++) {
+            int[] r=destinationBounds(i);boolean active=i==target;
+            g.fill(r[0],r[1],r[0]+r[2],r[1]+r[3],active?0xff30465d:0xf0141826);
+            g.fill(r[0],r[1],r[0]+2,r[1]+r[3],active?0xff78d8ff:0xff46506c);
+            int size=Math.min(26,r[3]-4);
+            blit(g,"icons_64/"+destinationIcon(CosmosRoutes.ALL.get(i).id()),r[0]+5,r[1]+(r[3]-size)/2f,size,size,64,64);
+            Component name=Component.translatable("cosmos.infinity_gauntlet."+CosmosRoutes.ALL.get(i).id());
+            float fit=Math.min(1,(float)(r[2]-size-16)/Math.max(1,font.width(name)));
+            g.pose().pushMatrix();g.pose().translate(r[0]+size+11,r[1]+(r[3]-8*fit)/2);g.pose().scale(fit,fit);
+            g.text(font,name,0,0,active?0xffffffff:0xffcddceb,true);g.pose().popMatrix();
+        }
+        int top=height-58;
+        blit(g,"tooltip_panel",8,top,width-16,55,320,80);
+        tooltipLine(g,Component.translatable("ability.infinity_gauntlet.pick_destination"),top+8,0xffffdfa0);
+        if(target>=0) tooltipLine(g,Component.translatable("cosmos.infinity_gauntlet."+CosmosRoutes.ALL.get(target).id()),top+20,0xff86d8ff);
+        tooltipLine(g,Component.translatable("ability.infinity_gauntlet.wheel_help",AbilityInput.WHEEL.getTranslatedKeyMessage()),top+34,0xffb1bacd);
     }
 
     private void tooltipLine(GuiGraphicsExtractor graphics, Component label, int y, int color) {
