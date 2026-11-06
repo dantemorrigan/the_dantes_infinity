@@ -1,8 +1,11 @@
 package com.dantemorrigan.gauntlet.space;
 
 import com.dantemorrigan.gauntlet.GauntletConfig;
+import com.dantemorrigan.gauntlet.GauntletState;
 import com.dantemorrigan.gauntlet.InfinityGauntlet;
+import com.dantemorrigan.gauntlet.Stone;
 import com.dantemorrigan.gauntlet.net.ModNetwork;
+import com.dantemorrigan.gauntlet.net.ModStatus;
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
@@ -91,7 +94,11 @@ public final class PlanetDestruction {
 		return PLAYER_EVENT.containsKey(player.getUUID()) || player.hasAttached(SpaceManager.RECORD);
 	}
 
-	/** Start the event. Validation (stone, mode, charge, cooldown) is done by the caller. */
+	public static boolean hasReturnStone(ServerPlayer player) {
+		return GauntletState.inserted(GauntletState.activeGauntlet(player)).contains(Stone.TIME);
+	}
+
+	/** Start the event. The caller validates the Power Stone, mode, charge and cooldown. */
 	public static boolean start(ServerPlayer activator, Vec3 impact) {
 		if (!GauntletConfig.get().allowPlanetDestruction || !EVENTS.isEmpty()
 				|| activator.hasAttached(com.dantemorrigan.gauntlet.snap.InfinitySnap.RECORD)) return false;
@@ -110,6 +117,10 @@ public final class PlanetDestruction {
 		}
 		ServerLevel level = activator.level();
 		if (level.dimension().equals(SpaceManager.DEAD_SPACE)) return false;
+		if (!hasReturnStone(activator)) {
+			ModStatus.send(activator, Component.translatable("ability.infinity_gauntlet.reason.planet_time"));
+			return false;
+		}
 		GauntletConfig cfg = GauntletConfig.get();
 		List<SpaceRecord.Fragment> fragments = FragmentCapture.capture(level, BlockPos.containing(impact));
 		MinecraftServer server = level.getServer();
@@ -199,6 +210,12 @@ public final class PlanetDestruction {
 			if (!EVENTS.containsKey(e.id)) continue;
 
 			if (!e.transferred && e.age >= transferTick) {
+				ServerPlayer activator = server.getPlayerList().getPlayer(e.activator);
+				if (activator == null || !hasReturnStone(activator)) {
+					cancel(e.id, "activator lost access to the Time Stone");
+					if (activator != null) ModStatus.send(activator, Component.translatable("ability.infinity_gauntlet.reason.planet_time"));
+					continue;
+				}
 				e.transferred = true;
 				for (UUID id : e.participants) {
 					ServerPlayer p = server.getPlayerList().getPlayer(id);

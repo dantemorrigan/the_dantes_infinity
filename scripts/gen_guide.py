@@ -31,8 +31,8 @@ add('wheel',
  f"{H}Ability wheel{R}\nHold {B}V{R}, point at a stone, then an ability, release. {B}R{R} uses it; hold R for charged powers.\n\n{B}Esc{R} cancels. Pin with 1–6. Hold B for favorites.",
  f"{H}Колесо способностей{R}\nДержи {B}V{R}, наведи на камень, потом на способность, отпусти. {B}R{R} — применить, держи R для заряжаемых.\n\n{B}Esc{R} — отмена. 1–6 закрепляют способность. Держи B для избранного.")
 add('power',
- f"{H}Power Stone{R}\n{B}Power strike{R}: hold R, release.\n{B}Planet Destruction{R}: charge, hit ground.\n{B}Celestial Destruction{R}: aim at a luminary.\n{B}Meteor Stream{R}: lock on, aim low, release R.\n\nHeld bare, it kills.",
- f"{H}Камень Силы{R}\n{B}Силовой удар{R}: держи R, отпусти.\n{B}Уничтожение планеты{R}: заряд, удар в землю.\n{B}Разрушение светил{R}: цель — светило.\n{B}Поток метеоритов{R}: захват, целься вниз, отпусти R.\nГолым убивает.")
+ f"{H}Power Stone{R}\n{B}Power strike{R}: hold R, release.\n{B}Planet Destruction{R}: needs Time. Charge, hit ground.\n{B}Celestial Destruction{R}: aim at a luminary.\n{B}Meteor Stream{R}: lock on, aim low, release R.\n\nHeld bare, it kills.",
+ f"{H}Камень Силы{R}\n{B}Силовой удар{R}: держи R, отпусти.\n{B}Уничтожение планеты{R}: Камень Времени, удар вниз.\n{B}Разрушение светил{R}: цель — светило.\n{B}Поток метеоритов{R}: захват, вниз, отпусти R.\nГолым убивает.")
 add('space',
  f"{H}Space Stone{R}\n{B}Portal{R}: a door to the Nether, End or Overworld.\n{B}Blink{R}: teleport where you look.\n{B}Flight{R}: Ctrl boosts; beyond the sky lies the Solar System.\n{B}Warp{R}: jump to a planet.",
  f"{H}Камень Пространства{R}\n{B}Портал{R}: дверь в другое измерение.\n{B}Рывок{R}: телепорт туда, куда смотришь.\n{B}Полёт{R}: Ctrl ускоряет; за небом — Солнечная система.\n{B}Варп{R}: прыжок к планете.")

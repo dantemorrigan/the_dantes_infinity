@@ -84,6 +84,7 @@ public final class AbilityController {
                 || p.hasAttached(com.dantemorrigan.gauntlet.snap.InfinitySnap.RECORD)) return "busy";
         var stones=GauntletState.inserted(g);
         if(a.stone!=null && !stones.contains(a.stone) || (a==Ability.BEAM || a==Ability.SNAP) && stones.size()!=6) return "stone";
+        if(a==Ability.PLANET && !PlanetDestruction.hasReturnStone(p)) return "planet_time";
         if(a==Ability.REWIND && TimeAbility.canRestorePlanet(p) && !TimeAbility.isRewinding(p)) return "";
         if(PlanetDestruction.isBusy(p) || TimeAbility.isRewinding(p)) return "busy";
         if(SpaceManager.inSpace(p) && a!=Ability.REWIND) return "dimension";
