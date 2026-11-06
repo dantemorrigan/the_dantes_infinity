@@ -44,6 +44,9 @@ public final class CosmosRoutes {
         body("neptune", 100000, 245, 3.88));
     public static final int EARTH = 3, SUN = 0;
     public static final double RETURN_RANGE = 3000, LIMIT = 125000;
+    /** Cross the atmosphere before the flight collision shell can stop the player. */
+    public static final double EARTH_ENTRY_RADIUS = R_EARTH + 48;
+    public static boolean entersEarth(double x,double y,double z) { return earthDistance(x,y,z)<=EARTH_ENTRY_RADIUS; }
     public static final double MIN_Y = -980, MAX_Y = 4096;
     public static final double BODY_CLEARANCE = 28;
     public static final double EXIT_HEIGHT = 640;

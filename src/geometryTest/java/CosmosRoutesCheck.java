@@ -15,6 +15,11 @@ public class CosmosRoutesCheck {
                     || d.y() + d.radius() + CosmosRoutes.BODY_CLEARANCE >= CosmosRoutes.MAX_Y))
                 throw new AssertionError("Body cannot be flown around: " + d.id());
         }
+        var earth=CosmosRoutes.ALL.get(CosmosRoutes.EARTH);
+        if(CosmosRoutes.entersEarth(earth.arrivalX(),earth.arrivalY(),earth.arrivalZ())) throw new AssertionError("Warp arrival must stay in orbit");
+        if(CosmosRoutes.EARTH_ENTRY_RADIUS<=earth.radius()+CosmosRoutes.BODY_CLEARANCE) throw new AssertionError("Re-entry blocked by planet collision shell");
+        if(!CosmosRoutes.entersEarth(earth.x()+CosmosRoutes.EARTH_ENTRY_RADIUS-1,earth.y(),earth.z())
+            || CosmosRoutes.entersEarth(earth.x()+CosmosRoutes.EARTH_ENTRY_RADIUS+1,earth.y(),earth.z())) throw new AssertionError("Atmosphere entry boundary");
         double previous=0;
         for(int y=0;y<1200;y++) {
             double f=CosmosRoutes.atmosphere(y);

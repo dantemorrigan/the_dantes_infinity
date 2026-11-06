@@ -125,7 +125,11 @@ public final class TribunalEncounter {
 					String reason = start(player);
 					context.getSource().sendSystemMessage(Component.translatable("tribunal.infinity_gauntlet." + reason));
 					return reason.equals("started") ? 1 : 0;
-				}))));
+                })).then(Commands.literal("verdict").requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS)).executes(context -> {
+                    ServerPlayer p=context.getSource().getPlayerOrException();Trial t=trial(p);
+                    if(t==null || t.boss.phase()!=LivingTribunal.BATTLE) return 0;
+                    beginVerdict(t,p);return 1;
+                }))));
 		ServerTickEvents.END_SERVER_TICK.register(TribunalEncounter::tick);
 		ServerLifecycleEvents.SERVER_STOPPING.register(server -> {
 			Trial trial = TRIALS.get(server);
@@ -166,6 +170,7 @@ public final class TribunalEncounter {
 			if (!(entity instanceof ServerPlayer p)) return true;
 			Trial trial = trial(p);
 			if (trial == null || trial.executing) return true;
+            if(p.isCreative() && source.is(DAMAGE)) return false;
 			if (trial.verdictAge > 0) return false;
 			if (source.is(DAMAGE) && p.getHealth() - amount <= 2) { beginVerdict(trial, p); return false; }
 			return true;
@@ -195,7 +200,7 @@ public final class TribunalEncounter {
 		ServerLevel level = p.level();
 		MinecraftServer server = level.getServer();
 		if (!CosmosTravel.inCosmos(p) || !p.hasAttached(CosmosTravel.FLIGHT) || !p.isAlive() || p.isSpectator()
-				|| p.isCreative() || level.getDifficulty() == Difficulty.PEACEFUL) return "space_only";
+				|| level.getDifficulty() == Difficulty.PEACEFUL) return "space_only";
 		if (awaitingReturn(p) || TRIALS.containsKey(server) || PlanetDestruction.isBusy(p) || com.dantemorrigan.gauntlet.power.TimeAbility.isRewinding(p)
 				|| com.dantemorrigan.gauntlet.snap.InfinitySnap.casting(p)) return "busy";
 		if (fullGauntlet(p) && GauntletEffects.state(p).phase != GauntletEffects.Phase.AWAKENED) return "awakening";
@@ -236,7 +241,7 @@ public final class TribunalEncounter {
 		if (trial == null) return;
 		ServerPlayer p = server.getPlayerList().getPlayer(trial.player);
 		LivingTribunal boss = trial.boss;
-		if (p == null || boss.isRemoved() || !p.isAlive() || p.level() != boss.level() || p.isSpectator() || p.isCreative()) {
+		if (p == null || boss.isRemoved() || !p.isAlive() || p.level() != boss.level() || p.isSpectator()) {
 			if (p != null && p.isAlive() && p.hasAttached(RETURN)) {
 				Checkpoint checkpoint = p.getAttached(RETURN);
 				TeleportTransition target = respawn(p, TeleportTransition.DO_NOTHING);
@@ -337,6 +342,7 @@ public final class TribunalEncounter {
     }
 
 	private static void hit(Trial trial, ServerPlayer p, float damage) {
+        if(p.isCreative()) return;
 		if (p.getHealth() - damage <= 2) {
 			beginVerdict(trial, p);
 			return;

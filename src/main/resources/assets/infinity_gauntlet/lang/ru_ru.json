@@ -578,7 +578,7 @@
   "entity.infinity_gauntlet.living_tribunal": "Великий Трибунал",
   "tribunal.infinity_gauntlet.verdict": "Приговор",
   "tribunal.infinity_gauntlet.started": "Испытание началось.",
-  "tribunal.infinity_gauntlet.space_only": "Для испытания нужна космическая локация и полёт в режиме выживания.",
+  "tribunal.infinity_gauntlet.space_only": "Для испытания нужна космическая локация, активный полёт и сложность выше мирной.",
   "tribunal.infinity_gauntlet.locked": "Надень Перчатку со всеми шестью Камнями и одолей Локи и Таноса.",
   "tribunal.infinity_gauntlet.busy": "Испытание сейчас недоступно.",
   "tribunal.infinity_gauntlet.victory": "Трибунал вынес свой последний приговор. Ты победил.",

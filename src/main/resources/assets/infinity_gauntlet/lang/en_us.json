@@ -578,7 +578,7 @@
   "entity.infinity_gauntlet.living_tribunal": "The Living Tribunal",
   "tribunal.infinity_gauntlet.verdict": "The Verdict",
   "tribunal.infinity_gauntlet.started": "The trial has begun.",
-  "tribunal.infinity_gauntlet.space_only": "The trial requires space flight in Survival mode.",
+  "tribunal.infinity_gauntlet.space_only": "The trial requires active space flight and a difficulty above Peaceful.",
   "tribunal.infinity_gauntlet.locked": "Wear the Gauntlet with all six Stones and defeat Loki and Thanos.",
   "tribunal.infinity_gauntlet.busy": "The trial is unavailable right now.",
   "tribunal.infinity_gauntlet.victory": "The Tribunal has rendered its final verdict. You won.",

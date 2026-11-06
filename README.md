@@ -196,3 +196,5 @@ At one heart, the cinematic confiscates the Gauntlet, levitates it above his ope
 Real-client smoke test, including the sound engine: `ALSOFT_DRIVERS=null xvfb-run -a ./gradlew runClientGameTest -PonlyTest=TribunalTest`.
 
 Cosmic Gauntlet variants include long-range Power Strike with 3D recoil, spherical Reality Strike/Inversion, ranged Soul attacks, psychic pressure against unliftable bosses, free-space blink and aimed meteor fragments. Infinity Beam and Time Flow target spatial volumes; Time Flow reaches up to 170 blocks. Rewind retains its position history. Day/night, cross-dimension portals and celestial destruction remain outside this encounter, and the Snap is sealed. Warp routes use bounded cards with matching pointer hit regions; selecting a route never casts it.
+
+Creative testing: `/tribunal challenge` retains progression gates but leaves the challenger invulnerable. Operators can use `/tribunal verdict` during the battle to test the final cinematic. Approaching Earth after a warp now re-enters the Overworld before the planetary collision shell.

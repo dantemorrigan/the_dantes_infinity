@@ -37,6 +37,13 @@ public final class TribunalRenderer extends EntityRenderer<LivingTribunal, Tribu
 	private static final Identifier GEOMETRY = InfinityGauntlet.id("tribunal/tribunal.geo.json");
 	private static final float SCALE = com.dantemorrigan.gauntlet.boss.TribunalSpace.MODEL_SCALE;
 	private static GeoModel model;
+    private static final java.util.Set<GeoModel.Cube> GLOW = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
+    private static void loadModel() {
+        if(model!=null) return;
+        model=GeoModel.load(GEOMETRY);
+        GLOW.add(model.bone("core").cubes().get(1));GLOW.add(model.bone("core").cubes().get(2));
+        GLOW.add(model.bone("head").cubes().get(4));GLOW.add(model.bone("head").cubes().get(9));
+    }
 
 	public TribunalRenderer(EntityRendererProvider.Context context) { super(context); }
 
@@ -73,7 +80,7 @@ public final class TribunalRenderer extends EntityRenderer<LivingTribunal, Tribu
 
 	@Override
 	public void submit(State state, PoseStack pose, SubmitNodeCollector collector, CameraRenderState camera) {
-		if (model == null) model = GeoModel.load(GEOMETRY);
+		loadModel();
 		float reveal = state.phase == LivingTribunal.ARRIVAL ? smooth((state.ticks - 20) / 85) : 1;
 		float fade = state.phase == LivingTribunal.DEPARTURE ? 1 - smooth(state.death / 52) : reveal;
 		float rise = -60 * (1 - reveal);
@@ -91,10 +98,10 @@ public final class TribunalRenderer extends EntityRenderer<LivingTribunal, Tribu
 			int tint = ARGB.color((int) (fade * 255), 255, 255, 255);
 			collector.submitCustomGeometry(pose, fade < .99f ? RenderTypes.entityTranslucent(GOLD) : RenderTypes.entityCutout(GOLD),
 					(p, out) -> model.render(ThanosRenderer.stack(p), out, bones, LightCoordsUtil.FULL_BRIGHT,
-							OverlayTexture.NO_OVERLAY, (bone, cube) -> tint));
+							OverlayTexture.NO_OVERLAY, (bone, cube) -> GLOW.contains(cube) ? 0 : tint));
 			collector.order(1).submitCustomGeometry(pose, RenderTypes.entityTranslucentEmissive(EMISSIVE),
 					(p, out) -> model.render(ThanosRenderer.stack(p), out, bones, LightCoordsUtil.FULL_BRIGHT,
-							OverlayTexture.NO_OVERLAY, (bone, cube) -> tint));
+							OverlayTexture.NO_OVERLAY, (bone, cube) -> GLOW.contains(cube) ? tint : 0));
 			pose.popPose();
 		}
 		if (state.attack > 0) {
@@ -156,7 +163,7 @@ public final class TribunalRenderer extends EntityRenderer<LivingTribunal, Tribu
 	}
 
 	public static Vec3 handPosition(LivingTribunal boss, float partial) {
-		if (model == null) model = GeoModel.load(GEOMETRY);
+		loadModel();
 		State state = new State();
 		state.phase = boss.phase(); state.attack = boss.attack(); state.ticks = boss.sceneAge() + partial;
 		state.yaw = Mth.rotLerp(partial,boss.yRotO,boss.getYRot()); state.ageInTicks = boss.tickCount + partial;

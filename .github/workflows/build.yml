@@ -31,6 +31,8 @@ jobs:
         run: java -cp build/classes/java/main src/geometryTest/java/TribunalSpaceCheck.java
       - name: validate cosmos textures
         run: python3 scripts/check_cosmos_assets.py
+      - name: validate Tribunal mesh
+        run: python3 scripts/check_tribunal_mesh.py
       - name: ability wheel client regression
         timeout-minutes: 12
         env:

@@ -229,6 +229,9 @@ public final class CosmosTravel {
                     p.teleport(new TeleportTransition(p.level(), arrival, Vec3.ZERO, d.arrivalYaw(), 0, TeleportTransition.DO_NOTHING));
                     n.cooldown = 100; sync(p,n);
                 }
+                if(n.warp==0 && CosmosRoutes.entersEarth(p.getX(),p.getY(),p.getZ())) {
+                    n.planned=-1;reenter(p);sync(p,n);continue;
+                }
                 constrainPosition(p);
             }
             if (p.hasAttached(FLIGHT) && p.tickCount % 20 == 0) sync(p,n);
