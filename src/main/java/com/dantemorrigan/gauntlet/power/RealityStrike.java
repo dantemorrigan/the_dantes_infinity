@@ -205,7 +205,7 @@ public final class RealityStrike {
 			while (!w.mobs.isEmpty() && w.mobs.getFirst().position().distanceTo(w.center) <= front + 0.5) {
 				LivingEntity mob = w.mobs.removeFirst();
 				if (!mob.isAlive() || mob.level() != w.level) continue;
-				if (mob instanceof com.dantemorrigan.gauntlet.boss.Thanos) {
+				if (mob instanceof com.dantemorrigan.gauntlet.boss.Thanos || mob instanceof com.dantemorrigan.gauntlet.boss.Loki) {
 					// Too real to be unmade: the wave only burns him.
 					com.dantemorrigan.gauntlet.uru.GauntletDamage.hurt(w.level, mob, owner, owner.damageSources().playerAttack(owner), LOOSE_DAMAGE * 4);
 					continue;

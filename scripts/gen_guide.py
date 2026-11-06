@@ -25,8 +25,8 @@ add('start',
  f"{H}First steps{R}\nThe gauntlet works in your {B}offhand{R}: press {B}F{R}. Right-click it in your main hand to open the stone slots.\n\nAll six stones have {B}survival sources{R}.",
  f"{H}Первые шаги{R}\nПерчатка работает в {B}левой руке{R}: нажми {B}F{R}. ПКМ с ней в правой руке открывает слоты камней.\n\nВсе шесть камней доступны в {B}выживании{R}.")
 add('hints',
- f"{H}Where to look{R}\n{B}Power{R}: follow the fallen stars.\n{B}Space{R}: beat the dragon. Wear iron.\n{B}Reality{R}: shoot the Nether mist wisp.\n{B}Time{R}: 3 gears in the Time Temple.\n{B}Mind{R}: map to the Ruined City.\n{B}Soul{R}: temple map. Offer a sacrifice.",
- f"{H}Где искать{R}\n{B}Сила{R}: упавшие звёзды.\n{B}Пространство{R}: дракон и броня.\n{B}Реальность{R}: туман в Незере.\n{B}Время{R}: 3 шестерни в Храме.\n{B}Разум{R}: Разрушенный город.\n{B}Душа{R}: карта храма и жертва.")
+ f"{H}Where to look{R}\n{B}Power{R}: follow the fallen stars.\n{B}Space{R}: beat the dragon. Wear iron.\n{B}Reality{R}: shoot the Nether mist wisp.\n{B}Time{R}: 3 gears in the Time Temple.\n{B}Mind{R}: Ruined City. Beat Loki.\n{B}Soul{R}: temple map. Offer a sacrifice.",
+ f"{H}Где искать{R}\n{B}Сила{R}: упавшие звёзды.\n{B}Пространство{R}: дракон и броня.\n{B}Реальность{R}: туман в Незере.\n{B}Время{R}: 3 шестерни в Храме.\n{B}Разум{R}: Локи в Разрушенном городе.\n{B}Душа{R}: карта храма и жертва.")
 add('wheel',
  f"{H}Ability wheel{R}\nHold {B}V{R}, point at a stone, then an ability, release. {B}R{R} uses it; hold R for charged powers.\n\n{B}Esc{R} cancels. Pin with 1–6. Hold B for favorites.",
  f"{H}Колесо способностей{R}\nДержи {B}V{R}, наведи на камень, потом на способность, отпусти. {B}R{R} — применить, держи R для заряжаемых.\n\n{B}Esc{R} — отмена. 1–6 закрепляют способность. Держи B для избранного.")
@@ -43,8 +43,8 @@ add('time',
  f"{H}Time Stone{R}\n{B}Rewind{R}: you are played back through your last 5 seconds.\n{B}Day / Night{R}: spins the sky to the other half of the day.\n\nIn Dead Space, rewind reassembles a destroyed planet.",
  f"{H}Камень Времени{R}\n{B}Перемотка{R}: тебя «проигрывает» назад на 5 секунд.\n{B}День / Ночь{R}: прокручивает небо на другую половину суток.\n\nВ Мёртвом космосе перемотка собирает разрушенную планету.")
 add('mind',
- f"{H}Mind Stone{R}\n{B}Grab{R}: lift blocks or a mob with your gaze, R again to {B}throw{R}.\n{B}Tear apart{R}: a held mob bursts.\n{B}Release{R}: put it down safely.",
- f"{H}Камень Разума{R}\n{B}Захват{R}: поднимай блоки или моба взглядом, R ещё раз — {B}бросок{R}.\n{B}Разорвать{R}: удерживаемый моб лопается.\n{B}Отпустить{R}: безопасно поставить.")
+ f"{H}Mind Stone{R}\n{B}Grab{R}: lift blocks or a mob with your gaze, R again to {B}throw{R}.\n{B}Tear apart{R}: a held mob bursts.\n{B}Release{R}: put it down safely.\n\n10 city zombies summon Loki.",
+ f"{H}Камень Разума{R}\n{B}Захват{R}: поднимай блоки или моба взглядом, R ещё раз — {B}бросок{R}.\n{B}Разорвать{R}: удерживаемый моб лопается.\n{B}Отпустить{R}: безопасно поставить.\n\n10 зомби города вызывают Локи.")
 add('soul',
  f"{H}Soul Stone{R}\n{B}Extract soul{R}: pull a mob's soul. Each gives +1 ❤ and +0.5 damage for a minute.\n{B}Mass extraction{R}: a wave takes every enemy's soul around you.",
  f"{H}Камень Души{R}\n{B}Извлечь душу{R}: вытяни душу моба. Каждая даёт +1 ❤ и +0.5 урона на минуту.\n{B}Массовое извлечение{R}: волна забирает души всех врагов рядом.")

@@ -48,6 +48,12 @@ public abstract class FogRendererMixin {
 			fog.color.set(fog.color.x + (0.86f - fog.color.x) * amber, fog.color.y + (0.47f - fog.color.y) * amber,
 					fog.color.z + (0.16f - fog.color.z) * amber, fog.color.w);
 		}
+		float lokiGold = com.dantemorrigan.gauntlet.client.boss.LokiClient.goldTint(camera.position(), partialFog) * .52f;
+		if (lokiGold > 0) {
+			FogData fog = cir.getReturnValue();
+			fog.color.set(fog.color.x + (1f - fog.color.x) * lokiGold, fog.color.y + (.84f - fog.color.y) * lokiGold,
+					fog.color.z + (.41f - fog.color.z) * lokiGold, fog.color.w);
+		}
 		float mist = com.dantemorrigan.gauntlet.client.quest.RealityFogClient.factor();
 		if (mist > 0) {
 			FogData fog = cir.getReturnValue();

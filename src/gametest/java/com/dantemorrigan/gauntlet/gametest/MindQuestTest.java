@@ -1,14 +1,22 @@
 package com.dantemorrigan.gauntlet.gametest;
 
+import com.dantemorrigan.gauntlet.InfinityGauntlet;
 import com.dantemorrigan.gauntlet.ModItems;
+import com.dantemorrigan.gauntlet.boss.Loki;
 import com.dantemorrigan.gauntlet.Stone;
 import com.dantemorrigan.gauntlet.stones.MindCity;
 import com.dantemorrigan.gauntlet.stones.MindQuest;
 import com.dantemorrigan.gauntlet.stones.MindZombie;
 import com.dantemorrigan.gauntlet.stones.StoneRegistry;
+import com.dantemorrigan.gauntlet.uru.GauntletDamage;
 import net.fabricmc.fabric.api.client.gametest.v1.FabricClientGameTest;
 import net.fabricmc.fabric.api.client.gametest.v1.context.ClientGameTestContext;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.damagesource.DamageTypes;
+import net.minecraft.world.entity.ExperienceOrb;
+import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.phys.AABB;
@@ -16,7 +24,7 @@ import net.minecraft.world.phys.Vec3;
 
 import java.util.List;
 
-/** Smoke: Ruined City built, map unrolled, 10 sun-immune Mind Zombies defeated, essence converges, Mind Stone in player's hand. */
+/** Smoke: Ruined City built, map unrolled, 10 sun-immune Mind Zombies, Loki’s portal and rage, illusions, both advancements, and a single Mind Stone drop. */
 public class MindQuestTest implements FabricClientGameTest {
 	private static net.minecraft.server.level.ServerPlayer player(net.minecraft.server.MinecraftServer s) {
 		return s.getPlayerList().getPlayers().getFirst();
@@ -68,7 +76,7 @@ public class MindQuestTest implements FabricClientGameTest {
 				throw new AssertionError("Expected 10 Mind Zombies in the Ruined City, found " + zombieCount);
 			}
 
-			Vec3 stand = MindCity.plazaStand(site);
+			Vec3 stand = MindCity.entranceStand(site);
 			server.runCommand("tp @p " + stand.x + " " + stand.y + " " + stand.z + " 180 4");
 			ctx.waitTicks(16);
 			sp.getClientLevel().waitForChunksRender();
@@ -91,7 +99,7 @@ public class MindQuestTest implements FabricClientGameTest {
 				throw new AssertionError("Mind Stone should not be released before the 10th zombie is defeated");
 			}
 
-			// Defeat the 10th (last) Mind Zombie: triggers the essence convergence animation in front of the player.
+			// The 10th zombie opens Loki’s portal.
 			server.runOnServer(s -> {
 				var p = player(s);
 				var level = s.overworld();
@@ -100,18 +108,95 @@ public class MindQuestTest implements FabricClientGameTest {
 				list.getFirst().hurtServer(level, level.damageSources().playerAttack(p), 1000.0f);
 			});
 
-			ctx.waitTicks(14);
-			ctx.takeScreenshot("mind_convergence");
+			AABB city = new AABB(site).inflate(48);
+			ctx.waitTicks(28);
+			ctx.takeScreenshot("loki_portal");
 
-			ctx.waitTicks(MindQuest.CONVERGENCE_TICKS);
-			ctx.takeScreenshot("mind_stone_in_hand");
+			ctx.waitTicks(42);
+			var bossId = server.computeOnServer(s -> {
+				var bosses = s.overworld().getEntitiesOfClass(Loki.class, city, e -> e.isAlive() && !e.isIllusion());
+				if (bosses.size() != 1) throw new AssertionError("Expected exactly one Loki, found " + bosses.size());
+				if (StoneRegistry.released(s, Stone.MIND)) throw new AssertionError("Loki's arrival already released the Mind Stone");
+				return bosses.getFirst().getUUID();
+			});
+			server.runOnServer(s -> {
+				var boss = s.overworld().getEntity(bossId);
+				if (boss != null) player(s).lookAt(net.minecraft.commands.arguments.EntityAnchorArgument.Anchor.EYES, boss.getEyePosition());
+			});
+			ctx.waitTicks(2);
+			ctx.takeScreenshot("loki_arrival");
 
-			if (!server.computeOnServer(s -> StoneRegistry.released(s, Stone.MIND))) {
-				throw new AssertionError("Mind Stone was not marked released after convergence");
+			server.runOnServer(s -> {
+				var level = s.overworld();
+				var p = player(s);
+				Loki boss = (Loki) level.getEntity(bossId);
+				var types = level.registryAccess().lookupOrThrow(Registries.DAMAGE_TYPE);
+				var melee = level.damageSources().playerAttack(p);
+				float max = boss.getMaxHealth();
+				boss.hurtServer(level, melee, 5);
+				float meleeDamage = max - boss.getHealth();
+				if (meleeDamage <= 0) throw new AssertionError("Loki was still invulnerable after the arrival");
+				boss.setHealth(max);
+				boss.invulnerableTime = 0;
+				boss.hurtServer(level, new DamageSource(types.getOrThrow(DamageTypes.ARROW), p), 5);
+				if (max - boss.getHealth() <= meleeDamage) throw new AssertionError("Arrows did not deal extra damage to Loki");
+				boss.setHealth(max);
+				boss.invulnerableTime = 0;
+				boss.hurtServer(level, new DamageSource(types.getOrThrow(DamageTypes.PLAYER_EXPLOSION), p), 5);
+				if (max - boss.getHealth() <= meleeDamage) throw new AssertionError("Explosions did not deal extra damage to Loki");
+				boss.setHealth(max);
+				boss.invulnerableTime = 0;
+				GauntletDamage.hurt(level, boss, p, melee, 5);
+				if (max - boss.getHealth() <= meleeDamage) throw new AssertionError("Infinity Stone powers did not deal extra damage to Loki");
+				boss.setHealth(max * 0.4f);
+			});
+			server.runCommand("gamemode survival @p");
+			ctx.waitTicks(22);
+			server.runOnServer(s -> {
+				Loki boss = (Loki) s.overworld().getEntity(bossId);
+				if (!boss.isEnraged()) throw new AssertionError("Loki did not enter rage");
+				var copies = s.overworld().getEntitiesOfClass(Loki.class, city, e -> e.isAlive() && e.isIllusion());
+				if (copies.isEmpty()) throw new AssertionError("Enraged Loki did not summon an illusion");
+				Loki copy = copies.getFirst();
+				copy.hurtServer(s.overworld(), s.overworld().damageSources().playerAttack(player(s)), 1f);
+				if (copy.isAlive()) throw new AssertionError("Loki's illusion survived one hit");
+				var advancement = s.getAdvancements().get(InfinityGauntlet.id("shatter_loki_illusion"));
+				if (advancement == null || !player(s).getAdvancements().getOrStartProgress(advancement).isDone()) {
+					throw new AssertionError("Shattering an illusion did not award its advancement");
+				}
+			});
+			ctx.takeScreenshot("loki_rage");
+			server.runCommand("gamemode creative @p");
+
+			server.runOnServer(s -> {
+				var level = s.overworld();
+				Loki boss = (Loki) level.getEntity(bossId);
+				Vec3 away = player(s).position().subtract(boss.position()).multiply(1, 0, 1).normalize().scale(7);
+				Vec3 viewer = boss.position().add(away).add(0, 2, 0);
+				player(s).teleportTo(viewer.x, viewer.y, viewer.z);
+				player(s).lookAt(net.minecraft.commands.arguments.EntityAnchorArgument.Anchor.EYES, boss.getEyePosition());
+				boss.hurtServer(level, level.damageSources().playerAttack(player(s)), 1000f);
+				if (boss.isAlive()) throw new AssertionError("Loki survived the finishing hit");
+				if (level.getEntitiesOfClass(ExperienceOrb.class, boss.getBoundingBox().inflate(4), orb -> orb.getValue() >= 73).isEmpty()) {
+					throw new AssertionError("Loki did not drop high-value XP orbs");
+				}
+			});
+			ctx.waitTicks(34);
+			ctx.takeScreenshot("loki_reward");
+			server.runOnServer(s -> {
+				if (!StoneRegistry.released(s, Stone.MIND)) throw new AssertionError("Defeating Loki did not release the Mind Stone");
+				var stones = s.overworld().getEntitiesOfClass(ItemEntity.class, city, item -> item.getItem().is(ModItems.MIND_STONE));
+				if (stones.size() != 1) throw new AssertionError("Expected one dropped Mind Stone, found " + stones.size());
+				var advancement = s.getAdvancements().get(InfinityGauntlet.id("defeat_loki"));
+				if (advancement == null || !player(s).getAdvancements().getOrStartProgress(advancement).isDone()) {
+					throw new AssertionError("Defeating Loki did not award its advancement");
+				}
+			});
+			ctx.waitTicks(80);
+			if (server.computeOnServer(s -> !s.overworld().getEntitiesOfClass(Loki.class, city, Loki::isAlive).isEmpty())) {
+				throw new AssertionError("Loki or his illusions remained after the encounter");
 			}
-			if (!server.computeOnServer(s -> player(s).getMainHandItem().is(ModItems.MIND_STONE))) {
-				throw new AssertionError("Mind Stone did not appear in the player's main hand");
-			}
+			InfinityGauntlet.LOGGER.info("Loki quest smoke passed");
 		}
 	}
 }

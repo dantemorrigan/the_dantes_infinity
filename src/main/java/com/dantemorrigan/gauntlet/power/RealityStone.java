@@ -337,10 +337,10 @@ public final class RealityStone {
 						&& !(e instanceof EnderDragon) && !(e instanceof WitherBoss)
 						&& !(e instanceof OwnableEntity o && player.getUUID().equals(o.getOwnerReference() != null ? o.getOwnerReference().getUUID() : null))
 						&& CoopRules.canAffect(player, e) && e.position().distanceTo(s.center) <= r)) {
-					if (entity instanceof Thanos thanos) {
-						if (!s.damagedTitans.contains(thanos.getUUID()) && GauntletDamage.hurt(s.level, thanos, player,
+					if (entity instanceof Thanos || entity instanceof com.dantemorrigan.gauntlet.boss.Loki) {
+						if (!s.damagedTitans.contains(entity.getUUID()) && GauntletDamage.hurt(s.level, entity, player,
 								player.damageSources().playerAttack(player), THANOS_BASE_DAMAGE)) {
-							s.damagedTitans.add(thanos.getUUID());
+							s.damagedTitans.add(entity.getUUID());
 						}
 						continue;
 					}

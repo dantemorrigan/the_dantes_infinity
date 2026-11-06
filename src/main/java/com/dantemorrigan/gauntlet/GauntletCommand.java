@@ -146,11 +146,10 @@ public final class GauntletCommand {
 									ctx.getSource().sendSuccess(() -> Component.literal("Ruined City: " + site.toShortString()), false);
 									return 1;
 								}))
-								.then(Commands.literal("complete").executes(ctx -> {
-									var p = ctx.getSource().getPlayerOrException();
-									com.dantemorrigan.gauntlet.stones.MindQuest.startConvergence(p);
-									return 1;
-								})))
+								.then(Commands.literal("summon")
+										.executes(ctx -> summonLoki(ctx.getSource().getPlayerOrException())))
+								.then(Commands.literal("complete")
+										.executes(ctx -> summonLoki(ctx.getSource().getPlayerOrException()))))
 						.then(Commands.literal("reality_fog").executes(ctx -> com.dantemorrigan.gauntlet.stones.RealityFog.start(ctx.getSource().getPlayerOrException()) ? 1 : 0))
 						.then(Commands.literal("space_quest")
 								.then(Commands.literal("tp")
@@ -229,6 +228,12 @@ public final class GauntletCommand {
 	static final List<String> TP_TRIALS = List.of("time", "time_clock", "mind", "soul", "soul_summit", "space", "space_rift");
 
 	/** Teleports the player directly to the start of a stone trial (building its temple/city/tower if not yet built). */
+	private static int summonLoki(ServerPlayer player) {
+		if (com.dantemorrigan.gauntlet.stones.MindQuest.summonLoki(player)) return 1;
+		player.sendSystemMessage(Component.translatable("msg.infinity_gauntlet.mind_quest.summon_unavailable"));
+		return 0;
+	}
+
 	private static int tpTrial(CommandSourceStack source, String trial) throws CommandSyntaxException {
 		ServerPlayer player = source.getPlayerOrException();
 		var server = source.getServer();

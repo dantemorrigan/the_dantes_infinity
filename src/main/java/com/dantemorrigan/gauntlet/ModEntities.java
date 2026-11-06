@@ -1,6 +1,7 @@
 package com.dantemorrigan.gauntlet;
 
 import com.dantemorrigan.gauntlet.entity.GauntletDoll;
+import com.dantemorrigan.gauntlet.boss.Loki;
 import net.fabricmc.fabric.api.object.builder.v1.entity.FabricDefaultAttributeRegistry;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -28,6 +29,11 @@ public final class ModEntities {
 			EntityType.Builder.<com.dantemorrigan.gauntlet.stones.MindZombie>of(com.dantemorrigan.gauntlet.stones.MindZombie::new, MobCategory.MONSTER)
 					.sized(0.6f, 1.95f).eyeHeight(1.74f).passengerAttachments(2.0125f).ridingOffset(-0.7f).clientTrackingRange(10).build(MIND_ZOMBIE_KEY));
 
+	private static final ResourceKey<EntityType<?>> LOKI_KEY = ResourceKey.create(Registries.ENTITY_TYPE, InfinityGauntlet.id("loki"));
+	public static final EntityType<Loki> LOKI = Registry.register(BuiltInRegistries.ENTITY_TYPE, LOKI_KEY,
+			EntityType.Builder.of(Loki::new, MobCategory.MONSTER).sized(0.84f, 2.55f).eyeHeight(1.8f)
+					.clientTrackingRange(10).updateInterval(2).noLootTable().build(LOKI_KEY));
+
 	private static final ResourceKey<EntityType<?>> THANOS_KEY = ResourceKey.create(Registries.ENTITY_TYPE, InfinityGauntlet.id("thanos"));
 	/** The final boss. Never saved: the encounter lives in memory and simply starts again after a restart. */
 	public static final EntityType<com.dantemorrigan.gauntlet.boss.Thanos> THANOS = Registry.register(BuiltInRegistries.ENTITY_TYPE, THANOS_KEY,
@@ -47,6 +53,7 @@ public final class ModEntities {
 							.sized(.95f, 1.8f).clientTrackingRange(12).updateInterval(1).noSave().noSummon().noLootTable().build(STORMBREAKER_KEY));
 
 	public static void init() {
+		FabricDefaultAttributeRegistry.register(LOKI, Loki.createAttributes());
 		FabricDefaultAttributeRegistry.register(THANOS, com.dantemorrigan.gauntlet.boss.Thanos.createAttributes());
 		FabricDefaultAttributeRegistry.register(GAUNTLET_DOLL, GauntletDoll.createAttributes());
 		FabricDefaultAttributeRegistry.register(MIND_ZOMBIE, com.dantemorrigan.gauntlet.stones.MindZombie.createAttributes());

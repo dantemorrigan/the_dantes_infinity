@@ -48,6 +48,7 @@ public final class GeoModel {
 		public final Bone parent;
 		public final float px, py, pz;
 		final List<Cube> cubes = new ArrayList<>();
+		float[] rotation;
 		final List<Bone> children = new ArrayList<>();
 
 		Bone(String name, Bone parent, float px, float py, float pz) {
@@ -91,9 +92,13 @@ public final class GeoModel {
 	public List<Bone> bones() { return order; }
 
 	public static GeoModel load(String file) {
-		JsonObject root = VfxPresets.readJson(InfinityGauntlet.id("thanos/" + file));
+		return load(InfinityGauntlet.id("thanos/" + file));
+	}
+
+	public static GeoModel load(Identifier file) {
+		JsonObject root = VfxPresets.readJson(file);
 		if (root == null) {
-			InfinityGauntlet.LOGGER.warn("Missing Thanos model {}", file);
+			InfinityGauntlet.LOGGER.warn("Missing entity model {}", file);
 			return new GeoModel(256, 256);
 		}
 		JsonObject geo = root.getAsJsonArray("minecraft:geometry").get(0).getAsJsonObject();
@@ -106,6 +111,7 @@ public final class GeoModel {
 			Bone parent = b.has("parent") ? model.bones.get(b.get("parent").getAsString()) : null;
 			float[] pivot = b.has("pivot") ? vec(b.getAsJsonArray("pivot")) : new float[3];
 			Bone bone = new Bone(name, parent, pivot[0], pivot[1], pivot[2]);
+			if (b.has("bind_rotation")) bone.rotation = vec(b.getAsJsonArray("bind_rotation"));
 			model.bones.put(name, bone);
 			model.order.add(bone);
 			if (parent != null) parent.children.add(bone);
@@ -145,11 +151,12 @@ public final class GeoModel {
 		float s = 1f / 16f;
 		if (p != null && (p.ox != 0 || p.oy != 0 || p.oz != 0)) pose.translate(-p.ox * s, p.oy * s, p.oz * s);
 		pose.translate(bone.px * s, bone.py * s, bone.pz * s);
-		if (p != null) {
-			if (p.rz != 0) pose.mulPose(com.mojang.math.Axis.ZP.rotationDegrees(-p.rz));
-			if (p.ry != 0) pose.mulPose(com.mojang.math.Axis.YP.rotationDegrees(-p.ry));
-			if (p.rx != 0) pose.mulPose(com.mojang.math.Axis.XP.rotationDegrees(-p.rx));
-		}
+		float rx = (p == null ? 0 : p.rx) + (bone.rotation == null ? 0 : bone.rotation[0]);
+		float ry = (p == null ? 0 : p.ry) + (bone.rotation == null ? 0 : bone.rotation[1]);
+		float rz = (p == null ? 0 : p.rz) + (bone.rotation == null ? 0 : bone.rotation[2]);
+		if (rz != 0) pose.mulPose(com.mojang.math.Axis.ZP.rotationDegrees(-rz));
+		if (ry != 0) pose.mulPose(com.mojang.math.Axis.YP.rotationDegrees(-ry));
+		if (rx != 0) pose.mulPose(com.mojang.math.Axis.XP.rotationDegrees(-rx));
 		pose.translate(-bone.px * s, -bone.py * s, -bone.pz * s);
 	}
 
