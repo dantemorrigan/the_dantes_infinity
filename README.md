@@ -186,3 +186,7 @@ participant radius (`participantRadius`), whole-dimension transfer (`transferWho
 camera shake and flash strength, space flight parameters, particle limit.
 
 Ideas: [IDEAS.md](IDEAS.md) · API notes: [docs/DEV_NOTES.md](docs/DEV_NOTES.md) · Pack resources: `art/vfx/`, `art/mind_stone/`, `art/soul_stone/`
+
+### The Living Tribunal
+
+After defeating Loki and Thanos, equip all six Stones and use `/tribunal challenge` while flying in the cosmos. Dodge the marked attacks and strike the Tribunal after each cast. His verdict destroys the Gauntlet on screen and returns you to your pre-fight position with your gear after respawning.

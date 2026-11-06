@@ -574,5 +574,16 @@
   "guide.infinity_gauntlet.p19.6": " recalls it from any dimension or the void.\nIn hand, it gives strength and softens gauntlet hits.",
   "command.infinity_gauntlet.loki.spawn": "Loki was spawned.",
   "command.infinity_gauntlet.loki.reset": "Loki can return to the Ruined City.",
-  "command.infinity_gauntlet.loki.spawn_failed": "Could not spawn Loki here. Choose a clear spot on Easy difficulty or higher."
+  "command.infinity_gauntlet.loki.spawn_failed": "Could not spawn Loki here. Choose a clear spot on Easy difficulty or higher.",
+  "entity.infinity_gauntlet.living_tribunal": "The Living Tribunal",
+  "tribunal.infinity_gauntlet.verdict": "The Verdict",
+  "tribunal.infinity_gauntlet.started": "The trial has begun.",
+  "tribunal.infinity_gauntlet.space_only": "The trial requires space flight in Survival mode.",
+  "tribunal.infinity_gauntlet.locked": "Wear the Gauntlet with all six Stones and defeat Loki and Thanos.",
+  "tribunal.infinity_gauntlet.busy": "The trial is unavailable right now.",
+  "tribunal.infinity_gauntlet.victory": "The Tribunal has rendered its final verdict. You won.",
+  "tribunal.infinity_gauntlet.sealed": "The Tribunal has sealed the Snap.",
+  "subtitles.infinity_gauntlet.tribunal.arrival": "You have played God for too long.",
+  "subtitles.infinity_gauntlet.tribunal.surrender": "Surrender.",
+  "subtitles.infinity_gauntlet.tribunal.defeat": "This is impossible."
 }

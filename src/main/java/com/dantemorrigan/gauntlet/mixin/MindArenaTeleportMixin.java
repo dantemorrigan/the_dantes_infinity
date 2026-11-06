@@ -20,7 +20,9 @@ abstract class MindArenaTeleportMixin {
 	private void infinityGauntlet$respawnOutsideCity(boolean useSpawnBlock, TeleportTransition.PostTeleportTransition post,
 			CallbackInfoReturnable<TeleportTransition> cir) {
 		if (!useSpawnBlock) return;
-		TeleportTransition retry = MindArena.takeRespawn((ServerPlayer) (Object) this, post);
+		ServerPlayer player = (ServerPlayer) (Object) this;
+		TeleportTransition retry = com.dantemorrigan.gauntlet.boss.TribunalEncounter.respawn(player, post);
+		if (retry == null) retry = MindArena.takeRespawn(player, post);
 		if (retry != null) cir.setReturnValue(retry);
 	}
 }

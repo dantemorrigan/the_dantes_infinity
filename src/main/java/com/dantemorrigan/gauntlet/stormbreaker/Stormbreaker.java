@@ -174,7 +174,7 @@ public final class Stormbreaker {
         });
         ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> stopFlight(handler.getPlayer(), SESSIONS.get(server)));
         ServerLivingEntityEvents.AFTER_DEATH.register((entity, source) -> {
-            if (entity instanceof ServerPlayer p) onDeath(p);
+            if (entity instanceof ServerPlayer p && !com.dantemorrigan.gauntlet.boss.TribunalEncounter.awaitingReturn(p)) onDeath(p);
         });
         ServerEntityEvents.ENTITY_LOAD.register((entity, level) -> {
             if (entity instanceof ItemEntity item && sealed(item.getItem())) item.discard();

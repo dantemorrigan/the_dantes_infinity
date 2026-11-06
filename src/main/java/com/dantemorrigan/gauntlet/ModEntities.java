@@ -34,6 +34,13 @@ public final class ModEntities {
 			EntityType.Builder.of(Loki::new, MobCategory.MONSTER).sized(0.72f, 2.25f).eyeHeight(1.88f)
 					.clientTrackingRange(10).updateInterval(2).noLootTable().build(LOKI_KEY));
 
+	private static final ResourceKey<EntityType<?>> TRIBUNAL_KEY = ResourceKey.create(Registries.ENTITY_TYPE, InfinityGauntlet.id("living_tribunal"));
+	public static final EntityType<com.dantemorrigan.gauntlet.boss.LivingTribunal> TRIBUNAL = Registry.register(
+			BuiltInRegistries.ENTITY_TYPE, TRIBUNAL_KEY,
+			EntityType.Builder.of(com.dantemorrigan.gauntlet.boss.LivingTribunal::new, MobCategory.MONSTER)
+					.sized(26, 50).eyeHeight(45).fireImmune().clientTrackingRange(16).updateInterval(1)
+					.noSave().noSummon().noLootTable().build(TRIBUNAL_KEY));
+
 	private static final ResourceKey<EntityType<?>> THANOS_KEY = ResourceKey.create(Registries.ENTITY_TYPE, InfinityGauntlet.id("thanos"));
 	/** The final boss. Never saved: the encounter lives in memory and simply starts again after a restart. */
 	public static final EntityType<com.dantemorrigan.gauntlet.boss.Thanos> THANOS = Registry.register(BuiltInRegistries.ENTITY_TYPE, THANOS_KEY,
@@ -53,6 +60,7 @@ public final class ModEntities {
 							.sized(.95f, 1.8f).clientTrackingRange(12).updateInterval(1).noSave().noSummon().noLootTable().build(STORMBREAKER_KEY));
 
 	public static void init() {
+		FabricDefaultAttributeRegistry.register(TRIBUNAL, com.dantemorrigan.gauntlet.boss.LivingTribunal.attributes());
 		FabricDefaultAttributeRegistry.register(LOKI, Loki.createAttributes());
 		FabricDefaultAttributeRegistry.register(THANOS, com.dantemorrigan.gauntlet.boss.Thanos.createAttributes());
 		FabricDefaultAttributeRegistry.register(GAUNTLET_DOLL, GauntletDoll.createAttributes());

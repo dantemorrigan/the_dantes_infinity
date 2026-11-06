@@ -34,6 +34,11 @@ public final class ModSounds {
 	public static final SoundEvent LOKI_DEFEAT = register("loki.defeat");
 	public static final SoundEvent THANOS_MUSIC = register("thanos.battle_music");
 
+	public static final SoundEvent TRIBUNAL_ARRIVAL = register("tribunal.arrival");
+	public static final SoundEvent TRIBUNAL_SURRENDER = register("tribunal.surrender");
+	public static final SoundEvent TRIBUNAL_DEFEAT = register("tribunal.defeat");
+	public static final SoundEvent TRIBUNAL_MUSIC = register("tribunal.battle_music");
+
 	private static SoundEvent register(String name) {
 		Identifier id = InfinityGauntlet.id(name);
 		return Registry.register(BuiltInRegistries.SOUND_EVENT, id, SoundEvent.createVariableRangeEvent(id));

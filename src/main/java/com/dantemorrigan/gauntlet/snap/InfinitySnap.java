@@ -143,6 +143,10 @@ public final class InfinitySnap {
 
 	/** Starts the snap (already validated: six stones, gauntlet intact, normal world). */
 	public static void cast(ServerPlayer player) {
+		if (com.dantemorrigan.gauntlet.boss.TribunalEncounter.inTrial(player)) {
+			player.sendSystemMessage(Component.translatable("tribunal.infinity_gauntlet.sealed"));
+			return;
+		}
 		if (!GauntletConfig.get().allowInfinitySnap) return;
 		ItemStack gauntlet = GauntletState.activeGauntlet(player);
 		if (gauntlet.isEmpty() || snapped(gauntlet) || !CASTS.isEmpty()) return;

@@ -574,5 +574,16 @@
   "guide.infinity_gauntlet.p19.6": " призывает её из других измерений и бездны.\nВ руке даёт силу и снижает урон Перчатки.",
   "command.infinity_gauntlet.loki.spawn": "Локи призван.",
   "command.infinity_gauntlet.loki.reset": "Локи снова может появиться в Разрушенном городе.",
-  "command.infinity_gauntlet.loki.spawn_failed": "Не удалось призвать Локи. Нужно свободное место и лёгкая сложность или выше."
+  "command.infinity_gauntlet.loki.spawn_failed": "Не удалось призвать Локи. Нужно свободное место и лёгкая сложность или выше.",
+  "entity.infinity_gauntlet.living_tribunal": "Великий Трибунал",
+  "tribunal.infinity_gauntlet.verdict": "Приговор",
+  "tribunal.infinity_gauntlet.started": "Испытание началось.",
+  "tribunal.infinity_gauntlet.space_only": "Для испытания нужна космическая локация и полёт в режиме выживания.",
+  "tribunal.infinity_gauntlet.locked": "Надень Перчатку со всеми шестью Камнями и одолей Локи и Таноса.",
+  "tribunal.infinity_gauntlet.busy": "Испытание сейчас недоступно.",
+  "tribunal.infinity_gauntlet.victory": "Трибунал вынес свой последний приговор. Ты победил.",
+  "tribunal.infinity_gauntlet.sealed": "Трибунал запечатал Щелчок.",
+  "subtitles.infinity_gauntlet.tribunal.arrival": "Ты слишком долго играл в Бога.",
+  "subtitles.infinity_gauntlet.tribunal.surrender": "Сдайся.",
+  "subtitles.infinity_gauntlet.tribunal.defeat": "Это невозможно."
 }

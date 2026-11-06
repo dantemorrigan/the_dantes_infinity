@@ -139,5 +139,9 @@
   "loki.defeat": {
     "subtitle": "subtitles.infinity_gauntlet.loki.defeat",
     "sounds": [{"name": "infinity_gauntlet:loki/defeat"}]
-  }
+  },
+  "tribunal.arrival": {"subtitle": "subtitles.infinity_gauntlet.tribunal.arrival", "sounds": [{"name": "infinity_gauntlet:tribunal/arrival"}]},
+  "tribunal.surrender": {"subtitle": "subtitles.infinity_gauntlet.tribunal.surrender", "sounds": [{"name": "infinity_gauntlet:tribunal/surrender"}]},
+  "tribunal.defeat": {"subtitle": "subtitles.infinity_gauntlet.tribunal.defeat", "sounds": [{"name": "infinity_gauntlet:tribunal/defeat"}]},
+  "tribunal.battle_music": {"sounds": [{"name": "infinity_gauntlet:tribunal/battle_music", "stream": true}]}
 }

@@ -197,6 +197,9 @@ public final class InfinityBeam {
                     float pulse = Math.min(cap - spent, amount * 4);
                     if (((com.dantemorrigan.gauntlet.boss.Thanos) target).hurtByBeam(c.level, c.owner, pulse)) c.damage.put(target.getUUID(), spent + pulse);
                 }
+            } else if (target instanceof com.dantemorrigan.gauntlet.boss.LivingTribunal) {
+                if ((c.age - c.charge) % 8 == 0)
+                    GauntletDamage.hurt(c.level, target, c.owner, c.owner.damageSources().playerAttack(c.owner), 48);
             } else if (!(target instanceof Player) && !UruArmor.fullSet(target)) {
                 // Every non-boss mob caught in the all-stones beam is incinerated and killed on the very first hit.
                 target.invulnerableTime = 0;

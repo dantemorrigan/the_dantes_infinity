@@ -43,6 +43,9 @@ public class InfinityGauntletClient implements ClientModInitializer {
 		net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry.register(com.dantemorrigan.gauntlet.ModEntities.REALITY_WISP, com.dantemorrigan.gauntlet.client.quest.RealityWispRenderer::new);
 		net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry.register(com.dantemorrigan.gauntlet.ModEntities.MIND_ZOMBIE, com.dantemorrigan.gauntlet.client.quest.MindZombieRenderer::new);
 		com.dantemorrigan.gauntlet.client.boss.LokiClient.init();
+		com.dantemorrigan.gauntlet.client.boss.TribunalClient.init();
+		net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry.register(
+				com.dantemorrigan.gauntlet.ModEntities.TRIBUNAL, com.dantemorrigan.gauntlet.client.boss.TribunalRenderer::new);
 		net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry.register(com.dantemorrigan.gauntlet.ModEntities.LOKI, com.dantemorrigan.gauntlet.client.boss.LokiRenderer::new);
 		com.dantemorrigan.gauntlet.client.boss.ThanosClient.init();
 		net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry.register(com.dantemorrigan.gauntlet.ModEntities.THANOS, com.dantemorrigan.gauntlet.client.boss.ThanosRenderer::new);

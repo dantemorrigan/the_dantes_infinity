@@ -93,9 +93,15 @@ public final class CosmosTravel {
     }
     public static void action(ServerPlayer p, int action) { action(p, action, false); }
 
+    public static void cancelWarp(ServerPlayer player) {
+        Navigation nav = NAV.get(player.getUUID());
+        if (nav != null && nav.warp > 0) { nav.warp = 0; sync(player, nav); }
+    }
+
     public static void warpSelected(ServerPlayer p) { action(p, 2, true); }
 
     private static void action(ServerPlayer p, int action, boolean useRoute) {
+        if (com.dantemorrigan.gauntlet.boss.TribunalEncounter.awaitingReturn(p)) return;
         if (action < 0 || action > 2 || !p.isAlive() || p.isSpectator() || p.hasAttached(SpaceManager.RECORD)) return;
         Navigation n = NAV.computeIfAbsent(p.getUUID(), id -> new Navigation());
         long now = p.level().getServer().overworld().getGameTime();
@@ -188,6 +194,7 @@ public final class CosmosTravel {
                 if (!p.isAlive() || p.tickCount > grace.expires || grace.groundedTicks >= 4)
                     LANDING_GRACE.remove(p.getUUID());
             }
+            if (com.dantemorrigan.gauntlet.boss.TribunalEncounter.awaitingReturn(p)) continue;
             if (!p.hasAttached(FLIGHT)) { NAV.remove(p.getUUID()); continue; }
             if (!p.isAlive()) { stop(p, false); continue; }
             if (!equipped(p) || p.hasAttached(SpaceManager.RECORD) || !flightDim(p)) {

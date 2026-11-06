@@ -47,6 +47,7 @@ public class InfinityGauntlet implements ModInitializer {
 		com.dantemorrigan.gauntlet.stones.MindLoot.init();
 		com.dantemorrigan.gauntlet.stones.GauntletLoot.init();
 		com.dantemorrigan.gauntlet.boss.ThanosEncounter.init();
+		com.dantemorrigan.gauntlet.boss.TribunalEncounter.init();
 		GauntletEffects.init();
 		ModNetwork.init();
 		com.dantemorrigan.gauntlet.power.InfinityBeam.init();
