@@ -70,7 +70,7 @@ public final class Stormbreaker {
     public static final Identifier CHARGED = InfinityGauntlet.id("stormbreaker_charged");
     private static final Identifier BASE = InfinityGauntlet.id("stormbreaker");
     private static final Identifier STRENGTH = InfinityGauntlet.id("stormbreaker_strength");
-    private static final int HELD = 0, IN_FLIGHT = 1, IN_GROUND = 2, FALLING = 3;
+    private static final int HELD = 0, IN_FLIGHT = 1, IN_GROUND = 2, FALLING = 3, CREATIVE_MISSING = 4;
     private static final int SKY_FALL_TICKS = 28, PULL_TICKS = 12;
     public static final int GROUND_MAX_CHARGE = 24;
     private static final int GROUND_MIN_CHARGE = 6;
@@ -89,6 +89,10 @@ public final class Stormbreaker {
                 Vec3.CODEC.fieldOf("position").forGetter(Relic::position)).apply(i, Relic::new));
 
         boolean belongsTo(ServerPlayer p) { return owner.equals(p.getStringUUID()); }
+
+        boolean acceptsStack() { return phase == HELD || phase == CREATIVE_MISSING; }
+
+        Relic withPhase(int phase) { return new Relic(owner, seal, phase, dimension, position); }
 
         static Relic at(ServerPlayer p, int phase) {
             return new Relic(p.getStringUUID(), UUID.randomUUID().toString(), phase, p.level().dimension(), p.position());
@@ -255,7 +259,10 @@ public final class Stormbreaker {
             status(p, "bound");
             return true;
         }
-        if (relic.phase() == HELD && relic.belongsTo(p) && matches(stack, relic)) return true;
+        if (relic.acceptsStack() && relic.belongsTo(p) && matches(stack, relic)) {
+            if (relic.phase() == CREATIVE_MISSING) storeRelic(server(p), relic.withPhase(HELD));
+            return true;
+        }
         status(p, "already_bound");
         return false;
     }
@@ -643,7 +650,7 @@ public final class Stormbreaker {
 
     private static void onDeath(ServerPlayer p) {
         Relic relic = record(p);
-        if (relic == null || !relic.belongsTo(p) || relic.phase() == IN_GROUND) return;
+        if (relic == null || !relic.belongsTo(p) || relic.phase() == IN_GROUND || relic.phase() == CREATIVE_MISSING) return;
         Session s = session(p);
         stopFlight(p, s);
         s.cast = null;
@@ -665,7 +672,7 @@ public final class Stormbreaker {
 
     public static boolean drop(ServerPlayer p, ItemStack stack) {
         Relic relic = record(p);
-        if (!p.isAlive() || p.isSpectator() || relic == null || relic.phase != HELD
+        if (!p.isAlive() || p.isSpectator() || relic == null || !relic.acceptsStack()
                 || !relic.belongsTo(p) || !matches(stack, relic)) return false;
         Vec3 front = p.position().add(Vec3.directionFromRotation(0, p.getYRot()).scale(2.3));
         Vec3 site = surface(p.level(), front, 1, 64);
@@ -695,12 +702,12 @@ public final class Stormbreaker {
     private static void recall(ServerPlayer p) {
         Relic relic = record(p);
         if (!p.isAlive() || p.isSpectator() || InfinitySnap.inVoid(p) || relic == null
-                || relic.phase != IN_GROUND || !relic.belongsTo(p)) return;
+                || (relic.phase != IN_GROUND && relic.phase != CREATIVE_MISSING) || !relic.belongsTo(p)) return;
         Session s = session(p);
         if (s.pull != null) return;
         if (p.getInventory().getFreeSlot() < 0) { status(p, "inventory_full"); return; }
         Vec3 hand = p.getEyePosition();
-        boolean local = relic.dimension == p.level().dimension() && !p.level().isOutsideBuildHeight(BlockPos.containing(relic.position))
+        boolean local = relic.phase == IN_GROUND && relic.dimension == p.level().dimension() && !p.level().isOutsideBuildHeight(BlockPos.containing(relic.position))
                 && hand.distanceToSqr(relic.position) <= 80 * 80
                 && surface(p.level(), relic.position, 1, 2) != null;
         Vec3 from = local ? relic.position.add(0, 1, 0)
@@ -921,13 +928,24 @@ public final class Stormbreaker {
         for (ServerPlayer player : server.getPlayerList().getPlayers()) {
             boolean found = cleanInventory(player, relic);
             if (player != owner || !player.isAlive()) continue;
+            if (found && relic.phase() == CREATIVE_MISSING) {
+                relic = relic.withPhase(HELD);
+                storeRelic(server, relic);
+            } else if (!found && relic.phase() == HELD && player.containerMenu == player.inventoryMenu) {
+                if (player.isCreative()) {
+                    // Creative drags use a client-only cursor. Keep the seal valid without replacing an absent stack.
+                    relic = relic.withPhase(CREATIVE_MISSING);
+                    storeRelic(server, relic);
+                } else {
+                    restore(player);
+                }
+            }
             boolean equipped = guarded(player);
             var strength = player.getAttribute(Attributes.ATTACK_DAMAGE);
             if (strength != null) {
                 if (equipped) strength.addOrUpdateTransientModifier(new AttributeModifier(STRENGTH, 5, AttributeModifier.Operation.ADD_VALUE));
                 else strength.removeModifier(STRENGTH);
             }
-            if (relic.phase() == HELD && !found && player.containerMenu == player.inventoryMenu) restore(player);
         }
         if (owner == null || !owner.isAlive() || InfinitySnap.inVoid(owner)) {
             if (owner != null) stopFlight(owner, s);
@@ -979,7 +997,7 @@ public final class Stormbreaker {
     }
 
     private static boolean cleanInventory(ServerPlayer player, Relic relic) {
-        boolean keep = relic.belongsTo(player) && relic.phase() == HELD;
+        boolean keep = relic.belongsTo(player) && relic.acceptsStack();
         ItemStack carried = player.containerMenu.getCarried();
         boolean found = keep && matches(carried, relic);
         if (carried.is(ModItems.STORMBREAKER) && !found) player.containerMenu.setCarried(ItemStack.EMPTY);
@@ -989,6 +1007,14 @@ public final class Stormbreaker {
             if (!stack.is(ModItems.STORMBREAKER)) continue;
             if (!found && keep && matches(stack, relic)) found = true;
             else inv.setItem(i, ItemStack.EMPTY);
+        }
+        if (player.containerMenu == player.inventoryMenu) {
+            for (var slot : player.inventoryMenu.getInputGridSlots()) {
+                ItemStack stack = slot.getItem();
+                if (!stack.is(ModItems.STORMBREAKER)) continue;
+                if (!found && keep && matches(stack, relic)) found = true;
+                else slot.set(ItemStack.EMPTY);
+            }
         }
         return found;
     }

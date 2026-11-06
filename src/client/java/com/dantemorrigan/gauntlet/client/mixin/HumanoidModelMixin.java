@@ -1,11 +1,16 @@
 package com.dantemorrigan.gauntlet.client.mixin;
 
+import com.dantemorrigan.gauntlet.ModItems;
 import com.dantemorrigan.gauntlet.client.render.GauntletGestureClient;
+import com.dantemorrigan.gauntlet.client.stormbreaker.StormbreakerClient;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.model.HumanoidModel;
 import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.client.renderer.entity.state.AvatarRenderState;
 import net.minecraft.client.renderer.entity.state.HumanoidRenderState;
 import net.minecraft.util.Mth;
+import net.minecraft.world.entity.HumanoidArm;
+import net.minecraft.world.entity.player.Player;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 import org.spongepowered.asm.mixin.Mixin;
@@ -19,21 +24,30 @@ public abstract class HumanoidModelMixin {
 	@Inject(method = "setupAnim(Lnet/minecraft/client/renderer/entity/state/HumanoidRenderState;)V", at = @At("TAIL"))
 	private void infinityGauntlet$gesture(HumanoidRenderState state, CallbackInfo ci) {
 		if (!(state instanceof AvatarRenderState avatar)) return;
-        HumanoidModel<?> model = (HumanoidModel<?>) (Object) this;
-        var mc = net.minecraft.client.Minecraft.getInstance();
-        var motion = com.dantemorrigan.gauntlet.client.stormbreaker.StormbreakerClient.pose(
-                avatar.id, mc.getDeltaTracker().getGameTimeDeltaPartialTick(false));
-        if (motion != null && mc.level != null
-                && mc.level.getEntity(avatar.id) instanceof net.minecraft.world.entity.player.Player player
-                && (player.getMainHandItem().is(com.dantemorrigan.gauntlet.ModItems.STORMBREAKER)
-                || com.dantemorrigan.gauntlet.client.stormbreaker.StormbreakerClient.isPulling(avatar.id))) {
-            boolean leftHand = state.mainArm == net.minecraft.world.entity.HumanoidArm.LEFT;
-            ModelPart axeArm = leftHand ? model.leftArm : model.rightArm;
-            var rotation = motion.rotation();
-            axeArm.xRot += (float) Math.toRadians(rotation.x * .9);
-            axeArm.yRot += (float) Math.toRadians(rotation.y * (leftHand ? -.7 : .7));
-            axeArm.zRot += (float) Math.toRadians(rotation.z * (leftHand ? -.65 : .65));
-        }
+		HumanoidModel<?> model = (HumanoidModel<?>) (Object) this;
+		var mc = Minecraft.getInstance();
+		if (mc.level != null && mc.level.getEntity(avatar.id) instanceof Player player) {
+			boolean main = player.getMainHandItem().is(ModItems.STORMBREAKER);
+			boolean off = player.getOffhandItem().is(ModItems.STORMBREAKER);
+			boolean pulling = StormbreakerClient.isPulling(avatar.id);
+			if (main || off || pulling) {
+				HumanoidArm hand = main || pulling ? state.mainArm : state.mainArm.getOpposite();
+				boolean left = hand == HumanoidArm.LEFT;
+				ModelPart axeArm = left ? model.leftArm : model.rightArm;
+				if (!pulling) {
+					axeArm.xRot -= 14 * Mth.DEG_TO_RAD;
+					axeArm.zRot += (left ? -5 : 5) * Mth.DEG_TO_RAD;
+				}
+				var motion = StormbreakerClient.pose(avatar.id, mc.getDeltaTracker().getGameTimeDeltaPartialTick(false));
+				if (motion != null && (main || pulling)) {
+					var rotation = motion.rotation();
+					float side = left ? -1 : 1;
+					axeArm.xRot += (float) rotation.x * .94f * Mth.DEG_TO_RAD;
+					axeArm.yRot += (float) rotation.y * .88f * side * Mth.DEG_TO_RAD;
+					axeArm.zRot += (float) rotation.z * .86f * side * Mth.DEG_TO_RAD;
+				}
+			}
+		}
 		GauntletGestureClient.Pose gesture = GauntletGestureClient.pose(avatar.id);
 		if (gesture == null) return;
 		boolean left = state.mainArm.getOpposite() == net.minecraft.world.entity.HumanoidArm.LEFT;

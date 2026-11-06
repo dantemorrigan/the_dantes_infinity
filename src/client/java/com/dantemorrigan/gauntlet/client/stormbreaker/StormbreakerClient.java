@@ -307,13 +307,19 @@ public final class StormbreakerClient {
     public static void firstPerson(PoseStack stack, int entity, float partial, boolean left) {
         Pose motion = pose(entity, partial);
         if (motion == null) return;
-        Vec3 t = motion.translation.scale(.57);
+        Animation animation = ANIMATIONS.get(entity);
+        boolean swing = animation.clip.startsWith("combo_") || "ground_slam".equals(animation.clip)
+                || "throw_release".equals(animation.clip) || "lightning_cast".equals(animation.clip);
+        Vec3 t = motion.translation.scale(swing ? .7 : .57);
         Vec3 r = motion.rotation;
         float side = left ? -1 : 1;
         stack.translate(side * t.x, t.y, -t.z);
-        stack.mulPose(Axis.XP.rotationDegrees((float) r.x * .55f));
-        stack.mulPose(Axis.YP.rotationDegrees((float) r.y * .48f * side));
-        stack.mulPose(Axis.ZP.rotationDegrees((float) r.z * .5f * side));
+        // Rotate around the held item, at the hand offset used by the first-person renderer.
+        if (swing) stack.translate(side * .56, -.52, -.72);
+        stack.mulPose(Axis.XP.rotationDegrees((float) r.x * (swing ? .74f : .55f)));
+        stack.mulPose(Axis.YP.rotationDegrees((float) r.y * (swing ? .7f : .48f) * side));
+        stack.mulPose(Axis.ZP.rotationDegrees((float) r.z * (swing ? .65f : .5f) * side));
+        if (swing) stack.translate(-side * .56, .52, .72);
     }
 
     public static float skyFactor(Vec3 camera, float partial) {
