@@ -131,15 +131,7 @@ public final class LokiRenderer extends EntityRenderer<Loki, LokiRenderer.State>
 		rotate(bones, "cape", 7 + state.walkSpeed * 25 + Mth.sin(state.ageInTicks * .16f) * 4, 0, walk * 6);
 		rotate(bones, "head", -state.pitch, state.headYaw, 0);
 		if (state.death >= 0) {
-			float kneel = Mth.clamp((state.death - Loki.REVERT_TICK) / 18, 0, 1);
-			kneel *= 2 - kneel;
-			rotate(bones, "body", 15 * kneel, 0, 0);
-			bones.get("body").oy = -9 * kneel;
-			rotate(bones, "head", 30 * kneel, 0, 0);
-			rotate(bones, "right_leg", -76 * kneel, 0, 0);
-			rotate(bones, "left_leg", -76 * kneel, 0, 0);
-			rotate(bones, "right_arm", 16 * kneel, 0, -8);
-			rotate(bones, "left_arm", 16 * kneel, 0, 8);
+			defeatKneel(state, bones);
 			return;
 		}
 		if (state.shift >= 0) {
@@ -168,6 +160,44 @@ public final class LokiRenderer extends EntityRenderer<Loki, LokiRenderer.State>
 			rotate(bones, "right_arm", -walk * 26 + 7, 0, -7);
 			rotate(bones, "left_arm", walk * 26 + 7, 0, 7);
 		}
+	}
+
+	private static void defeatKneel(State state, Map<String, GeoModel.BonePose> bones) {
+		float age = state.death - Loki.REVERT_TICK;
+		float step = ease(age / 9);
+		float settle = ease((age - 2) / 16);
+		float bow = ease((age - 12) / 10);
+		float frontThigh = -74 * settle;
+		float rearThigh = 35 * settle;
+		float rearBoot = 90 * settle;
+
+		// Keep the forward boot level. Lower the hips around it and account for the rear toe as it folds under.
+		float thighLength = 6.5f;
+		float frontAngle = -frontThigh * Mth.DEG_TO_RAD;
+		float rearAngle = rearBoot * Mth.DEG_TO_RAD;
+		float frontGround = thighLength * (1 + Mth.cos(frontAngle));
+		float rearGround = thighLength * (Mth.cos(rearThigh * Mth.DEG_TO_RAD) + Mth.cos(rearAngle)) + 3.05f * Mth.sin(rearAngle);
+		rotate(bones, "pelvis", 0, 0, 0);
+		var pelvis = bones.get("pelvis");
+		pelvis.oy = Math.max(frontGround, rearGround) - 13 + .75f * Mth.sin(step * Mth.PI);
+		pelvis.oz = thighLength * (Mth.sin(frontAngle) - Mth.sin(74 * Mth.DEG_TO_RAD) * step);
+
+		rotate(bones, "left_leg", frontThigh, 0, 0);
+		rotate(bones, "left_shin", -frontThigh, 0, 0);
+		rotate(bones, "right_leg", rearThigh, 0, 0);
+		rotate(bones, "right_shin", rearBoot - rearThigh, 0, 0);
+		rotate(bones, "body", 8 * settle + 5 * bow, 0, 0);
+		rotate(bones, "head", 30 * bow, 0, 0);
+		rotate(bones, "left_coat", -58 * settle, 0, 12 * settle);
+		rotate(bones, "right_coat", 26 * settle, 0, -12 * settle);
+		rotate(bones, "cape", 12 + 25 * settle, 0, 0);
+		rotate(bones, "left_arm", 20 * settle, 0, -17 * settle);
+		rotate(bones, "right_arm", -12 * settle, 0, 15 * settle);
+	}
+
+	private static float ease(float progress) {
+		float t = Mth.clamp(progress, 0, 1);
+		return t * t * (3 - 2 * t);
 	}
 
 	private static void wolfPose(State state, Map<String, GeoModel.BonePose> bones) {
