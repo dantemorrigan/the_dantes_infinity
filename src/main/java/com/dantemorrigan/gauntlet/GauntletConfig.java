@@ -305,6 +305,7 @@ public final class GauntletConfig {
 					}
 				}
 			}
+			config.sanitize();
 			Files.createDirectories(path.getParent());
 			try (Writer writer = Files.newBufferedWriter(path)) {
 				gson.toJson(config, writer);
@@ -313,6 +314,33 @@ public final class GauntletConfig {
 			InfinityGauntlet.LOGGER.warn("Could not read/write {}, using defaults", path, e);
 		}
 		return config;
+	}
+
+	/** A hand-edited file must never be able to freeze or crash the server: clamp the load-bearing values. */
+	private void sanitize() {
+		strikeRadius = Math.max(0.5f, Math.min(32f, strikeRadius));
+		meteorImpactRadius = Math.max(8, Math.min(256, meteorImpactRadius));
+		maxActiveMeteors = Math.max(1, Math.min(256, maxActiveMeteors));
+		streamMaxActiveMeteors = Math.max(1, Math.min(512, streamMaxActiveMeteors));
+		streamMaxConcurrent = Math.max(1, Math.min(16, streamMaxConcurrent));
+		streamRadius = Math.max(2, Math.min(64, streamRadius));
+		streamMaxRange = Math.max(16, Math.min(512, streamMaxRange));
+		realityRadius = Math.max(2, Math.min(48, realityRadius));
+		realityMaxBlocks = Math.max(64, Math.min(20000, realityMaxBlocks));
+		beamBlocksPerTick = Math.max(64, Math.min(8192, beamBlocksPerTick));
+		beamFireTicks = Math.max(10, Math.min(600, beamFireTicks));
+		mindMaxBlocks = Math.max(1, Math.min(512, mindMaxBlocks));
+		powerStoneHoldTicks = Math.max(1, powerStoneHoldTicks);
+		thanosStoneThreshold = Math.max(1, Math.min(6, thanosStoneThreshold));
+		thanosDelayTicks = Math.max(0, thanosDelayTicks);
+		thanosReturnMinutes = Math.max(0, thanosReturnMinutes);
+		thanosGauntletMult = Math.max(0f, thanosGauntletMult);
+		thanosFullGauntletMult = Math.max(0f, thanosFullGauntletMult);
+		thanosOtherTaken = Math.max(0f, thanosOtherTaken);
+		thanosExperience = Math.max(0, Math.min(100000, thanosExperience));
+		uruMaxWearPerHit = Math.max(0, uruMaxWearPerHit);
+		realityFogChancePerMinute = Math.max(0f, Math.min(1f, realityFogChancePerMinute));
+		realityFogSeconds = Math.max(10, realityFogSeconds);
 	}
 
 	private GauntletConfig() {}
