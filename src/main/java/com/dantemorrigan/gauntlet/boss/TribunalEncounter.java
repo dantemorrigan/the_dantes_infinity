@@ -210,6 +210,11 @@ public final class TribunalEncounter {
         Trial t=trial(p);return t!=null && t.boss.isAlive() && !t.boss.isRemoved()?t.boss:null;
     }
 	public static boolean inTrial(ServerPlayer p) { return trial(p) != null; }
+	/** While a trial runs, only its challenger may be in space (creative and spectator testers excepted). */
+	public static boolean barred(ServerPlayer p) {
+		Trial t = TRIALS.get(p.level().getServer());
+		return t != null && !t.player.equals(p.getUUID()) && !p.isCreative() && !p.isSpectator();
+	}
 	public static boolean awaitingReturn(ServerPlayer p) { return p.hasAttached(RETURN); }
 	public static boolean isChallenger(LivingTribunal boss, ServerPlayer p) {
 		Trial trial = trial(p);
@@ -269,6 +274,13 @@ public final class TribunalEncounter {
         autoArrival(server);
 		Trial trial = TRIALS.get(server);
 		if (trial == null) return;
+		// Space belongs to the bearer for the duration: everyone else is sent home.
+		for (ServerPlayer other : server.getPlayerList().getPlayers()) {
+			if (barred(other) && CosmosTravel.inCosmos(other) && other.isAlive()) {
+				CosmosTravel.stop(other, true);
+				com.dantemorrigan.gauntlet.net.ModStatus.send(other, Component.translatable("tribunal.infinity_gauntlet.barred"));
+			}
+		}
 		ServerPlayer p = server.getPlayerList().getPlayer(trial.player);
 		LivingTribunal boss = trial.boss;
 		if (p == null || boss.isRemoved() || !p.isAlive() || p.level() != boss.level() || p.isSpectator()) {

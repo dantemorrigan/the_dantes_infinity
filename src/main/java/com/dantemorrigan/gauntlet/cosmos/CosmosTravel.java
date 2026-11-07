@@ -220,7 +220,12 @@ public final class CosmosTravel {
                     p.teleport(new TeleportTransition(p.level(), new Vec3(p.getX(), ceiling, p.getZ()), Vec3.ZERO, p.getYRot(), p.getXRot(), TeleportTransition.DO_NOTHING));
                 }
             }
-            if (p.level().dimension().equals(Level.OVERWORLD) && p.getY() >= CosmosRoutes.EXIT_HEIGHT && space != null) {
+            if (p.level().dimension().equals(Level.OVERWORLD) && p.getY() >= CosmosRoutes.EXIT_HEIGHT && space != null
+                    && com.dantemorrigan.gauntlet.boss.TribunalEncounter.barred(p)) {
+                // The Tribunal trial owns space: hold everyone else at the edge of the atmosphere.
+                p.teleport(new TeleportTransition(p.level(), new Vec3(p.getX(), CosmosRoutes.EXIT_HEIGHT - 30, p.getZ()), Vec3.ZERO, p.getYRot(), p.getXRot(), TeleportTransition.DO_NOTHING));
+                if (p.tickCount % 40 == 0) ModStatus.send(p, Component.translatable("tribunal.infinity_gauntlet.barred"));
+            } else if (p.level().dimension().equals(Level.OVERWORLD) && p.getY() >= CosmosRoutes.EXIT_HEIGHT && space != null) {
                 { var e = CosmosRoutes.ALL.get(CosmosRoutes.EARTH);
                     p.teleport(new TeleportTransition(space, new Vec3(e.arrivalX(), e.arrivalY(), e.arrivalZ()), Vec3.ZERO, e.arrivalYaw(), 20, TeleportTransition.DO_NOTHING)); }
                 sync(p,n);
