@@ -12,7 +12,7 @@ public enum BossBarArt {
 
 	private static final int WIDTH = 320, HEIGHT = 54;
 	private static final int FILL_X = 35, FILL_Y = 25, FILL_WIDTH = 250, FILL_HEIGHT = 9;
-	public static final int ROW_HEIGHT = 46;
+	public static final int ROW_HEIGHT = 54;
 
 	private final Identifier track, fill, tip, frame, crest;
 

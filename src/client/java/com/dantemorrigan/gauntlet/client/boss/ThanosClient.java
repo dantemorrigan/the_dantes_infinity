@@ -743,7 +743,7 @@ public final class ThanosClient {
 			int nw = mc.font.width(name);
 			int gold = ARGB.color(a, 0xf2, 0xc2, 0x5a);
 			g.text(mc.font, name, (w - nw) / 2, y - 11, gold, true);
-			(enraged ? BossBarArt.THANOS_RAGE : BossBarArt.THANOS).draw(g, y - 4, barHealth, barLag, a);
+			(enraged ? BossBarArt.THANOS_RAGE : BossBarArt.THANOS).draw(g, y + 3, barHealth, barLag, a);
 		}
 		if (captionLine >= 0 && ticks < captionUntil) {
 			float fade = Mth.clamp((captionUntil - ticks - partial) / 20f, 0, 1);
@@ -751,7 +751,7 @@ public final class ThanosClient {
                     .append(com.dantemorrigan.gauntlet.text.BossText.action(Component.literal(": ")).withStyle(ChatFormatting.GRAY))
                     .append(com.dantemorrigan.gauntlet.text.BossText.action(Component.translatable("thanos.infinity_gauntlet.line."+captionLine)).withStyle(ChatFormatting.WHITE));
 			int lw = mc.font.width(line);
-			int cy = y + (barShown > 0.01f ? 33 : 0);
+			int cy = y + (barShown > 0.01f ? 41 : 0);
 			int ba = (int) (150 * fade);
 			g.fill((w - lw) / 2 - 6, cy - 3, (w + lw) / 2 + 6, cy + 11, ARGB.color(ba, 12, 6, 20));
 			g.text(mc.font, line, (w - lw) / 2, cy, ARGB.color((int) (255 * fade), 255, 255, 255), true);
