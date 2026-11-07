@@ -739,8 +739,7 @@ public final class ThanosClient {
 			barLag = barLag > hp ? Math.max(hp, barLag - 0.004f) : hp;
 			int a = (int) (255 * barShown);
 			boolean enraged = t != null && t.flag(Thanos.FLAG_ENRAGED);
-			Component name = Component.translatable(enraged ? "boss.infinity_gauntlet.thanos.rage" : "entity.infinity_gauntlet.thanos.title")
-					.withStyle(ChatFormatting.BOLD);
+			Component name = com.dantemorrigan.gauntlet.text.BossText.name(Component.translatable(enraged ? "boss.infinity_gauntlet.thanos.rage" : "entity.infinity_gauntlet.thanos.title"));
 			int nw = mc.font.width(name);
 			int gold = ARGB.color(a, 0xf2, 0xc2, 0x5a);
 			g.text(mc.font, name, (w - nw) / 2, y - 11, gold, true);
@@ -748,9 +747,9 @@ public final class ThanosClient {
 		}
 		if (captionLine >= 0 && ticks < captionUntil) {
 			float fade = Mth.clamp((captionUntil - ticks - partial) / 20f, 0, 1);
-			Component line = Component.translatable("entity.infinity_gauntlet.thanos").withStyle(ChatFormatting.DARK_PURPLE, ChatFormatting.BOLD)
-					.append(Component.literal(": ").withStyle(ChatFormatting.GRAY))
-					.append(Component.translatable("thanos.infinity_gauntlet.line." + captionLine).withStyle(ChatFormatting.WHITE, ChatFormatting.ITALIC));
+			Component line = com.dantemorrigan.gauntlet.text.BossText.name(Component.translatable("entity.infinity_gauntlet.thanos")).withStyle(s->s.withColor(0xefc76c))
+                    .append(com.dantemorrigan.gauntlet.text.BossText.action(Component.literal(": ")).withStyle(ChatFormatting.GRAY))
+                    .append(com.dantemorrigan.gauntlet.text.BossText.action(Component.translatable("thanos.infinity_gauntlet.line."+captionLine)).withStyle(ChatFormatting.WHITE));
 			int lw = mc.font.width(line);
 			int cy = y + (barShown > 0.01f ? 33 : 0);
 			int ba = (int) (150 * fade);

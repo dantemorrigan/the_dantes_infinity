@@ -33,7 +33,7 @@ public final class SpaceQuestClient {
 	private static float frost;
 
 	public static void init() {
-		ClientPlayNetworking.registerGlobalReceiver(ModNetwork.QuestAlert.TYPE, (packet, ctx) -> { alert = packet.text(); style = packet.style(); alertAge = 0; });
+		ClientPlayNetworking.registerGlobalReceiver(ModNetwork.QuestAlert.TYPE, (packet, ctx) -> { alert = com.dantemorrigan.gauntlet.text.BossText.notice(packet.text()); style = packet.style(); alertAge = 0; });
 		ClientTickEvents.END_CLIENT_TICK.register(mc -> {
 			if (alert != null && ++alertAge > ALERT_TICKS) alert = null;
 			float target = 0;

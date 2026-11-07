@@ -92,7 +92,7 @@ public final class TribunalClient {
 			LivingTribunal boss = nearby;
 			if (boss == null) return;
             if(boss.phase()==LivingTribunal.BATTLE) {
-                if(boss.attack()>0) g.centeredText(Minecraft.getInstance().font,Component.translatable("tribunal.infinity_gauntlet.attack."+boss.attack()),g.guiWidth()/2,58,0xffffdfa0);
+                if(boss.attack()>0) g.centeredText(Minecraft.getInstance().font,com.dantemorrigan.gauntlet.text.BossText.action(Component.translatable("tribunal.infinity_gauntlet.attack."+boss.attack())),g.guiWidth()/2,58,0xffffdfa0);
                 return;
             }
 			int age = boss.sceneAge();
@@ -106,7 +106,7 @@ public final class TribunalClient {
 			}
 			if (verdict) g.centeredText(Minecraft.getInstance().font, Component.literal("♥"), w / 2, h - bars - 16, 0xffff5867);
 			if (bars > 10) g.centeredText(Minecraft.getInstance().font,
-					Component.translatable(verdict ? "tribunal.infinity_gauntlet.verdict" : "entity.infinity_gauntlet.living_tribunal"),
+					com.dantemorrigan.gauntlet.text.BossText.name(Component.translatable(verdict ? "tribunal.infinity_gauntlet.verdict" : "entity.infinity_gauntlet.living_tribunal")),
 					w / 2, h - bars + (bars - 8) / 2, 0xffffdfa0);
 		});
 	}

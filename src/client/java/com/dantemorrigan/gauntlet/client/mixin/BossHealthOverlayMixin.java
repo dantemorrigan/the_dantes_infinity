@@ -38,7 +38,7 @@ abstract class BossHealthOverlayMixin {
 				graphics.centeredText(minecraft.font, event.getName(), center, y, 0xffffffff);
 				y += 19;
 			} else {
-				graphics.centeredText(minecraft.font, event.getName(), center, y, art == BossBarArt.FENRIR ? 0xffc8ffdb : 0xffffe5a5);
+				graphics.centeredText(minecraft.font, com.dantemorrigan.gauntlet.text.BossText.name(event.getName()), center, y, art == BossBarArt.FENRIR ? 0xffc8ffdb : 0xffffe5a5);
 				art.draw(graphics, y + 7, event.getProgress(), event.getProgress(), 255);
 				y += BossBarArt.ROW_HEIGHT;
 			}
