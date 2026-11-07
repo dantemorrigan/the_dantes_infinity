@@ -16,7 +16,8 @@
 		"SkyRendererMixin",
 		"StormCloudRendererMixin",
 		"RealityBlockUpdateMixin",
-		"ClientAdvancementsMixin"
+		"ClientAdvancementsMixin",
+		"BossChatMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1

@@ -47,7 +47,8 @@
       "com.dantemorrigan.gauntlet.gametest.TribunalHitTest",
       "com.dantemorrigan.gauntlet.gametest.CosmicMenuPersistenceTest",
       "com.dantemorrigan.gauntlet.gametest.LokiCreativePolishTest",
-      "com.dantemorrigan.gauntlet.gametest.TribunalWeakspotGuideTest"
+      "com.dantemorrigan.gauntlet.gametest.TribunalWeakspotGuideTest",
+      "com.dantemorrigan.gauntlet.gametest.BossTypographyTest"
     ]
   },
   "depends": {

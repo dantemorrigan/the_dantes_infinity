@@ -32,6 +32,7 @@ public final class StatusHud {
         if (text == null) LINES.remove(key); else LINES.put(key, text);
     }
     private static Component bold(Component text) {
+        if(com.dantemorrigan.gauntlet.text.BossText.kind(text)!=null)return com.dantemorrigan.gauntlet.text.BossText.action(text);
         // Legacy ability strings still contain section colors; retain bold after every color/reset.
         String value = text.getString().replace("§5", "§d").replace("§9", "§b").replace("§2", "§a")
                 .replaceAll("(?i)§([0-9a-fr])", "§$1§l");
