@@ -364,6 +364,7 @@ public final class GauntletCommand {
 		ItemStack displaced = player.getOffhandItem().copy();
 		player.setItemInHand(net.minecraft.world.InteractionHand.OFF_HAND, glove);
 		if (!displaced.isEmpty() && !player.getInventory().add(displaced)) player.drop(displaced, false);
+		com.dantemorrigan.gauntlet.boss.TribunalEncounter.debugMode(player, true); // debug gauntlet: the Tribunal comes by itself in space
 		source.sendSuccess(() -> Component.translatable("command.infinity_gauntlet.full"), false);
 		return 1;
 	}

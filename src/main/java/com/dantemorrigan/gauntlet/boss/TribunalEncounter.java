@@ -66,6 +66,13 @@ public final class TribunalEncounter {
     private static final AttachmentType<Long> RETRY = AttachmentRegistry.<Long>builder().persistent(Codec.LONG).copyOnDeath()
             .buildAndRegister(InfinityGauntlet.id("tribunal_retry_at"));
     private static int boltId;
+    /** Operator debug mode: the Tribunal comes by itself in space without any progression, until /tribunal reset. */
+    private static final AttachmentType<Boolean> FORCED = AttachmentRegistry.<Boolean>builder().persistent(Codec.BOOL).copyOnDeath()
+            .buildAndRegister(InfinityGauntlet.id("tribunal_debug"));
+    public static void debugMode(ServerPlayer p, boolean on) {
+        if (on) p.setAttached(FORCED, true); else { p.removeAttached(FORCED); p.removeAttached(RETRY); VISITED.remove(p.getUUID()); ARRIVING.remove(p.getUUID()); }
+    }
+    private static boolean debugMode(ServerPlayer p) { return Boolean.TRUE.equals(p.getAttached(FORCED)); }
     private static final AttachmentType<Boolean> XP_GIVEN = AttachmentRegistry.<Boolean>builder().persistent(Codec.BOOL).copyOnDeath()
             .buildAndRegister(InfinityGauntlet.id("tribunal_xp_given"));
     private static final AttachmentType<Boolean> NOTIFIED = AttachmentRegistry.<Boolean>builder().persistent(Codec.BOOL).copyOnDeath()
@@ -106,6 +113,7 @@ public final class TribunalEncounter {
     private static TribunalSpace.Point point(Vec3 p) { return new TribunalSpace.Point(p.x,p.y,p.z); }
     private static Vec3 vector(TribunalSpace.Point p) { return new Vec3(p.x(),p.y(),p.z()); }
     public static boolean eligible(ServerPlayer p) {
+        if (debugMode(p)) return p.isAlive() && !p.isSpectator() && CosmosTravel.inCosmos(p) && p.hasAttached(CosmosTravel.FLIGHT);
         return p.isAlive() && !p.isSpectator() && CosmosTravel.inCosmos(p)
             && p.hasAttached(CosmosTravel.FLIGHT) && fullGauntlet(p) && GauntletEffects.state(p).phase==GauntletEffects.Phase.AWAKENED
             && progressed(p);
@@ -129,7 +137,7 @@ public final class TribunalEncounter {
             if(VISITED.contains(id) || TRIALS.containsKey(server)) continue;
             int age=ARRIVING.merge(id,1,Integer::sum);
             if(age==1 && !Boolean.TRUE.equals(p.getAttached(NOTIFIED))) {p.setAttached(NOTIFIED,true);p.sendSystemMessage(Component.translatable("tribunal.infinity_gauntlet.available"));}
-            if(age>=AUTO_DELAY && start(p).equals("started")) { ARRIVING.remove(id); VISITED.add(id); }
+            if(age>=AUTO_DELAY && start(p, debugMode(p)).equals("started")) { ARRIVING.remove(id); VISITED.add(id); }
         }
     }
 	public static void init() {
@@ -138,7 +146,17 @@ public final class TribunalEncounter {
 					ServerPlayer player = context.getSource().getPlayerOrException();
 					String reason = start(player, Commands.hasPermission(Commands.LEVEL_GAMEMASTERS).test(context.getSource()));
 					context.getSource().sendSystemMessage(Component.translatable("tribunal.infinity_gauntlet." + reason));
+					if (reason.equals("started") && Commands.hasPermission(Commands.LEVEL_GAMEMASTERS).test(context.getSource())) context.getSource().sendSystemMessage(Component.translatable("tribunal.infinity_gauntlet.debug_on"));
 					return reason.equals("started") ? 1 : 0;
+                })).then(Commands.literal("unlock").requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS)).executes(context -> {
+                    ServerPlayer p=context.getSource().getPlayerOrException();
+                    ThanosEncounter.markDefeated(p.level().getServer());
+                    StoneRegistry.markReleased(p.level().getServer(),Stone.MIND);
+                    com.dantemorrigan.gauntlet.ModAdvancements.award(p,"defeat_loki");com.dantemorrigan.gauntlet.ModAdvancements.award(p,"defeat_thanos");
+                    context.getSource().sendSystemMessage(Component.translatable("tribunal.infinity_gauntlet.unlocked"));return 1;
+                })).then(Commands.literal("reset").requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS)).executes(context -> {
+                    debugMode(context.getSource().getPlayerOrException(),false);
+                    context.getSource().sendSystemMessage(Component.translatable("tribunal.infinity_gauntlet.debug_off"));return 1;
                 })).then(Commands.literal("kill").requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS)).executes(context -> {
                     ServerPlayer p=context.getSource().getPlayerOrException();Trial t=trial(p);
                     if(t==null || t.boss.phase()==LivingTribunal.VERDICT)return 0;
@@ -253,6 +271,7 @@ public final class TribunalEncounter {
 		boss.setYBodyRot(yaw);
 		boss.challenger(p.getId());
 		if (!level.addFreshEntity(boss)) return "busy";
+		if (force) p.setAttached(FORCED, true); // a debug start keeps the automatic return working after a verdict
 		Trial started = new Trial(p, boss);
 		started.forced = force;
 		TRIALS.put(server, started);

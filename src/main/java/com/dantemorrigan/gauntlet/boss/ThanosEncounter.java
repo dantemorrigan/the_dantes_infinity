@@ -135,6 +135,9 @@ public final class ThanosEncounter {
 
 	public static boolean running() { return active != null; }
 
+	/** Debug: records the world victory without a fight. */
+	public static void markDefeated(MinecraftServer server) { server.overworld().setAttached(DEFEATED, true); }
+
 	/** He was already defeated in this world (and comes back only after {@code /gauntlet thanos reset}). */
 	public static boolean beaten(MinecraftServer server) {
 		return GauntletConfig.get().thanosOnce && defeatedForever(server);

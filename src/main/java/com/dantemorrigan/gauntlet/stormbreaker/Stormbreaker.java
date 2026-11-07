@@ -351,6 +351,13 @@ public final class Stormbreaker {
                     index == 2 ? 1.2f : .6f, .74f + index * .06f);
             if (index == 2) StormFx.LIGHTNING_HIT.play(p.level(), living.position(), 4.5);
         }
+        // The Living Tribunal is too large for a normal hit test: use his real hitbox. The axe only chips him.
+        var giant = com.dantemorrigan.gauntlet.boss.TribunalEncounter.targetFor(p);
+        if (giant != null && com.dantemorrigan.gauntlet.power.CombatTargets.near(giant, arc, 3.4)
+                && strike(p, giant, 8 + index * 3, forward, 0)) {
+            StormFx.IMPACT.play(p.level(), arc, 1.4 + index * .3);
+            sound(p.level(), arc, SoundEvents.TRIDENT_HIT, .9f, .8f);
+        }
         if (index != 1) return;
         for (LivingEntity target : targets(p.level(), arc, 2.1, 1.4)) {
             Vec3 delta = target.position().subtract(p.position());
@@ -568,6 +575,7 @@ public final class Stormbreaker {
 
     private static void startThrow(ServerPlayer p) {
         if (!ready(p)) return;
+        if (CosmosTravel.inCosmos(p)) { status(p, "space_locked"); return; }
         Session s = session(p);
         int now = server(p).getTickCount();
         if (s.release != null || s.groundCharge != null || now < s.throwReady) return;
@@ -725,6 +733,13 @@ public final class Stormbreaker {
 
     public static boolean drop(ServerPlayer p, ItemStack stack) {
         Relic relic = record(p);
+        if (CosmosTravel.inCosmos(p) && p.isAlive() && relic != null && relic.belongsTo(p) && matches(stack, relic)) {
+            // Nothing to plant it in, and it must never be lost in the void: it stays with its owner.
+            if (p.getMainHandItem().isEmpty()) p.setItemInHand(InteractionHand.MAIN_HAND, stack);
+            else p.getInventory().add(stack);
+            status(p, "space_locked");
+            return true;
+        }
         if (!p.isAlive() || p.isSpectator() || relic == null || !relic.acceptsStack()
                 || !relic.belongsTo(p) || !matches(stack, relic)) return false;
         Vec3 front = p.position().add(Vec3.directionFromRotation(0, p.getYRot()).scale(2.3));
