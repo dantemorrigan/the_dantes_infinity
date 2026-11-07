@@ -358,6 +358,19 @@ public final class Stormbreaker {
             StormFx.IMPACT.play(p.level(), arc, 1.4 + index * .3);
             sound(p.level(), arc, SoundEvents.TRIDENT_HIT, .9f, .8f);
         }
+        // The Ender Dragon is made of separate parts: a swing that reaches any of them hits the dragon.
+        for (var dragon : p.level().getEntitiesOfClass(net.minecraft.world.entity.boss.enderdragon.EnderDragon.class,
+                new AABB(arc, arc).inflate(24), Entity::isAlive)) {
+            for (var part : dragon.getSubEntities()) {
+                if (dragon != direct && part.getBoundingBox().inflate(1.6).contains(arc)) {
+                    if (strike(p, dragon, 10 + index * 4, forward, 0)) {
+                        StormFx.IMPACT.play(p.level(), arc, 1.2 + index * .3);
+                        sound(p.level(), arc, SoundEvents.TRIDENT_HIT, .9f, .8f);
+                    }
+                    break;
+                }
+            }
+        }
         if (index != 1) return;
         for (LivingEntity target : targets(p.level(), arc, 2.1, 1.4)) {
             Vec3 delta = target.position().subtract(p.position());
@@ -1173,7 +1186,12 @@ public final class Stormbreaker {
     private static boolean strike(ServerPlayer p, LivingEntity target, float damage, Vec3 direction, double push) {
         if (target == p || target.isSpectator() || !CoopRules.canAffect(p, target)) return false;
         var type = p.level().registryAccess().lookupOrThrow(Registries.DAMAGE_TYPE).getOrThrow(DAMAGE);
-        if (!target.hurtServer(p.level(), new DamageSource(type, p), damage)) return false;
+        DamageSource source = new DamageSource(type, p);
+        // The Ender Dragon takes a quarter damage on any part but the head: a Stormbreaker blow counts as a head hit.
+        boolean landed = target instanceof net.minecraft.world.entity.boss.enderdragon.EnderDragon dragon
+                ? dragon.hurt(p.level(), dragon.head, source, damage)
+                : target.hurtServer(p.level(), source, damage);
+        if (!landed) return false;
         Vec3 kick = direction.multiply(1, 0, 1).normalize().scale(push);
         target.push(kick.x, .18, kick.z);
         target.hurtMarked = true;

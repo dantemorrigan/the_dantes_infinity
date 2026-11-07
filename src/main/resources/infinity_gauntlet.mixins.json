@@ -13,6 +13,7 @@
 		"StormbreakerCraftClickMixin",
 		"StormbreakerCrafterMixin",
 		"StormbreakerDropMixin",
+		"EnderDragonWingMixin",
 		"MindArenaTeleportMixin",
 		"MindArenaMovementMixin"
 	],

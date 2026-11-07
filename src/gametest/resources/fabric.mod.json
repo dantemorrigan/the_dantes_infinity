@@ -14,6 +14,7 @@
       "com.dantemorrigan.gauntlet.gametest.DedicatedServerTest",
       "com.dantemorrigan.gauntlet.gametest.PlanetRestrictionTest",
       "com.dantemorrigan.gauntlet.gametest.ThanosTriggerTest",
+      "com.dantemorrigan.gauntlet.gametest.ThanosEndTriggerTest",
       "com.dantemorrigan.gauntlet.gametest.PowerShowerTest",
       "com.dantemorrigan.gauntlet.gametest.ThanosMusicTest",
       "com.dantemorrigan.gauntlet.gametest.StoneDeathDupTest",
