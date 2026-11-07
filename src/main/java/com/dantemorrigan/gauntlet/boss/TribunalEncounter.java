@@ -441,7 +441,9 @@ public final class TribunalEncounter {
 		} else p.setHealth(Math.min(checkpoint.health, p.getMaxHealth()));
 		CosmosTravel.restoreFlight(p, checkpoint.flight);
 		p.removeAttached(RETURN);
-		p.setAttached(RETRY,p.level().getServer().overworld().getGameTime()+1200);
+		// A short window to flee to Earth; staying in space brings him back automatically.
+		p.setAttached(RETRY,p.level().getServer().overworld().getGameTime()+200);
+		VISITED.remove(p.getUUID()); ARRIVING.remove(p.getUUID());
 		p.inventoryMenu.broadcastChanges();
 	}
 
