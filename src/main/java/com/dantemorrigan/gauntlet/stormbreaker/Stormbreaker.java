@@ -72,6 +72,7 @@ public final class Stormbreaker {
             ResourceKey.create(Registries.DAMAGE_TYPE, InfinityGauntlet.id("stormbreaker"));
     public static final Identifier CHARGED = InfinityGauntlet.id("stormbreaker_charged");
     private static final Identifier BASE = InfinityGauntlet.id("stormbreaker");
+    private static final Identifier WIELDER_JUMP = InfinityGauntlet.id("stormbreaker_jump"), WIELDER_HEALTH = InfinityGauntlet.id("stormbreaker_health");
     private static final Identifier STRENGTH = InfinityGauntlet.id("stormbreaker_strength");
     private static final int HELD = 0, IN_FLIGHT = 1, IN_GROUND = 2, FALLING = 3, CREATIVE_MISSING = 4;
     private static final int SKY_FALL_TICKS = 28, PULL_TICKS = 12;
@@ -1035,6 +1036,18 @@ public final class Stormbreaker {
             if (strength != null) {
                 if (equipped) strength.addOrUpdateTransientModifier(new AttributeModifier(STRENGTH, 5, AttributeModifier.Operation.ADD_VALUE));
                 else strength.removeModifier(STRENGTH);
+            }
+            // Carrying the bound axe anywhere in the inventory empowers its wielder: a higher jump and extra hearts.
+            boolean carrying = found && relic.belongsTo(player);
+            var jump = player.getAttribute(Attributes.JUMP_STRENGTH);
+            if (jump != null) {
+                if (carrying) jump.addOrUpdateTransientModifier(new AttributeModifier(WIELDER_JUMP, .14, AttributeModifier.Operation.ADD_VALUE));
+                else jump.removeModifier(WIELDER_JUMP);
+            }
+            var health = player.getAttribute(Attributes.MAX_HEALTH);
+            if (health != null) {
+                if (carrying) health.addOrUpdateTransientModifier(new AttributeModifier(WIELDER_HEALTH, 10, AttributeModifier.Operation.ADD_VALUE));
+                else if (health.removeModifier(WIELDER_HEALTH) && player.getHealth() > player.getMaxHealth()) player.setHealth(player.getMaxHealth());
             }
         }
         if (owner == null || !owner.isAlive() || InfinitySnap.inVoid(owner)) {
