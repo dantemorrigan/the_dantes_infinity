@@ -442,7 +442,7 @@ public final class TribunalEncounter {
 		CosmosTravel.restoreFlight(p, checkpoint.flight);
 		p.removeAttached(RETURN);
 		// A short window to flee to Earth; staying in space brings him back automatically.
-		p.setAttached(RETRY,p.level().getServer().overworld().getGameTime()+200);
+		p.setAttached(RETRY,p.level().getServer().overworld().getGameTime()+600);
 		VISITED.remove(p.getUUID()); ARRIVING.remove(p.getUUID());
 		p.inventoryMenu.broadcastChanges();
 	}
