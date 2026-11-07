@@ -44,7 +44,7 @@ public final class GauntletDamage {
 			return thanos.hurtByGauntlet(level, attacker, amount, fullGauntlet(attacker));
 		}
 		if (target instanceof com.dantemorrigan.gauntlet.boss.Loki loki && attacker != null) {
-			return loki.hurtServer(level, normal, amount < LETHAL ? amount * 1.65f : amount);
+			return loki.hurtByGauntlet(level, normal, amount < LETHAL ? amount * 1.65f : amount);
 		}
 		if (target instanceof ServerPlayer player && player != attacker && Stormbreaker.guarded(player)) {
 			boolean full = attacker != null && fullGauntlet(attacker);

@@ -670,6 +670,14 @@ public final class Loki extends Monster {
 		return (float) (Mth.atan2(to.z - from.z, to.x - from.x) * Mth.RAD_TO_DEG) - 90;
 	}
 
+	private boolean gauntletBlow;
+
+	/** An ability of a worn gauntlet: exempt from the ordinary-weapon cap. */
+	public boolean hurtByGauntlet(ServerLevel level, DamageSource source, float amount) {
+		gauntletBlow = true;
+		try { return hurtServer(level, source, amount); } finally { gauntletBlow = false; }
+	}
+
 	@Override
 	public boolean hurtServer(ServerLevel level, DamageSource source, float amount) {
 		if (source.is(DamageTypes.GENERIC_KILL)) return super.hurtServer(level, source, amount);
@@ -679,6 +687,8 @@ public final class Loki extends Monster {
 		boolean weakPoint = source.is(DamageTypes.ARROW) || source.is(DamageTypeTags.IS_EXPLOSION);
 		if (source.is(DamageTypes.ARROW)) amount *= 1.6f;
 		else if (source.is(DamageTypeTags.IS_EXPLOSION)) amount *= 1.7f;
+		// Buffed swords, crits and maces cannot melt him: ordinary hits are capped (arrows and blasts exploit the weak point).
+		if (!gauntletBlow) amount = Math.min(amount, weakPoint ? 24f : 12f) * (weakPoint ? 1f : .75f);
 		if (wardTicks() > 0) amount *= weakPoint ? .85f : .4f;
 		if (isEnraged()) amount *= .87f;
 		else amount = Math.min(amount, Math.max(10, getHealth() - getMaxHealth() * PHASE_THRESHOLD + 1));

@@ -55,7 +55,7 @@ public final class TribunalEncounter {
 				Codec.FLOAT.fieldOf("pitch").forGetter(Checkpoint::pitch),
 				Codec.FLOAT.fieldOf("health").forGetter(Checkpoint::health),
 				CosmosTravel.Flight.CODEC.fieldOf("flight").forGetter(Checkpoint::flight),
-				ItemStack.CODEC.fieldOf("gauntlet").forGetter(Checkpoint::gauntlet)).apply(i, Checkpoint::new));
+				ItemStack.OPTIONAL_CODEC.fieldOf("gauntlet").forGetter(Checkpoint::gauntlet)).apply(i, Checkpoint::new));
 	}
 
 	private static final AttachmentType<Checkpoint> RETURN = AttachmentRegistry.<Checkpoint>builder().persistent(Checkpoint.CODEC)
@@ -80,6 +80,8 @@ public final class TribunalEncounter {
 		Vec3 verdictOrigin;
 		int verdictAge;
 		boolean executing;
+		/** Operator debug trial: no progression or gauntlet required. */
+		boolean forced;
 		float healthCeiling;
         int flightAge;
         final java.util.List<Bolt> bolts = new java.util.ArrayList<>();
@@ -107,8 +109,11 @@ public final class TribunalEncounter {
             && progressed(p);
     }
     private static boolean progressed(ServerPlayer p) {
-        return ThanosEncounter.defeatedForever(p.level().getServer()) && StoneRegistry.released(p.level().getServer(),Stone.MIND)
-            && com.dantemorrigan.gauntlet.ModAdvancements.completed(p,"defeat_loki")
+        var server=p.level().getServer();
+        if(!ThanosEncounter.defeatedForever(server) || !StoneRegistry.released(server,Stone.MIND)) return false;
+        // Personal gates matter in co-op; in single player the world records are the same thing and the
+        // advancements may be missing (bosses beaten before they existed, or by commands).
+        return server.isSingleplayer() || com.dantemorrigan.gauntlet.ModAdvancements.completed(p,"defeat_loki")
             && com.dantemorrigan.gauntlet.ModAdvancements.completed(p,"defeat_thanos");
     }
     private static void autoArrival(MinecraftServer server) {
@@ -127,7 +132,7 @@ public final class TribunalEncounter {
 		CommandRegistrationCallback.EVENT.register((dispatcher, access, environment) ->
 				dispatcher.register(Commands.literal("tribunal").then(Commands.literal("challenge").executes(context -> {
 					ServerPlayer player = context.getSource().getPlayerOrException();
-					String reason = start(player);
+					String reason = start(player, Commands.hasPermission(Commands.LEVEL_GAMEMASTERS).test(context.getSource()));
 					context.getSource().sendSystemMessage(Component.translatable("tribunal.infinity_gauntlet." + reason));
 					return reason.equals("started") ? 1 : 0;
                 })).then(Commands.literal("kill").requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS)).executes(context -> {
@@ -208,15 +213,18 @@ public final class TribunalEncounter {
 		return trial != null && trial.player.equals(player.getUUID()) ? trial : null;
 	}
 
-	public static String start(ServerPlayer p) {
+	public static String start(ServerPlayer p) { return start(p, false); }
+
+	/** {@code force}: operator debug start that skips progression, awakening and the gauntlet requirement. */
+	public static String start(ServerPlayer p, boolean force) {
 		ServerLevel level = p.level();
 		MinecraftServer server = level.getServer();
 		if (!CosmosTravel.inCosmos(p) || !p.hasAttached(CosmosTravel.FLIGHT) || !p.isAlive() || p.isSpectator()
 				|| level.getDifficulty() == Difficulty.PEACEFUL) return "space_only";
 		if (awaitingReturn(p) || TRIALS.containsKey(server) || PlanetDestruction.isBusy(p) || com.dantemorrigan.gauntlet.power.TimeAbility.isRewinding(p)
 				|| com.dantemorrigan.gauntlet.snap.InfinitySnap.casting(p)) return "busy";
-		if (fullGauntlet(p) && GauntletEffects.state(p).phase != GauntletEffects.Phase.AWAKENED) return "awakening";
-		if (!progressed(p) || !fullGauntlet(p)) return "locked";
+		if (!force && fullGauntlet(p) && GauntletEffects.state(p).phase != GauntletEffects.Phase.AWAKENED) return "awakening";
+		if (!force && (!progressed(p) || !fullGauntlet(p))) return "locked";
 		LivingTribunal boss = ModEntities.TRIBUNAL.create(level, EntitySpawnReason.MOB_SUMMONED);
 		if (boss == null) return "busy";
 		Vec3 heading = p.getLookAngle().multiply(1, 0, 1).normalize();
@@ -232,7 +240,9 @@ public final class TribunalEncounter {
 		boss.setYBodyRot(yaw);
 		boss.challenger(p.getId());
 		if (!level.addFreshEntity(boss)) return "busy";
-		TRIALS.put(server, new Trial(p, boss));
+		Trial started = new Trial(p, boss);
+		started.forced = force;
+		TRIALS.put(server, started);
 		VISITED.add(p.getUUID()); ARRIVING.remove(p.getUUID());
 		AbilityController.cancel(p);
 		CosmosTravel.cancelWarp(p);
@@ -267,7 +277,7 @@ public final class TribunalEncounter {
 			runVerdict(trial, p);
 			return;
 		}
-		if (!fullGauntlet(p)) {
+		if (!trial.forced && !fullGauntlet(p)) {
 			close(server, trial);
 			return;
 		}
@@ -377,7 +387,7 @@ public final class TribunalEncounter {
 	private static void beginVerdict(Trial trial, ServerPlayer p) {
 		if (trial.verdictAge > 0) return;
 		ItemStack gauntlet = GauntletState.activeGauntlet(p);
-		if (gauntlet.isEmpty()) return;
+		if (gauntlet.isEmpty() && !trial.forced) return;
 		AbilityController.cancel(p);
 		CosmosTravel.cancelWarp(p);
 		p.closeContainer();
@@ -386,7 +396,7 @@ public final class TribunalEncounter {
 		trial.verdictOrigin = p.position();
 		p.setHealth(2);
 		p.setAttached(RETURN, new Checkpoint(trial.origin, trial.yaw, trial.pitch, trial.health, trial.flight, gauntlet.copy()));
-		p.setItemInHand(InteractionHand.OFF_HAND, ItemStack.EMPTY);
+		if (!gauntlet.isEmpty()) p.setItemInHand(InteractionHand.OFF_HAND, ItemStack.EMPTY);
 		trial.boss.phase(LivingTribunal.VERDICT);
 		trial.boss.attack(0, p.position().add(0, 1.3, 0));
 		ModSounds.play(p.level(), p.position(), ModSounds.TRIBUNAL_SURRENDER, 3);
@@ -423,10 +433,12 @@ public final class TribunalEncounter {
 	}
 
 	private static void restore(ServerPlayer p, Checkpoint checkpoint) {
-		ItemStack displaced = p.getOffhandItem();
-		p.setItemInHand(InteractionHand.OFF_HAND, checkpoint.gauntlet.copy());
-		if (!displaced.isEmpty() && !p.getInventory().add(displaced)) p.drop(displaced, false);
-		GauntletEffects.restoreAwakened(p, checkpoint.health);
+		if (!checkpoint.gauntlet.isEmpty()) {
+			ItemStack displaced = p.getOffhandItem();
+			p.setItemInHand(InteractionHand.OFF_HAND, checkpoint.gauntlet.copy());
+			if (!displaced.isEmpty() && !p.getInventory().add(displaced)) p.drop(displaced, false);
+			GauntletEffects.restoreAwakened(p, checkpoint.health);
+		} else p.setHealth(Math.min(checkpoint.health, p.getMaxHealth()));
 		CosmosTravel.restoreFlight(p, checkpoint.flight);
 		p.removeAttached(RETURN);
 		p.setAttached(RETRY,p.level().getServer().overworld().getGameTime()+1200);

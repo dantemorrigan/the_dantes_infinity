@@ -117,13 +117,13 @@ public final class GauntletConfig {
 	/** A complete Uru set takes only this share of his blows. */
 	public float thanosUruFactor = 0.3f;
 	/** Damage he takes: explosions, diamond / netherite swords, loose stones (no gauntlet), a gauntlet, everything else. */
-	public float thanosExplosionTaken = 2.0f;
+	public float thanosExplosionTaken = 0.7f;
 	/** Swords hurt him less than the gauntlet does: the gauntlet is the strongest thing against him. */
-	public float thanosDiamondSwordMult = 0.8f;
-	public float thanosNetheriteSwordMult = 1.0f;
+	public float thanosDiamondSwordMult = 0.3f;
+	public float thanosNetheriteSwordMult = 0.4f;
 	/** A bare stone in the hand (no gauntlet worn): stronger than a sword, weaker than the gauntlet. */
-	public float thanosLooseStoneMult = 1.5f;
-	public float thanosOtherTaken = 0.35f;
+	public float thanosLooseStoneMult = 0.7f;
+	public float thanosOtherTaken = 0.12f;
 	/** Abilities of a worn gauntlet (power strike, reality strike, mind throw...): partial gauntlet / all six stones. */
 	public float thanosGauntletMult = 3.0f;
 	public float thanosFullGauntletMult = 5.0f;

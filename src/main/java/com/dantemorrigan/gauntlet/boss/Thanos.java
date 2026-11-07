@@ -651,6 +651,8 @@ public class Thanos extends Monster {
 		boolean stormbreaker = source.is(Stormbreaker.DAMAGE);
 		float scaled = rawDamage || stormbreaker ? amount : amount * takenMultiplier(source);
 		if (!rawDamage && !stormbreaker && amount >= 1000f) scaled = Math.min(scaled, looseStone(source) ? 90f : 60f);
+		// Sharpness, Strength, crits, maces and TNT stack up: an ordinary weapon never takes more than a sliver per hit.
+		if (!rawDamage && !stormbreaker) scaled = Math.min(scaled, source.is(DamageTypeTags.IS_EXPLOSION) ? 20f : looseStone(source) ? 10f : 6f);
 		float beforeRage = this.getHealth() - this.getMaxHealth() * RAGE_HEALTH;
 		if (flag(FLAG_ENRAGED) || beforeRage <= 0) scaled *= RAGE_TAKEN;
 		else scaled = Math.min(scaled, beforeRage); // A single burst cannot skip the second phase.
