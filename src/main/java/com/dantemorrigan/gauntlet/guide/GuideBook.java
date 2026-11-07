@@ -80,6 +80,11 @@ public final class GuideBook {
 				page.append(part.withStyle(style -> style.withColor(bookColor(stone)).withBold(true)));
 				continue;
 			}
+			Integer boss = bossColor(number, j + 1);
+			if (boss != null) {
+				page.append(part.withStyle(style -> style.withFont(com.dantemorrigan.gauntlet.text.BossText.NAME).withColor(boss).withBold(false).withItalic(false)));
+				continue;
+			}
 			page.append(switch (styles.charAt(j)) {
 				case 'H' -> part.withStyle(ChatFormatting.DARK_PURPLE, ChatFormatting.BOLD);
 				case 'B' -> part.withStyle(ChatFormatting.BLACK, ChatFormatting.BOLD);
@@ -88,6 +93,12 @@ public final class GuideBook {
 			});
 		}
 		return page;
+	}
+
+	/** Boss chapter headings (Loki p13, Thanos p16) use the boss typography in parchment-legible accents. */
+	private static Integer bossColor(int page, int segment) {
+		if (segment != 1) return null;
+		return switch (page) { case 13 -> 0x1f7a45; case 16 -> 0x8a5a00; default -> null; };
 	}
 
 	private static Stone stoneForSegment(int page, int segment) {
