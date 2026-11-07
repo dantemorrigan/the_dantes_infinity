@@ -836,7 +836,7 @@ public final class Stormbreaker {
         }
     }
 
-    /** Debug: drops the world's Stormbreaker ~30 blocks from the player. Returns false if one already exists or there is no room. */
+    /** Debug: calls a thunderstorm and drops the world's Stormbreaker ~30 blocks from the player (the real skyfall). Returns false if one already exists or there is no room. */
     public static boolean debugSkyfall(ServerPlayer player) {
         var level = player.level();
         if (level.dimension() != Level.OVERWORLD || exists(level.getServer())) return false;
@@ -849,6 +849,8 @@ public final class Stormbreaker {
             if (!level.getBlockState(top).isAir() || !level.getFluidState(top.below()).isEmpty() || !level.getBlockState(top.below()).isSolidRender()) continue;
             Vec3 landing = Vec3.atBottomCenterOf(top);
             if (!level.hasChunkAt(BlockPos.containing(fallingPosition(landing, 0)))) continue;
+            // The full event: a thunderstorm rolls in, then the axe streaks down with thunder, lightning and the compass.
+            level.getServer().getCommands().performPrefixedCommand(level.getServer().createCommandSourceStack().withSuppressedOutput(), "weather thunder");
             storeRelic(level.getServer(), new Relic("", UUID.randomUUID().toString(), FALLING, level.dimension(), landing));
             return true;
         }
