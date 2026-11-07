@@ -836,6 +836,25 @@ public final class Stormbreaker {
         }
     }
 
+    /** Debug: drops the world's Stormbreaker ~30 blocks from the player. Returns false if one already exists or there is no room. */
+    public static boolean debugSkyfall(ServerPlayer player) {
+        var level = player.level();
+        if (level.dimension() != Level.OVERWORLD || exists(level.getServer())) return false;
+        var random = level.getRandom();
+        for (int i = 0; i < 16; i++) {
+            double angle = random.nextDouble() * Math.TAU, range = 24 + random.nextDouble() * 12;
+            BlockPos column = BlockPos.containing(player.getX() + Math.cos(angle) * range, player.getY(), player.getZ() + Math.sin(angle) * range);
+            if (!level.hasChunkAt(column) || !level.getWorldBorder().isWithinBounds(column)) continue;
+            BlockPos top = level.getHeightmapPos(Heightmap.Types.MOTION_BLOCKING, column);
+            if (!level.getBlockState(top).isAir() || !level.getFluidState(top.below()).isEmpty() || !level.getBlockState(top.below()).isSolidRender()) continue;
+            Vec3 landing = Vec3.atBottomCenterOf(top);
+            if (!level.hasChunkAt(BlockPos.containing(fallingPosition(landing, 0)))) continue;
+            storeRelic(level.getServer(), new Relic("", UUID.randomUUID().toString(), FALLING, level.dimension(), landing));
+            return true;
+        }
+        return false;
+    }
+
     private static Vec3 fallingPosition(Vec3 landing, double progress) {
         double remaining = 1 - progress * progress;
         return landing.add(-8 * remaining, 38 * remaining, 5 * remaining);

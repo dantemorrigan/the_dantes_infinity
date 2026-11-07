@@ -29,6 +29,7 @@
   "cosmos.infinity_gauntlet.earth": "Earth",
   "cosmos.infinity_gauntlet.moon": "Moon",
   "cosmos.infinity_gauntlet.need_stone": "A gauntlet with the Space Stone is required in your offhand",
+  "cosmos.infinity_gauntlet.return_blocked": "The Tribunal does not let you leave",
   "cosmos.infinity_gauntlet.return_near_earth": "Warp back to Earth first",
   "cosmos.infinity_gauntlet.orbit_controls": "%s — boost · Space Stone — routes",
   "cosmos.infinity_gauntlet.navigation": "%s · %s m · %s m/s",

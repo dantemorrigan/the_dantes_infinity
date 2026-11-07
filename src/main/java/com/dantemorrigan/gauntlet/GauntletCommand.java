@@ -42,6 +42,12 @@ public final class GauntletCommand {
 						.then(Commands.literal("use")
 								.then(Commands.argument("stones", StringArgumentType.greedyString())
 										.executes(ctx -> use(ctx.getSource(), StringArgumentType.getString(ctx, "stones")))))
+						.then(Commands.literal("stormbreaker_fall").executes(ctx -> {
+							ServerPlayer p = ctx.getSource().getPlayerOrException();
+							if (com.dantemorrigan.gauntlet.stormbreaker.Stormbreaker.debugSkyfall(p)) return 1;
+							ctx.getSource().sendFailure(Component.literal("Stormbreaker already exists in this world, or no free spot in the Overworld nearby"));
+							return 0;
+						}))
 						.then(Commands.literal("full").executes(ctx -> fullGauntlet(ctx.getSource())))
 						.then(Commands.literal("give_power").executes(ctx -> givePower(ctx.getSource())))
 						.then(Commands.literal("give_time").executes(ctx -> giveStone(ctx.getSource(), Stone.TIME)))

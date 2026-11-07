@@ -112,6 +112,9 @@ public final class CosmosTravel {
             if (inCosmos(p) && CosmosRoutes.earthDistance(p.getX(),p.getY(),p.getZ()) > CosmosRoutes.RETURN_RANGE) {
                 ModStatus.send(p, Component.translatable("cosmos.infinity_gauntlet.return_near_earth")); return;
             }
+            if (inCosmos(p) && com.dantemorrigan.gauntlet.boss.TribunalEncounter.inTrial(p)) {
+                ModStatus.send(p, Component.translatable("cosmos.infinity_gauntlet.return_blocked")); return;
+            }
             if (inCosmos(p)) {
                 n.warp = 0;
                 n.planned = -1;
@@ -229,7 +232,7 @@ public final class CosmosTravel {
                     p.teleport(new TeleportTransition(p.level(), arrival, Vec3.ZERO, d.arrivalYaw(), 0, TeleportTransition.DO_NOTHING));
                     n.cooldown = 100; sync(p,n);
                 }
-                if(n.warp==0 && CosmosRoutes.entersEarth(p.getX(),p.getY(),p.getZ())) {
+                if(n.warp==0 && !com.dantemorrigan.gauntlet.boss.TribunalEncounter.inTrial(p) && CosmosRoutes.entersEarth(p.getX(),p.getY(),p.getZ())) {
                     n.planned=-1;reenter(p);sync(p,n);continue;
                 }
                 constrainPosition(p);
