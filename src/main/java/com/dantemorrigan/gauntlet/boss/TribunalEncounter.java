@@ -161,6 +161,10 @@ public final class TribunalEncounter {
 		});
 		ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
 			ServerPlayer player = handler.getPlayer();
+			// Co-op: someone who was away when the bosses fell is credited once the world records the victories,
+			// otherwise they could never qualify (Thanos never returns).
+			if (ThanosEncounter.defeatedForever(server)) com.dantemorrigan.gauntlet.ModAdvancements.award(player, "defeat_thanos");
+			if (StoneRegistry.released(server, Stone.MIND)) com.dantemorrigan.gauntlet.ModAdvancements.award(player, "defeat_loki");
 			Checkpoint checkpoint = player.getAttached(RETURN);
 			if (checkpoint != null && player.isAlive()) {
 				TeleportTransition target = respawn(player, TeleportTransition.DO_NOTHING);

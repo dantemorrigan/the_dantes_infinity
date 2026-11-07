@@ -66,6 +66,10 @@ public final class TimeAbility {
 
 	public static void init() {
 		ServerTickEvents.END_SERVER_TICK.register(TimeAbility::tick);
+		// A fresh life has no past: otherwise a rewind right after respawn would pull the player back to where they died.
+		net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents.AFTER_RESPAWN.register((old, player, alive) -> {
+			HISTORY.remove(player.getUUID()); HISTORY.remove(old.getUUID()); ACTIVE.remove(player.getUUID());
+		});
 		// Rewinding players are outside of time: nothing can hurt them.
 		ServerLivingEntityEvents.ALLOW_DAMAGE.register((e, s, a) -> !(e instanceof ServerPlayer p && ACTIVE.containsKey(p.getUUID())));
 	}
