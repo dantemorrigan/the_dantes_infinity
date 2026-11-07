@@ -27,7 +27,7 @@ public enum BossBarArt {
 
 	public void draw(GuiGraphicsExtractor g, int top, float health, float damageTrail, int alpha) {
 		if(this==TRIBUNAL){drawTribunal(g,top,health,alpha);return;}
-		float scale = Math.min(.72f, (g.guiWidth() - 12f) / WIDTH);
+		float scale = snap(.72f, g.guiWidth());
 		int full = Math.round(FILL_WIDTH * Mth.clamp(health, 0, 1));
 		int lag = Math.round(FILL_WIDTH * Mth.clamp(damageTrail, 0, 1));
 		int color = ARGB.color(alpha, 255, 255, 255);
@@ -47,6 +47,13 @@ public enum BossBarArt {
 		pose.popMatrix();
 	}
 
+    /** Pixel art blurs at arbitrary ratios: snap the bar scale to 1/8 steps that still fit the screen. */
+    private static float snap(float cap, int guiWidth) {
+        float fit = Math.min(cap, (guiWidth - 12f) / WIDTH);
+        float rounded = Math.round(fit * 8) / 8f;
+        return rounded * WIDTH > guiWidth - 12f ? Math.max(.125f, (float) Math.floor(fit * 8) / 8f) : Math.max(.125f, rounded);
+    }
+
     private static float tribunalTrail=1;
     private static long trailAt;
     private static void drawTribunal(GuiGraphicsExtractor g,int top,float hp,int alpha) {
@@ -54,7 +61,7 @@ public enum BossBarArt {
         long now=System.nanoTime()/1_000_000;
         float dt=Math.min(100,Math.max(0,now-trailAt))/1000f;trailAt=now;
         tribunalTrail=hp>tribunalTrail?hp:Math.max(hp,tribunalTrail-dt*.08f);
-        float scale=Math.min(.9f,(g.guiWidth()-12f)/WIDTH);
+        float scale=snap(.9f,g.guiWidth());
         var pose=g.pose();pose.pushMatrix();pose.translate((g.guiWidth()-WIDTH*scale)/2,top);pose.scale(scale);
         int gold=ARGB.color(alpha,224,175,76),light=ARGB.color(alpha,255,235,171);
         // Recessed astral track, stepped golden filigree and delayed amber damage trail.

@@ -45,7 +45,7 @@ public final class GauntletCommand {
 						.then(Commands.literal("stormbreaker_fall").executes(ctx -> {
 							ServerPlayer p = ctx.getSource().getPlayerOrException();
 							if (com.dantemorrigan.gauntlet.stormbreaker.Stormbreaker.debugSkyfall(p)) return 1;
-							ctx.getSource().sendFailure(Component.literal("Stormbreaker already exists in this world, or no free spot in the Overworld nearby"));
+							ctx.getSource().sendFailure(Component.translatable("command.infinity_gauntlet.stormbreaker_fall_failed"));
 							return 0;
 						}))
 						.then(Commands.literal("full").executes(ctx -> fullGauntlet(ctx.getSource())))
@@ -87,7 +87,7 @@ public final class GauntletCommand {
 								}))
 								.then(Commands.literal("locate").executes(ctx -> {
 									var site = com.dantemorrigan.gauntlet.stones.SoulTemple.site(ctx.getSource().getServer());
-									ctx.getSource().sendSuccess(() -> Component.literal("Temple of Soul: " + site.toShortString()), false);
+									ctx.getSource().sendSuccess(() -> Component.translatable("command.infinity_gauntlet.located", Component.translatable("hud.infinity_gauntlet.quest_compass.soul_temple"), site.toShortString()), false);
 									return 1;
 								}))
 								.then(Commands.literal("ritual").executes(ctx -> com.dantemorrigan.gauntlet.stones.SoulQuest.sacrifice(ctx.getSource().getPlayerOrException(), null) ? 1 : 0)))
@@ -110,7 +110,7 @@ public final class GauntletCommand {
 								}))
 								.then(Commands.literal("locate").executes(ctx -> {
 									var site = com.dantemorrigan.gauntlet.stones.TimeTemple.site(ctx.getSource().getServer());
-									ctx.getSource().sendSuccess(() -> Component.literal("Temple of Time: " + site.toShortString()), false);
+									ctx.getSource().sendSuccess(() -> Component.translatable("command.infinity_gauntlet.located", Component.translatable("hud.infinity_gauntlet.quest_compass.time_temple"), site.toShortString()), false);
 									return 1;
 								}))
 								.then(Commands.literal("gears").executes(ctx -> {
@@ -132,7 +132,7 @@ public final class GauntletCommand {
 								.then(Commands.literal("stop").executes(ctx -> { com.dantemorrigan.gauntlet.boss.ThanosEncounter.stop(); return 1; }))
 								.then(Commands.literal("reset").executes(ctx -> {
 									com.dantemorrigan.gauntlet.boss.ThanosEncounter.reset(ctx.getSource().getServer());
-									ctx.getSource().sendSuccess(() -> Component.literal("Thanos can come again"), true);
+									ctx.getSource().sendSuccess(() -> Component.translatable("command.infinity_gauntlet.thanos_reset"), true);
 									return 1;
 								})))
 						.then(Commands.literal("loki")
@@ -160,7 +160,7 @@ public final class GauntletCommand {
 								}))
 								.then(Commands.literal("locate").executes(ctx -> {
 									var site = com.dantemorrigan.gauntlet.stones.MindCity.site(ctx.getSource().getServer());
-									ctx.getSource().sendSuccess(() -> Component.literal("Ruined City: " + site.toShortString()), false);
+									ctx.getSource().sendSuccess(() -> Component.translatable("command.infinity_gauntlet.located", Component.translatable("hud.infinity_gauntlet.quest_compass.mind_city"), site.toShortString()), false);
 									return 1;
 								}))
 								.then(Commands.literal("summon")
@@ -176,7 +176,7 @@ public final class GauntletCommand {
 									var end = ctx.getSource().getServer().getLevel(net.minecraft.world.level.Level.END);
 									if (end == null) return 0;
 									var pos = com.dantemorrigan.gauntlet.stones.SpaceStoneQuest.buildEndRift(end);
-									ctx.getSource().sendSuccess(() -> Component.literal("End rift: " + pos.toShortString()), false);
+									ctx.getSource().sendSuccess(() -> Component.translatable("command.infinity_gauntlet.located", Component.translatable("command.infinity_gauntlet.place.end_rift"), pos.toShortString()), false);
 									return 1;
 								}))
 								.then(Commands.literal("asteroid").executes(ctx -> {
@@ -272,7 +272,7 @@ public final class GauntletCommand {
 				}
 				Vec3 stand = com.dantemorrigan.gauntlet.stones.TimeTemple.courtyardStand(site);
 				player.teleport(new net.minecraft.world.level.portal.TeleportTransition(overworld, stand, Vec3.ZERO, 180f, 0f, net.minecraft.world.level.portal.TeleportTransition.DO_NOTHING));
-				source.sendSuccess(() -> Component.literal("Teleported to Temple of Time (" + site.toShortString() + ")"), false);
+				source.sendSuccess(() -> Component.translatable("command.infinity_gauntlet.teleported", Component.translatable("hud.infinity_gauntlet.quest_compass.time_temple"), site.toShortString()), false);
 				return 1;
 			}
 			case "time_clock" -> {
@@ -282,7 +282,7 @@ public final class GauntletCommand {
 				}
 				Vec3 stand = com.dantemorrigan.gauntlet.stones.TimeTemple.sanctumStand(site);
 				player.teleport(new net.minecraft.world.level.portal.TeleportTransition(overworld, stand, Vec3.ZERO, 180f, 0f, net.minecraft.world.level.portal.TeleportTransition.DO_NOTHING));
-				source.sendSuccess(() -> Component.literal("Teleported to Temple of Time Clock (" + site.toShortString() + ")"), false);
+				source.sendSuccess(() -> Component.translatable("command.infinity_gauntlet.teleported", Component.translatable("command.infinity_gauntlet.place.time_clock"), site.toShortString()), false);
 				return 1;
 			}
 			case "mind" -> {
@@ -292,7 +292,7 @@ public final class GauntletCommand {
 				}
 				Vec3 stand = com.dantemorrigan.gauntlet.stones.MindCity.entranceStand(site);
 				player.teleport(new net.minecraft.world.level.portal.TeleportTransition(overworld, stand, Vec3.ZERO, 180f, 0f, net.minecraft.world.level.portal.TeleportTransition.DO_NOTHING));
-				source.sendSuccess(() -> Component.literal("Teleported to Ruined City (" + site.toShortString() + ")"), false);
+				source.sendSuccess(() -> Component.translatable("command.infinity_gauntlet.teleported", Component.translatable("hud.infinity_gauntlet.quest_compass.mind_city"), site.toShortString()), false);
 				return 1;
 			}
 			case "soul" -> {
@@ -302,7 +302,7 @@ public final class GauntletCommand {
 				}
 				Vec3 stand = com.dantemorrigan.gauntlet.stones.SoulTemple.stairwayStart(site);
 				player.teleport(new net.minecraft.world.level.portal.TeleportTransition(overworld, stand, Vec3.ZERO, 0f, 0f, net.minecraft.world.level.portal.TeleportTransition.DO_NOTHING));
-				source.sendSuccess(() -> Component.literal("Teleported to Temple of Soul stairway (" + site.toShortString() + ")"), false);
+				source.sendSuccess(() -> Component.translatable("command.infinity_gauntlet.teleported", Component.translatable("command.infinity_gauntlet.place.soul_stairway"), site.toShortString()), false);
 				return 1;
 			}
 			case "soul_summit" -> {
@@ -312,12 +312,12 @@ public final class GauntletCommand {
 				}
 				Vec3 stand = com.dantemorrigan.gauntlet.stones.SoulTemple.summitStand(site);
 				player.teleport(new net.minecraft.world.level.portal.TeleportTransition(overworld, stand, Vec3.ZERO, 90f, 0f, net.minecraft.world.level.portal.TeleportTransition.DO_NOTHING));
-				source.sendSuccess(() -> Component.literal("Teleported to Temple of Soul summit (" + site.toShortString() + ")"), false);
+				source.sendSuccess(() -> Component.translatable("command.infinity_gauntlet.teleported", Component.translatable("command.infinity_gauntlet.place.soul_summit"), site.toShortString()), false);
 				return 1;
 			}
 			case "space" -> {
 				com.dantemorrigan.gauntlet.stones.SpaceStoneQuest.goToAsteroid(player);
-				source.sendSuccess(() -> Component.literal("Teleported to Frost Asteroid Ice Tower"), false);
+				source.sendSuccess(() -> Component.translatable("command.infinity_gauntlet.teleported_nocoords", Component.translatable("command.infinity_gauntlet.place.ice_tower")), false);
 				return 1;
 			}
 			case "space_rift", "rift" -> {
@@ -326,11 +326,11 @@ public final class GauntletCommand {
 				BlockPos rift = com.dantemorrigan.gauntlet.stones.SpaceStoneQuest.buildEndRift(end);
 				Vec3 stand = new Vec3(rift.getX() + 0.5, rift.getY() - 1.0, rift.getZ() - 4.5);
 				player.teleport(new net.minecraft.world.level.portal.TeleportTransition(end, stand, Vec3.ZERO, 0f, 0f, net.minecraft.world.level.portal.TeleportTransition.DO_NOTHING));
-				source.sendSuccess(() -> Component.literal("Teleported to End Rift (" + rift.toShortString() + ")"), false);
+				source.sendSuccess(() -> Component.translatable("command.infinity_gauntlet.teleported", Component.translatable("command.infinity_gauntlet.place.end_rift"), rift.toShortString()), false);
 				return 1;
 			}
 			default -> {
-				source.sendFailure(Component.literal("Unknown trial: " + trial + " (expected: " + String.join(", ", TP_TRIALS) + ")"));
+				source.sendFailure(Component.translatable("command.infinity_gauntlet.unknown_trial", trial, String.join(", ", TP_TRIALS)));
 				return 0;
 			}
 		}
@@ -364,7 +364,7 @@ public final class GauntletCommand {
 		ItemStack displaced = player.getOffhandItem().copy();
 		player.setItemInHand(net.minecraft.world.InteractionHand.OFF_HAND, glove);
 		if (!displaced.isEmpty() && !player.getInventory().add(displaced)) player.drop(displaced, false);
-		source.sendSuccess(() -> Component.literal("Full Infinity Gauntlet equipped"), false);
+		source.sendSuccess(() -> Component.translatable("command.infinity_gauntlet.full"), false);
 		return 1;
 	}
 

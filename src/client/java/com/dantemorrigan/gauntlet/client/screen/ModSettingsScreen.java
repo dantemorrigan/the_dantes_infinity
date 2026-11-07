@@ -147,7 +147,7 @@ public final class ModSettingsScreen extends Screen {
 		int cy = cardY();
 		g.centeredText(font, title.copy().withStyle(s -> s.withBold(true)), width / 2, Math.max(8, cy - 34), 0xFFFFFFFF);
 		g.centeredText(font, Component.translatable("settings.infinity_gauntlet.language"), width / 2, cy - 22, 0xFFB9B2D6);
-		g.centeredText(font, Component.translatable("settings.infinity_gauntlet.language.hint"), width / 2, cy - 11, 0xFF7C7794);
+		fitted(g, Component.translatable("settings.infinity_gauntlet.language.hint"), cy - 11, 0xFFA29DBA);
 
 		for (int i = 0; i < 3; i++) {
 			glow[i] += ((hovered == i ? 1f : 0f) - glow[i]) * Math.min(1f, delta * 0.35f + 0.12f);
@@ -160,8 +160,19 @@ public final class ModSettingsScreen extends Screen {
 			case "ru" -> Component.translatable("settings.infinity_gauntlet.note.ru");
 			default -> Component.translatable("settings.infinity_gauntlet.note.auto");
 		};
-		g.centeredText(font, note, width / 2, cy + cardH() + 5, 0xFFD9D4F0);
+		fitted(g, note, cy + cardH() + 5, 0xFFD9D4F0);
 		g.centeredText(font, Component.translatable("settings.infinity_gauntlet.client_section"), width / 2, clientRowsY() - 12, 0xFFB9B2D6);
+	}
+
+	/** Centered text that shrinks to fit the screen instead of running off it. */
+	private void fitted(GuiGraphicsExtractor g, Component text, int y, int color) {
+		int tw = Math.max(1, font.width(text));
+		float s = Math.max(.6f, Math.min(1f, (width - 24f) / tw));
+		g.pose().pushMatrix();
+		g.pose().translate(width / 2f, y);
+		g.pose().scale(s, s);
+		g.centeredText(font, text, 0, 0, color);
+		g.pose().popMatrix();
 	}
 
 	private void drawCard(GuiGraphicsExtractor g, int i) {
@@ -184,13 +195,9 @@ public final class ModSettingsScreen extends Screen {
 		// Name in its own language, never translated
 		Component name = NATIVE[i] == null ? Component.translatable("settings.infinity_gauntlet.language.auto") : Component.literal(NATIVE[i]);
 		g.centeredText(font, name.copy().withStyle(s -> s.withBold(true)), x + w / 2, y + 34, sel ? 0xFFFFFFFF : 0xFFC9C4E0);
-		Component sub = switch (i) {
-			case 1 -> Component.literal("English");
-			case 2 -> Component.literal("Russian");
-			default -> Component.translatable("settings.infinity_gauntlet.language.auto.sub");
-		};
-		if (i != 0) g.centeredText(font, i == 1 ? "United States" : "Россия", x + w / 2, y + 46, 0xFF8F8AA8);
-		else g.centeredText(font, sub, x + w / 2, y + 46, 0xFF8F8AA8);
+		Component sub = i == 0 ? Component.translatable("settings.infinity_gauntlet.language.auto.sub")
+				: Component.literal(i == 1 ? "United States" : "Россия");
+		g.centeredText(font, sub, x + w / 2, y + 46, 0xFF8F8AA8);
 
 		if (sel) {
 			g.fill(x + 10, y + h - 16, x + w - 10, y + h - 5, 0x40FFFFFF & ((ACCENT & 0x00FFFFFF) | 0xFF000000));

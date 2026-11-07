@@ -32,7 +32,7 @@ public final class AbilityWheelScreen extends Screen {
     private boolean finished;
     public AbilityWheelScreen() {super(Component.translatable("ability.infinity_gauntlet.wheel"));stone=AbilityInput.selected().stone==null?Stone.POWER:AbilityInput.selected().stone;}
     @Override public boolean isPauseScreen() {return false;}
-    private float scale() {return Math.max(.35f,Math.min(1.05f,Math.min((width-16)/360f,(height-95)/360f)));}
+    private float scale() {return Math.max(.2f,Math.min(1.05f,Math.min((width-16)/360f,(height-95)/360f)));}
     private double cx() {return width/2.0;}
     private double cy() {return (height-55)/2.0+9;}
     private boolean hit(double mx,double my,double x,double y,double r) {return Math.pow((mx-cx())/scale()-x,2)+Math.pow((my-cy())/scale()-y,2)<=r*r;}
@@ -255,7 +255,11 @@ public final class AbilityWheelScreen extends Screen {
         int textWidth = font.width(label);
         int inset = Math.max(16, width / 16);
         int availableWidth = Math.max(1, width - inset * 2);
-        float fit = Math.min(1f, (float) availableWidth / Math.max(1, textWidth));
+        float fit = Math.max(.6f, Math.min(1f, (float) availableWidth / Math.max(1, textWidth)));
+        if (textWidth * fit > availableWidth) {
+            label = Component.literal(font.substrByWidth(label, (int) (availableWidth / fit) - font.width("…")).getString() + "…");
+            textWidth = font.width(label);
+        }
         graphics.pose().pushMatrix();
         graphics.pose().translate(width / 2f, y);
         graphics.pose().scale(fit, fit);
