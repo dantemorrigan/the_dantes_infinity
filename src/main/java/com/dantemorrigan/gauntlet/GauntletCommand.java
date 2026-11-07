@@ -358,8 +358,8 @@ public final class GauntletCommand {
 		ServerPlayer player = source.getPlayerOrException();
 		ItemStack glove = new ItemStack(ModItems.GAUNTLET);
 		for (Stone stone : Stone.values()) {
+			// Debug copy: deliberately NOT registered, so it cannot close the quests for survival players on the same world.
 			GauntletState.putStone(glove, new ItemStack(stone.item()));
-			com.dantemorrigan.gauntlet.stones.StoneRegistry.markReleased(source.getServer(), stone);
 		}
 		ItemStack displaced = player.getOffhandItem().copy();
 		player.setItemInHand(net.minecraft.world.InteractionHand.OFF_HAND, glove);

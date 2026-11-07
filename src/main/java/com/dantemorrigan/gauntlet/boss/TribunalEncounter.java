@@ -122,6 +122,8 @@ public final class TribunalEncounter {
             if(!CosmosTravel.inCosmos(p)) { ARRIVING.remove(id); VISITED.remove(id); continue; }
             Long retry=p.getAttached(RETRY);
             if(!eligible(p) || awaitingReturn(p) || retry!=null && server.overworld().getGameTime()<retry) { ARRIVING.remove(id); continue; }
+            // The single server-wide trial slot must not be eaten by a creative tester while others play in survival.
+            if(p.isCreative() && server.getPlayerList().getPlayerCount()>1) { ARRIVING.remove(id); continue; }
             if(VISITED.contains(id) || TRIALS.containsKey(server)) continue;
             int age=ARRIVING.merge(id,1,Integer::sum);
             if(age==1 && !Boolean.TRUE.equals(p.getAttached(NOTIFIED))) {p.setAttached(NOTIFIED,true);p.sendSystemMessage(Component.translatable("tribunal.infinity_gauntlet.available"));}

@@ -681,7 +681,7 @@ public final class Loki extends Monster {
 	@Override
 	public boolean hurtServer(ServerLevel level, DamageSource source, float amount) {
 		if (source.is(DamageTypes.GENERIC_KILL)) return super.hurtServer(level, source, amount);
-		if (introTicks() > 0 || transformationTicks() > 0) return false;
+		if (introTicks() > 0 || transformationTicks() > 0 || !Float.isFinite(amount)) return false;
 		if (amount <= 0) return super.hurtServer(level, source, amount);
 		if (isIllusion()) return super.hurtServer(level, source, Math.max(amount, 20));
 		boolean weakPoint = source.is(DamageTypes.ARROW) || source.is(DamageTypeTags.IS_EXPLOSION);
