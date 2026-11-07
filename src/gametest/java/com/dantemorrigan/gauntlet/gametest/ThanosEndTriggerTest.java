@@ -40,6 +40,31 @@ public class ThanosEndTriggerTest implements FabricClientGameTest {
 						+ " armed-stones=" + ThanosEncounter.carried(s.getPlayerList().getPlayers().getFirst()).size());
 				System.out.println("THANOS-END " + (came ? "came" : "DID NOT COME") + " in " + where);
 				if (!came) throw new AssertionError("Thanos never came to a survival player with five stones in the End (" + where + ")");
+				// He kills the player in the End; after the respawn he must come back wherever the player is.
+				cfg.thanosReturnMinutes = 0;
+				server.runOnServer(s -> {
+					var p = s.getPlayerList().getPlayers().getFirst();
+					p.removeEffect(net.minecraft.world.effect.MobEffects.RESISTANCE);
+					p.setHealth(0.5f);
+					p.hurtServer((net.minecraft.server.level.ServerLevel) p.level(), p.level().damageSources().generic(), 100f);
+				});
+				ctx.waitTicks(20);
+				server.runOnServer(s -> s.getPlayerList().getPlayers().getFirst().connection.handleClientCommand(
+						new net.minecraft.network.protocol.game.ServerboundClientCommandPacket(
+								net.minecraft.network.protocol.game.ServerboundClientCommandPacket.Action.PERFORM_RESPAWN)));
+				ctx.waitTicks(40);
+				// The stones come back with the player; wait for the second arrival.
+				boolean again = false;
+				for (int i = 0; i < 80 && !again; i++) {
+					ctx.waitTicks(10);
+					again = server.computeOnServer(s -> ThanosEncounter.running());
+				}
+				String after = server.computeOnServer(s -> {
+					var p = s.getPlayerList().getPlayers().getFirst();
+					return p.level().dimension().identifier() + " alive=" + p.isAlive() + " stones=" + ThanosEncounter.carried(p).size();
+				});
+				System.out.println("THANOS-END-RETURN " + (again ? "came again" : "DID NOT COME AGAIN") + " " + after);
+				if (!again) throw new AssertionError("Thanos did not return after the player died (" + after + ")");
 			} finally {
 				cfg.thanosDelayTicks = delay;
 				cfg.thanosWarningSeconds = warn;

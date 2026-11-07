@@ -32,8 +32,9 @@ public class RealityFogTest implements FabricClientGameTest {
 			ctx.waitTicks(30);
 			ctx.takeScreenshot("reality_fog_dispel");
 			if (!server.computeOnServer(s -> StoneRegistry.released(s, Stone.REALITY))) throw new AssertionError("Stone not released");
-			if (server.computeOnServer(s -> s.overworld().getEntitiesOfClass(ItemEntity.class, s.getPlayerList().getPlayers().getFirst().getBoundingBox().inflate(6),
-					e -> e.getItem().is(ModItems.REALITY_STONE)).isEmpty())) throw new AssertionError("No stone near the player");
+			// The caught stone goes straight into the player's backpack (not onto the ground).
+			if (!server.computeOnServer(s -> com.dantemorrigan.gauntlet.boss.ThanosEncounter.carried(s.getPlayerList().getPlayers().getFirst())
+					.contains(Stone.REALITY))) throw new AssertionError("The Reality Stone did not reach the player");
 		}
 	}
 }
