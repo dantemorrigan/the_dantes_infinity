@@ -61,8 +61,8 @@ add('cosmic_combat',
  f"{H}Powers in space{R}\n{B}Power / Reality{R}: aim in any direction.\n{B}Inversion{R}: bends space and damages once per cast.\n{B}Beam / Time Flow{R}: aim through a target.\n\nBlink and meteors also work in flight.",
  f"{H}Силы в космосе{R}\n{B}Сила / Реальность{R}: целься в любую сторону.\n{B}Изнанка{R}: гнёт пространство, бьёт раз за применение.\n{B}Луч / Поток времени{R}: наведи на цель.\n\nРывок и метеориты работают в полёте.")
 add('thanos',
- f"{H}Thanos{R}\nGather {B}five stones{R}: after half a day of calm the Mad Titan comes for them.\n{B}Uru armor{R} is a must. The worn gauntlet hurts him most; explosions, bare stones and swords also work.\nBeaten once, he never returns.",
- f"{H}Танос{R}\nСобери {B}пять камней{R}: через полсуток придёт Безумный Титан.\n{B}Броня Уру{R} обязательна. Сильнее всего его бьёт перчатка, дальше взрывы, камни и мечи.\nПобеждённый, он не вернётся.")
+ f"{H}Thanos{R}\nGather {B}five stones{R}: after half a day of calm the Mad Titan comes for them.\n{B}Uru armor{R} is a must. The worn gauntlet hurts him most, then bare stones and explosions. Swords barely scratch him.\nBeaten once, he never returns.",
+ f"{H}Танос{R}\nСобери {B}пять камней{R}: через полсуток придёт Безумный Титан.\n{B}Броня Уру{R} обязательна. Сильнее всего бьёт перчатка, затем камни в руке и взрывы. Мечи почти не ранят.\nПобеждённый, он не вернётся.")
 add('uru',
  f"{H}Uru{R}\nFind ore near Y=−32. Mine with diamond or netherite and smelt it.\n\n{B}Uru armor{R} uses iron recipes. A full set reduces full-gauntlet damage. Find a {B}Gauntlet Schematic{R} in chests or shops. Use it to learn recipes.",
  f"{H}Уру{R}\nРуда около Y=−32. Добудь алмазной или незеритовой киркой, переплавь.\n\n{B}Броня из Уру{R} снижает урон Перчатки. {B}Схема перчатки{R} открывает рецепты по ПКМ. Ищи в сундуках и у торговцев.")

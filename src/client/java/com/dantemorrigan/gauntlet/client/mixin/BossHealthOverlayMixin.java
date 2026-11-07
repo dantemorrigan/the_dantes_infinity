@@ -26,7 +26,7 @@ abstract class BossHealthOverlayMixin {
 
 	@Inject(method = "extractRenderState", at = @At("HEAD"), cancellable = true)
 	private void infinityGauntlet$drawLokiBars(GuiGraphicsExtractor graphics, CallbackInfo ci) {
-		if (events.values().stream().noneMatch(event -> infinityGauntlet$art(event) != null)) return;
+		if (events.values().stream().noneMatch(event -> infinityGauntlet$art(event) != null) && !ThanosClient.hasBossBar()) return;
 		ci.cancel();
 		graphics.nextStratum();
 		int center = graphics.guiWidth() / 2;

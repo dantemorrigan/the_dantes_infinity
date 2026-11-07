@@ -751,7 +751,7 @@ public final class ThanosClient {
                     .append(com.dantemorrigan.gauntlet.text.BossText.action(Component.literal(": ")).withStyle(ChatFormatting.GRAY))
                     .append(com.dantemorrigan.gauntlet.text.BossText.action(Component.translatable("thanos.infinity_gauntlet.line."+captionLine)).withStyle(ChatFormatting.WHITE));
 			int lw = mc.font.width(line);
-			int cy = y + (barShown > 0.01f ? 41 : 0);
+			int cy = y + (barShown > 0.01f ? 46 : 0);
 			int ba = (int) (150 * fade);
 			g.fill((w - lw) / 2 - 6, cy - 3, (w + lw) / 2 + 6, cy + 11, ARGB.color(ba, 12, 6, 20));
 			g.text(mc.font, line, (w - lw) / 2, cy, ARGB.color((int) (255 * fade), 255, 255, 255), true);

@@ -53,7 +53,7 @@ final class QuestCompassHud {
                 || mc.screen instanceof AbilityWheelScreen) return;
 
         Target target = selectTarget(player);
-        int y = 25;
+        int y = com.dantemorrigan.gauntlet.client.boss.ThanosClient.hasBossBar() ? 62 : 25;
         if (target != null && target.distanceFrom(player) > ARRIVAL_RADIUS) {
             renderTarget(graphics, mc, player, target, y, ACCENT);
             y += 24;
@@ -79,7 +79,8 @@ final class QuestCompassHud {
         float relative = (float) (bearing - Math.toRadians(player.getYRot()));
         Component label = Component.translatable("hud.infinity_gauntlet.quest_compass.distance",
                 Component.translatable(target.nameKey()), Math.round(distance));
-        int width = mc.font.width(label) + 30;
+        int width = Math.min(mc.font.width(label) + 30, graphics.guiWidth() - 16);
+        label = Component.literal(mc.font.substrByWidth(label, width - 30).getString());
         int x = (graphics.guiWidth() - width) / 2;
         graphics.fill(x, y, x + width, y + 20, 0xD014101F);
         graphics.text(mc.font, label, x + 24, y + 6, 0xFFF4EFFA, true);

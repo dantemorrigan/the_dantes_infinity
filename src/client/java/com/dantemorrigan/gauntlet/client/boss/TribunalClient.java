@@ -92,7 +92,7 @@ public final class TribunalClient {
 			LivingTribunal boss = nearby;
 			if (boss == null) return;
             if(boss.phase()==LivingTribunal.BATTLE) {
-                if(boss.attack()>0) g.centeredText(Minecraft.getInstance().font,com.dantemorrigan.gauntlet.text.BossText.action(Component.translatable("tribunal.infinity_gauntlet.attack."+boss.attack())),g.guiWidth()/2,66,0xffffdfa0);
+                if(boss.attack()>0) g.centeredText(Minecraft.getInstance().font,com.dantemorrigan.gauntlet.text.BossText.action(Component.translatable("tribunal.infinity_gauntlet.attack."+boss.attack())),g.guiWidth()/2,70,0xffffdfa0);
                 return;
             }
 			int age = boss.sceneAge();
