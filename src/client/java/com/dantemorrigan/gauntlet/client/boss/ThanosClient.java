@@ -207,7 +207,6 @@ public final class ThanosClient {
 					var result = mc.getSoundManager().play(music);
 					InfinityGauntlet.LOGGER.info("Thanos battle theme: {}", result);
 				}
-				mc.getMusicManager().stopPlaying();
 			}
 			case ThanosEncounter.FX_MUSIC_STOP -> { if (music != null) music.fadeOut(Math.max(1, fx.ticks())); }
 			case ThanosEncounter.FX_IMPACT -> {
@@ -383,7 +382,6 @@ public final class ThanosClient {
 				// The sound engine no longer has it (dimension change, device change): forget it; the server re-sends the cue.
 				music = null;
 			} else {
-				mc.getMusicManager().stopPlaying();
 				if (!mc.player.isAlive()) music.fadeOut(60);
 			}
 		}
@@ -791,6 +789,7 @@ public final class ThanosClient {
 
 		@Override
 		public void tick() {
+			if (!out) com.dantemorrigan.gauntlet.client.MusicDuck.pulse();
 			if (out) {
 				this.volume -= step;
 				if (this.volume <= 0.001f) this.stop();

@@ -17,7 +17,8 @@
 		"StormCloudRendererMixin",
 		"RealityBlockUpdateMixin",
 		"ClientAdvancementsMixin",
-		"BossChatMixin"
+		"BossChatMixin",
+		"SoundEngineMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1

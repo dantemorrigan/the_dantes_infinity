@@ -120,8 +120,7 @@ public final class LokiClient {
 			mc.getSoundManager().play(music);
 		}
 		if (music != null) {
-			if (fight) mc.getMusicManager().stopPlaying();
-			else music.fadeOut(40);
+			if (!fight) music.fadeOut(40);
 		}
 	}
 

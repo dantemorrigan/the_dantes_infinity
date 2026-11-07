@@ -71,7 +71,6 @@ public final class TribunalClient {
 					mc.getSoundManager().play(music);
 					musicAt = ticks;
 				}
-				mc.getMusicManager().stopPlaying();
 				int phase = nearby.phase(), age = nearby.sceneAge();
 				if (phase == LivingTribunal.VERDICT && lastPhase == phase && lastAge < LivingTribunal.SHATTER_TICK && age >= LivingTribunal.SHATTER_TICK) {
 					shake = 1;
