@@ -7,6 +7,7 @@ import net.fabricmc.fabric.api.attachment.v1.AttachmentRegistry;
 import net.fabricmc.fabric.api.attachment.v1.AttachmentType;
 import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -51,12 +52,34 @@ public final class StoneKeeper {
 			if (item.getItem().is(ModItems.QUEST_SPACE_TESSERACT)) lost.add(Stone.SPACE);
 			for (Stone stone : lost) StoneRegistry.forget(level.getServer(), stone);
 		});
+		// A stone that came from outside the quests (creative menu, /give, a dropped copy) still exists in the world:
+		// register it, so the quest that would create "the" stone (meteors, mist, gears...) cannot create a second one.
+		ServerTickEvents.END_SERVER_TICK.register(server -> {
+			if (server.getTickCount() % 20 != 0) return;
+			for (ServerPlayer player : server.getPlayerList().getPlayers()) {
+				Inventory inv = player.getInventory();
+				for (int i = 0; i < inv.getContainerSize(); i++) registerExisting(server, inv.getItem(i));
+				registerExisting(server, player.containerMenu.getCarried());
+			}
+		});
+		ServerEntityEvents.ENTITY_LOAD.register((entity, level) -> {
+			if (entity instanceof ItemEntity item) registerExisting(level.getServer(), item.getItem());
+		});
 		ServerEntityEvents.ENTITY_LOAD.register((entity, level) -> {
 			if (entity instanceof ItemEntity item && precious(item.getItem())) {
 				item.setUnlimitedLifetime();
 				item.setInvulnerable(true);
 			}
 		});
+	}
+
+	private static void registerExisting(net.minecraft.server.MinecraftServer server, ItemStack stack) {
+		if (stack.isEmpty()) return;
+		for (Stone stone : stonesIn(stack)) {
+			if (StoneRegistry.released(server, stone)) continue;
+			StoneRegistry.markReleased(server, stone);
+			if (stone == Stone.TIME) TimeQuest.markClockCompleted(server);
+		}
 	}
 
 	public static boolean precious(ItemStack stack) {
