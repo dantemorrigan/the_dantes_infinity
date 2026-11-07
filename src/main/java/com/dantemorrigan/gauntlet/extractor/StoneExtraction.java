@@ -334,6 +334,7 @@ public final class StoneExtraction {
 	private static boolean stoneInUse(LivingEntity target, ItemStack gauntlet, Stone stone) {
 		if (GauntletState.inUse(gauntlet).contains(stone)) return true;
 		if (!(target instanceof ServerPlayer player)) return false;
+		if (com.dantemorrigan.gauntlet.boss.TribunalEncounter.inTrial(player)) return true;
 		if (InfinityBeam.active(player) || InfinitySnap.casting(player)) return true;
 		return switch (stone) {
 			case POWER -> AbilityController.chargeTicks(player) > 0;

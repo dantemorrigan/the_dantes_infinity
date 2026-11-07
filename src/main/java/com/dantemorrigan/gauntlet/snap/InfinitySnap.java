@@ -307,6 +307,7 @@ public final class InfinitySnap {
 			ItemStack off = p.getOffhandItem();
 			if (!off.isEmpty() && !p.getInventory().add(off)) p.drop(off, false);
 			p.setItemInHand(net.minecraft.world.InteractionHand.OFF_HAND, gauntlet);
+			if (GauntletState.inserted(gauntlet).size() == Stone.values().length) com.dantemorrigan.gauntlet.GauntletEffects.restoreAwakened(p, p.getHealth());
 		}
 		p.fallDistance = 0;
 		p.setDeltaMovement(Vec3.ZERO);

@@ -168,7 +168,7 @@ public final class ThanosEncounter {
 
 	/** Starts the encounter for this player now (command or trigger). Returns false if one is already running. */
 	public static boolean start(ServerPlayer player, boolean skipWarning) {
-		if (active != null || beaten(player.level().getServer())
+		if (active != null || player.level().getDifficulty() == net.minecraft.world.Difficulty.PEACEFUL || beaten(player.level().getServer())
 				|| MindArena.excludesThanos(player.level(), player.position())) return false;
 		Encounter e = new Encounter();
 		e.playerId = player.getUUID();
@@ -477,6 +477,8 @@ public final class ThanosEncounter {
 	private static void withdraw(boolean later) {
 		Encounter e = active;
 		if (e == null) return;
+		// A defeated Titan finishes his dust and loot even if the challenger leaves or dies meanwhile.
+		if (e.stage == Stage.DEFEAT || e.boss != null && e.boss.isDeadOrDying()) return;
 		if (later) {
 			long back = e.level.getServer().overworld().getGameTime() + GauntletConfig.get().thanosReturnMinutes * 1200L;
 			RETURN_AT.put(e.playerId, back);

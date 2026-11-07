@@ -41,6 +41,16 @@ public final class StoneKeeper {
 		ServerPlayerEvents.AFTER_RESPAWN.register((old, player, alive) -> restore(old, player));
 		// Died, then the server stopped before the respawn: the attachment brings the stones back on the next respawn.
 		net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents.SERVER_STOPPED.register(s -> PENDING.clear());
+		// A stone that falls out of the world is gone for good: the registry must forget it so its quest can run again.
+		ServerEntityEvents.ENTITY_UNLOAD.register((entity, level) -> {
+			if (!(entity instanceof ItemEntity item) || !precious(item.getItem()) || item.getY() >= level.getMinY()) return;
+			if (item.getRemovalReason() != Entity.RemovalReason.DISCARDED) return;
+			java.util.Set<Stone> lost = java.util.EnumSet.noneOf(Stone.class);
+			lost.addAll(stonesIn(item.getItem()));
+			if (item.getItem().is(ModItems.POWER_ORB)) lost.add(Stone.POWER);
+			if (item.getItem().is(ModItems.QUEST_SPACE_TESSERACT)) lost.add(Stone.SPACE);
+			for (Stone stone : lost) StoneRegistry.forget(level.getServer(), stone);
+		});
 		ServerEntityEvents.ENTITY_LOAD.register((entity, level) -> {
 			if (entity instanceof ItemEntity item && precious(item.getItem())) {
 				item.setUnlimitedLifetime();

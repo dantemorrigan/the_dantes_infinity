@@ -642,7 +642,7 @@ public class Thanos extends Monster {
 	@Override
 	public boolean hurtServer(ServerLevel level, DamageSource source, float amount) {
 		if (source.is(DamageTypes.GENERIC_KILL)) return super.hurtServer(level, source, amount); // /kill
-		if (!Float.isFinite(amount)) return false; // NaN / infinity must never reach the health value
+		if (!(amount > 0) || !Float.isFinite(amount)) return false; // NaN / infinity must never reach the health value
 		if (this.isInvulnerable() || scripted || !fighting() || this.isDeadOrDying()) return false;
 		if (source.is(DamageTypes.FALL) || source.is(DamageTypeTags.IS_FIRE) || source.is(DamageTypes.IN_WALL)
 				|| source.is(DamageTypes.DROWN) || source.is(DamageTypes.CACTUS) || source.is(DamageTypes.FREEZE)
@@ -836,6 +836,8 @@ public class Thanos extends Monster {
 	}
 
 	// The encounter lives in memory only: a Thanos is never saved (a restart simply lets him come again).
+	@Override public boolean shouldBeSaved() { return false; }
+
 	@Override
 	protected void addAdditionalSaveData(ValueOutput output) {
 		super.addAdditionalSaveData(output);

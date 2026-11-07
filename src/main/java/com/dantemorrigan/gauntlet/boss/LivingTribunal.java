@@ -111,6 +111,7 @@ public final class LivingTribunal extends Monster {
         if(activeChunk!=null && level() instanceof ServerLevel level) level.getChunkSource().removeTicketWithRadius(TICKETING,activeChunk,2);
         activeChunk=null;bar.removeAllPlayers();super.remove(reason);
     }
+	@Override public boolean shouldBeSaved() { return false; }
 	@Override public boolean removeWhenFarAway(double distance) { return false; }
 	@Override public boolean isPushable() { return false; }
 	@Override public boolean canUsePortal(boolean passengers) { return false; }

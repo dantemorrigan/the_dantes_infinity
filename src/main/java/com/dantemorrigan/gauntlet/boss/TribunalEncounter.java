@@ -66,6 +66,8 @@ public final class TribunalEncounter {
     private static final AttachmentType<Long> RETRY = AttachmentRegistry.<Long>builder().persistent(Codec.LONG).copyOnDeath()
             .buildAndRegister(InfinityGauntlet.id("tribunal_retry_at"));
     private static int boltId;
+    private static final AttachmentType<Boolean> XP_GIVEN = AttachmentRegistry.<Boolean>builder().persistent(Codec.BOOL).copyOnDeath()
+            .buildAndRegister(InfinityGauntlet.id("tribunal_xp_given"));
     private static final AttachmentType<Boolean> NOTIFIED = AttachmentRegistry.<Boolean>builder().persistent(Codec.BOOL).copyOnDeath()
 			.buildAndRegister(InfinityGauntlet.id("tribunal_notified"));
 	private static final Map<MinecraftServer, Trial> TRIALS = new HashMap<>();
@@ -280,6 +282,8 @@ public final class TribunalEncounter {
 			return;
 		}
 		if (!trial.forced && !fullGauntlet(p)) {
+			// Dropping the gauntlet mid-trial is a forfeit: no instant re-summon.
+			p.setAttached(RETRY, server.overworld().getGameTime() + 600);
 			close(server, trial);
 			return;
 		}
@@ -424,6 +428,12 @@ public final class TribunalEncounter {
 			trial.executing = true;
 			p.kill(p.level());
 			close(p.level().getServer(), trial);
+			Checkpoint pending = p.getAttached(RETURN);
+			if (p.isAlive() && pending != null) { // the kill was vetoed (e.g. by an effect): never leave the player confiscated
+				TeleportTransition back = respawn(p, TeleportTransition.DO_NOTHING);
+				if (back != null) p.teleport(back);
+				restore(p, pending);
+			}
 		}
 	}
 
@@ -469,7 +479,10 @@ public final class TribunalEncounter {
 		if (p != null) {
 			ModSounds.play(level, p.position(), ModSounds.TRIBUNAL_DEFEAT, 3);
 			p.sendSystemMessage(Component.translatable("tribunal.infinity_gauntlet.victory"));
-			net.minecraft.world.entity.ExperienceOrb.award(level, p.position(), 1600);
+			if (!Boolean.TRUE.equals(p.getAttached(XP_GIVEN))) {
+				p.setAttached(XP_GIVEN, true);
+				net.minecraft.world.entity.ExperienceOrb.award(level, p.position(), 1600);
+			}
 		}
 	}
 

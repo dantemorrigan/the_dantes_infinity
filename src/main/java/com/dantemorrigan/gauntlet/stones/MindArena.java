@@ -61,7 +61,7 @@ public final class MindArena {
 		});
 	}
 
-	static boolean active(MinecraftServer server) {
+	public static boolean active(MinecraftServer server) {
 		return sealed(server) && !StoneRegistry.released(server, Stone.MIND);
 	}
 

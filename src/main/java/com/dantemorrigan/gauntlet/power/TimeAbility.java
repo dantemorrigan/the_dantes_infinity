@@ -115,6 +115,7 @@ public final class TimeAbility {
 	}
 
 	public static void request(ServerPlayer player) {
+		if (com.dantemorrigan.gauntlet.boss.TribunalEncounter.inTrial(player) || com.dantemorrigan.gauntlet.boss.TribunalEncounter.awaitingReturn(player)) return;
 		GauntletConfig cfg = GauntletConfig.get();
 		ItemStack gauntlet = GauntletState.activeGauntlet(player);
 		if (gauntlet.isEmpty() || !GauntletState.inserted(gauntlet).contains(Stone.TIME)) {

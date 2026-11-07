@@ -65,6 +65,10 @@ public final class SoulQuest {
 
 	public static void init() {
 		ServerTickEvents.END_SERVER_TICK.register(SoulQuest::tick);
+		// A ritual cut off by a restart (sacrificed but the stone never appeared) would dead-end the quest: let it start over.
+		ServerLifecycleEvents.SERVER_STARTED.register(server -> {
+			if (StoneRegistry.found(server, Stone.SOUL) && !StoneRegistry.released(server, Stone.SOUL)) StoneRegistry.forget(server, Stone.SOUL);
+		});
 		ServerLifecycleEvents.SERVER_STOPPED.register(s -> {
 			ritual = null;
 			rising = null;

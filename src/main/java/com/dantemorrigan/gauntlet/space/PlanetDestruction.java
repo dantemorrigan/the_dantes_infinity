@@ -105,7 +105,8 @@ public final class PlanetDestruction {
 	}
 
 	public static boolean bossBlocksDestruction(ServerPlayer player) {
-		if (ThanosEncounter.running() || com.dantemorrigan.gauntlet.boss.TribunalEncounter.inTrial(player) || MindQuest.lokiEncounterRunning(player.level().getServer())) return true;
+		if (ThanosEncounter.running() || com.dantemorrigan.gauntlet.boss.TribunalEncounter.inTrial(player) || MindQuest.lokiEncounterRunning(player.level().getServer())
+				|| com.dantemorrigan.gauntlet.stones.MindArena.active(player.level().getServer())) return true;
 
 		// Summoned bosses can fight outside their scripted arenas.
 		return !player.level().getEntitiesOfClass(Mob.class, player.getBoundingBox().inflate(96),
