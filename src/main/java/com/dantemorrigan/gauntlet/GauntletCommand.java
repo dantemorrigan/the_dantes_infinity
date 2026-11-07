@@ -42,6 +42,7 @@ public final class GauntletCommand {
 						.then(Commands.literal("use")
 								.then(Commands.argument("stones", StringArgumentType.greedyString())
 										.executes(ctx -> use(ctx.getSource(), StringArgumentType.getString(ctx, "stones")))))
+						.then(Commands.literal("full").executes(ctx -> fullGauntlet(ctx.getSource())))
 						.then(Commands.literal("give_power").executes(ctx -> givePower(ctx.getSource())))
 						.then(Commands.literal("give_time").executes(ctx -> giveStone(ctx.getSource(), Stone.TIME)))
 						.then(Commands.literal("give_stone").then(Commands.argument("stone", StringArgumentType.word())
@@ -346,6 +347,21 @@ public final class GauntletCommand {
 	}
 
 	/** Insert a stone into the worn gauntlet. */
+	/** Debug: a gauntlet with all six stones in the off hand (the old off-hand item goes to the inventory). */
+	private static int fullGauntlet(CommandSourceStack source) throws CommandSyntaxException {
+		ServerPlayer player = source.getPlayerOrException();
+		ItemStack glove = new ItemStack(ModItems.GAUNTLET);
+		for (Stone stone : Stone.values()) {
+			GauntletState.putStone(glove, new ItemStack(stone.item()));
+			com.dantemorrigan.gauntlet.stones.StoneRegistry.markReleased(source.getServer(), stone);
+		}
+		ItemStack displaced = player.getOffhandItem().copy();
+		player.setItemInHand(net.minecraft.world.InteractionHand.OFF_HAND, glove);
+		if (!displaced.isEmpty() && !player.getInventory().add(displaced)) player.drop(displaced, false);
+		source.sendSuccess(() -> Component.literal("Full Infinity Gauntlet equipped"), false);
+		return 1;
+	}
+
 	private static int giveStone(CommandSourceStack source, Stone stone) throws CommandSyntaxException {
 		ServerPlayer player = source.getPlayerOrException();
 		ItemStack gauntlet = GauntletState.activeGauntlet(player);
