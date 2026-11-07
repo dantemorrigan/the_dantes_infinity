@@ -320,7 +320,9 @@ public final class StormbreakerClient {
         stack.translate(side * t.x, t.y, -t.z);
         // Rotate around the held item, at the hand offset used by the first-person renderer.
         if (swing) stack.translate(side * .56, -.52, -.72);
-        stack.mulPose(Axis.XP.rotationDegrees((float) r.x * (swing ? .74f : .55f)));
+        // First person: the tip must travel from above and behind the shoulder DOWN through the target, not scoop upward.
+        // Swings therefore use the inverted pitch with a wider arc; non-swing gestures keep their original sign.
+        stack.mulPose(Axis.XP.rotationDegrees((float) r.x * (swing ? -.9f : .55f)));
         stack.mulPose(Axis.YP.rotationDegrees((float) r.y * (swing ? .7f : .48f) * side));
         stack.mulPose(Axis.ZP.rotationDegrees((float) r.z * (swing ? .65f : .5f) * side));
         if (swing) stack.translate(-side * .56, .52, .72);
