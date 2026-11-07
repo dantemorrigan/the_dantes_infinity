@@ -121,9 +121,9 @@ public final class TribunalEncounter {
     private static boolean progressed(ServerPlayer p) {
         var server=p.level().getServer();
         if(!ThanosEncounter.defeatedForever(server) || !StoneRegistry.released(server,Stone.MIND)) return false;
-        // Personal gates matter in co-op; in single player the world records are the same thing and the
-        // advancements may be missing (bosses beaten before they existed, or by commands).
-        return server.isSingleplayer() || com.dantemorrigan.gauntlet.ModAdvancements.completed(p,"defeat_loki")
+        // The gate is personal: another player's victories do not open the trial. Players who join after the world
+        // victories are credited on login, and operators can use /tribunal unlock.
+        return com.dantemorrigan.gauntlet.ModAdvancements.completed(p,"defeat_loki")
             && com.dantemorrigan.gauntlet.ModAdvancements.completed(p,"defeat_thanos");
     }
     private static void autoArrival(MinecraftServer server) {

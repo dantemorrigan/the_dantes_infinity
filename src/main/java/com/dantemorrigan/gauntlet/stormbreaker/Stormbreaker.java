@@ -831,6 +831,7 @@ public final class Stormbreaker {
                 ModAdvancements.award(p, "stormbreaker_wielder");
                 ModAdvancements.award(p, "stormbreaker_skyfall");
                 StormNetwork.compass(level, relic.position, false);
+                clearDebugStorm(server); // the storm summoned by the debug command ends when the axe is claimed
             }
             status(p, "bound");
             removeDisplay(s);
@@ -879,11 +880,25 @@ public final class Stormbreaker {
             Vec3 landing = Vec3.atBottomCenterOf(top);
             if (!level.hasChunkAt(BlockPos.containing(fallingPosition(landing, 0)))) continue;
             // The full event: a thunderstorm rolls in, then the axe streaks down with thunder, lightning and the compass.
-            level.getServer().getCommands().performPrefixedCommand(level.getServer().createCommandSourceStack().withSuppressedOutput(), "weather thunder");
+            runWeather(level.getServer(), "thunder");
+            debugStormUntil = level.getServer().getTickCount() + 6000L; // never left on forever, even with weather cycle disabled
             storeRelic(level.getServer(), new Relic("", UUID.randomUUID().toString(), FALLING, level.dimension(), landing));
             return true;
         }
         return false;
+    }
+
+    /** Tick by which a storm summoned by the debug command is cleared again (0 = none). */
+    private static long debugStormUntil;
+
+    private static void runWeather(MinecraftServer server, String weather) {
+        server.getCommands().performPrefixedCommand(server.createCommandSourceStack().withSuppressedOutput(), "weather " + weather);
+    }
+
+    private static void clearDebugStorm(MinecraftServer server) {
+        if (debugStormUntil == 0) return;
+        debugStormUntil = 0;
+        runWeather(server, "clear");
     }
 
     private static Vec3 fallingPosition(Vec3 landing, double progress) {
@@ -986,6 +1001,7 @@ public final class Stormbreaker {
     private static void tick(MinecraftServer server) {
         Relic relic = server.overworld().getAttached(RELIC);
         int now = server.getTickCount();
+        if (debugStormUntil != 0 && now > debugStormUntil) clearDebugStorm(server);
         if (relic == null) {
             if (now % 20 == 0 && !claimLegacyStack(server)) rollSkyfall(server.overworld(), now);
             return;

@@ -91,6 +91,7 @@ public final class TribunalTest implements FabricClientGameTest {
                 StoneRegistry.markReleased(s,Stone.MIND);
                 check(TribunalEncounter.start(p).equals("locked"),"Trial opened without Thanos");
                 thanosDefeated(s);com.dantemorrigan.gauntlet.ModAdvancements.award(p,"defeat_loki");com.dantemorrigan.gauntlet.ModAdvancements.award(p,"defeat_thanos");
+                p.setExperienceLevels(12); p.setExperiencePoints(0); // the advancement rewards add experience: pin the value this test compares
                 var glove=p.getOffhandItem();p.setItemInHand(InteractionHand.OFF_HAND,ItemStack.EMPTY);
                 check(TribunalEncounter.start(p).equals("locked"),"Trial opened without full gauntlet");
                 p.setItemInHand(InteractionHand.OFF_HAND,glove);
