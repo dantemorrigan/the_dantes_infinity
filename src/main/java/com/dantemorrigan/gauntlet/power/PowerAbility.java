@@ -148,6 +148,7 @@ public final class PowerAbility {
 			if (push.lengthSqr() < 1.0e-4) push = player.getLookAngle().multiply(1, com.dantemorrigan.gauntlet.cosmos.CosmosTravel.inCosmos(player)?1:0, 1);
 			push = push.normalize().scale(cfg.strikeKnockback * charge * falloff);
             double brace = e instanceof ServerPlayer guarded && com.dantemorrigan.gauntlet.stormbreaker.Stormbreaker.guarded(guarded) ? .36 : 1;
+            if (e instanceof com.dantemorrigan.gauntlet.boss.Thanos) brace = .1; // the Titan barely budges
 			e.push(push.x * brace, (com.dantemorrigan.gauntlet.cosmos.CosmosTravel.inCosmos(player)?push.y:0.35 + 0.3 * charge * falloff) * brace, push.z * brace);
 			e.hurtMarked = true;
 		}

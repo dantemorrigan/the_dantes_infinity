@@ -125,8 +125,8 @@ public final class GauntletConfig {
 	public float thanosLooseStoneMult = 0.7f;
 	public float thanosOtherTaken = 0.12f;
 	/** Abilities of a worn gauntlet (power strike, reality strike, mind throw...): partial gauntlet / all six stones. */
-	public float thanosGauntletMult = 3.0f;
-	public float thanosFullGauntletMult = 5.0f;
+	public float thanosGauntletMult = 1.4f;
+	public float thanosFullGauntletMult = 2.2f;
 	/** The Infinity Beam takes this share of his maximum health when it hits for its full length. */
 	public float thanosBeamShare = 0.45f;
 	/** Experience dropped on defeat. */
