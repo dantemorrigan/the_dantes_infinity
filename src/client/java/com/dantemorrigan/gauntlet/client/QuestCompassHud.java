@@ -68,7 +68,7 @@ final class QuestCompassHud {
         if (player.isSpectator() || player.position().distanceToSqr(current.site)
                 > StormNetwork.COMPASS_RANGE * StormNetwork.COMPASS_RANGE) return;
         renderTarget(graphics, mc, player,
-                new Target("item.infinity_gauntlet.stormbreaker", current.site.x, current.site.z), y, STORM_ACCENT);
+                new Target("hud.infinity_gauntlet.quest_compass.skyfall", current.site.x, current.site.z), y, STORM_ACCENT);
     }
 
     private static void renderTarget(GuiGraphicsExtractor graphics, Minecraft mc, LocalPlayer player,

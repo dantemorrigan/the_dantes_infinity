@@ -684,9 +684,18 @@ public final class Stormbreaker {
         Relic fresh = Relic.at(p, HELD);
         ItemStack stack = new ItemStack(ModItems.STORMBREAKER);
         stack.set(ModComponents.STORMBREAKER_SEAL, fresh.seal());
-        int slot = p.getInventory().getFreeSlot();
-        if (slot < 0) return false;
-        p.getInventory().setItem(slot, stack);
+        // The axe lands straight in the main hand; whatever was there moves to a free slot.
+        ItemStack held = p.getMainHandItem();
+        if (!held.isEmpty()) {
+            int slot = p.getInventory().getFreeSlot();
+            if (slot < 0) return false;
+            p.getInventory().setItem(slot, held.copy());
+        }
+        p.setItemInHand(InteractionHand.MAIN_HAND, stack);
+        p.swing(InteractionHand.MAIN_HAND, true);
+        sound(p.level(), p.position(), SoundEvents.LIGHTNING_BOLT_IMPACT, .7f, 1.5f);
+        StormFx.RECLAIM.play(p.level(), p.position().add(0, 1.1, 0), 1.2);
+        p.inventoryMenu.broadcastChanges();
         server(p).overworld().setAttached(RELIC, fresh);
         return true;
     }
