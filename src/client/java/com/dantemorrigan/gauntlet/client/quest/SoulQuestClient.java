@@ -31,7 +31,6 @@ import net.minecraft.world.phys.Vec3;
  */
 public final class SoulQuestClient {
 	private static final Identifier CLOUDS = InfinityGauntlet.id("textures/environment/quest_soul_ritual_clouds.png");
-	private static final Identifier HORIZON = InfinityGauntlet.id("textures/environment/soul_horizon.png");
 	private static final Identifier[] BEAM = new Identifier[8];
 	static { for (int i = 0; i < 8; i++) BEAM[i] = InfinityGauntlet.id("textures/particle/quest_soul_ritual_beam_0" + i + ".png"); }
 

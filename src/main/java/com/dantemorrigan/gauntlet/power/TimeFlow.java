@@ -1,6 +1,5 @@
 package com.dantemorrigan.gauntlet.power;
 
-import com.dantemorrigan.gauntlet.CoopRules;
 import com.dantemorrigan.gauntlet.GauntletState;
 import com.dantemorrigan.gauntlet.Stone;
 import com.dantemorrigan.gauntlet.net.ModNetwork;

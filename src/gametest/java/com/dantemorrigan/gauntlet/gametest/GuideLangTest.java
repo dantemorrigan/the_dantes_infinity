@@ -1,6 +1,5 @@
 package com.dantemorrigan.gauntlet.gametest;
 
-import com.dantemorrigan.gauntlet.GauntletConfig;
 import com.dantemorrigan.gauntlet.client.lang.ModLang;
 import com.dantemorrigan.gauntlet.client.screen.ModSettingsScreen;
 import net.fabricmc.fabric.api.client.gametest.v1.FabricClientGameTest;

@@ -119,6 +119,4 @@ public class ThanosSword extends Entity {
 
 	public boolean returning() { return returning; }
 
-	@SuppressWarnings("unused")
-	private static boolean isLiving(Entity e) { return e instanceof LivingEntity; }
 }

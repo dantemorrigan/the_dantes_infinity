@@ -5,7 +5,6 @@ import com.dantemorrigan.gauntlet.InfinityGauntlet;
 import com.dantemorrigan.gauntlet.ModComponents;
 import com.dantemorrigan.gauntlet.ModEntities;
 import com.dantemorrigan.gauntlet.ModItems;
-import com.dantemorrigan.gauntlet.ModParticles;
 import com.dantemorrigan.gauntlet.ModSounds;
 import com.dantemorrigan.gauntlet.Stone;
 import com.dantemorrigan.gauntlet.net.ModNetwork;

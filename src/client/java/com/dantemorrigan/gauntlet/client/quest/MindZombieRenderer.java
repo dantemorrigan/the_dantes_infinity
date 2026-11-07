@@ -5,7 +5,6 @@ import com.dantemorrigan.gauntlet.ModParticles;
 import com.dantemorrigan.gauntlet.stones.MindZombie;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.model.geom.ModelLayers;
 import net.minecraft.client.model.monster.zombie.BabyZombieModel;
 import net.minecraft.client.model.monster.zombie.ZombieModel;

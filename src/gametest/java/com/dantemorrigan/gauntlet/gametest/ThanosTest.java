@@ -12,7 +12,6 @@ import net.minecraft.world.entity.item.ItemEntity;
 import com.dantemorrigan.gauntlet.boss.ThanosEncounter;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.minecraft.world.phys.AABB;
 
 import java.util.List;
 

@@ -7,7 +7,6 @@ import com.dantemorrigan.gauntlet.space.SpaceManager;
 import net.fabricmc.fabric.api.client.gametest.v1.FabricClientGameTest;
 import net.fabricmc.fabric.api.client.gametest.v1.context.ClientGameTestContext;
 import net.fabricmc.fabric.api.client.gametest.v1.context.TestSingleplayerContext;
-import net.minecraft.world.phys.Vec3;
 
 /** Rain + red sky -> planet destruction -> clean space -> Time rewind. */
 public class PlanetDestructionRegressionTest implements FabricClientGameTest {

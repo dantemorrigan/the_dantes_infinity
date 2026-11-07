@@ -3,7 +3,6 @@ package com.dantemorrigan.gauntlet.client.fx;
 import com.dantemorrigan.gauntlet.GauntletConfig;
 import com.dantemorrigan.gauntlet.InfinityGauntlet;
 import com.dantemorrigan.gauntlet.ModParticles;
-import com.dantemorrigan.gauntlet.Stone;
 import com.dantemorrigan.gauntlet.client.cutscene.Cutscene;
 import com.dantemorrigan.gauntlet.client.space.SpaceScene;
 import com.dantemorrigan.gauntlet.net.ModNetwork;

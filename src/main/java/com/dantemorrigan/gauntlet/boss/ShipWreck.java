@@ -20,7 +20,6 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -219,7 +218,6 @@ public final class ShipWreck {
 		private final int[] shift;
 		private int part, index;
 		private final List<long[]> deferred = new ArrayList<>();
-		private int deferredScan;
 		private int total, placed, waited;
 		private boolean decorated;
 
@@ -348,7 +346,6 @@ public final class ShipWreck {
 	}
 
 	@SuppressWarnings("unused")
-	private static int[] copy(int[] a) { return Arrays.copyOf(a, a.length); }
 
 	private ShipWreck() {}
 }

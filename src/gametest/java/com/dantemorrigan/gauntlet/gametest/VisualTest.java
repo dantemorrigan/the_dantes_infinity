@@ -3,7 +3,6 @@ package com.dantemorrigan.gauntlet.gametest;
 import net.fabricmc.fabric.api.client.gametest.v1.FabricClientGameTest;
 import net.fabricmc.fabric.api.client.gametest.v1.context.ClientGameTestContext;
 import net.fabricmc.fabric.api.client.gametest.v1.context.TestSingleplayerContext;
-import net.minecraft.client.Minecraft;
 import org.lwjgl.glfw.GLFW;
 
 /** Scripted walkthrough that takes screenshots of every stage (run with ./gradlew runClientGameTest). */

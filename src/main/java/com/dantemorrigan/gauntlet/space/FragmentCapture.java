@@ -2,7 +2,6 @@ package com.dantemorrigan.gauntlet.space;
 
 import com.dantemorrigan.gauntlet.GauntletConfig;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Holder;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.tags.BlockTags;

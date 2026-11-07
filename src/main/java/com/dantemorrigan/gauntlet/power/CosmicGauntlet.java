@@ -9,9 +9,6 @@ import com.dantemorrigan.gauntlet.uru.GauntletDamage;
 import net.fabricmc.fabric.api.event.lifecycle.v1.*;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.monster.Enemy;
-import net.minecraft.world.level.portal.TeleportTransition;
 import net.minecraft.world.phys.*;
 import java.util.*;
 
@@ -37,10 +34,6 @@ public final class CosmicGauntlet {
     public static void fx(ServerPlayer p,int kind,Vec3 from,Vec3 to,float size,int color,int ticks) {
         var packet=new ModNetwork.CosmicFx(kind,from,to,size,color,ticks);
         for(var witness:p.level().players()) if(witness.position().distanceToSqr(from)<400*400) ServerPlayNetworking.send(witness,packet);
-    }
-    private static double distance(Vec3 at,AABB box) {
-        double x=Math.max(box.minX,Math.min(box.maxX,at.x)), y=Math.max(box.minY,Math.min(box.maxY,at.y)), z=Math.max(box.minZ,Math.min(box.maxZ,at.z));
-        return at.distanceTo(new Vec3(x,y,z));
     }
     private static void pulse(ServerPlayer p,Vec3 center,double radius,float damage,int color) {pulse(p,center,radius,damage,color,false);}
     private static void pulse(ServerPlayer p,Vec3 center,double radius,float damage,int color,boolean bossesOnly) {
