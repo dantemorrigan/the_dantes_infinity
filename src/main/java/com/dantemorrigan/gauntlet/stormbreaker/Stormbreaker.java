@@ -848,7 +848,11 @@ public final class Stormbreaker {
     /** Debug: calls a thunderstorm and drops the world's Stormbreaker ~30 blocks from the player (the real skyfall). Returns false if one already exists or there is no room. */
     public static boolean debugSkyfall(ServerPlayer player) {
         var level = player.level();
-        if (level.dimension() != Level.OVERWORLD || exists(level.getServer())) return false;
+        if (level.dimension() != Level.OVERWORLD) return false;
+        Relic current = level.getServer().overworld().getAttached(RELIC);
+        // A creative copy that was deleted leaves a placeholder record: it must not block the event.
+        if (current != null && current.phase() == CREATIVE_MISSING) level.getServer().overworld().removeAttached(RELIC);
+        else if (current != null) return false;
         var random = level.getRandom();
         for (int i = 0; i < 16; i++) {
             double angle = random.nextDouble() * Math.TAU, range = 24 + random.nextDouble() * 12;
@@ -1013,6 +1017,10 @@ public final class Stormbreaker {
             if (found && relic.phase() == CREATIVE_MISSING) {
                 relic = relic.withPhase(HELD);
                 storeRelic(server, relic);
+            } else if (!found && relic.phase() == CREATIVE_MISSING && !player.isCreative()) {
+                // The axe was taken from the creative menu and deleted: the world forgets it, so it can fall again.
+                server.overworld().removeAttached(RELIC);
+                return;
             } else if (!found && relic.phase() == HELD && player.containerMenu == player.inventoryMenu) {
                 if (player.isCreative()) {
                     // Creative drags use a client-only cursor. Keep the seal valid without replacing an absent stack.
