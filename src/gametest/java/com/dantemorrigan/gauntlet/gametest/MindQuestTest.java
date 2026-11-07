@@ -306,7 +306,8 @@ public class MindQuestTest implements FabricClientGameTest {
 				Vec3 viewer = boss.position().add(away).add(0, 2, 0);
 				player(s).teleportTo(viewer.x, viewer.y, viewer.z);
 				player(s).lookAt(net.minecraft.commands.arguments.EntityAnchorArgument.Anchor.EYES, boss.getEyePosition());
-				boss.hurtServer(level, level.damageSources().playerAttack(player(s)), 1000f);
+				// A finishing blow of the gauntlet; ordinary weapons are capped per hit, so 1000 from a sword is not a real scenario.
+				boss.hurtByGauntlet(level, level.damageSources().playerAttack(player(s)), 1000f);
 				if (boss.isAlive()) throw new AssertionError("Loki survived the finishing hit");
 			});
 			ctx.waitFor(mc -> mc.level.getEntitiesOfClass(Loki.class, city, e -> e.isDeadOrDying()
@@ -364,7 +365,7 @@ public class MindQuestTest implements FabricClientGameTest {
 				var level = s.overworld();
 				Loki replay = level.getEntitiesOfClass(Loki.class, city, e -> e.isAlive() && !e.isIllusion()).getFirst();
 				replay.invulnerableTime = 0;
-				replay.hurtServer(level, level.damageSources().playerAttack(player(s)), 1000f);
+				replay.hurtByGauntlet(level, level.damageSources().playerAttack(player(s)), 1000f);
 				if (replay.isAlive()) throw new AssertionError("City replay could not be defeated in the Fenrir phase");
 			});
 			ctx.waitTicks(98);
