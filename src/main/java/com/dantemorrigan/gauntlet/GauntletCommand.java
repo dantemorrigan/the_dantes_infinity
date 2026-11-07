@@ -130,6 +130,11 @@ public final class GauntletCommand {
 								.then(Commands.literal("now").executes(ctx -> thanosCommand(ctx.getSource(), 1)))
 								.then(Commands.literal("spawn").executes(ctx -> thanosCommand(ctx.getSource(), 2)))
 								.then(Commands.literal("stop").executes(ctx -> { com.dantemorrigan.gauntlet.boss.ThanosEncounter.stop(); return 1; }))
+								.then(Commands.literal("status").executes(ctx -> {
+									String reason = com.dantemorrigan.gauntlet.boss.ThanosEncounter.explain(ctx.getSource().getPlayerOrException());
+									ctx.getSource().sendSuccess(() -> Component.literal("Thanos: " + reason), false);
+									return 1;
+								}))
 								.then(Commands.literal("reset").executes(ctx -> {
 									com.dantemorrigan.gauntlet.boss.ThanosEncounter.reset(ctx.getSource().getServer());
 									ctx.getSource().sendSuccess(() -> Component.translatable("command.infinity_gauntlet.thanos_reset"), true);

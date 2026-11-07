@@ -134,6 +134,29 @@ public final class ThanosEncounter {
 
 	public static boolean running() { return active != null; }
 
+	/** Debug: why Thanos is not coming to this player right now (one line per blocking condition, or "nothing blocks"). */
+	public static String explain(ServerPlayer p) {
+		GauntletConfig cfg = GauntletConfig.get();
+		MinecraftServer server = p.level().getServer();
+		long now = server.overworld().getGameTime();
+		java.util.List<String> why = new java.util.ArrayList<>();
+		if (!cfg.thanosEnabled) why.add("disabled in config");
+		if (cfg.thanosOnce && defeatedForever(server)) why.add("already defeated in this world (/gauntlet thanos reset)");
+		if (active != null) why.add("an encounter is already running");
+		if (p.isCreative() || p.isSpectator()) why.add("player is in creative/spectator");
+		if (p.level().getDifficulty() == net.minecraft.world.Difficulty.PEACEFUL) why.add("difficulty is Peaceful");
+		int stones = carried(p).size();
+		if (stones < cfg.thanosStoneThreshold) why.add("carries " + stones + "/" + cfg.thanosStoneThreshold + " stones");
+		Long armed = p.getAttached(ARMED_AT);
+		if (stones >= cfg.thanosStoneThreshold && (armed == null || armed > now)) why.add("breather has just started");
+		else if (armed != null && now - armed < cfg.thanosDelayTicks) why.add("breather: " + (cfg.thanosDelayTicks - (now - armed)) / 20 + " s left");
+		Long back = RETURN_AT.get(p.getUUID());
+		if (back != null && now < back) why.add("return cooldown: " + (back - now) / 20 + " s left");
+		if (!arena(p.level())) why.add("dimension " + p.level().dimension().identifier() + " is not Overworld/Nether/End");
+		if (MindArena.excludesThanos(p.level(), p.position())) why.add("inside the Ruined City arena");
+		return why.isEmpty() ? "nothing blocks him" : String.join("; ", why);
+	}
+
 	/** Debug: records the world victory without a fight. */
 	public static void markDefeated(MinecraftServer server) { server.overworld().setAttached(DEFEATED, true); }
 

@@ -105,7 +105,7 @@ public final class GauntletConfig {
 	/** Seconds of warning ("something approaches from deep space") before the arrival scene. */
 	public int thanosWarningSeconds = 10;
 	/** Minutes before Thanos comes back after the player died, ran away or left. */
-	public int thanosReturnMinutes = 5;
+	public int thanosReturnMinutes = 1;
 	public float thanosHealth = 600f;
 	/** Base damage of his attacks before armor: sword swing, leap slam, thrown sword, gauntlet backhand. */
 	public float thanosSwingDamage = 22f;
