@@ -86,7 +86,7 @@
   "ability.infinity_gauntlet.dimension.overworld": "Overworld",
   "ability.infinity_gauntlet.dimension.latveria": "Latveria",
   "ability.infinity_gauntlet.latveria_sealed": "Doom has sealed this portal for good.",
-  "msg.infinity_gauntlet.latveria.doom": "Doctor Doom: You are not welcome here.",
+  "msg.infinity_gauntlet.latveria.doom": "Doctor Doom: You're not allowed here.",
   "ability.infinity_gauntlet.open_inventory": "Click — manage stones",
   "ability.infinity_gauntlet.portal_target": "Portal: %s",
   "ability.infinity_gauntlet.portal_hint": "%s — open / close · Shift+%s — dimension",

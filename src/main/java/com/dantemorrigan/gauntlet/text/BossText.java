@@ -26,7 +26,7 @@ public final class BossText {
         if(k.startsWith("tribunal.infinity_gauntlet.") || k.equals("entity.infinity_gauntlet.living_tribunal"))return Kind.COSMIC;
         if(k.startsWith("thanos.infinity_gauntlet.line.") || k.startsWith("msg.infinity_gauntlet.thanos.") || (k.equals("entity.infinity_gauntlet.thanos") || k.equals("entity.infinity_gauntlet.thanos.title")) || k.startsWith("boss.infinity_gauntlet.thanos.") || k.startsWith("command.infinity_gauntlet.thanos_"))return Kind.TITAN;
         if(k.equals("entity.infinity_gauntlet.loki") || k.startsWith("boss.infinity_gauntlet.loki.") || k.startsWith("msg.infinity_gauntlet.loki.") || k.startsWith("msg.infinity_gauntlet.mind_quest.") || k.startsWith("command.infinity_gauntlet.loki."))return Kind.TRICKSTER;
-        if(k.equals("ability.infinity_gauntlet.latveria_sealed"))return Kind.SOVEREIGN;
+        if(k.equals("ability.infinity_gauntlet.latveria_sealed") || k.startsWith("msg.infinity_gauntlet.latveria."))return Kind.SOVEREIGN;
         return null;
     }
     public static MutableComponent name(Component text) {
@@ -50,7 +50,7 @@ public final class BossText {
                 if(theme==Kind.TITAN)aliases.addAll(List.of("Таноса","Таносу","Таносом","Таносе","Безумный Титан","Безумного Титана","Mad Titan"));
                 if(theme==Kind.COSMIC)aliases.addAll(List.of("Трибунала","Трибуналу","Трибуналом","Трибунале","Трибунал","Tribunal"));
                 if(theme==Kind.TRICKSTER)aliases.addAll(List.of("Фенрира","Фенриру","Фенриром","Фенрир","Fenrir"));
-                if(theme==Kind.SOVEREIGN){aliases.add("Дум");aliases.add("Doom");}
+                if(theme==Kind.SOVEREIGN){aliases.addAll(List.of("Доктор Дум","Doctor Doom","Дум","Doom"));}
                 while(!value.isEmpty()) {
                     int at=Integer.MAX_VALUE;String match=null;
                     for(String alias:aliases){int i=value.indexOf(alias);if(!alias.isEmpty() && i>=0 && (i<at || i==at && (match==null || alias.length()>match.length()))){at=i;match=alias;}}
