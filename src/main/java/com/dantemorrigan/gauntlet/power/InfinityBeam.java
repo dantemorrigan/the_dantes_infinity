@@ -169,7 +169,7 @@ public final class InfinityBeam {
         AABB area = new AABB(from, to).inflate(radius + 16);
         for (LivingEntity target : CombatTargets.inArea(c.owner,area)) {
             if (!CoopRules.canAffect(c.owner, target)) continue;
-            boolean hit = intersects(target.getBoundingBox().inflate(radius), from, to);
+            boolean hit = CombatTargets.clip(target,from,to,radius).isPresent();
             if (target instanceof EnderDragon dragon) {
                 for (var part : dragon.getSubEntities()) hit |= intersects(part.getBoundingBox().inflate(radius), from, to);
             }
@@ -198,7 +198,7 @@ public final class InfinityBeam {
                 }
             } else if (target instanceof com.dantemorrigan.gauntlet.boss.LivingTribunal) {
                 if ((c.age - c.charge) % 8 == 0)
-                    GauntletDamage.hurt(c.level, target, c.owner, c.owner.damageSources().playerAttack(c.owner), 48);
+                    GauntletDamage.hurt(c.level, target, c.owner, c.owner.damageSources().playerAttack(c.owner), 48,CombatTargets.impact(target,from,to,radius));
             } else if (!(target instanceof Player) && !UruArmor.fullSet(target)) {
                 // Every non-boss mob caught in the all-stones beam is incinerated and killed on the very first hit.
                 target.invulnerableTime = 0;

@@ -703,6 +703,8 @@ public final class Loki extends Monster {
 			discard();
 			return;
 		}
+        if(isCityEncounter() && MindQuest.isCurrentBoss(this) && source.getEntity() instanceof ServerPlayer killer)
+            ModAdvancements.award(killer,"defeat_loki");
 		bar.removeAllPlayers();
 		getNavigation().stop();
 		entityData.set(SHIFT, 0);

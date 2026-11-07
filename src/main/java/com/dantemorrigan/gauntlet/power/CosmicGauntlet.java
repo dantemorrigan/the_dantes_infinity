@@ -46,8 +46,8 @@ public final class CosmicGauntlet {
     private static void pulse(ServerPlayer p,Vec3 center,double radius,float damage,int color,boolean bossesOnly) {
         for(var e:CombatTargets.inArea(p,new AABB(center,center).inflate(radius))) {
             if(bossesOnly && !MindStone.isBoss(e)) continue;
-            if(distance(center,e.getBoundingBox())>radius) continue;
-            if(GauntletDamage.hurt(p.level(),e,p,p.damageSources().playerAttack(p),damage) && !MindStone.isBoss(e)) {
+            if(!CombatTargets.near(e,center,radius)) continue;
+            if(GauntletDamage.hurt(p.level(),e,p,p.damageSources().playerAttack(p),damage,center) && !MindStone.isBoss(e)) {
                 Vec3 direction=e.getBoundingBox().getCenter().subtract(center).normalize();e.push(direction.scale(.8));e.hurtMarked=true;
             }
         }

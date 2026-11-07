@@ -172,11 +172,10 @@ public final class PowerAbility {
 		Vec3 entityEnd = eye.add(player.getLookAngle().scale(max));
 		AABB box = player.getBoundingBox().expandTowards(player.getLookAngle().scale(max)).inflate(1.0);
 		EntityHitResult entity = ProjectileUtil.getEntityHitResult(player, eye, entityEnd, box,
-				e -> !e.isSpectator() && e.isPickable() && e instanceof LivingEntity, max * max);
+				e -> !e.isSpectator() && e.isPickable() && e instanceof LivingEntity && !(e instanceof com.dantemorrigan.gauntlet.boss.LivingTribunal), max * max);
 		var giant=com.dantemorrigan.gauntlet.boss.TribunalEncounter.targetFor(player);
         if(giant!=null) {
-            var boxG=giant.getBoundingBox().inflate(1);
-            Vec3 contact=boxG.contains(eye)?eye:boxG.clip(eye,entityEnd).orElse(null);
+            Vec3 contact=CombatTargets.clip(giant,eye,entityEnd,1).orElse(null);
             if(contact!=null && (entity==null || eye.distanceToSqr(contact)<eye.distanceToSqr(entity.getLocation()))) entity=new EntityHitResult(giant,contact);
         }
         return entity != null ? entity : block;

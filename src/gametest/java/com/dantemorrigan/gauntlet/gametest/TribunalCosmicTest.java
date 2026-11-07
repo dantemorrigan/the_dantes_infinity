@@ -28,7 +28,7 @@ public final class TribunalCosmicTest implements FabricClientGameTest {
     @SuppressWarnings("unchecked") private static void unlock(MinecraftServer s) {
         try {var f=ThanosEncounter.class.getDeclaredField("DEFEATED");f.setAccessible(true);s.overworld().setAttached((AttachmentType<Boolean>)f.get(null),true);}
         catch(Exception e) {throw new AssertionError(e);}
-        StoneRegistry.markReleased(s,Stone.MIND);
+        StoneRegistry.markReleased(s,Stone.MIND);com.dantemorrigan.gauntlet.ModAdvancements.award(player(s),"defeat_loki");com.dantemorrigan.gauntlet.ModAdvancements.award(player(s),"defeat_thanos");
     }
     @Override public void runTest(ClientGameTestContext ctx) {
         LegacyBindings.disable(ctx);

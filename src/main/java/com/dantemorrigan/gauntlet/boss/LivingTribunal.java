@@ -43,11 +43,16 @@ public final class LivingTribunal extends Monster {
 	int nextAttack = 18;
 	long exposedUntil;
     private boolean gauntletHit;
-    private long damageWindow=-20;
-    private float windowDamage;
+    private long lastDamageTick=-1;
+    private float damageCredit;
+    private Vec3 gauntletImpact;
     public static final int DEATH_TICKS=100, EXPLOSION_TICK=55;
     public boolean hurtByGauntlet(ServerLevel level,ServerPlayer owner,float amount) {
-        gauntletHit=true;try{return hurtServer(level,level.damageSources().playerAttack(owner),amount);}finally{gauntletHit=false;}
+        return hurtByGauntlet(level,owner,amount,null);
+    }
+    public boolean hurtByGauntlet(ServerLevel level,ServerPlayer owner,float amount,Vec3 impact) {
+        gauntletHit=true;gauntletImpact=impact;
+        try{return hurtServer(level,level.damageSources().playerAttack(owner),amount);}finally{gauntletHit=false;gauntletImpact=null;}
     }
 
 	public LivingTribunal(EntityType<? extends LivingTribunal> type, Level level) {
@@ -115,14 +120,18 @@ public final class LivingTribunal extends Monster {
 		if (phase() != BATTLE || !(source.getEntity() instanceof ServerPlayer player)
 				|| !TribunalEncounter.isChallenger(this, player) || !(amount > 0) || !Float.isFinite(amount)) return false;
 		boolean exposed=level.getGameTime()<exposedUntil;
-        if(level.getGameTime()-damageWindow>=20){damageWindow=level.getGameTime();windowDamage=0;}
-        // Shared across every spell and beam slice: stacking casts cannot erase the boss in two volleys.
-        float hit=Math.min(Math.min(amount,100)*(gauntletHit?(exposed?.32f:.18f):.10f),Math.max(0,(exposed?14:8)-windowDamage));
-        if(hit<=0)return false;
-        float before=getHealth();
-        if(gauntletHit) invulnerableTime=0;
+        float capacity=exposed?14:8;long now=level.getGameTime();
+        damageCredit=lastDamageTick<0?capacity:Math.min(capacity,damageCredit+Math.max(0,now-lastDamageTick)*capacity/20f);
+        lastDamageTick=now;
+        boolean core=gauntletImpact!=null && TribunalHitbox.core(this).inflate(1.5).contains(gauntletImpact);
+        float cost=core?.5f:1;
+        float resistance=gauntletHit?(core?(exposed?.45f:.25f):(exposed?.18f:.10f)):.10f;
+        // Refill every tick: natural beam pulses always regain damage; the glowing core spends half the budget.
+        float hit=Math.min(Math.min(amount,100)*resistance,damageCredit/cost);
+        if(hit<=.001f)return false;
+        float before=getHealth();if(gauntletHit)invulnerableTime=0;
         boolean result=super.hurtServer(level,source,hit);
-        windowDamage+=Math.max(0,before-getHealth());return result;
+        damageCredit=Math.max(0,damageCredit-Math.max(0,before-getHealth())*cost);return result;
 	}
 
 	@Override

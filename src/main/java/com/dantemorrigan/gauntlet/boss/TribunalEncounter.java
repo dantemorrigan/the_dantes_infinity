@@ -102,9 +102,14 @@ public final class TribunalEncounter {
     private static TribunalSpace.Point point(Vec3 p) { return new TribunalSpace.Point(p.x,p.y,p.z); }
     private static Vec3 vector(TribunalSpace.Point p) { return new Vec3(p.x(),p.y(),p.z()); }
     public static boolean eligible(ServerPlayer p) {
-        return p.isAlive() && !p.isCreative() && !p.isSpectator() && CosmosTravel.inCosmos(p)
+        return p.isAlive() && !p.isSpectator() && CosmosTravel.inCosmos(p)
             && p.hasAttached(CosmosTravel.FLIGHT) && fullGauntlet(p) && GauntletEffects.state(p).phase==GauntletEffects.Phase.AWAKENED
-            && ThanosEncounter.defeatedForever(p.level().getServer()) && StoneRegistry.released(p.level().getServer(),Stone.MIND);
+            && progressed(p);
+    }
+    private static boolean progressed(ServerPlayer p) {
+        return ThanosEncounter.defeatedForever(p.level().getServer()) && StoneRegistry.released(p.level().getServer(),Stone.MIND)
+            && com.dantemorrigan.gauntlet.ModAdvancements.completed(p,"defeat_loki")
+            && com.dantemorrigan.gauntlet.ModAdvancements.completed(p,"defeat_thanos");
     }
     private static void autoArrival(MinecraftServer server) {
         for(ServerPlayer p:server.getPlayerList().getPlayers()) {
@@ -211,7 +216,7 @@ public final class TribunalEncounter {
 		if (awaitingReturn(p) || TRIALS.containsKey(server) || PlanetDestruction.isBusy(p) || com.dantemorrigan.gauntlet.power.TimeAbility.isRewinding(p)
 				|| com.dantemorrigan.gauntlet.snap.InfinitySnap.casting(p)) return "busy";
 		if (fullGauntlet(p) && GauntletEffects.state(p).phase != GauntletEffects.Phase.AWAKENED) return "awakening";
-		if (!ThanosEncounter.defeatedForever(server) || !StoneRegistry.released(server, Stone.MIND) || !fullGauntlet(p)) return "locked";
+		if (!progressed(p) || !fullGauntlet(p)) return "locked";
 		LivingTribunal boss = ModEntities.TRIBUNAL.create(level, EntitySpawnReason.MOB_SUMMONED);
 		if (boss == null) return "busy";
 		Vec3 heading = p.getLookAngle().multiply(1, 0, 1).normalize();

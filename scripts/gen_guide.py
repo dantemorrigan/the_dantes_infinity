@@ -40,8 +40,8 @@ add('reality',
  f"{H}Reality Stone{R}\n{B}Reality strike{R}: press R. Mobs turn to butterflies, ground to redstone and fire.\n\n{B}Inversion{R}: hold R while moving. The vortex moves with you. Mobs dissolve, and terrain stays twisted.",
  f"{H}Камень Реальности{R}\n{B}Удар Реальности{R}: нажми R. Мобы — бабочки, земля — редстоун и огонь.\n\n{B}Изнанка{R}: держи R на ходу. Вихрь движется за тобой. Мобы исчезают, а рельеф остаётся закрученным.")
 add('time',
- f"{H}Time Stone{R}\n{B}Rewind{R}: you are played back through your last 5 seconds.\n{B}Day / Night{R}: spins the sky to the other half of the day.\n\nIn Dead Space, rewind reassembles a destroyed planet.",
- f"{H}Камень Времени{R}\n{B}Перемотка{R}: тебя «проигрывает» назад на 5 секунд.\n{B}День / Ночь{R}: прокручивает небо на другую половину суток.\n\nВ Мёртвом космосе перемотка собирает разрушенную планету.")
+ f"{H}Time Stone{R}\n{B}Rewind{R}: replay your last 5 seconds backwards.\n{B}Time Flow{R}: hold R and aim.\n{B}Day / Night{R}: switch the sky.\n\nRewind restores a broken planet in Dead Space.",
+ f"{H}Камень Времени{R}\n{B}Перемотка{R}: назад на 5 секунд.\n{B}Поток времени{R}: держи R и целься.\n{B}День / Ночь{R}: сменить небо.\n\nВ Мёртвом космосе перемотка восстанавливает планету.")
 add('mind',
  f"{H}Mind Stone{R}\n{B}Grab{R}: lift blocks or a mob with your gaze, R again to {B}throw{R}.\n{B}Tear apart{R}: a held mob bursts.\n{B}Release{R}: put it down safely.\n\n10 city zombies summon Loki.",
  f"{H}Камень Разума{R}\n{B}Захват{R}: поднимай блоки или моба взглядом, R ещё раз — {B}бросок{R}.\n{B}Разорвать{R}: удерживаемый моб лопается.\n{B}Отпустить{R}: безопасно поставить.\n\n10 зомби города вызывают Локи.")
@@ -51,6 +51,15 @@ add('soul',
 add('beam',
  f"{H}All six stones{R}\n{B}Infinity Beam{R}: hold R. Burns through terrain and kills most mobs on contact.\n\n{B}Infinity Snap{R}: erases the universe and burns the gauntlet out. A loose Time Stone can undo it.",
  f"{H}Все шесть камней{R}\n{B}Луч Бесконечности{R}: держи R. Бурит землю и сжигает мобов.\n\n{B}Щелчок{R}: стирает вселенную и сжигает перчатку. Вернуть может Камень Времени вне перчатки.")
+add('loki',
+ f"{H}Loki{R}\nDefeat 10 zombies in the Ruined City. Loki creates illusions and strikes from the ruins. At 45% health he becomes Fenrir. Dodge the marks. After victory the Mind Stone flies to a participant.",
+ f"{H}Локи{R}\nОдолей 10 зомби в Разрушенном городе. Локи создаёт копии и бьёт с руин. На 45% здоровья он станет Фенриром. Избегай меток. После победы Камень Разума прилетит к участнику.")
+add('cosmos',
+ f"{H}Solar System{R}\nFly beyond the sky with Space.\n{B}Ctrl{R}: boost.\n{B}V{R}: choose a route.\n{B}R{R}: warp to it.\n\nTen bodies have distinct icons. Approach Earth to return. Planets rotate slowly.",
+ f"{H}Солнечная система{R}\nС Пространством лети выше неба.\n{B}Ctrl{R}: ускорение.\n{B}V{R}: выбрать маршрут.\n{B}R{R}: выполнить варп.\n\nУ 10 светил свои иконки. Подлети к Земле для возврата. Планеты вращаются.")
+add('cosmic_combat',
+ f"{H}Powers in space{R}\n{B}Power / Reality{R}: aim in any direction.\n{B}Inversion{R}: bends space and damages once per cast.\n{B}Beam / Time Flow{R}: aim through a target.\n\nBlink and meteors also work in flight.",
+ f"{H}Силы в космосе{R}\n{B}Сила / Реальность{R}: целься в любую сторону.\n{B}Изнанка{R}: гнёт пространство, бьёт раз за применение.\n{B}Луч / Поток времени{R}: наведи на цель.\n\nРывок и метеориты работают в полёте.")
 add('thanos',
  f"{H}Thanos{R}\nGather {B}five stones{R}: after half a day of calm the Mad Titan comes for them.\n{B}Uru armor{R} is a must. The worn gauntlet hurts him most; explosions, bare stones and swords also work.\nBeaten once, he never returns.",
  f"{H}Танос{R}\nСобери {B}пять камней{R}: через полсуток придёт Безумный Титан.\n{B}Броня Уру{R} обязательна. Сильнее всего его бьёт перчатка, дальше взрывы, камни и мечи.\nПобеждённый, он не вернётся.")
@@ -75,8 +84,8 @@ add('storm_owner',
 # --- contents: built from the page order ---
 order = list(PAGES)
 def pn(k): return str(order.index(k) + 1)
-toc_en = [("Wheel",'wheel'),("Power",'power'),("Space",'space'),("Reality",'reality'),("Time",'time'),("Mind",'mind'),("Soul",'soul'),("Beam",'beam'),("Thanos",'thanos'),("Uru",'uru'),("Tools",'extractor'),("Stormbreaker",'storm_find')]
-toc_ru = [("Колесо",'wheel'),("Сила",'power'),("Пространство",'space'),("Реальность",'reality'),("Время",'time'),("Разум",'mind'),("Душа",'soul'),("Луч",'beam'),("Танос",'thanos'),("Уру",'uru'),("Инструменты",'extractor'),("Гром-Секира",'storm_find')]
+toc_en = [("Wheel",'wheel'),("Power",'power'),("Space",'space'),("Reality",'reality'),("Time",'time'),("Mind",'mind'),("Soul",'soul'),("Loki",'loki'),("Thanos",'thanos'),("Uru",'uru'),("Tools",'extractor'),("Stormbreaker",'storm_find')]
+toc_ru = [("Колесо",'wheel'),("Сила",'power'),("Пространство",'space'),("Реальность",'reality'),("Время",'time'),("Разум",'mind'),("Душа",'soul'),("Локи",'loki'),("Танос",'thanos'),("Уру",'uru'),("Инструменты",'extractor'),("Гром-Секира",'storm_find')]
 PAGES['contents'] = (
  f"{H}Contents{R}\n" + "\n".join(f"{n} {G}{pn(k)}{R}" for n,k in toc_en),
  f"{H}Содержание{R}\n" + "\n".join(f"{n} {G}{pn(k)}{R}" for n,k in toc_ru))

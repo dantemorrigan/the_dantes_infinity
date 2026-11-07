@@ -122,9 +122,8 @@ public final class TimeFlow {
         for (LivingEntity target : CombatTargets.inArea(owner,area)) {
             UUID id = target.getUUID();
             if (cast.age - cast.lastHit.getOrDefault(id, -HIT_INTERVAL) < HIT_INTERVAL) continue;
-            AABB box = target.getBoundingBox();
-            AABB widened = box.inflate(HIT_RADIUS);
-            Vec3 contact = widened.contains(from) ? from : widened.clip(from, end).orElse(null);
+            AABB box = CombatTargets.box(target);
+            Vec3 contact = CombatTargets.clip(target,from,end,HIT_RADIUS).orElse(null);
             if (contact == null) continue;
 
             // A wide beam can graze a mob, but its hit still needs a clear path to the real hitbox.
@@ -133,7 +132,7 @@ public final class TimeFlow {
             if (cast.level.clip(new ClipContext(from, body, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, owner))
                     .getType() != HitResult.Type.MISS) continue;
 
-            if (GauntletDamage.hurt(cast.level, target, owner, owner.damageSources().playerAttack(owner), HIT_DAMAGE)) {
+            if (GauntletDamage.hurt(cast.level, target, owner, owner.damageSources().playerAttack(owner), HIT_DAMAGE,CombatTargets.impact(target,from,end,HIT_RADIUS))) {
                 cast.lastHit.put(id, cast.age);
             }
         }

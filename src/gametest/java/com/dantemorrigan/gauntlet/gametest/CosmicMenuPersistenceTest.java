@@ -52,7 +52,7 @@ public final class CosmicMenuPersistenceTest implements FabricClientGameTest {
             ctx.getInput().pressKey(GLFW.GLFW_KEY_ESCAPE);ctx.getInput().pressKey(GLFW.GLFW_KEY_ESCAPE);
             server.runOnServer(s->{var player=p(s);player.teleport(new TeleportTransition(s.getLevel(CosmosTravel.DIMENSION),new Vec3(30000,256,500),Vec3.ZERO,0,0,TeleportTransition.DO_NOTHING));
                 try{var f=ThanosEncounter.class.getDeclaredField("DEFEATED");f.setAccessible(true);s.overworld().setAttached((AttachmentType<Boolean>)f.get(null),true);}catch(Exception e){throw new AssertionError(e);}
-                StoneRegistry.markReleased(s,Stone.MIND);check(TribunalEncounter.start(player).equals("started"),"Trial start failed");});
+                StoneRegistry.markReleased(s,Stone.MIND);com.dantemorrigan.gauntlet.ModAdvancements.award(player,"defeat_loki");com.dantemorrigan.gauntlet.ModAdvancements.award(player,"defeat_thanos");check(TribunalEncounter.start(player).equals("started"),"Trial start failed");});
             until(ctx,()->server.computeOnServer(s->TribunalEncounter.targetFor(p(s)).phase()==LivingTribunal.BATTLE),"Arrival failed");
             LivingTribunal[] boss={server.computeOnServer(s->TribunalEncounter.targetFor(p(s)))};float hp=server.computeOnServer(s->boss[0].getHealth());
             for(int distance:new int[]{800,30000}){

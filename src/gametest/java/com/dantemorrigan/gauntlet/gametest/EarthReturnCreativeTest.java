@@ -49,7 +49,7 @@ public final class EarthReturnCreativeTest implements FabricClientGameTest {
             server.runOnServer(s->{
                 p(s).teleport(new TeleportTransition(s.getLevel(CosmosTravel.DIMENSION),new Vec3(30000,256,500),Vec3.ZERO,0,-15,TeleportTransition.DO_NOTHING));
                 try {var f=ThanosEncounter.class.getDeclaredField("DEFEATED");f.setAccessible(true);s.overworld().setAttached((AttachmentType<Boolean>)f.get(null),true);}catch(Exception e){throw new AssertionError(e);}
-                StoneRegistry.markReleased(s,Stone.MIND);
+                StoneRegistry.markReleased(s,Stone.MIND);com.dantemorrigan.gauntlet.ModAdvancements.award(p(s),"defeat_loki");com.dantemorrigan.gauntlet.ModAdvancements.award(p(s),"defeat_thanos");
                 check(TribunalEncounter.start(p(s)).equals("started"),"Creative challenge rejected");
             });
             until(ctx,()->server.computeOnServer(s->boss(s)!=null && boss(s).phase()==LivingTribunal.BATTLE && boss(s).attack()>0 && boss(s).sceneAge()>LivingTribunal.WINDUP+2),"Creative battle never reached attack");

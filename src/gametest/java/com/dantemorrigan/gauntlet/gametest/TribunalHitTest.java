@@ -32,16 +32,17 @@ public final class TribunalHitTest implements FabricClientGameTest {
             server.runOnServer(s->{
                 var p=p(s);p.teleport(new TeleportTransition(s.getLevel(CosmosTravel.DIMENSION),new Vec3(30000,256,500),Vec3.ZERO,0,-10,TeleportTransition.DO_NOTHING));
                 try{var f=ThanosEncounter.class.getDeclaredField("DEFEATED");f.setAccessible(true);s.overworld().setAttached((AttachmentType<Boolean>)f.get(null),true);}catch(Exception e){throw new AssertionError(e);}
-                StoneRegistry.markReleased(s,Stone.MIND);check(TribunalEncounter.start(p).equals("started"),"Creative trial failed");
+                StoneRegistry.markReleased(s,Stone.MIND);com.dantemorrigan.gauntlet.ModAdvancements.award(p,"defeat_loki");com.dantemorrigan.gauntlet.ModAdvancements.award(p,"defeat_thanos");check(TribunalEncounter.start(p).equals("started"),"Creative trial failed");
             });
             until(ctx,()->server.computeOnServer(s->TribunalEncounter.targetFor(p(s)).sceneAge()>100),"No emergence");ctx.takeScreenshot("tribunal_emerging_through_horizon");
             until(ctx,()->server.computeOnServer(s->TribunalEncounter.targetFor(p(s)).phase()==LivingTribunal.BATTLE),"Arrival stuck");
             float[] inversionHealth={0};
             server.runOnServer(s->{
                 var p=p(s);var b=TribunalEncounter.targetFor(p);var g=p.getOffhandItem();
-                for(double height:new double[]{8,53,97}){
-                    Vec3 point=b.position().add(0,height,0);p.lookAt(net.minecraft.commands.arguments.EntityAnchorArgument.Anchor.EYES,point);
-                    check(PowerAbility.pick(p,170) instanceof EntityHitResult,"Giant ray missed height "+height);
+                var parts=TribunalHitbox.parts(b);var leg=parts.get(2).getCenter();
+                for(Vec3 point:new Vec3[]{new Vec3(leg.x,b.getY()+8,leg.z),TribunalHitbox.core(b).getCenter(),parts.get(4).getCenter()}){
+                    p.lookAt(net.minecraft.commands.arguments.EntityAnchorArgument.Anchor.EYES,point);
+                    check(PowerAbility.pick(p,170) instanceof EntityHitResult,"Giant ray missed visible part "+point);
                 }
                 p.lookAt(net.minecraft.commands.arguments.EntityAnchorArgument.Anchor.EYES,b.getBoundingBox().getCenter());
                 g.set(ModComponents.POWER_MODE,PowerAbility.MODE_STRIKE);float before=b.getHealth();PowerAbility.release(p,g,25);

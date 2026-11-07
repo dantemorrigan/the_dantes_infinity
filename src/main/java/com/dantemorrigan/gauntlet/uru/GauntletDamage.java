@@ -33,9 +33,12 @@ public final class GauntletDamage {
 	/** Amounts at or above this are "kill outright" effects (Float.MAX_VALUE in the stones' code). */
 	private static final float LETHAL = 1000f;
 
-	public static boolean hurt(ServerLevel level, Entity target, ServerPlayer attacker, DamageSource normal, float amount) {
+    public static boolean hurt(ServerLevel level,Entity target,ServerPlayer attacker,DamageSource normal,float amount) {
+        return hurt(level,target,attacker,normal,amount,null);
+    }
+    public static boolean hurt(ServerLevel level, Entity target, ServerPlayer attacker, DamageSource normal, float amount,net.minecraft.world.phys.Vec3 impact) {
 		if(target instanceof com.dantemorrigan.gauntlet.boss.LivingTribunal tribunal && attacker!=null && !GauntletState.activeGauntlet(attacker).isEmpty())
-            return tribunal.hurtByGauntlet(level,attacker,amount);
+            return tribunal.hurtByGauntlet(level,attacker,amount,impact);
         // Thanos fears the gauntlet above all else: every ability of a worn gauntlet hits him hard (see Thanos#hurtByGauntlet).
 		if (target instanceof com.dantemorrigan.gauntlet.boss.Thanos thanos && attacker != null && !GauntletState.activeGauntlet(attacker).isEmpty()) {
 			return thanos.hurtByGauntlet(level, attacker, amount, fullGauntlet(attacker));
