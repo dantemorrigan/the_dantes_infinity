@@ -5,7 +5,6 @@ import com.dantemorrigan.gauntlet.ModBlocks;
 import com.mojang.serialization.Codec;
 import net.fabricmc.fabric.api.attachment.v1.AttachmentRegistry;
 import net.fabricmc.fabric.api.attachment.v1.AttachmentType;
-import net.fabricmc.fabric.api.event.lifecycle.v1.ServerChunkEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.core.BlockPos;
@@ -28,12 +27,8 @@ import net.minecraft.world.level.storage.loot.BuiltInLootTables;
 import net.minecraft.world.level.storage.loot.LootTable;
 import net.minecraft.world.phys.Vec3;
 
-import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.Deque;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 /**
  * The Ruined City: a single overgrown, vine-draped ancient city per world.
@@ -45,10 +40,9 @@ public final class MindCity {
 
 	private static final AttachmentType<BlockPos> SITE = AttachmentRegistry.<BlockPos>builder()
 			.persistent(BlockPos.CODEC).buildAndRegister(InfinityGauntlet.id("mind_city_site"));
-	private static final AttachmentType<List<Long>> SHAPED = AttachmentRegistry.<List<Long>>builder()
-			.persistent(Codec.LONG.listOf()).buildAndRegister(InfinityGauntlet.id("mind_city_shaped"));
 	private static final AttachmentType<Boolean> BUILT = AttachmentRegistry.<Boolean>builder()
 			.persistent(Codec.BOOL).buildAndRegister(InfinityGauntlet.id("mind_city_built"));
+	private static final ChunkShaper SHAPER = new ChunkShaper("mind_city_shaped", SITE, R_BLEND, 6, MindCity::shapeChunk);
 
 	@SuppressWarnings("unchecked")
 	private static final ResourceKey<LootTable>[] CHEST_LOOT = new ResourceKey[]{
@@ -64,22 +58,9 @@ public final class MindCity {
 			BuiltInLootTables.WOODLAND_MANSION
 	};
 
-	private static final Deque<Long> QUEUE = new ArrayDeque<>();
-	private static final Set<Long> QUEUED = new HashSet<>();
-	private static Set<Long> shapedCache;
 
 	public static void init() {
 		ServerLifecycleEvents.SERVER_STARTED.register(MindCity::site);
-		ServerLifecycleEvents.SERVER_STOPPED.register(s -> { QUEUE.clear(); QUEUED.clear(); shapedCache = null; });
-		ServerChunkEvents.CHUNK_LOAD.register((level, chunk, fresh) -> {
-			if (level != level.getServer().overworld()) return;
-			BlockPos site = level.getAttached(SITE);
-			if (site == null) return;
-			ChunkPos cp = chunk.getPos();
-			if (!inBlendRange(site, cp)) return;
-			long key = cp.pack();
-			if (!shaped(level).contains(key) && QUEUED.add(key)) QUEUE.add(key);
-		});
 		ServerTickEvents.END_SERVER_TICK.register(MindCity::tick);
 	}
 
@@ -112,11 +93,8 @@ public final class MindCity {
 	public static void relocate(MinecraftServer server, BlockPos site) {
 		ServerLevel level = server.overworld();
 		level.setAttached(SITE, site);
-		level.removeAttached(SHAPED);
+		SHAPER.reset(level);
 		level.removeAttached(BUILT);
-		shapedCache = null;
-		QUEUE.clear();
-		QUEUED.clear();
 	}
 
 	public static boolean built(MinecraftServer server) {
@@ -133,45 +111,14 @@ public final class MindCity {
 		return new Vec3(site.getX() + 0.5, site.getY() + 1, site.getZ() + 18.5);
 	}
 
-	private static Set<Long> shaped(ServerLevel level) {
-		if (shapedCache == null) {
-			List<Long> list = level.getAttached(SHAPED);
-			shapedCache = new HashSet<>(list == null ? List.of() : list);
-		}
-		return shapedCache;
-	}
-
-	private static boolean inBlendRange(BlockPos site, ChunkPos cp) {
-		int minX = (site.getX() - R_BLEND) >> 4, maxX = (site.getX() + R_BLEND) >> 4;
-		int minZ = (site.getZ() - R_BLEND) >> 4, maxZ = (site.getZ() + R_BLEND) >> 4;
-		return cp.x() >= minX && cp.x() <= maxX && cp.z() >= minZ && cp.z() <= maxZ;
-	}
-
 	private static void tick(MinecraftServer server) {
 		ServerLevel level = server.overworld();
 		BlockPos site = level.getAttached(SITE);
 		if (site == null) return;
-		for (int n = 0; n < 6 && !QUEUE.isEmpty(); n++) {
-			long key = QUEUE.poll();
-			QUEUED.remove(key);
-			ChunkPos cp = ChunkPos.unpack(key);
-			if (!level.hasChunk(cp.x(), cp.z()) || shaped(level).contains(key)) continue;
-			shapeChunk(level, site, cp);
-		}
+		SHAPER.drain(level, site);
 		if (level.getGameTime() % 20 == 0 && !built(server)) {
-			int minX = (site.getX() - R_BLEND) >> 4, maxX = (site.getX() + R_BLEND) >> 4;
-			int minZ = (site.getZ() - R_BLEND) >> 4, maxZ = (site.getZ() + R_BLEND) >> 4;
-			for (int x = minX; x <= maxX; x++) {
-				for (int z = minZ; z <= maxZ; z++) {
-					if (!level.hasChunk(x, z)) continue;
-					long key = new ChunkPos(x, z).pack();
-					if (!shaped(level).contains(key) && QUEUED.add(key)) QUEUE.add(key);
-				}
-			}
-			boolean ready = true;
-			for (ChunkPos cp : cityChunks(site)) {
-				if (!level.hasChunk(cp.x(), cp.z()) || !shaped(level).contains(cp.pack())) { ready = false; break; }
-			}
+			SHAPER.rescan(level, site);
+			boolean ready = SHAPER.allShaped(level, cityChunks(site));
 			if (ready) build(level, site);
 		}
 	}
@@ -191,7 +138,7 @@ public final class MindCity {
 		BlockPos site = site(level.getServer());
 		for (ChunkPos cp : cityChunks(site)) {
 			level.getChunk(cp.x(), cp.z());
-			if (!shaped(level).contains(cp.pack())) shapeChunk(level, site, cp);
+			if (!SHAPER.isShaped(level, cp)) shapeChunk(level, site, cp);
 		}
 		build(level, site);
 	}
@@ -255,8 +202,7 @@ public final class MindCity {
 				}
 			}
 		}
-		shaped(level).add(cp.pack());
-		level.setAttached(SHAPED, new ArrayList<>(shaped(level)));
+		SHAPER.markShaped(level, cp);
 	}
 
 	private static void set(ServerLevel level, BlockPos p, BlockState s) {

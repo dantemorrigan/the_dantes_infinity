@@ -1,14 +1,9 @@
 package com.dantemorrigan.gauntlet.stones;
 
 import com.dantemorrigan.gauntlet.ModItems;
-import net.fabricmc.fabric.api.loot.v3.LootTableEvents;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.storage.loot.BuiltInLootTables;
-import net.minecraft.world.level.storage.loot.LootPool;
 import net.minecraft.world.level.storage.loot.LootTable;
-import net.minecraft.world.level.storage.loot.entries.LootItem;
-import net.minecraft.world.level.storage.loot.predicates.LootItemRandomChanceCondition;
-import net.minecraft.world.level.storage.loot.providers.number.ConstantValue;
 
 import java.util.Map;
 
@@ -23,13 +18,7 @@ public final class SoulLoot {
 			BuiltInLootTables.ABANDONED_MINESHAFT, 0.08f);
 
 	public static void init() {
-		LootTableEvents.MODIFY.register((key, builder, source, registries) -> {
-			Float chance = CHANCES.get(key);
-			if (chance == null || !source.isBuiltin()) return;
-			builder.withPool(LootPool.lootPool().setRolls(ConstantValue.exactly(1))
-					.when(LootItemRandomChanceCondition.randomChance(chance))
-					.add(LootItem.lootTableItem(ModItems.QUEST_SOUL_TEMPLE_MAP)));
-		});
+		QuestLoot.distribute(CHANCES, ModItems.QUEST_SOUL_TEMPLE_MAP);
 	}
 
 	private SoulLoot() {}

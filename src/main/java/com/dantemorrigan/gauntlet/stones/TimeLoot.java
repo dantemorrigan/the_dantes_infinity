@@ -2,7 +2,6 @@ package com.dantemorrigan.gauntlet.stones;
 
 import com.dantemorrigan.gauntlet.ModItems;
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
-import net.fabricmc.fabric.api.loot.v3.LootTableEvents;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Mob;
@@ -12,11 +11,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.storage.loot.BuiltInLootTables;
-import net.minecraft.world.level.storage.loot.LootPool;
 import net.minecraft.world.level.storage.loot.LootTable;
-import net.minecraft.world.level.storage.loot.entries.LootItem;
-import net.minecraft.world.level.storage.loot.predicates.LootItemRandomChanceCondition;
-import net.minecraft.world.level.storage.loot.providers.number.ConstantValue;
 
 import java.util.Map;
 
@@ -69,13 +64,10 @@ public final class TimeLoot {
 			BuiltInLootTables.END_CITY_TREASURE, 0.6f);
 
 	public static void init() {
-		LootTableEvents.MODIFY.register((key, builder, source, registries) -> {
-			if (!source.isBuiltin()) return;
-			addIfPresent(builder, MAP_CHANCES.get(key), ModItems.QUEST_TIME_TEMPLE_MAP);
-			addIfPresent(builder, OVERWORLD_GEAR_CHANCES.get(key), ModItems.QUEST_TIME_GEAR_OVERWORLD);
-			addIfPresent(builder, NETHER_GEAR_CHANCES.get(key), ModItems.QUEST_TIME_GEAR_NETHER);
-			addIfPresent(builder, END_GEAR_CHANCES.get(key), ModItems.QUEST_TIME_GEAR_END);
-		});
+		QuestLoot.distribute(MAP_CHANCES, ModItems.QUEST_TIME_TEMPLE_MAP);
+		QuestLoot.distribute(OVERWORLD_GEAR_CHANCES, ModItems.QUEST_TIME_GEAR_OVERWORLD);
+		QuestLoot.distribute(NETHER_GEAR_CHANCES, ModItems.QUEST_TIME_GEAR_NETHER);
+		QuestLoot.distribute(END_GEAR_CHANCES, ModItems.QUEST_TIME_GEAR_END);
 
 		ServerLivingEntityEvents.AFTER_DEATH.register((entity, damageSource) -> {
 			if (!(entity instanceof Mob) || !(entity.level() instanceof ServerLevel level)) return;
@@ -97,12 +89,6 @@ public final class TimeLoot {
 		return null;
 	}
 
-	private static void addIfPresent(LootTable.Builder builder, Float chance, Item item) {
-		if (chance == null) return;
-		builder.withPool(LootPool.lootPool().setRolls(ConstantValue.exactly(1))
-				.when(LootItemRandomChanceCondition.randomChance(chance))
-				.add(LootItem.lootTableItem(item)));
-	}
 
 	private TimeLoot() {}
 }
