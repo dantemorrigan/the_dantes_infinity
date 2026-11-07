@@ -157,7 +157,7 @@ public final class GauntletConfig {
 	/** Chance, checked once a minute per nearby group in the Nether, that the red mist comes. */
 	public float realityFogChancePerMinute = 0.08f;
 	/** How long the stone stays in the mist before it slips away. */
-	public int realityFogSeconds = 75;
+	public int realityFogSeconds = 120;
 
 	// ---- Meteor Stream (Power stone, server) ----
 	/** Ticks the gauntlet must stay on the sun/moon to lock on. */

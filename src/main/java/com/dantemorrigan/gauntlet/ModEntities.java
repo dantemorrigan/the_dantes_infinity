@@ -21,7 +21,7 @@ public final class ModEntities {
 	/** The Reality Stone fleeing through the red mist in the Nether. */
 	public static final EntityType<com.dantemorrigan.gauntlet.stones.RealityWisp> REALITY_WISP = Registry.register(BuiltInRegistries.ENTITY_TYPE, WISP_KEY,
 			EntityType.Builder.<com.dantemorrigan.gauntlet.stones.RealityWisp>of(com.dantemorrigan.gauntlet.stones.RealityWisp::new, MobCategory.MISC)
-					.sized(0.6f, 0.6f).clientTrackingRange(8).updateInterval(1).noLootTable().build(WISP_KEY));
+					.sized(1.4f, 1.4f).clientTrackingRange(8).updateInterval(1).noLootTable().build(WISP_KEY));
 
 	private static final ResourceKey<EntityType<?>> MIND_ZOMBIE_KEY = ResourceKey.create(Registries.ENTITY_TYPE, InfinityGauntlet.id("mind_zombie"));
 	/** Smart, sun-immune zombie infused with Mind Stone essence roaming the Ruined City. */

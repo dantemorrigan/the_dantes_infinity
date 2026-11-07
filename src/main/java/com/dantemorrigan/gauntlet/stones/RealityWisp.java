@@ -38,19 +38,19 @@ public final class RealityWisp extends Entity {
 		if (p == null) { discard(); return; }
 		Vec3 pos = position();
 		double toPlayer = pos.distanceTo(p.getEyePosition());
-		if (toPlayer < 4.0) {
+		if (toPlayer < 2.5) {
 			// Too close: dart away, a little sideways so it is hard to follow.
 			Vec3 away = pos.subtract(p.getEyePosition()).normalize();
 			Vec3 side = away.cross(new Vec3(0, 1, 0)).normalize().scale(random.nextBoolean() ? 0.7 : -0.7);
-			goal = pos.add(away.scale(7)).add(side.scale(4)).add(0, random.nextDouble() * 2 - 0.5, 0);
-			retarget = 15;
+			goal = pos.add(away.scale(4)).add(side.scale(2)).add(0, random.nextDouble() * 2 - 0.5, 0);
+			retarget = 10;
 		} else if (goal == null || --retarget <= 0 || pos.distanceToSqr(goal) < 1.5) {
 			double a = random.nextDouble() * Math.PI * 2, r = 5 + random.nextDouble() * 7;
 			goal = p.position().add(Math.cos(a) * r, 1 + random.nextDouble() * 4, Math.sin(a) * r);
 			retarget = 20 + random.nextInt(25);
 		}
-		Vec3 v = getDeltaMovement().scale(0.86).add(goal.subtract(pos).normalize().scale(0.11));
-		if (v.length() > 0.62) v = v.normalize().scale(0.62);
+		Vec3 v = getDeltaMovement().scale(0.86).add(goal.subtract(pos).normalize().scale(0.06));
+		if (v.length() > 0.3) v = v.normalize().scale(0.3);
 		v = v.add(0, Math.sin(tickCount * 0.35) * 0.03, 0);
 		setDeltaMovement(v);
 		setPos(pos.add(v));
@@ -61,11 +61,13 @@ public final class RealityWisp extends Entity {
 		if (isRemoved()) return false;
 		if (!(source.getEntity() instanceof ServerPlayer player)) return false;
 		Entity direct = source.getDirectEntity();
-		if (direct instanceof AbstractArrow) return RealityFog.caught(this, player, true);
-		return direct == player && RealityFog.caught(this, player, false);
+		if (direct instanceof net.minecraft.world.entity.projectile.Projectile) return RealityFog.caught(this, player, true);
+		return (direct == player || direct == null) && RealityFog.caught(this, player, false);
 	}
 
 	@Override public boolean isPickable() { return true; }
+	/** Generous aim assist: melee and arrows register even when slightly off. */
+	@Override public float getPickRadius() { return 0.9f; }
 	@Override public boolean isAttackable() { return true; }
 	@Override public boolean shouldBeSaved() { return false; }
 	@Override public boolean isNoGravity() { return true; }
