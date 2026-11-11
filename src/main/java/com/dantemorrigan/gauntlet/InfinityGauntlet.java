@@ -51,6 +51,7 @@ public class InfinityGauntlet implements ModInitializer {
 		GauntletEffects.init();
 		com.dantemorrigan.gauntlet.power.CosmicGauntlet.init();
 		ModNetwork.init();
+		ServerRules.init();
 		com.dantemorrigan.gauntlet.power.InfinityBeam.init();
 		ServerPlayNetworking.registerGlobalReceiver(ModNetwork.BeamAction.TYPE, (payload, context) -> com.dantemorrigan.gauntlet.power.InfinityBeam.request(context.player(), payload.start()));
 		SpaceManager.init();

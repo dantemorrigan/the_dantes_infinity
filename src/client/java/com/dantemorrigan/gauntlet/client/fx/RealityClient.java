@@ -1,6 +1,5 @@
 package com.dantemorrigan.gauntlet.client.fx;
 
-import com.dantemorrigan.gauntlet.GauntletConfig;
 import com.dantemorrigan.gauntlet.InfinityGauntlet;
 import com.dantemorrigan.gauntlet.ModParticles;
 import com.dantemorrigan.gauntlet.client.cutscene.Cutscene;
@@ -298,7 +297,7 @@ public final class RealityClient {
 
 	private static void cracks(Minecraft mc) {
 		RandomSource rnd = mc.level.getRandom();
-		float r = GauntletConfig.get().realityRadius;
+		float r = com.dantemorrigan.gauntlet.ServerRules.realityRadius;
 		ClientPower.spawn(ModParticles.REALITY_FRACTURE, center.add(0, 0.05, 0), 0, 1.6, 0);
 		for (int i = 0; i < 7; i++) {
 			double a = rnd.nextDouble() * Math.PI * 2, d = INNER + 2 + rnd.nextDouble() * (r - INNER - 2);
@@ -312,7 +311,7 @@ public final class RealityClient {
 		RandomSource rnd = mc.level.getRandom();
 		int max = 192;
 		if (liveBudget > max) return;
-		float r = GauntletConfig.get().realityRadius;
+		float r = com.dantemorrigan.gauntlet.ServerRules.realityRadius;
 		// Glass shards along the distortion boundary, aether ribbons inside it.
 		double a = rnd.nextDouble() * Math.PI * 2;
 		Vec3 edge = center.add(Math.cos(a) * r, 1 + rnd.nextDouble() * 4, Math.sin(a) * r);
@@ -335,9 +334,8 @@ public final class RealityClient {
 	private static void captureAround(Minecraft mc) {
 		ClientLevel lvl = mc.level;
 		if (lvl == null) return;
-		GauntletConfig cfg = GauntletConfig.get();
-		int r = cfg.realityRadius;
-		int maxBlocks = cfg.realityMaxBlocks * 3;
+		int r = com.dantemorrigan.gauntlet.ServerRules.realityRadius;
+		int maxBlocks = com.dantemorrigan.gauntlet.ServerRules.realityMaxBlocks * 3;
 		BlockPos c = BlockPos.containing(center);
 		double rSq = r * r;
 
@@ -422,7 +420,7 @@ public final class RealityClient {
 	private static void commitAndClear() {
 		Minecraft mc = Minecraft.getInstance();
 		float p = foldProgress(0);
-		if (!ENTRIES.isEmpty() && level != null && mc.level == level && p > 0.01f && GauntletConfig.get().abilityBlockChanges) {
+		if (!ENTRIES.isEmpty() && level != null && mc.level == level && p > 0.01f && com.dantemorrigan.gauntlet.ServerRules.abilityBlockChanges) {
 			Map<BlockPos, BlockState> targets = new LinkedHashMap<>();
 			for (Entry e : ENTRIES.values()) {
 				if (!RealityStone.isDisplaced(e.pos, e.kind, e.anchorCenter, e.anchorYaw)) continue;

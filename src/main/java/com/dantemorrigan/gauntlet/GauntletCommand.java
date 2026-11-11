@@ -211,6 +211,7 @@ public final class GauntletCommand {
 						})))
 						.then(Commands.literal("reload_config").executes(ctx -> {
 							GauntletConfig.reload();
+							ServerRules.broadcast(ctx.getSource().getServer());
 							ctx.getSource().sendSuccess(() -> Component.translatable("command.infinity_gauntlet.reload"), false);
 							return 1;
 						}))

@@ -177,6 +177,32 @@ public final class ModNetwork {
 		@Override public Type<CelestialSync> type() { return TYPE; }
 	}
 
+	/** S2C: the server's values of the rules the client uses for its own visuals and local block changes (join, config reload). */
+	public record RulesSync(boolean abilityBlockChanges, int realityRadius, int realityMaxBlocks, int redSkyRadius, int redSkyFalloff,
+			float celestialAimSeconds, double soulHealthPerSoul, double soulDamagePerSoul) implements CustomPacketPayload {
+		public static final Type<RulesSync> TYPE = newType("rules_sync");
+		public static final StreamCodec<ByteBuf, RulesSync> CODEC = new StreamCodec<>() {
+			@Override
+			public RulesSync decode(ByteBuf buf) {
+				return new RulesSync(buf.readBoolean(), buf.readInt(), buf.readInt(), buf.readInt(), buf.readInt(),
+						buf.readFloat(), buf.readDouble(), buf.readDouble());
+			}
+
+			@Override
+			public void encode(ByteBuf buf, RulesSync v) {
+				buf.writeBoolean(v.abilityBlockChanges);
+				buf.writeInt(v.realityRadius);
+				buf.writeInt(v.realityMaxBlocks);
+				buf.writeInt(v.redSkyRadius);
+				buf.writeInt(v.redSkyFalloff);
+				buf.writeFloat(v.celestialAimSeconds);
+				buf.writeDouble(v.soulHealthPerSoul);
+				buf.writeDouble(v.soulDamagePerSoul);
+			}
+		};
+		@Override public Type<RulesSync> type() { return TYPE; }
+	}
+
 	/** S2C: a physical meteor was launched (server decides where it lands). */
 	public record MeteorSpawn(int id, Vec3 from, Vec3 to, int flightTicks, int size, boolean solar) implements CustomPacketPayload {
 		public static final Type<MeteorSpawn> TYPE = newType("meteor_spawn");
@@ -484,6 +510,7 @@ public final class ModNetwork {
 		PayloadTypeRegistry.clientboundPlay().register(LatveriaLook.TYPE, LatveriaLook.CODEC);
 		PayloadTypeRegistry.clientboundPlay().register(SpaceFx.TYPE, SpaceFx.CODEC);
 		PayloadTypeRegistry.clientboundPlay().register(CelestialSync.TYPE, CelestialSync.CODEC);
+		PayloadTypeRegistry.clientboundPlay().register(RulesSync.TYPE, RulesSync.CODEC);
 		PayloadTypeRegistry.clientboundPlay().register(MeteorSpawn.TYPE, MeteorSpawn.CODEC);
 		PayloadTypeRegistry.clientboundPlay().register(MeteorImpact.TYPE, MeteorImpact.CODEC);
 		PayloadTypeRegistry.serverboundPlay().register(TimeRewindRequest.TYPE, TimeRewindRequest.CODEC);

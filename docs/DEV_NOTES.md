@@ -134,6 +134,8 @@ networking, key-mapping, rendering, particles, dimensions, data-attachment, item
 - `abilityBlockChanges` отключает изменение блоков способностями, включая кратеры и огонь от метеоров. `beamBreakBlocks` отдельно управляет разрушением от луча. Метеоры могут наносить урон как эффект окружения.
 - `allowPlanetDestruction`, `allowCelestialDestruction`, `allowInfinitySnap` и `allowTimeShift` отключают запуск отдельных глобальных событий. Уже запущенное событие можно завершить и отмотать.
 
+Правила, которые нужны клиенту для своих эффектов и локальных блоков (`abilityBlockChanges`, `realityRadius`, `realityMaxBlocks`, `redSkyRadius`, `redSkyFalloff`, `celestialAimSeconds`, сила баффа Души), клиент читает из `ServerRules`, а не из своего файла: сервер шлёт их пакетом `RulesSync` при входе и после `/gauntlet reload_config`. Статическое состояние способностей сбрасывается на `SERVER_STOPPED`, чтобы не переходить в другой мир того же клиента. Тест: `-PonlyTest=RuntimeStateTest`.
+
 Для проверки вдвоём: щелчок из космоса при втором игроке на Земле, выход одного участника до отката, взгляд на искажение Реальности с разных сторон, вход в измерение с открытым порталом, два извлекателя на одном камне, захват и освобождение игрока с разрешённым и запрещённым PvP.
 
 ## Броня из Уру (как устроено)

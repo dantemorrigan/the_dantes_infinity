@@ -66,6 +66,8 @@ public final class TimeAbility {
 
 	public static void init() {
 		ServerTickEvents.END_SERVER_TICK.register(TimeAbility::tick);
+		// Runtime state belongs to one server: a singleplayer client that opens another world must start clean.
+		net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents.SERVER_STOPPED.register(server -> { HISTORY.clear(); ACTIVE.clear(); COOLDOWN.clear(); });
 		// A fresh life has no past: otherwise a rewind right after respawn would pull the player back to where they died.
 		net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents.AFTER_RESPAWN.register((old, player, alive) -> {
 			HISTORY.remove(player.getUUID()); HISTORY.remove(old.getUUID()); ACTIVE.remove(player.getUUID());

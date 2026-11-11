@@ -74,6 +74,8 @@ public final class PlanetDestruction {
 
 	public static void init() {
 		ServerTickEvents.END_SERVER_TICK.register(PlanetDestruction::tick);
+		// Runtime state belongs to one server: a singleplayer client that opens another world must start clean.
+		net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents.SERVER_STOPPED.register(server -> { EVENTS.clear(); PLAYER_EVENT.clear(); });
 		// Participants are untouchable while the cutscene plays (until the transfer).
 		ServerLivingEntityEvents.ALLOW_DAMAGE.register((entity, source, amount) ->
 				!(entity instanceof ServerPlayer p && PLAYER_EVENT.containsKey(p.getUUID())));

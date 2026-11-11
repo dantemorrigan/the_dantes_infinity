@@ -36,6 +36,11 @@ import java.util.UUID;
 public final class PowerAbility {
 	private static final Map<UUID, Long> ULTIMATE_COOLDOWN = new HashMap<>();
 
+	static {
+		// Runtime state belongs to one server: a singleplayer client that opens another world must start clean.
+		net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents.SERVER_STOPPED.register(server -> ULTIMATE_COOLDOWN.clear());
+	}
+
 	public static boolean canUse(ServerPlayer player, ItemStack gauntlet) {
 		return GauntletState.activeGauntlet(player) == gauntlet && GauntletState.inserted(gauntlet).contains(Stone.POWER);
 	}

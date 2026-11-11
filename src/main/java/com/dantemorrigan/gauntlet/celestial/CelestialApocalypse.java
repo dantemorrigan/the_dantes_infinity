@@ -89,6 +89,8 @@ public final class CelestialApocalypse {
 			}
 		});
 		ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> ServerPlayNetworking.send(handler.getPlayer(), sync(server)));
+		// Runtime state belongs to one server: a singleplayer client that opens another world must start clean.
+		ServerLifecycleEvents.SERVER_STOPPED.register(server -> { METEORS.clear(); AIM.clear(); endingSince = -1; spawnAccumulator = 0; });
 	}
 
 	// ------------------------------------------------------------------ body geometry

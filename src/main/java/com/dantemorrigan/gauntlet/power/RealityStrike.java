@@ -77,6 +77,8 @@ public final class RealityStrike {
 
 	public static void init() {
 		ServerTickEvents.END_SERVER_TICK.register(RealityStrike::tick);
+		// Runtime state belongs to one server: a singleplayer client that opens another world must start clean.
+		net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents.SERVER_STOPPED.register(server -> { WAVES.clear(); COOLDOWN.clear(); });
 	}
 
 	public static void strike(ServerPlayer player) {

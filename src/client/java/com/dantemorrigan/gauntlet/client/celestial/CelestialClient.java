@@ -1,6 +1,5 @@
 package com.dantemorrigan.gauntlet.client.celestial;
 
-import com.dantemorrigan.gauntlet.GauntletConfig;
 import com.dantemorrigan.gauntlet.GauntletItem;
 import com.dantemorrigan.gauntlet.InfinityGauntlet;
 import com.dantemorrigan.gauntlet.ModParticles;
@@ -172,9 +171,8 @@ public final class CelestialClient {
 		else if (phase == 2) time = 1;
 		else time = Math.max(0, 1 - Math.max(0, endingTicks) / 100f);
 		if (time <= 0) return 0;
-		GauntletConfig cfg = GauntletConfig.get();
 		double d = Math.sqrt(Math.pow(pos.x - center.x, 2) + Math.pow(pos.z - center.z, 2));
-		float radial = (float) Mth.clamp(1 - (d - cfg.redSkyRadius) / Math.max(1, cfg.redSkyFalloff), 0, 1);
+		float radial = (float) Mth.clamp(1 - (d - com.dantemorrigan.gauntlet.ServerRules.redSkyRadius) / Math.max(1, com.dantemorrigan.gauntlet.ServerRules.redSkyFalloff), 0, 1);
 		return time * radial;
 	}
 
@@ -307,7 +305,7 @@ public final class CelestialClient {
 		Vec3 dir = player.getViewVector(partial);
 		Vec3 to = from.add(dir.scale(Math.min(180, mc.options.getEffectiveRenderDistance() * 16)));
 		Vec3 side = dir.cross(cam.subtract(from)).normalize().scale(0.12 + 0.05 * Mth.sin((GauntletItem.chargeTicks(player) + partial) * 0.8f));
-		float charge = Mth.clamp(GauntletItem.chargeTicks(player) / (GauntletConfig.get().celestialAimSeconds * 20f), 0, 1);
+		float charge = Mth.clamp(GauntletItem.chargeTicks(player) / (com.dantemorrigan.gauntlet.ServerRules.celestialAimSeconds * 20f), 0, 1);
 		int color = ARGB.colorFromFloat(0.5f + 0.5f * charge, 0.85f, 0.5f, 1f);
 		PoseStack pose = ctx.poseStack();
 		pose.pushPose();

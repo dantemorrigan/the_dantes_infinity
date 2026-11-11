@@ -1,6 +1,5 @@
 package com.dantemorrigan.gauntlet.client.fx;
 
-import com.dantemorrigan.gauntlet.GauntletConfig;
 import com.dantemorrigan.gauntlet.ModParticles;
 import com.dantemorrigan.gauntlet.client.StatusHud;
 import com.dantemorrigan.gauntlet.client.cutscene.Cutscene;
@@ -175,10 +174,9 @@ public final class SoulClient {
 		if (p != null && buffSouls > 0) {
 			if (buffTicks > 0) buffTicks--;
 			if (p.tickCount % 30 == 0) ClientPower.spawn(ModParticles.SOUL_ABSORPTION, chest(p), 0.7, 0, 0);
-			GauntletConfig cfg = GauntletConfig.get();
 			StatusHud.persistent("soul", Component.translatable("msg.infinity_gauntlet.soul.hud", String.valueOf(buffSouls),
-					String.format(java.util.Locale.ROOT, "%.0f", buffSouls * cfg.soulHealthPerSoul / 2),
-					String.format(java.util.Locale.ROOT, "%.1f", buffSouls * cfg.soulDamagePerSoul), String.valueOf(Mth.ceil(buffTicks / 20f))));
+					String.format(java.util.Locale.ROOT, "%.0f", buffSouls * com.dantemorrigan.gauntlet.ServerRules.soulHealthPerSoul / 2),
+					String.format(java.util.Locale.ROOT, "%.1f", buffSouls * com.dantemorrigan.gauntlet.ServerRules.soulDamagePerSoul), String.valueOf(Mth.ceil(buffTicks / 20f))));
 		}
 	}
 
