@@ -1,8 +1,10 @@
-# Pushing a tag vX.Y.Z builds the mod and publishes a GitHub release with the jar.
-# The release text is docs/releases/<tag>.md; the tag must match the version in gradle.properties.
+# Builds the mod and publishes a GitHub release with the jar for the version in gradle.properties.
+# Start it by hand (Actions -> release -> Run workflow, on main) or by pushing the tag vX.Y.Z.
+# The release text is docs/releases/vX.Y.Z.md; a run started by hand creates the tag on the commit it built.
 
 name: release
 on:
+  workflow_dispatch:
   push:
     tags: ['v*']
 
@@ -25,12 +27,14 @@ jobs:
       - name: check the tag against the mod version
         run: |
           version=$(grep '^version=' gradle.properties | cut -d= -f2)
-          if [ "v$version" != "$GITHUB_REF_NAME" ]; then
+          tag="v$version"
+          if [ "$GITHUB_REF_TYPE" = tag ] && [ "$tag" != "$GITHUB_REF_NAME" ]; then
             echo "Tag $GITHUB_REF_NAME does not match version $version in gradle.properties" >&2
             exit 1
           fi
-          test -f "docs/releases/$GITHUB_REF_NAME.md" || { echo "docs/releases/$GITHUB_REF_NAME.md is missing" >&2; exit 1; }
+          test -f "docs/releases/$tag.md" || { echo "docs/releases/$tag.md is missing" >&2; exit 1; }
           echo "VERSION=$version" >> "$GITHUB_ENV"
+          echo "TAG=$tag" >> "$GITHUB_ENV"
       - name: build
         run: |
           chmod +x ./gradlew
@@ -39,5 +43,5 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "$GITHUB_REF_NAME" "build/libs/infinity_gauntlet-$VERSION.jar" \
-            --title "$GITHUB_REF_NAME" --notes-file "docs/releases/$GITHUB_REF_NAME.md" --verify-tag
+          gh release create "$TAG" "build/libs/infinity_gauntlet-$VERSION.jar" \
+            --title "$TAG" --notes-file "docs/releases/$TAG.md" --target "$GITHUB_SHA"
