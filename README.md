@@ -6,7 +6,7 @@
 
 🇬🇧 English · [🇷🇺 Русский](README.ru.md)
 
-Requirements: **Java 25**. Build: `./gradlew build` → `build/libs/infinity_gauntlet-1.0.6.jar` (+ Fabric API 0.155.3+26.1.2).
+Requirements: **Java 25**. Build: `./gradlew build` → `build/libs/infinity_gauntlet-1.0.7.jar` (+ Fabric API 0.155.3+26.1.2).
 
 ```
 ./gradlew runClient          # test client; stable offline profile Player433
