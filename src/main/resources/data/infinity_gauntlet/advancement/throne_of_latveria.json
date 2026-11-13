@@ -1,0 +1,23 @@
+{
+  "parent": "infinity_gauntlet:defeat_doom",
+  "display": {
+    "icon": {
+      "id": "infinity_gauntlet:latveria_banner"
+    },
+    "title": {
+      "translate": "advancements.infinity_gauntlet.throne_of_latveria.title"
+    },
+    "description": {
+      "translate": "advancements.infinity_gauntlet.throne_of_latveria.description"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "done": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

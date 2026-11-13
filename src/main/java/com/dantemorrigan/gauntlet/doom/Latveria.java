@@ -183,6 +183,7 @@ public final class Latveria {
 			placed = null;
 			Searchlights.clear();
 			GauntletSilence.clear();
+			LatveriaCourt.clear();
 			placedDirty = false;
 			inGate.clear();
 			logoDue.clear();
@@ -196,6 +197,7 @@ public final class Latveria {
 		UseBlockCallback.EVENT.register((player, level, hand, hit) -> {
 			if (!(player instanceof ServerPlayer sp) || level.dimension() != LEVEL) return InteractionResult.PASS;
 			BlockPos p = hit.getBlockPos(), g = LatveriaPlan.GENERATOR;
+			if (LatveriaCourt.isThrone(p) && LatveriaCourt.sit(sp)) return InteractionResult.SUCCESS;
 			if (Math.abs(p.getX() - g.getX()) > 2 || Math.abs(p.getZ() - g.getZ()) > 2 || Math.abs(p.getY() - g.getY()) > 5) return InteractionResult.PASS;
 			return shutGenerator(sp) ? InteractionResult.SUCCESS : InteractionResult.PASS;
 		});
@@ -502,6 +504,7 @@ public final class Latveria {
 		}
 		for (int n = 0; n < 2 && !toFurnish.isEmpty(); n++) furnish(level, toFurnish.poll());
 		Searchlights.tick(level);
+		LatveriaCourt.tick(level);
 		for (ServerPlayer p : level.players()) {
 			Integer due = logoDue.get(p.getUUID());
 			if (due != null) {

@@ -171,6 +171,11 @@ public class Doombot extends PathfinderMob {
 		setAction(A_SALUTE);
 	}
 
+	/** Salutes (the new monarch on the throne, for instance) unless busy fighting. */
+	public void salute() {
+		if (action() == A_IDLE) setAction(A_SALUTE);
+	}
+
 	public boolean guarding() { return guarding; }
 
 	public void setGuarding(boolean guard) {
