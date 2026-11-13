@@ -235,6 +235,118 @@ public final class Latveria {
 		DoomFx.send(player, DoomFx.LOGO, 0, player.position(), 0, 200);
 	}
 
+	// ------------------------------------------------------------------ debug tools
+
+	/** Named spots for {@code /gauntlet latveria tp}: x, y, z, yaw. */
+	public static final Map<String, double[]> PLACES = new java.util.LinkedHashMap<>();
+	static {
+		int f = LatveriaPlan.FLOOR;
+		PLACES.put("arrival", new double[]{0.5, LatveriaPlan.VALLEY_Y + 1, 122.5, 180});
+		PLACES.put("square", new double[]{0.5, LatveriaPlan.VALLEY_Y + 1, 45.5, 180});
+		PLACES.put("watchtower", new double[]{11.5, LatveriaPlan.VALLEY_Y + 18, -59.5, 180});
+		PLACES.put("road", new double[]{0.5, LatveriaPlan.roadHeight(-120) + 1.6, -112.5, 180});
+		PLACES.put("gate", new double[]{0.5, f, -186.5, 180});
+		PLACES.put("yard", new double[]{0.5, f, -212.5, 180});
+		PLACES.put("barracks", new double[]{-33.5, f, -230.5, 90});
+		PLACES.put("forge", new double[]{33.5, f, -230.5, 270});
+		PLACES.put("service_door", new double[]{50.5, f, -283.5, 90});
+		PLACES.put("lab", new double[]{34.5, f, -270.5, 135});
+		PLACES.put("hall", new double[]{0.5, f, -256.5, 180});
+		PLACES.put("throne", new double[]{0.5, f + 2, -289.5, 0});
+		PLACES.put("armory", new double[]{-33.5, f, -284.5, 90});
+		PLACES.put("dining", new double[]{-31.5, f, -264.5, 90});
+		PLACES.put("bedrooms", new double[]{-35.5, f + 10, -270.5, 90});
+		PLACES.put("library", new double[]{32.5, f + 10, -278.5, 270});
+		PLACES.put("master_bedroom", new double[]{32.5, f + 10, -262.5, 270});
+		PLACES.put("roof", new double[]{0.5, f + 19, -273.5, 180});
+		PLACES.put("overlook", new double[]{70.5, 160, -180.5, 135});
+	}
+
+	public static boolean tp(ServerPlayer player, String place) {
+		double[] at = PLACES.get(place);
+		ServerLevel level = player.level().getServer().getLevel(LEVEL);
+		if (at == null || level == null) return false;
+		if (player.level().dimension() != LEVEL) {
+			player.setAttached(RETURN_DIM, player.level().dimension().identifier().toString());
+			player.setAttached(RETURN_POS, player.blockPosition());
+		}
+		player.teleport(new TeleportTransition(level, new Vec3(at[0], at[1], at[2]), Vec3.ZERO, (float) at[3], 0f, TeleportTransition.DO_NOTHING));
+		return true;
+	}
+
+	/** Brings up every squad that has not been met yet, wherever the players are. */
+	public static int spawnSquads(ServerLevel level) {
+		load(level.getServer());
+		int before = spawned;
+		for (int s = 0; s < SQUADS.length; s++) level.getChunk(BlockPos.containing(SQUAD_AT[s]));
+		for (int s = 0; s < SQUADS.length; s++) {
+			if ((spawned & 1 << s) != 0) continue;
+			Vec3 at = SQUAD_AT[s];
+			int count = 0;
+			for (int i = 0; i < SQUADS[s].length; i++) {
+				Doombot bot = ModEntities.DOOMBOT.create(level, EntitySpawnReason.STRUCTURE);
+				if (bot == null) continue;
+				bot.setup(SQUADS[s][i], s);
+				bot.snapTo(at.x + (i % 4 - 1.5) * 2.2, at.y + (SQUADS[s][i] == Doombot.INTERCEPTOR ? 5 : 0), at.z + (i / 4) * 2.4 - 1.2, 180f, 0);
+				if (level.addFreshEntity(bot)) count++;
+			}
+			spawned |= 1 << s;
+			alive[s] = count;
+		}
+		save(level.getServer());
+		return Integer.bitCount(spawned & ~before);
+	}
+
+	/** Switches the laboratory's generator off or back on. */
+	public static void setGenerator(ServerLevel level, boolean off) {
+		load(level.getServer());
+		if (off) flags |= GENERATOR; else flags &= ~GENERATOR;
+		save(level.getServer());
+		level.getChunk(LatveriaPlan.GENERATOR);
+		if (off) barriers(level);
+		else {
+			level.setBlockAndUpdate(LatveriaPlan.GENERATOR, Blocks.SEA_LANTERN.defaultBlockState());
+			set(level, LatveriaPlan.LAB_DOOR, Blocks.GREEN_STAINED_GLASS);
+		}
+	}
+
+	/** Opens the portcullis and the throne room as if the squads had fallen. */
+	public static void openGates(ServerLevel level) {
+		load(level.getServer());
+		flags |= GATE | THRONE;
+		save(level.getServer());
+		level.getChunk(new BlockPos(0, 0, -205));
+		level.getChunk(new BlockPos(0, 0, -253));
+		barriers(level);
+	}
+
+	/** Forgets everything Latveria knows about a player: access, title card, spoils, ownership. */
+	public static void forget(ServerPlayer player) {
+		load(player.level().getServer());
+		player.removeAttached(ACCESS);
+		player.removeAttached(LOGO_SEEN);
+		player.removeAttached(REWARDED);
+		owners.remove(player.getUUID());
+		save(player.level().getServer());
+	}
+
+	/** Lets the title card play again on the next arrival. */
+	public static void forgetLogo(ServerPlayer player) { player.removeAttached(LOGO_SEEN); }
+
+	/** Lets the victor's spoils be paid once more. */
+	public static void forgetReward(ServerPlayer player) { player.removeAttached(REWARDED); }
+
+	/** One of every item of the add-on. */
+	public static void giveAll(ServerPlayer p) {
+		for (net.minecraft.world.item.Item item : List.of(ModItems.DOOM_HELMET, ModItems.DOOM_CHESTPLATE, ModItems.DOOM_LEGGINGS, ModItems.DOOM_BOOTS,
+				ModItems.DOOM_GAUNTLET, ModItems.DOOM_GRIMOIRE, ModItems.LATVERIA_KEY, ModItems.CASTLE_SEAL, ModItems.DOOMBOT_CONTROLLER,
+				ModItems.MECHANICAL_HEART, ModItems.TIME_PLATFORM, ModItems.ARC_REACTOR, ModItems.DOOM_CIRCUIT, ModItems.JADE_SHARD,
+				ModItems.REPAIR_TOOL, ModItems.LATVERIA_BANNER)) {
+			ItemStack stack = new ItemStack(item, item == ModItems.CASTLE_SEAL || item == ModItems.MECHANICAL_HEART ? 4 : 1);
+			if (!p.getInventory().add(stack)) p.drop(stack, false);
+		}
+	}
+
 	// ------------------------------------------------------------------ travelling
 
 	private static boolean hasMind(ServerPlayer p) {
@@ -435,12 +547,13 @@ public final class Latveria {
 		}
 	}
 
-	private static void summon(ServerLevel level) {
+	public static DoctorDoom summon(ServerLevel level) {
+		if (boss != null && !boss.isRemoved()) return boss;
 		DoctorDoom doom = ModEntities.DOCTOR_DOOM.create(level, EntitySpawnReason.EVENT);
-		if (doom == null) return;
+		if (doom == null) return null;
 		doom.snapTo(LatveriaPlan.THRONE.x, LatveriaPlan.THRONE.y, LatveriaPlan.THRONE.z, 0f, 0);
 		doom.yBodyRot = doom.yHeadRot = 0f;
-		if (!level.addFreshEntity(doom)) return;
+		if (!level.addFreshEntity(doom)) return null;
 		doom.intro();
 		boss = doom;
 		emptyArena = 0;
@@ -452,10 +565,11 @@ public final class Latveria {
 			level.addFreshEntity(guard);
 		}
 		for (ServerPlayer p : level.players()) if (p.position().distanceToSqr(LatveriaPlan.ARENA) < 60 * 60) DoomFx.send(p, DoomFx.CUTSCENE, doom.getId(), doom.position(), 0, 100);
+		return doom;
 	}
 
 	/** Ends an unfinished fight: Doom and the Doombots he brought are gone, the hall is as it was. */
-	private static void callOff(ServerLevel level) {
+	public static void callOff(ServerLevel level) {
 		if (boss != null) {
 			boss.cleanup(level);
 			boss.discard();
@@ -466,13 +580,25 @@ public final class Latveria {
 	}
 
 	public static void onDoomDefeated(ServerLevel level, DoctorDoom doom) {
+		boss = null;
+		conquer(level, doom.challengers());
+	}
+
+	/** The castle falls to {@code victors}: spoils, ownership, open doors, and the Doombots change sides. */
+	public static void conquer(ServerLevel level, java.util.Collection<UUID> victors) {
 		MinecraftServer server = level.getServer();
 		load(server);
-		boss = null;
-		if ((flags & CONQUERED) != 0) return;
+		if ((flags & CONQUERED) != 0) {
+			for (UUID id : victors) {
+				ServerPlayer p = server.getPlayerList().getPlayer(id);
+				if (p != null) { owners.add(id); reward(p); }
+			}
+			save(server);
+			return;
+		}
 		flags |= CONQUERED | GATE | THRONE | GENERATOR;
 		ServerPlayer first = null;
-		for (UUID id : doom.challengers()) {
+		for (UUID id : victors) {
 			ServerPlayer p = server.getPlayerList().getPlayer(id);
 			if (p == null) continue;
 			owners.add(id);

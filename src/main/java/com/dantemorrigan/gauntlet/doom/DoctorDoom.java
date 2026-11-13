@@ -64,6 +64,7 @@ public class DoctorDoom extends Monster {
 			BossEvent.BossBarColor.GREEN, BossEvent.BossBarOverlay.PROGRESS);
 	/** Client: tickCount when the current action began. */
 	public int actionStartTick;
+	private boolean passive;
 	private int actionTicks, cooldown = 30, exposed, blowsTaken, sinceSuns = 200, sinceEdict = 400, sinceDrop = 100;
 	private float castDamage;
 	private UUID targetId;
@@ -196,15 +197,16 @@ public class DoctorDoom extends Monster {
 			if (action() == action && actionTicks >= TICKS[action]) setAction(A_IDLE);
 			return;
 		}
-		if (target == null) {
-			this.getNavigation().stop();
-			return;
-		}
 		// The stages turn at two thirds and one third of his health.
 		float hp = this.getHealth() / this.getMaxHealth();
 		if (phase() == 1 && hp <= 0.66f) { this.entityData.set(PHASE, 2); DoomFx.line(level, this.position(), 64, "doom.phase_2"); setAction(A_SHIFT); return; }
 		if (phase() == 2 && hp <= 0.33f) { this.entityData.set(PHASE, 3); DoomFx.line(level, this.position(), 64, "doom.phase_3"); sinceEdict = 340; setAction(A_NOVA); return; }
+		if (target == null) {
+			this.getNavigation().stop();
+			return;
+		}
 		this.getLookControl().setLookAt(target, 30, 30);
+		if (passive) { this.getNavigation().stop(); return; }
 		double d = this.distanceTo(target);
 		if (d > 3.2) this.getNavigation().moveTo(target, 1.0);
 		else this.getNavigation().stop();
@@ -505,6 +507,37 @@ public class DoctorDoom extends Monster {
 		setAction(A_STAGGER);
 		expose(60);
 	}
+
+	// ------------------------------------------------------------------ debug
+
+	/** Debug: starts an action right now (its name is the clip's, e.g. latverian_edict). False if unknown or he is busy dying. */
+	public boolean force(String clip) {
+		int a = java.util.Arrays.asList(CLIPS).indexOf(clip);
+		if (a <= 0 || a == A_INTRO || a == A_DEFEAT || this.isDeadOrDying()) return false;
+		if (!fighting()) { this.setInvulnerable(false); setFlag(FLAG_FIGHT, true); }
+		ServerPlayer target = this.level() instanceof ServerLevel sl ? target(sl) : null;
+		if (target != null) face(target.position());
+		setAction(a);
+		return true;
+	}
+
+	/** Debug: jumps to a stage (1-3) by setting his health to that stage's share. */
+	public void stage(int n) {
+		n = Mth.clamp(n, 1, 3);
+		this.setHealth(this.getMaxHealth() * (n == 1 ? 1f : n == 2 ? 0.65f : 0.32f));
+		// Forward: he notices on his next breath and plays the change of stage. Backward: at once.
+		if (n <= phase()) this.entityData.set(PHASE, n);
+		if (n == 3) sinceEdict = 400;
+		if (n >= 2) sinceSuns = 470;
+	}
+
+	/** Debug: he stands still and only defends himself with nothing (a training dummy). */
+	public boolean togglePassive() {
+		passive = !passive;
+		return passive;
+	}
+
+	public void heal() { this.setHealth(this.getMaxHealth()); }
 
 	/** The Time Stone was turned back next to him: he hangs in the rewound moment, open to blows. */
 	public void timeLock(ServerLevel level) {

@@ -108,6 +108,13 @@ public final class DoomArmor {
 		TIMED.clear();
 	}
 
+	/** Debug: every power is ready again. */
+	public static void resetCooldowns(ServerPlayer p) {
+		Wearer w = WEARERS.computeIfAbsent(p.getUUID(), id -> new Wearer());
+		java.util.Arrays.fill(w.ready, 0);
+		sync(p, w);
+	}
+
 	private static boolean canHit(ServerPlayer owner, LivingEntity e) {
 		if (e == owner || e instanceof AbstractVillager || e instanceof Doombot b && b.allied()) return false;
 		return !(e instanceof ServerPlayer) || CoopRules.canAffect(owner, e);

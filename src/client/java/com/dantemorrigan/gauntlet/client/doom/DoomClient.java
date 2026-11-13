@@ -77,6 +77,7 @@ public final class DoomClient {
 				case DoomFx.CUTSCENE -> { barsAge = 0; barsTicks = Math.max(20, fx.ticks()); }
 				case DoomFx.SHAKE -> Cutscene.shake(Math.min(1f, fx.f() * 0.5f), fx.ticks());
 				case DoomFx.FLASH -> { flashAge = 0; flashTicks = Math.max(4, fx.ticks()); flashStrength = fx.f(); }
+				case DoomFx.MUSIC -> force(Minecraft.getInstance(), fx.id());
 				default -> {}
 			}
 		});
@@ -140,6 +141,7 @@ public final class DoomClient {
 			track = null;
 		}
 		if (track != null) {
+			if (track.pinned) return;
 			boolean wrong = !inLatveria || track.boss != fight || !mc.player.isAlive() && track.boss;
 			if (wrong) track.fadeOut(track.boss ? 60 : 40);
 			return;
@@ -152,6 +154,17 @@ public final class DoomClient {
 		if (silence > 0) { silence--; return; }
 		boolean echoes = nextAmbient++ % 2 == 0;
 		play(mc, new Track(echoes ? ModSounds.LATVERIA_ECHOES : ModSounds.LATVERIA_SANCTUM, echoes ? "echoes_of_latveria" : "sovereign_sanctum", false, 0.38f, false));
+	}
+
+	/** Debug: a theme chosen by command plays until it ends or another is chosen; 0 stops the music for a minute. */
+	private static void force(Minecraft mc, int id) {
+		if (track != null) track.halt();
+		track = null;
+		if (id == 0) { silence = 1200; return; }
+		Track t = id == 3 ? new Track(ModSounds.DOOM_BOSS_THEME, "boss", true, 0.5f, true)
+				: new Track(id == 1 ? ModSounds.LATVERIA_ECHOES : ModSounds.LATVERIA_SANCTUM, id == 1 ? "echoes_of_latveria" : "sovereign_sanctum", false, 0.38f, false);
+		t.pinned = true;
+		play(mc, t);
 	}
 
 	private static void play(Minecraft mc, Track next) {
@@ -167,7 +180,7 @@ public final class DoomClient {
 		final boolean boss;
 		final float level;
 		float step;
-		boolean out;
+		boolean out, pinned;
 		/** Client tick when it was started: the sound engine ticks it only once it really plays. */
 		int created;
 

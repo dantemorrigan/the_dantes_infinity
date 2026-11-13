@@ -189,6 +189,12 @@ public final class SpaceStone {
 		return Boolean.TRUE.equals(player.getAttached(LATVERIA_SEEN));
 	}
 
+	/** Debug: marks the Latveria preview as seen (sealed) or forgets it, so the teaser can be skipped or replayed. */
+	public static void setLatveriaSeen(ServerPlayer player, boolean seen) {
+		if (seen) player.setAttached(LATVERIA_SEEN, true);
+		else player.removeAttached(LATVERIA_SEEN);
+	}
+
 	/** A portal preview has no target world and never enters the travel path. */
 	public static void glimpseLatveria(ServerPlayer player) {
 		if (latveriaSealed(player) || latveriaActive(player)) return;

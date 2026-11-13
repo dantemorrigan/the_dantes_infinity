@@ -14,6 +14,8 @@ import net.minecraft.world.phys.Vec3;
 public final class DoomFx {
 	/** Client events. LOGO: the add-on's title card. CUTSCENE: letterbox bars for {@code ticks}. SHAKE: camera shake f. */
 	public static final int LOGO = 1, CUTSCENE = 2, SHAKE = 3, FLASH = 4;
+	/** Debug: play a theme now. id: 0 stop, 1 Echoes of Latveria, 2 Sovereign Sanctum, 3 the boss theme. */
+	public static final int MUSIC = 5;
 
 	/** A camera-facing pack effect; size 0 keeps the preset's own. */
 	public static void bill(ServerLevel level, ParticleOptions type, Vec3 at, double size) {

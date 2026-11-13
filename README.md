@@ -6,6 +6,8 @@
 
 🇬🇧 English · [🇷🇺 Русский](README.ru.md)
 
+Includes the add-on **[The Fury of Doom](#the-fury-of-doom--latveria-and-doctor-doom)**: Latveria, Castle Doom, the Doombots and Doctor Doom himself.
+
 Requirements: **Java 25**. Build: `./gradlew build` → `build/libs/infinity_gauntlet-1.0.7.jar` (+ Fabric API 0.155.3+26.1.2).
 
 ```
@@ -81,6 +83,11 @@ Requirements: **Java 25**. Build: `./gradlew build` → `build/libs/infinity_gau
 
 ## The Fury of Doom — Latveria and Doctor Doom
 
+<p align="center">
+  <img src="docs/assets/the-fury-of-doom.webp" alt="The Fury of Doom" width="560">
+</p>
+
+
 **Getting in.** With the Space Stone, the hidden fourth portal of the wheel shows Latveria once, and Doom seals it. After you beat Loki, carry the Mind Stone (in the gauntlet or the inventory): it reads Doom's seal, and the same portal option takes you to Latveria. Everyone standing within four blocks travels with you. The title card plays on your first arrival.
 
 **Latveria** is its own dimension: mountains around a valley, a river, a living city with townsfolk, and a road climbing to Castle Doom. Two themes alternate while you walk there (*Echoes of Latveria* and *Sovereign Sanctum*). The gate at the south end of the city (stand in it for two seconds) takes you back to where you came from.
@@ -100,7 +107,25 @@ After every heavy attack he is exposed for a moment and takes more damage. A Spa
 
 **Doom's armor.** All four pieces worn together unlock the powers wheel (**M**): Gauntlet Bolt, Iron Bastion, Jet Flight, Rift Step, Seven Suns and the Latverian Edict. Pick a power with the mouse or 1–6. Cooldowns are shown on the right edge of the screen. The jets never touch vanilla flight, so they do not clash with the Infinity Gauntlet or Stormbreaker. The armor's keys are separate from the gauntlet's (**V**/**R**).
 
-Commands (operator): `/gauntlet latveria enter|leave|unlock|gate|lab|throne|logo|status|reset|clear <0-3>`, `/gauntlet doom armor|phase2|phase3|kill`.
+**Admin tools** (operator level, `/gauntlet latveria help` prints them all):
+
+| Command | What it does |
+|---|---|
+| `/gauntlet latveria prepare` | The honest way in: marks the teaser as seen, grants the Loki advancement and hands over a Mind Stone. The seal is read within a second. |
+| `/gauntlet latveria enter` · `leave` · `unlock` | Travel there and back, or grant access without travelling. |
+| `/gauntlet latveria gate` · `lab` · `throne` | Quick jumps to the gate, the service door and the throne room. |
+| `/gauntlet latveria tp <place>` | `arrival`, `square`, `watchtower`, `road`, `gate`, `yard`, `barracks`, `forge`, `service_door`, `lab`, `hall`, `throne`, `armory`, `dining`, `bedrooms`, `library`, `master_bedroom`, `roof`, `overlook`. |
+| `/gauntlet latveria skip <road\|gate\|yard\|lab\|assault\|boss\|all>` | Clear part of the assault; `boss` and `all` also bring you into the throne room. |
+| `/gauntlet latveria squads` · `clear <0-3\|all>` | Bring up every squad now, or destroy them. |
+| `/gauntlet latveria generator <on\|off>` · `gates` | Switch the laboratory generator; open the portcullis and the throne room. |
+| `/gauntlet latveria conquer [player]` | Win at once: spoils, the castle, allied Doombots. |
+| `/gauntlet latveria teaser <replay\|skip>` · `logo` · `logo reset` | Replay or skip the Space Stone preview; show the title card now or on the next arrival. |
+| `/gauntlet latveria music <echoes\|sanctum\|boss\|stop>` | Play a theme now. |
+| `/gauntlet latveria give` · `forget` · `status` · `reset` | Every item of the add-on; wipe your access, title card, spoils and ownership; state of the assault; play the assault again. |
+| `/gauntlet doom spawn` · `stop` · `kill` · `heal` · `passive` | Summon, call off, defeat, heal, or freeze Doom as a training dummy. |
+| `/gauntlet doom stage <1-3>` · `action <clip>` | Jump to a stage; force an attack such as `latverian_edict`, `seven_suns` or `jet_slam`. |
+| `/gauntlet doom armor [player]` · `cooldowns` | Put on Doom's armor; make every power ready. |
+| `/gauntlet doombot spawn <variant> [allied]` · `kill` · `allies` | Spawn a Doombot; destroy hostile ones nearby; make every Doombot nearby obey you. |
 
 ## Language, client settings, advancements, and field guide
 
