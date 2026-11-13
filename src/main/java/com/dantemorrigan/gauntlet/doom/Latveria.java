@@ -164,6 +164,7 @@ public final class Latveria {
 	}
 
 	public static void init() {
+		DoomItems.Heart.init();
 		net.fabricmc.fabric.api.event.player.PlayerBlockBreakEvents.BEFORE.register((level, player, pos, state, be) -> {
 			if (level.dimension() != LEVEL) return true;
 			if (player.isCreative()) { bypass = true; return true; }

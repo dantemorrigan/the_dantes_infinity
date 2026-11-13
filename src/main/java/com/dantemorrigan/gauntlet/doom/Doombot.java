@@ -142,6 +142,15 @@ public class Doombot extends PathfinderMob {
 
 	public boolean decoy() { return flag(FLAG_DECOY); }
 
+	private boolean forged;
+
+	/** Built at an anvil: a fifth stronger than one put together in the field. */
+	public void forge() {
+		forged = true;
+		this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(HEALTH[variant()] * 1.2);
+		this.setHealth(this.getMaxHealth());
+	}
+
 	/**
 	 * "It was a Doombot!": a robot in Doom's likeness, left behind in his place when he shifts away. It fights like a
 	 * soldier, wears his face and name, and has none of his strength: struck down, it bursts and gives itself away.
@@ -662,6 +671,7 @@ public class Doombot extends PathfinderMob {
 		output.putBoolean("Allied", allied());
 		output.putBoolean("Guarding", guarding);
 		output.putBoolean("Decoy", decoy());
+		output.putBoolean("Forged", forged);
 		if (commander != null) output.putString("Commander", commander.toString());
 	}
 
@@ -676,5 +686,9 @@ public class Doombot extends PathfinderMob {
 		commander = id.isEmpty() ? null : UUID.fromString(id);
 		applyVariant();
 		if (input.getBooleanOr("Decoy", false)) makeDecoy();
+		if (input.getBooleanOr("Forged", false)) {
+			forged = true;
+			this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(HEALTH[variant()] * 1.2);
+		}
 	}
 }

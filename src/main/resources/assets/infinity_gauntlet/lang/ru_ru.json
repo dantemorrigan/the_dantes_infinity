@@ -786,5 +786,7 @@
   "msg.infinity_gauntlet.latveria.doom.decoy_revealed": "Доктор Дум: Думбот! Ты ударил тень, глупец.",
   "advancements.infinity_gauntlet.throne_of_latveria.title": "Тяжела ты, шапка Мономаха",
   "advancements.infinity_gauntlet.throne_of_latveria.description": "Сядьте на трон Дума как новый монарх Латверии",
-  "msg.infinity_gauntlet.latveria.throne.sit": "%s занимает трон Латверии. Двор приветствует монарха."
+  "msg.infinity_gauntlet.latveria.throne.sit": "%s занимает трон Латверии. Двор приветствует монарха.",
+  "msg.infinity_gauntlet.latveria.bot.built": "%s встаёт и салютует тебе. (Катализатор во второй руке выбирает роль: дуговой реактор, перо, нефритовый осколок, ремонтный инструмент, топор.)",
+  "msg.infinity_gauntlet.latveria.bot.forged": "Выкован на наковальне: более крепкий %s встаёт и салютует тебе."
 }

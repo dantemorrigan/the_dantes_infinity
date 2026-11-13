@@ -61,6 +61,24 @@ public class LatveriaThroneTest implements FabricClientGameTest {
 			}));
 			ctx.takeScreenshot("latveria_throne_view");
 			server.runOnServer(s -> player(s).stopRiding());
+			// The lord builds a Bastion at an anvil: a Mechanical Heart with an arc reactor in the other hand.
+			ctx.waitTicks(10);
+			String forged = server.computeOnServer(s -> {
+				ServerPlayer p = player(s);
+				var l = s.getLevel(Latveria.LEVEL);
+				net.minecraft.core.BlockPos anvil = new net.minecraft.core.BlockPos(10, LatveriaPlan.FLOOR, -270);
+				l.setBlockAndUpdate(anvil, net.minecraft.world.level.block.Blocks.ANVIL.defaultBlockState());
+				p.setGameMode(net.minecraft.world.level.GameType.SURVIVAL);
+				p.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, new net.minecraft.world.item.ItemStack(com.dantemorrigan.gauntlet.ModItems.MECHANICAL_HEART));
+				p.setItemInHand(net.minecraft.world.InteractionHand.OFF_HAND, new net.minecraft.world.item.ItemStack(com.dantemorrigan.gauntlet.ModItems.ARC_REACTOR, 2));
+				var hit = new net.minecraft.world.phys.BlockHitResult(net.minecraft.world.phys.Vec3.atCenterOf(anvil).add(0, 0.5, 0), net.minecraft.core.Direction.UP, anvil, false);
+				p.gameMode.useItemOn(p, l, p.getMainHandItem(), net.minecraft.world.InteractionHand.MAIN_HAND, hit);
+				var bots = l.getEntitiesOfClass(com.dantemorrigan.gauntlet.doom.Doombot.class, new AABB(anvil).inflate(3), b -> b.allied() && b.variant() == com.dantemorrigan.gauntlet.doom.Doombot.BASTION);
+				p.setGameMode(net.minecraft.world.level.GameType.CREATIVE);
+				return bots.size() + " hp=" + (bots.isEmpty() ? 0 : (int) bots.getFirst().getMaxHealth()) + " reactors=" + p.getOffhandItem().getCount() + " heart=" + p.getMainHandItem().getCount();
+			});
+			System.out.println("FORGE " + forged);
+			check(forged.startsWith("1 hp=204 reactors=1 heart=0"), "The forge did not build a sturdier Bastion from the heart and a reactor: " + forged);
 			ctx.waitTicks(30);
 			check(server.computeOnServer(s -> s.getLevel(Latveria.LEVEL).getEntitiesOfClass(ArmorStand.class,
 					new AABB(-6, LatveriaPlan.FLOOR - 4, -296, 6, LatveriaPlan.FLOOR + 8, -286), a -> a.entityTags().contains(LatveriaCourt.SEAT_TAG)).isEmpty()),

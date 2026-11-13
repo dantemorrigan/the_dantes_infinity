@@ -786,5 +786,7 @@
   "msg.infinity_gauntlet.latveria.doom.decoy_revealed": "Doctor Doom: A Doombot! You struck at a shadow, fool.",
   "advancements.infinity_gauntlet.throne_of_latveria.title": "Uneasy Lies the Head",
   "advancements.infinity_gauntlet.throne_of_latveria.description": "Sit on Doom's throne as the new monarch of Latveria",
-  "msg.infinity_gauntlet.latveria.throne.sit": "%s takes the throne of Latveria. The court salutes its monarch."
+  "msg.infinity_gauntlet.latveria.throne.sit": "%s takes the throne of Latveria. The court salutes its monarch.",
+  "msg.infinity_gauntlet.latveria.bot.built": "A %s rises and salutes you. (Hold a catalyst in the other hand to choose the role: arc reactor, feather, jade shard, repair tool, axe.)",
+  "msg.infinity_gauntlet.latveria.bot.forged": "Forged at the anvil: a sturdier %s rises and salutes you."
 }

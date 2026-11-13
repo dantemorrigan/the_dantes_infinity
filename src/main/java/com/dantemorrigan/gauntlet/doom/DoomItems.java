@@ -76,23 +76,63 @@ public final class DoomItems {
 	}
 
 	/** Mechanical Heart: the castle's owner builds a new Soldier where the heart is set down. */
+	/**
+	 * A Mechanical Heart builds a Doombot for the castle's lord. What is held in the other hand decides its role and is
+	 * used up: an arc reactor makes a Bastion, a feather or rocket an Interceptor, a jade shard an Arcanist, a repair
+	 * tool an Engineer, an axe a Royal Guard; nothing makes a Soldier. At an anvil the robot comes out of a proper forge.
+	 */
 	public static final class Heart extends Item {
 		public Heart(Properties properties) { super(properties); }
+
+		public static int role(ItemStack catalyst) {
+			if (catalyst.is(ModItems.ARC_REACTOR)) return Doombot.BASTION;
+			if (catalyst.is(net.minecraft.world.item.Items.FEATHER) || catalyst.is(net.minecraft.world.item.Items.FIREWORK_ROCKET)) return Doombot.INTERCEPTOR;
+			if (catalyst.is(ModItems.JADE_SHARD)) return Doombot.ARCANIST;
+			if (catalyst.is(ModItems.REPAIR_TOOL)) return Doombot.ENGINEER;
+			if (catalyst.is(net.minecraft.tags.ItemTags.AXES)) return Doombot.ROYAL_GUARD;
+			return Doombot.SOLDIER;
+		}
+
+		/** Registered once: a heart used on an anvil builds a robot instead of opening the anvil. */
+		public static void init() {
+			net.fabricmc.fabric.api.event.player.UseBlockCallback.EVENT.register((player, level, hand, hit) -> {
+				if (!player.getItemInHand(hand).is(ModItems.MECHANICAL_HEART) || !level.getBlockState(hit.getBlockPos()).is(net.minecraft.tags.BlockTags.ANVIL))
+					return InteractionResult.PASS;
+				if (player instanceof ServerPlayer p && level instanceof ServerLevel sl) build(p, sl, hit.getBlockPos(), hit.getDirection(), hand);
+				return InteractionResult.SUCCESS;
+			});
+		}
 
 		@Override
 		public InteractionResult useOn(UseOnContext context) {
 			if (!(context.getPlayer() instanceof ServerPlayer p) || !(context.getLevel() instanceof ServerLevel level)) return InteractionResult.SUCCESS;
-			if (!Latveria.isOwner(p)) { DoomFx.tell(p, "bot.denied"); return InteractionResult.SUCCESS; }
+			build(p, level, context.getClickedPos(), context.getClickedFace(), context.getHand());
+			return InteractionResult.SUCCESS;
+		}
+
+		static void build(ServerPlayer p, ServerLevel level, BlockPos clicked, net.minecraft.core.Direction face, InteractionHand hand) {
+			if (!Latveria.isOwner(p)) { DoomFx.tell(p, "bot.denied"); return; }
 			Doombot bot = ModEntities.DOOMBOT.create(level, EntitySpawnReason.SPAWN_ITEM_USE);
-			if (bot == null) return InteractionResult.FAIL;
-			BlockPos at = context.getClickedPos().relative(context.getClickedFace());
-			bot.setup(Doombot.SOLDIER, -1);
+			if (bot == null) return;
+			InteractionHand other = hand == InteractionHand.MAIN_HAND ? InteractionHand.OFF_HAND : InteractionHand.MAIN_HAND;
+			ItemStack catalyst = p.getItemInHand(other);
+			int role = role(catalyst);
+			boolean forge = level.getBlockState(clicked).is(net.minecraft.tags.BlockTags.ANVIL);
+			BlockPos at = forge ? clicked.above() : clicked.relative(face);
+			bot.setup(role, -1);
 			bot.snapTo(at.getX() + 0.5, at.getY(), at.getZ() + 0.5, p.getYRot() + 180, 0);
 			level.addFreshEntity(bot);
 			bot.obey(p);
 			DoomFx.bill(level, ModParticles.DOOM_PHASE_SHIFT, bot.position().add(0, 1, 0), 1.6);
-			context.getItemInHand().shrink(1);
-			return InteractionResult.SUCCESS;
+			if (forge) {
+				DoomVfx.at(level, DoomVfx.IMPACT, Vec3.atCenterOf(clicked).add(0, 0.6, 0), 1.2f, 12, DoomVfx.GOLD);
+				level.playSound(null, clicked, SoundEvents.ANVIL_USE, net.minecraft.sounds.SoundSource.BLOCKS, 1f, 0.8f);
+				level.playSound(null, clicked, SoundEvents.SMITHING_TABLE_USE, net.minecraft.sounds.SoundSource.BLOCKS, 1f, 0.9f);
+				bot.forge();
+			}
+			if (role != Doombot.SOLDIER && !p.isCreative()) catalyst.shrink(1);
+			DoomFx.tell(p, forge ? "bot.forged" : "bot.built", bot.getName());
+			if (!p.isCreative()) p.getItemInHand(hand).shrink(1);
 		}
 	}
 
