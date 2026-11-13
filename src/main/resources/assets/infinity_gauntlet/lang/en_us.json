@@ -781,5 +781,7 @@
   "msg.infinity_gauntlet.latveria.doom.siphon": "Doctor Doom: That gauntlet was always meant for a worthier hand. Give it to Doom!",
   "msg.infinity_gauntlet.latveria.doom.siphon_broken": "Doctor Doom: Insolent wretch! You will pay for that!",
   "msg.infinity_gauntlet.latveria.doom.siphon_done": "Doctor Doom: Yes... the power of Infinity answers Doom now!",
-  "msg.infinity_gauntlet.latveria.siphon.warn": "Doom drains your gauntlet! Break his line of sight, blink away or strike him hard: %s s"
+  "msg.infinity_gauntlet.latveria.siphon.warn": "Doom drains your gauntlet! Break his line of sight, blink away or strike him hard: %s s",
+  "msg.infinity_gauntlet.latveria.doom.decoys": "Doctor Doom: Which of us is Doom? Choose... if you dare.",
+  "msg.infinity_gauntlet.latveria.doom.decoy_revealed": "Doctor Doom: A Doombot! You struck at a shadow, fool."
 }

@@ -46,12 +46,12 @@ import java.util.UUID;
 public class DoctorDoom extends Monster {
 	public static final int A_IDLE = 0, A_INTRO = 1, A_COMBO = 2, A_BOLT = 3, A_BASTION = 4, A_DROP = 5, A_SLAM = 6, A_SHIFT = 7,
 			A_RIFT = 8, A_SORCERY = 9, A_HEX = 10, A_SUNS = 11, A_NOVA = 12, A_EDICT = 13, A_LIGHTNING = 14, A_CLEAVE = 15,
-			A_SMASH = 16, A_STAGGER = 17, A_DEFEAT = 18, A_TAUNT = 19, A_SIPHON = 20;
+			A_SMASH = 16, A_STAGGER = 17, A_DEFEAT = 18, A_TAUNT = 19, A_SIPHON = 20, A_DECOY = 21;
 	/** Clip of each action, in action order. */
 	public static final String[] CLIPS = {"idle", "intro", "armored_combo", "gauntlet_bolt", "iron_bastion", "doombot_drop", "jet_slam",
 			"phase_shift", "rift_step", "sorcery_bolt", "hex_barrage", "seven_suns", "arcane_nova", "latverian_edict", "lightning_call",
-			"cleave", "overhead_smash", "stagger_heavy", "defeat", "taunt", "infinity_siphon"};
-	private static final int[] TICKS = {0, 100, 39, 38, 87, 53, 59, 42, 38, 55, 48, 119, 60, 126, 52, 30, 32, 32, 72, 48, 100};
+			"cleave", "overhead_smash", "stagger_heavy", "defeat", "taunt", "infinity_siphon", "decoy_gambit"};
+	private static final int[] TICKS = {0, 100, 39, 38, 87, 53, 59, 42, 38, 55, 48, 119, 60, 126, 52, 30, 32, 32, 72, 48, 100, 42};
 	/** The siphon: wind-up, then the pull until it completes; blows that break it, and how long a drained gauntlet stays silent. */
 	public static final int SIPHON_START = 14, SIPHON_DONE = 92, SIPHON_SILENCE = 300;
 	public static final float SIPHON_BREAK = 30;
@@ -70,7 +70,7 @@ public class DoctorDoom extends Monster {
 	private boolean passive;
 	private int actionTicks, cooldown = 30, exposed, blowsTaken, sinceSuns = 200, sinceEdict = 400, sinceDrop = 100;
 	private float castDamage, siphonDamage;
-	private int sinceSiphon = 200;
+	private int sinceSiphon = 200, sinceDecoy = 300;
 	private UUID siphonId;
 	private UUID targetId;
 	private Vec3 aim, from;
@@ -267,6 +267,7 @@ public class DoctorDoom extends Monster {
 		sinceEdict++;
 		sinceDrop++;
 		sinceSiphon++;
+		sinceDecoy++;
 		ServerPlayer target = target(level);
 		for (ServerPlayer p : level.players()) if (valid(p)) challengers.add(p.getUUID());
 		if (action != A_IDLE) {
@@ -316,6 +317,7 @@ public class DoctorDoom extends Monster {
 			if (sinceDrop > 300 && bots < 3 && r < 0.4f) { sinceDrop = 0; setAction(A_DROP); }
 			else setAction(r < 0.6f ? A_BOLT : A_SLAM);
 		} else if (phase == 2) {
+			if (sinceDecoy > 640 && r < 0.3f) { sinceDecoy = 0; setAction(A_DECOY); return; }
 			setAction(r < 0.3f ? A_RIFT : r < 0.55f ? A_SORCERY : r < 0.8f ? A_HEX : A_BOLT);
 		} else {
 			setAction(r < 0.3f ? A_LIGHTNING : r < 0.5f ? A_HEX : r < 0.7f ? A_RIFT : r < 0.85f ? A_SLAM : A_SORCERY);
@@ -327,6 +329,32 @@ public class DoctorDoom extends Monster {
 		if (target != null && action != A_SLAM && action != A_EDICT && action != A_SUNS && action != A_STAGGER && t < 20) face(target.position());
 		switch (action) {
 			case A_SIPHON -> siphon(level, t);
+			case A_DECOY -> {
+				// The decoy gambit: he spins away into a shimmer, and three Dooms step out of it; only one is real.
+				this.setInvulnerable(t < 30);
+				if (t == 5) DoomFx.bill(level, ModParticles.DOOM_PHASE_SHIFT, at.add(0, 1.4, 0), 0);
+				if (t == 18) {
+					List<Vec3> spots = new ArrayList<>();
+					for (int i = 0; i < 3; i++) {
+						double a = this.random.nextDouble() * Math.TAU;
+						spots.add(clampToArena(LatveriaPlan.ARENA.add(Math.cos(a) * (5 + i * 2.5), 0, Math.sin(a) * (5 + i * 2.5))));
+					}
+					java.util.Collections.shuffle(spots, new java.util.Random(this.random.nextLong()));
+					for (int i = 0; i < 3; i++) {
+						Vec3 s = spots.get(i);
+						DoomFx.bill(level, ModParticles.DOOM_PHASE_SHIFT, s.add(0, 1.4, 0), 2);
+						DoomFx.flat(level, ModParticles.DOOM_SLAM_WAVE, s, 3);
+						if (i == 0) { this.setPos(s.x, s.y, s.z); continue; }
+						Doombot decoy = ModEntities.DOOMBOT.create(level, EntitySpawnReason.EVENT);
+						if (decoy == null) continue;
+						decoy.makeDecoy();
+						decoy.snapTo(s.x, s.y, s.z, this.getYRot(), 0);
+						level.addFreshEntity(decoy);
+					}
+					DoomFx.sound(level, at, SoundEvents.ILLUSIONER_MIRROR_MOVE, 2f, 0.7f);
+					DoomFx.line(level, this.position(), 64, "doom.decoys");
+				}
+			}
 			case A_COMBO -> {
 				if (t == 8) DoomFx.sound(level, at, SoundEvents.PLAYER_ATTACK_SWEEP, 1.2f, 0.6f);
 				if (t == 12 || t == 17 || t == 20) {

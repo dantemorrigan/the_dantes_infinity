@@ -42,7 +42,11 @@ public class Doombot extends PathfinderMob {
 	public static final int SOLDIER = 0, BASTION = 1, INTERCEPTOR = 2, ARCANIST = 3, ENGINEER = 4, ROYAL_GUARD = 5;
 	public static final String[] NAMES = {"soldier", "bastion", "interceptor", "arcanist", "engineer", "royal_guard"};
 	public static final int A_IDLE = 0, A_ALERT = 1, A_ATTACK = 2, A_STAGGER = 3, A_SALUTE = 4, A_ACTIVATE = 5;
-	public static final int FLAG_ALLIED = 1, FLAG_SHIELD = 2, FLAG_WARD = 4, FLAG_FLYING = 8;
+	public static final int FLAG_ALLIED = 1, FLAG_SHIELD = 2, FLAG_WARD = 4, FLAG_FLYING = 8, FLAG_DECOY = 16;
+	/** A decoy stands as tall as Doom himself (2.4 blocks) and only lasts so long. */
+	public static final double DECOY_SCALE = 2.4 / 1.95;
+	public static final int DECOY_LIFE = 600;
+	public static final float DECOY_HEALTH = 40;
 	private static final int[] ATTACK_TICKS = {24, 56, 44, 40, 60, 48};
 	private static final double[] HEALTH = {90, 170, 80, 90, 100, 190};
 	private static final double[] SPEED = {0.27, 0.2, 0.3, 0.23, 0.28, 0.29};
@@ -60,6 +64,7 @@ public class Doombot extends PathfinderMob {
 
 	/** Client: tickCount when the current action began. */
 	public int actionStartTick;
+	private int decoyAge;
 	private int actionTicks, cooldown = 20, casts, wardTicks, retarget, airTimer = 90, groundTimer, meleeCd;
 		private final java.util.Set<UUID> struck = new java.util.HashSet<>();
 	private int squad = -1;
@@ -129,10 +134,28 @@ public class Doombot extends PathfinderMob {
 
 	@Override
 	protected Component getTypeName() {
+		if (decoy()) return Component.translatable("entity.infinity_gauntlet.doctor_doom");
 		return Component.translatable("entity.infinity_gauntlet.doombot." + NAMES[variant()]);
 	}
 
 	public int squad() { return squad; }
+
+	public boolean decoy() { return flag(FLAG_DECOY); }
+
+	/**
+	 * "It was a Doombot!": a robot in Doom's likeness, left behind in his place when he shifts away. It fights like a
+	 * soldier, wears his face and name, and has none of his strength: struck down, it bursts and gives itself away.
+	 */
+	public void makeDecoy() {
+		setup(SOLDIER, -1);
+		setFlag(FLAG_DECOY, true);
+		this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(DECOY_HEALTH);
+		this.getAttribute(Attributes.SCALE).setBaseValue(DECOY_SCALE);
+		this.getAttribute(Attributes.ARMOR).setBaseValue(4);
+		this.refreshDimensions();
+		this.setHealth(DECOY_HEALTH);
+		this.decoyAge = 0;
+	}
 
 	public boolean allied() { return flag(FLAG_ALLIED); }
 
@@ -187,7 +210,16 @@ public class Doombot extends PathfinderMob {
 	protected void customServerAiStep(ServerLevel level) {
 		super.customServerAiStep(level);
 		actionTicks++;
-		if (this.isDeadOrDying()) return;
+			if (this.isDeadOrDying()) return;
+			if (decoy()) {
+				DoctorDoom doom = Latveria.boss();
+				if (++decoyAge > DECOY_LIFE || doom == null || !doom.isAlive() || doom.isDeadOrDying()) {
+					DoomFx.bill(level, ModParticles.DOOM_DOOM_SMOKE, this.position().add(0, 1.2, 0), 1.6);
+					DoomFx.sound(level, this.position(), SoundEvents.FIRE_EXTINGUISH, 1f, 0.6f);
+					this.discard();
+					return;
+				}
+			}
 		if (!allied() && Latveria.conquered(level.getServer())) {
 			ServerPlayer owner = Latveria.anyOwner(level.getServer());
 			if (owner != null && owner.level() == level) obey(owner);
@@ -534,7 +566,7 @@ public class Doombot extends PathfinderMob {
 				DoomFx.bill(level, ModParticles.DOOM_IRON_BASTION, this.position().add(0, 1, 0), 1.4);
 			}
 		}
-		amount = Math.min(amount, this.getMaxHealth() * MAX_SHARE);
+		if (!decoy()) amount = Math.min(amount, this.getMaxHealth() * MAX_SHARE);
 		boolean hurt = super.hurtServer(level, source, amount);
 		if (hurt && source.getEntity() instanceof LivingEntity attacker && foe(attacker)) targetId = attacker.getUUID();
 		if (hurt && amount >= 24 && variant() != BASTION && action() == A_IDLE && !this.isDeadOrDying()) setAction(A_STAGGER);
@@ -566,7 +598,18 @@ public class Doombot extends PathfinderMob {
 		boolean was = this.dead;
 		super.die(source);
 		if (was || !(this.level() instanceof ServerLevel level)) return;
-		Latveria.onBotDeath(level.getServer(), squad);
+			if (decoy()) {
+				// The mask cracks: sparks, a burst of smoke and Doom's laughter from wherever he really is.
+				Vec3 at = this.position().add(0, 1.4, 0);
+				DoomVfx.at(level, DoomVfx.IMPACT, at, 1.4f, 14, DoomVfx.GOLD);
+				DoomFx.bill(level, ModParticles.DOOM_DOOM_SMOKE, at, 2);
+				DoomFx.sound(level, at, SoundEvents.GENERIC_EXPLODE.value(), 0.8f, 1.6f);
+				DoomFx.sound(level, at, SoundEvents.IRON_GOLEM_DEATH, 1f, 1.6f);
+				DoomFx.line(level, at, 64, "doom.decoy_revealed");
+				this.spawnAtLocation(level, new ItemStack(ModItems.DOOM_CIRCUIT));
+				return;
+			}
+			Latveria.onBotDeath(level.getServer(), squad);
 		DoomFx.bill(level, ModParticles.DOOM_IMPACT, this.position().add(0, 1, 0), 2);
 		DoomFx.sound(level, this.position(), SoundEvents.IRON_GOLEM_DEATH, 0.9f, 1.3f);
 		if (allied()) return;
@@ -613,6 +656,7 @@ public class Doombot extends PathfinderMob {
 		output.putInt("Squad", squad);
 		output.putBoolean("Allied", allied());
 		output.putBoolean("Guarding", guarding);
+		output.putBoolean("Decoy", decoy());
 		if (commander != null) output.putString("Commander", commander.toString());
 	}
 
@@ -626,5 +670,6 @@ public class Doombot extends PathfinderMob {
 		String id = input.getStringOr("Commander", "");
 		commander = id.isEmpty() ? null : UUID.fromString(id);
 		applyVariant();
+		if (input.getBooleanOr("Decoy", false)) makeDecoy();
 	}
 }

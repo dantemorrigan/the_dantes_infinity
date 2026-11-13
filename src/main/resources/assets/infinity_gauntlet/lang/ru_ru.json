@@ -781,5 +781,7 @@
   "msg.infinity_gauntlet.latveria.doom.siphon": "Доктор Дум: Эта перчатка всегда предназначалась более достойной руке. Отдай её Думу!",
   "msg.infinity_gauntlet.latveria.doom.siphon_broken": "Доктор Дум: Наглец! Ты заплатишь за это!",
   "msg.infinity_gauntlet.latveria.doom.siphon_done": "Доктор Дум: Да... сила Бесконечности теперь отвечает Думу!",
-  "msg.infinity_gauntlet.latveria.siphon.warn": "Дум осушает твою перчатку! Уйди из его взгляда, телепортируйся или ударь сильно: %s с"
+  "msg.infinity_gauntlet.latveria.siphon.warn": "Дум осушает твою перчатку! Уйди из его взгляда, телепортируйся или ударь сильно: %s с",
+  "msg.infinity_gauntlet.latveria.doom.decoys": "Доктор Дум: Кто из нас Дум? Выбирай... если осмелишься.",
+  "msg.infinity_gauntlet.latveria.doom.decoy_revealed": "Доктор Дум: Думбот! Ты ударил тень, глупец."
 }

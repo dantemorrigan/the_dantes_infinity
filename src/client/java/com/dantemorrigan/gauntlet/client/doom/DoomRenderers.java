@@ -130,10 +130,34 @@ public final class DoomRenderers {
 	public static final class BotState extends EntityRenderState {
 		float bodyYaw, actionTime, walkPos, walkSpeed, deathTime, headYaw, scale;
 		int action, variant;
-		boolean hurt, ward, allied, flying;
+		boolean hurt, ward, allied, flying, decoy;
 	}
 
 	public static final class Bot extends EntityRenderer<Doombot, BotState> {
+		/** A decoy is Doom to the eye: his model, texture and clips, at his own size. Only a faint chill in the steel betrays it. */
+		private void decoy(BotState s, PoseStack pose, SubmitNodeCollector collector, CameraRenderState camera) {
+			Map<String, GeoModel.BonePose> bones = new HashMap<>();
+			if (s.deathTime > 0) play(DoomAssets.CLIPS, bones, "stagger_heavy", Math.min(s.deathTime / 20f, 1.6f), 1);
+			else switch (s.action) {
+				case Doombot.A_ATTACK -> play(DoomAssets.CLIPS, bones, "gauntlet_bolt", s.actionTime, 1);
+				case Doombot.A_STAGGER -> play(DoomAssets.CLIPS, bones, "stagger_heavy", s.actionTime, 1);
+				default -> {
+					play(DoomAssets.CLIPS, bones, "idle", s.ageInTicks / 20f, 1 - s.walkSpeed);
+					play(DoomAssets.CLIPS, bones, "walk", s.walkPos * 0.11f, s.walkSpeed);
+					bones.computeIfAbsent("head", k -> new GeoModel.BonePose()).ry += Mth.clamp(s.headYaw, -60, 60);
+				}
+			}
+			int overlay = OverlayTexture.pack(OverlayTexture.u(0), OverlayTexture.v(s.hurt));
+			int light = lit(s.lightCoords);
+			int color = ARGB.color(255, 238, 246, 255);
+			pose.pushPose();
+			pose.mulPose(Axis.YP.rotationDegrees(180f - s.bodyYaw));
+			collector.submitCustomGeometry(pose, RenderTypes.entityCutout(DoomAssets.TEXTURE), (p, out) ->
+					DoomAssets.MODEL.render(stack(p), out, bones, light, overlay, (b, c) -> color));
+			pose.popPose();
+			super.submit(s, pose, collector, camera);
+		}
+
 		public Bot(EntityRendererProvider.Context context) {
 			super(context);
 			this.shadowRadius = 0.9f;
@@ -162,11 +186,13 @@ public final class DoomRenderers {
 			s.ward = e.flag(Doombot.FLAG_WARD);
 			s.allied = e.flag(Doombot.FLAG_ALLIED);
 			s.flying = e.flag(Doombot.FLAG_FLYING);
+			s.decoy = e.decoy();
 			s.scale = e.getScale();
 		}
 
 		@Override
 		public void submit(BotState s, PoseStack pose, SubmitNodeCollector collector, CameraRenderState camera) {
+			if (s.decoy) { decoy(s, pose, collector, camera); return; }
 			Map<String, GeoModel.BonePose> bones = new HashMap<>();
 			if (s.deathTime > 0) {
 				play(BotAssets.CLIPS, bones, "shutdown", Math.min(s.deathTime / 20f, 2f), 1);

@@ -373,6 +373,10 @@ def clips():
     c.k(1.65, spin=(0, 360, 0), body=-8, head=-8, aR=(-40, 0, 62), fR=-12, aL=(-40, 0, -62), fL=-12,
         pos=(0, 0.6, 0), cape=34, wR=(0, 0, 12), wL=(0, 0, -12))
     c.k(2.1, spin=(0, 360, 0), body=0, head=0, aR=0, fR=0, aL=0, fL=0, cape=0, wR=0, wL=0, pos=(0, 0, 0))
+    # The decoy gambit is the same spin: he vanishes in it and two Doombots in his likeness are left behind.
+    d = Clip("decoy_gambit", c.length, group="magic", wind=c.wind)
+    d.rot = {b: dict(keys) for b, keys in c.rot.items()}
+    d.pos = {b: dict(keys) for b, keys in c.pos.items()}
 
     # ------------------------------------------------------------------ reactions and scenes
     c = Clip("block", 1.2, group="react", wind=0.8)
