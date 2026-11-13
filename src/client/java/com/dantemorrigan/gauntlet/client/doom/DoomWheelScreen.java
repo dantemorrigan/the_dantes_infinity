@@ -38,7 +38,7 @@ public final class DoomWheelScreen extends Screen {
 	private void cast() {
 		int choice = hovered;
 		Minecraft.getInstance().setScreen(null);
-		if (choice >= 0 && ClientPlayNetworking.canSend(ModNetwork.DoomCast.TYPE)) ClientPlayNetworking.send(new ModNetwork.DoomCast(choice));
+		if (choice >= 0) DoomClient.choose(choice);
 	}
 
 	@Override
@@ -87,6 +87,7 @@ public final class DoomWheelScreen extends Screen {
 			boolean ready = DoomClient.cooldown(i) <= 0;
 			int x = (int) (p[0] - size / 2.0), y = (int) (p[1] - size / 2.0);
 			String frame = i == hovered ? "state_warning" : ready ? "state_active" : "state_cooldown";
+			if (i == DoomClient.selected()) g.fill(x - size / 3, y - size / 3, x + size + size / 3, y + size + size / 3, 0x44FFD36B);
 			blit(g, "textures/gui/doctor_doom/" + frame + ".png", x - size / 4, y - size / 4, size + size / 2, -1);
 			blit(g, "textures/gui/doctor_doom/icons/" + DoomClient.ICONS[i] + ".png", x, y, size, ready ? -1 : ARGB.color(255, 96, 104, 100));
 			Component name = Component.translatable("doom.infinity_gauntlet.power." + DoomArmor.NAMES[i]);

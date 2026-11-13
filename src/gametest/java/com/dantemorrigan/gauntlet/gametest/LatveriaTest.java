@@ -309,7 +309,11 @@ public class LatveriaTest implements FabricClientGameTest {
 			server.runCommand("execute as @p at @s run tp @s ~ ~ ~ 180 -70");
 			double y0 = server.computeOnServer(s -> player(s).getY());
 			server.runOnServer(s -> DoomArmor.cast(player(s), DoomArmor.JET));
+			ctx.waitTicks(3);
+			// The client flies: hold Space to climb.
+			ctx.getInput().holdKey(org.lwjgl.glfw.GLFW.GLFW_KEY_SPACE);
 			ctx.waitTicks(30);
+			ctx.getInput().releaseKey(org.lwjgl.glfw.GLFW.GLFW_KEY_SPACE);
 			check(server.computeOnServer(s -> player(s).getY()) > y0 + 6, "Jet Flight did not lift the wearer");
 			check(!server.computeOnServer(s -> player(s).getAbilities().mayfly), "Jet Flight must not touch the player's flight ability");
 			ctx.takeScreenshot("latveria_33_jet_flight");

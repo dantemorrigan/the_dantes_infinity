@@ -251,12 +251,12 @@ public class DoctorDoom extends Monster {
 			case A_BOLT -> {
 				if (t == 10 && target != null) {
 					aim = target.position().add(0, 1, 0);
-					DoomFx.bill(level, ModParticles.DOOM_RUNE_MOTE, hand(), 3);
+					DoomVfx.on(level, DoomVfx.CHARGE, this, 0.6f, 9, DoomVfx.GOLD);
 					DoomFx.sound(level, at, SoundEvents.BEACON_POWER_SELECT, 1f, 1.6f);
 				}
 				if (t == 18 && aim != null) {
 					Vec3 dir = aim.subtract(hand()).normalize();
-					DoomCombat.fire(level, this, hand(), dir.scale(2.2), 12, 0.35, 1.5, 40, null, 0, ModParticles.DOOM_GAUNTLET_BOLT, 0, this::foe);
+					DoomCombat.fire(level, this, hand(), dir.scale(2.2), 12, 0.35, 1.5, 40, null, 0, DoomVfx.GOLD, 0.32f, this::foe);
 					DoomFx.sound(level, at, SoundEvents.BLAZE_SHOOT, 1.3f, 0.8f);
 				}
 			}
@@ -266,7 +266,7 @@ public class DoctorDoom extends Monster {
 					DoomFx.line(level, at, 64, "doom.bastion");
 					DoomFx.sound(level, at, SoundEvents.IRON_GOLEM_REPAIR, 1.4f, 0.5f);
 				}
-				if (t >= 12 && t < 61 && t % 12 == 0) DoomFx.bill(level, ModParticles.DOOM_IRON_BASTION, hand().add(0, -0.3, 0), 0);
+				if (t == 12) DoomVfx.on(level, DoomVfx.SHIELD, this, 2.0f, 49, DoomVfx.GREEN);
 				if (t == 61) {
 					setFlag(FLAG_SHIELD, false);
 					DoomFx.bill(level, ModParticles.DOOM_DOOM_SMOKE, at.add(0, 1.4, 0), 1.6);
@@ -294,7 +294,7 @@ public class DoctorDoom extends Monster {
 				}
 			}
 			case A_SLAM -> {
-				if (t == 7) { DoomFx.bill(level, ModParticles.DOOM_JET_EXHAUST, at, 0); DoomFx.sound(level, at, SoundEvents.FIRECHARGE_USE, 1.4f, 0.6f); }
+				if (t == 7) { DoomVfx.on(level, DoomVfx.JET, this, 1, 22, DoomVfx.GOLD); DoomFx.sound(level, at, SoundEvents.FIRECHARGE_USE, 1.4f, 0.6f); }
 				if (t == 8) { from = at; aim = target == null ? at : clampToArena(target.position()); DoomFx.flat(level, ModParticles.DOOM_DROP_MARKER, aim, 2.4); }
 				if (t > 8 && t <= 28 && aim != null && from != null) {
 					float k = (t - 8) / 20f;
@@ -340,12 +340,12 @@ public class DoctorDoom extends Monster {
 				if (t == 30) cooldown = 0;
 			}
 			case A_SORCERY -> {
-				if (t == 12) { DoomFx.bill(level, ModParticles.DOOM_RUNE_MOTE, hand(), 4); DoomFx.sound(level, at, SoundEvents.EVOKER_PREPARE_ATTACK, 1.2f, 0.9f); }
+				if (t == 12) { DoomVfx.on(level, DoomVfx.CHARGE, this, 0.7f, 10, DoomVfx.GREEN); DoomFx.sound(level, at, SoundEvents.EVOKER_PREPARE_ATTACK, 1.2f, 0.9f); }
 				if (t == 22) {
 					Vec3 fwd = Vec3.directionFromRotation(0, this.getYRot());
 					for (int i = -1; i <= 1; i++) {
 						Vec3 dir = fwd.yRot(i * 0.5f).add(0, 0.15, 0).normalize();
-						DoomCombat.fire(level, this, hand(), dir.scale(0.62), 8, 0.35, 0, 110, target, 0.08, ModParticles.DOOM_SORCERY_BOLT, 0, this::foe);
+						DoomCombat.fire(level, this, hand(), dir.scale(0.62), 8, 0.35, 0, 110, target, 0.08, DoomVfx.GREEN, 0.40f, this::foe);
 					}
 					DoomFx.sound(level, at, SoundEvents.EVOKER_CAST_SPELL, 1.3f, 0.8f);
 				}
@@ -355,27 +355,32 @@ public class DoctorDoom extends Monster {
 					Vec3 lead = target.position().add(0, 1, 0).add(target.getDeltaMovement().scale(6));
 					for (int i = 0; i < (t == 38 ? 2 : 1); i++) {
 						Vec3 dir = lead.subtract(hand()).normalize().yRot(i == 0 ? 0 : 0.25f);
-						DoomCombat.fire(level, this, hand(), dir.scale(1.7), 7, 0.3, 0, 50, null, 0, ModParticles.DOOM_SORCERY_BOLT, 0.8, this::foe);
+						DoomCombat.fire(level, this, hand(), dir.scale(1.7), 7, 0.3, 0, 50, null, 0, DoomVfx.GREEN, 0.32f, this::foe);
 					}
 					DoomFx.sound(level, at, SoundEvents.SHULKER_SHOOT, 1f, 1.3f);
 				}
 			}
 			case A_SUNS -> {
-				if (t == 1) DoomFx.line(level, at, 64, "doom.seven_suns");
-				if (t == 18) { DoomFx.bill(level, ModParticles.DOOM_SEVEN_SUNS, at.add(0, 2.4, 0), 0); DoomFx.sound(level, at, SoundEvents.BEACON_ACTIVATE, 1.6f, 0.6f); }
+				if (t == 1) { DoomFx.line(level, at, 64, "doom.seven_suns"); suns.clear(); }
+				if (t == 18) { DoomVfx.on(level, DoomVfx.ORBIT, this, 7, 70, DoomVfx.SUN); DoomFx.sound(level, at, SoundEvents.BEACON_ACTIVATE, 1.6f, 0.6f); }
 				if (t >= 36 && t <= 78 && (t - 36) % 7 == 0 && target != null) {
 					Vec3 mark = clampToArena(target.position().add(target.getDeltaMovement().multiply(8, 0, 8)));
 					suns.add(new Vec3(mark.x, t + 13, mark.z));
-					DoomFx.flat(level, ModParticles.DOOM_EDICT_WARNING, new Vec3(mark.x, LatveriaPlan.FLOOR, mark.z), 0.36);
+					Vec3 ground = new Vec3(mark.x, LatveriaPlan.FLOOR, mark.z);
+					DoomVfx.at(level, DoomVfx.EDICT, ground.add(0, 0.05, 0), 1.7f, 13, DoomVfx.SUN);
+					// One of the seven leaves its orbit and falls on the mark in 13 ticks.
+					int left = 7 - (t - 36) / 7;
+					Vec3 from = at.add(Math.cos(t * 0.3) * 1.6, 3.2, Math.sin(t * 0.3) * 1.6);
+					DoomVfx.bolt(level, DoomVfx.nextId(), this, null, from, ground.add(0, 0.6, 0).subtract(from).scale(1 / 13.0), 0.6f, 0, 13, DoomVfx.SUN);
+					DoomVfx.on(level, DoomVfx.ORBIT, this, left - 1, Math.max(1, 92 - t), DoomVfx.SUN);
 				}
-				if (t == 36) suns.removeIf(s -> s.y > 200 || s.y < 36);
 				for (int i = suns.size() - 1; i >= 0; i--) {
 					Vec3 s = suns.get(i);
 					if ((int) s.y != t) continue;
 					suns.remove(i);
 					Vec3 hit = new Vec3(s.x, LatveriaPlan.FLOOR, s.z);
-					DoomFx.bill(level, ModParticles.DOOM_SUN_PROJECTILE, hit.add(0, 1.2, 0), 2.6);
-					DoomFx.bill(level, ModParticles.DOOM_IMPACT, hit.add(0, 0.6, 0), 2.4);
+					DoomVfx.at(level, DoomVfx.IMPACT, hit.add(0, 0.5, 0), 2.6f, 10, DoomVfx.SUN);
+					DoomVfx.at(level, DoomVfx.SLAM, hit.add(0, 0.05, 0), 3.2f, 12, DoomVfx.SUN);
 					DoomFx.sound(level, hit, SoundEvents.GENERIC_EXPLODE.value(), 1f, 1.3f);
 					strike(level, hit, 2.7, 14, 0.5);
 				}
@@ -590,6 +595,10 @@ public class DoctorDoom extends Monster {
 		boolean was = this.dead;
 		super.die(source);
 		if (was || !(this.level() instanceof ServerLevel level)) return;
+		// Everyone standing in the hall at the end shares the victory, even if the last blow came at once.
+		for (ServerPlayer p : level.players()) {
+			if (p.isAlive() && !p.isSpectator() && LatveriaPlan.ARENA_BOX.inflate(3).contains(p.position())) challengers.add(p.getUUID());
+		}
 		if (nodesUp) placeNodes(level, false);
 		this.entityData.set(ACTION, A_DEFEAT, true);
 		bar.removeAllPlayers();

@@ -15,7 +15,8 @@
 		"StormbreakerDropMixin",
 		"EnderDragonWingMixin",
 		"MindArenaTeleportMixin",
-		"MindArenaMovementMixin"
+		"MindArenaMovementMixin",
+		"ServerGamePacketListenerAccessor"
 	],
 	"injectors": {
 		"defaultRequire": 1

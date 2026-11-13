@@ -662,7 +662,7 @@
   "entity.infinity_gauntlet.doombot.royal_guard": "Royal Guard",
   "key.infinity_gauntlet.doom_wheel": "Doom Armor: Powers Wheel",
   "doom.infinity_gauntlet.wheel": "Powers of Doom",
-  "doom.infinity_gauntlet.wheel_help": "Point and release to cast · 1–6 picks at once · Esc closes",
+  "doom.infinity_gauntlet.wheel_help": "Point and release (or click) to pick and cast · 1–6 at once · N casts the selected power again · Esc closes",
   "doom.infinity_gauntlet.power.gauntlet_bolt": "Gauntlet Bolt",
   "doom.infinity_gauntlet.power.iron_bastion": "Iron Bastion",
   "doom.infinity_gauntlet.power.jet_flight": "Jet Flight",
@@ -712,5 +712,7 @@
   "advancements.infinity_gauntlet.sabotage_generator.title": "Lights Out",
   "advancements.infinity_gauntlet.sabotage_generator.description": "Shut down the generator in the laboratory of Castle Doom",
   "advancements.infinity_gauntlet.defeat_doom.title": "The Fury of Doom",
-  "advancements.infinity_gauntlet.defeat_doom.description": "Defeat Doctor Doom and take his castle"
+  "advancements.infinity_gauntlet.defeat_doom.description": "Defeat Doctor Doom and take his castle",
+  "msg.infinity_gauntlet.latveria.armor.no_fuel": "The jets are empty. Land and let them refill.",
+  "key.infinity_gauntlet.doom_cast": "Doom Armor: Cast Selected Power"
 }

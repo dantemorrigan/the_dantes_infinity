@@ -114,10 +114,10 @@ public final class DoomItems {
 				LivingEntity target = sl.getEntitiesOfClass(LivingEntity.class, p.getBoundingBox().inflate(20), e -> e != p && e.isAlive()
 						&& (e instanceof net.minecraft.world.entity.monster.Enemy || e instanceof Doombot b && !b.allied())
 						&& e.position().subtract(eye).normalize().dot(look) > 0.6).stream().findFirst().orElse(null);
-				DoomCombat.fire(sl, p, eye.add(look), look.scale(0.7), 9, 0.35, 0, 100, target, 0.1, ModParticles.DOOM_SORCERY_BOLT, 0.9, e -> hits(p, e));
+				DoomCombat.fire(sl, p, eye.add(look), look.scale(0.7), 9, 0.35, 0, 100, target, 0.1, DoomVfx.GREEN, 0.36f, e -> hits(p, e));
 				DoomFx.sound(sl, eye, SoundEvents.EVOKER_CAST_SPELL, 0.9f, 1.1f);
 			} else {
-				DoomCombat.fire(sl, p, eye.add(look.scale(0.8)), look.scale(2.2), 9, 0.3, 0, 40, null, 0, ModParticles.DOOM_GAUNTLET_BOLT, 0.8, e -> hits(p, e));
+				DoomCombat.fire(sl, p, eye.add(look.scale(0.8)), look.scale(2.2), 9, 0.3, 0, 40, null, 0, DoomVfx.GOLD, 0.26f, e -> hits(p, e));
 				DoomFx.sound(sl, eye, SoundEvents.BLAZE_SHOOT, 0.8f, 1.3f);
 			}
 			p.getCooldowns().addCooldown(p.getItemInHand(hand), homing ? 50 : 36);

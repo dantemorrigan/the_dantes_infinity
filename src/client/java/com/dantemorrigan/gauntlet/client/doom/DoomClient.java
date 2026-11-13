@@ -29,6 +29,7 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.ARGB;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.phys.Vec3;
 import org.lwjgl.glfw.GLFW;
 
 /**
@@ -38,14 +39,17 @@ import org.lwjgl.glfw.GLFW;
 public final class DoomClient {
 	public static final KeyMapping WHEEL = KeyMappingHelper.registerKeyMapping(new KeyMapping("key.infinity_gauntlet.doom_wheel",
 			InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_M, ClientPower.CATEGORY));
+	/** Casts the selected power again without opening the wheel. */
+	public static final KeyMapping CAST = KeyMappingHelper.registerKeyMapping(new KeyMapping("key.infinity_gauntlet.doom_cast",
+			InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_N, ClientPower.CATEGORY));
 	public static final String[] ICONS = {"gauntlet_bolt", "iron_bastion", "jet_slam", "rift_step", "seven_suns", "latverian_edict"};
 	private static final Identifier LOGO = InfinityGauntlet.id("textures/gui/doctor_doom/logo.png");
 	private static final String GUI = "textures/gui/doctor_doom/";
 
 	// Armor state from the server.
-	private static boolean set;
+	private static boolean set, jet;
 	private static final int[] cooldown = new int[6], cooldownMax = {1, 1, 1, 1, 1, 1};
-	private static int jet, bastion;
+	private static int fuel = DoomArmor.FUEL, bastion, suns, selected;
 	// One-off scenes.
 	private static int logoAge = -1, logoTicks, barsAge = -1, barsTicks, flashAge = -1, flashTicks;
 	private static float flashStrength;
@@ -58,6 +62,24 @@ public final class DoomClient {
 	public static boolean fullSet() { return set; }
 
 	public static int cooldown(int ability) { return cooldown[ability]; }
+
+	public static int selected() { return selected; }
+
+	public static boolean jetActive() { return jet; }
+
+	/** Picks a power and casts it at once (the wheel, the number keys). */
+	public static void choose(int ability) {
+		selected = Mth.clamp(ability, 0, 5);
+		cast();
+	}
+
+	/** Casts the selected power. Seven Suns cast again while they orbit looses them at the crosshair. */
+	public static void cast() {
+		if (!set || !ClientPlayNetworking.canSend(ModNetwork.DoomCast.TYPE)) return;
+		ClientPlayNetworking.send(new ModNetwork.DoomCast(selected));
+		Minecraft mc = Minecraft.getInstance();
+		if (mc.player != null && selected != DoomArmor.JET && (cooldown[selected] <= 0 || selected == DoomArmor.SUNS && suns > 0)) mc.player.swing(net.minecraft.world.InteractionHand.MAIN_HAND);
+	}
 
 	public static boolean logoShowing() { return logoAge >= 0; }
 
@@ -83,11 +105,13 @@ public final class DoomClient {
 		});
 		ClientPlayNetworking.registerGlobalReceiver(ModNetwork.DoomSync.TYPE, (sync, ctx) -> {
 			String[] parts = sync.state().split(";");
-			if (parts.length < 4) return;
+			if (parts.length < 6) return;
 			set = parts[0].equals("1");
-			jet = Integer.parseInt(parts[1]);
-			bastion = Integer.parseInt(parts[2]);
-			String[] cds = parts[3].split(",");
+			jet = parts[1].equals("1");
+			fuel = Integer.parseInt(parts[2]);
+			bastion = Integer.parseInt(parts[3]);
+			suns = Integer.parseInt(parts[4]);
+			String[] cds = parts[5].split(",");
 			for (int i = 0; i < 6 && i < cds.length; i++) {
 				String[] c = cds[i].split("/");
 				cooldown[i] = Integer.parseInt(c[0]);
@@ -115,15 +139,62 @@ public final class DoomClient {
 		if (mc.isPaused()) return;
 		clock++;
 		for (int i = 0; i < 6; i++) if (cooldown[i] > 0) cooldown[i]--;
-		if (jet > 0) jet--;
 		if (bastion > 0) bastion--;
+		if (jet && fuel > 0) fuel--;
 		if (logoAge >= 0 && ++logoAge > logoTicks) logoAge = -1;
 		if (barsAge >= 0 && ++barsAge > barsTicks) barsAge = -1;
 		if (flashAge >= 0 && ++flashAge > flashTicks) flashAge = -1;
 		while (WHEEL.consumeClick()) {
 			if (set && mc.screen == null) mc.setScreen(new DoomWheelScreen());
 		}
+		while (CAST.consumeClick()) if (mc.screen == null) cast();
+		if (!set) jet = false;
+		fly(mc);
+		edictPreview(mc);
 		music(mc);
+	}
+
+	// ------------------------------------------------------------------ jets and aiming
+
+	/**
+	 * Jet Flight runs on the client, so it answers like walking does: W thrusts along the view (sprint is faster),
+	 * S brakes, A and D slide, Space climbs, Shift sinks; with no key held the wearer hovers. The server only keeps
+	 * the fuel and the fall damage.
+	 */
+	private static void fly(Minecraft mc) {
+		var p = mc.player;
+		if (!jet || p == null || !p.isAlive() || p.getAbilities().flying || p.isPassenger()) return;
+		var keys = p.input.keyPresses;
+		Vec3 look = p.getLookAngle();
+		Vec3 flat = new Vec3(look.x, 0, look.z).normalize();
+		Vec3 side = new Vec3(-flat.z, 0, flat.x);
+		double speed = keys.sprint() ? 1.35 : 0.85;
+		Vec3 want = Vec3.ZERO;
+		if (keys.forward()) want = want.add(look.scale(speed));
+		if (keys.backward()) want = want.subtract(flat.scale(speed * 0.45));
+		if (keys.right()) want = want.add(side.scale(speed * 0.55));
+		if (keys.left()) want = want.subtract(side.scale(speed * 0.55));
+		if (keys.jump()) want = want.add(0, 0.55, 0);
+		if (keys.shift()) want = want.add(0, -0.55, 0);
+		Vec3 next = p.getDeltaMovement().lerp(want, 0.2);
+		// Air drag and gravity act on this before the next move; give them back so the jets hold the line.
+		p.setDeltaMovement(next.x / 0.91, next.y / 0.98 + 0.08, next.z / 0.91);
+		p.fallDistance = 0;
+		if (fuel <= 0 && ClientPlayNetworking.canSend(ModNetwork.DoomJet.TYPE)) ClientPlayNetworking.send(new ModNetwork.DoomJet(false));
+	}
+
+	/** With the Edict selected, a circle shows where it would fall. */
+	private static void edictPreview(Minecraft mc) {
+		if (!set || selected != DoomArmor.EDICT || mc.player == null || mc.screen != null || cooldown[DoomArmor.EDICT] > 0) {
+			DoomVfxClient.preview(null, 0);
+			return;
+		}
+		var hit = mc.player.pick(DoomArmor.EDICT_RANGE, 1f, false);
+		if (hit.getType() != net.minecraft.world.phys.HitResult.Type.BLOCK) { DoomVfxClient.preview(null, 0); return; }
+		Vec3 at = hit.getLocation();
+		var down = mc.level.clip(new net.minecraft.world.level.ClipContext(at.add(0, 0.5, 0), at.add(0, -24, 0),
+				net.minecraft.world.level.ClipContext.Block.COLLIDER, net.minecraft.world.level.ClipContext.Fluid.NONE, mc.player));
+		DoomVfxClient.preview(down.getType() == net.minecraft.world.phys.HitResult.Type.MISS ? null : down.getLocation(), (float) DoomArmor.EDICT_RADIUS);
 	}
 
 	// ------------------------------------------------------------------ music
@@ -261,16 +332,26 @@ public final class DoomClient {
 			return;
 		}
 		if (!set || mc.options.hideGui || mc.screen instanceof DoomWheelScreen) return;
-		// The armor's six powers down the right edge: lit when ready, dim with seconds left while cooling.
-		int size = 18, x = w - size - 4, y0 = h / 2 - 3 * (size + 3);
+		// The armor's six powers down the right edge: the selected one framed in gold, lit when ready, dim with
+		// seconds left while cooling; the jets show their fuel, the suns how many still orbit.
+		int size = 18, x = w - size - 6, y0 = h / 2 - 3 * (size + 4);
 		for (int i = 0; i < 6; i++) {
-			int y = y0 + i * (size + 3);
-			boolean active = i == DoomArmor.JET && jet > 0 || i == DoomArmor.BASTION && bastion > 0;
-			boolean ready = cooldown[i] <= 0;
+			int y = y0 + i * (size + 4);
+			boolean active = i == DoomArmor.JET && jet || i == DoomArmor.BASTION && bastion > 0 || i == DoomArmor.SUNS && suns > 0;
+			boolean ready = cooldown[i] <= 0 || active;
+			if (i == selected) g.fill(x - 5, y - 5, x + size + 5, y + size + 5, 0x66FFD36B);
 			image(g, InfinityGauntlet.id(GUI + (active ? "state_warning" : ready ? "state_active" : "state_cooldown") + ".png"), x - 3, y - 3, size + 6, size + 6, 64, 64, -1);
-			image(g, InfinityGauntlet.id(GUI + "icons/" + ICONS[i] + ".png"), x, y, size, size, 64, 64, ready || active ? -1 : ARGB.color(255, 96, 104, 100));
+			image(g, InfinityGauntlet.id(GUI + "icons/" + ICONS[i] + ".png"), x, y, size, size, 64, 64, ready ? -1 : ARGB.color(255, 96, 104, 100));
 			if (!ready) g.centeredText(mc.font, Component.literal(String.valueOf((cooldown[i] + 19) / 20)), x + size / 2, y + 5, 0xFFFFE08A);
+			if (i == DoomArmor.JET) {
+				int bar = Math.round(size * fuel / (float) DoomArmor.FUEL);
+				g.fill(x, y + size + 1, x + size, y + size + 3, 0xAA101010);
+				g.fill(x, y + size + 1, x + bar, y + size + 3, jet ? 0xFFFFB347 : 0xFF6CE89A);
+			}
+			if (i == DoomArmor.SUNS && suns > 0) g.text(mc.font, Component.literal(String.valueOf(suns)), x - 8, y + 5, 0xFFFFE9A8, true);
 		}
+		g.text(mc.font, Component.translatable("doom.infinity_gauntlet.power." + DoomArmor.NAMES[selected]), x - 4 - mc.font.width(Component.translatable("doom.infinity_gauntlet.power." + DoomArmor.NAMES[selected])),
+				y0 + 6 * (size + 4) + 2, 0xFFFFE08A, true);
 	}
 
 	/** Doom's boss bar from the pack: track, a fill for the current stage, frame and seal. */

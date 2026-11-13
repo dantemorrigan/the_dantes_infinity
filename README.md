@@ -105,7 +105,15 @@ After every heavy attack he is exposed for a moment and takes more damage. A Spa
 
 **The reward** is paid once per player: Doom's armor, Doom's Gauntlet, the Grimoire, the Latveria Key, the Doombot Controller, four Castle Seals, the Time Platform and the Banner of Latveria. The castle becomes your base, and the surviving Doombots obey you. The Doombot Controller switches them between following you and standing guard, and a Mechanical Heart builds a new Soldier. The Latveria Key takes you to the castle hall from any dimension and back, even when you are not wearing the armor (sneak to arrive in the valley instead). Give a Castle Seal to a friend so they can travel to Latveria too.
 
-**Doom's armor.** All four pieces worn together unlock the powers wheel (**M**): Gauntlet Bolt, Iron Bastion, Jet Flight, Rift Step, Seven Suns and the Latverian Edict. Pick a power with the mouse or 1–6. Cooldowns are shown on the right edge of the screen. The jets never touch vanilla flight, so they do not clash with the Infinity Gauntlet or Stormbreaker. The armor's keys are separate from the gauntlet's (**V**/**R**).
+**Doom's armor.** On the player it is Doom himself: the same model, texture and living cloak as the boss. All four pieces worn together unlock six powers. Hold **M** for the wheel and release over a power (or press 1–6) to pick and cast it; **N** casts the selected power again.
+- **Gauntlet Bolt**: a fast bolt from the hand that bursts on impact (0.5 s).
+- **Iron Bastion**: a hex shell for 6 s. Arrows stop dead, blows lose four fifths, attackers are thrown back.
+- **Jet Flight**: toggled. **W** thrusts along the view (sprint is faster), **S** brakes, **A**/**D** slide, **Space** climbs, **Shift** sinks; with no key held you hover. The fuel bar is under the icon and refills on the ground.
+- **Rift Step**: jump up to 24 blocks to where you look and slip through attacks for a second.
+- **Seven Suns**: seven suns orbit you and strike nearby monsters on their own; cast again to loose the rest at the crosshair.
+- **Latverian Edict**: a circle shows where it will fall; a second later a column of light crushes and throws up everything in it.
+
+The jets never touch vanilla flight, so the armor does not clash with the Infinity Gauntlet or Stormbreaker, and its keys are separate from the gauntlet's (**V**/**R**).
 
 **Admin tools** (operator level, `/gauntlet latveria help` prints them all):
 

@@ -92,13 +92,9 @@ def armor():
         rect(b, x, 20, w, 3, GREEN, 15, False)
     rect(b, 4, 16, 4, 4, STEEL, 17)
     for x in range(0, 16): dot(b, x, 25, STEEL_LO)
-    for sub, img in (("humanoid", a), ("humanoid_leggings", b)):
-        path = ASSETS + "textures/entity/equipment/%s/doom.png" % sub
-        os.makedirs(os.path.dirname(path), exist_ok=True)
-        img.save(path)
+    # The worn armor is Doom's own model, drawn by DoomArmorLayer; the vanilla layers stay empty.
     with open(ASSETS + "equipment/doom.json", "w") as f:
-        json.dump({"layers": {"humanoid": [{"texture": "infinity_gauntlet:doom"}],
-                              "humanoid_leggings": [{"texture": "infinity_gauntlet:doom"}]}}, f, indent=2)
+        json.dump({"layers": {}}, f)
         f.write("\n")
 
 
@@ -123,7 +119,7 @@ def logo():
 
 
 if __name__ == "__main__":
-    armor()
+    armor()  # the sheets above are kept only as a fallback sketch; nothing references them
     items()
     logo()
     print("items:", len(ITEMS))

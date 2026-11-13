@@ -15,6 +15,7 @@ public class InfinityGauntletClient implements ClientModInitializer {
 	private static void registerUru(net.fabricmc.fabric.api.client.rendering.v1.LivingEntityRenderLayerRegistrationCallback.RegistrationHelper helper,
 			net.minecraft.client.renderer.entity.LivingEntityRenderer<?, ?, ?> renderer) {
 		helper.register(new com.dantemorrigan.gauntlet.client.render.UruDetailLayer((net.minecraft.client.renderer.entity.RenderLayerParent) renderer));
+		helper.register(new com.dantemorrigan.gauntlet.client.render.DoomArmorLayer((net.minecraft.client.renderer.entity.RenderLayerParent) renderer));
 	}
 
 	@Override
@@ -57,6 +58,7 @@ public class InfinityGauntletClient implements ClientModInitializer {
 		net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry.register(com.dantemorrigan.gauntlet.ModEntities.DOCTOR_DOOM, com.dantemorrigan.gauntlet.client.doom.DoomRenderers.Doom::new);
 		net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry.register(com.dantemorrigan.gauntlet.ModEntities.DOOMBOT, com.dantemorrigan.gauntlet.client.doom.DoomRenderers.Bot::new);
 		com.dantemorrigan.gauntlet.client.doom.DoomClient.init();
+		com.dantemorrigan.gauntlet.client.doom.DoomVfxClient.init();
 		net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry.register(com.dantemorrigan.gauntlet.ModEntities.THANOS_SWORD, com.dantemorrigan.gauntlet.client.boss.ThanosSwordRenderer::new);
 		com.dantemorrigan.gauntlet.client.screen.SettingsButtons.init();
 		com.dantemorrigan.gauntlet.client.stormbreaker.StormbreakerClient.init();

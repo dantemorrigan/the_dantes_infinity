@@ -294,17 +294,17 @@ public class Doombot extends PathfinderMob {
 		switch (v) {
 			case SOLDIER -> {
 				if (t == 6 && target != null) aim = target.position().add(0, target.getBbHeight() * 0.6, 0);
-				if (t == 6) DoomFx.bill(level, ModParticles.DOOM_GAUNTLET_BOLT, eye.add(this.getLookAngle().scale(0.8)), 0.7);
+				if (t == 6) DoomVfx.on(level, DoomVfx.CHARGE, this, 0.4f, 8, DoomVfx.GOLD);
 				if (t == 13 && aim != null) {
 					Vec3 dir = aim.subtract(eye).normalize();
-					DoomCombat.fire(level, this, eye.add(dir.scale(0.8)), dir.scale(1.5), 6, 0.25, 0, 40, null, 0, ModParticles.DOOM_GAUNTLET_BOLT, 0.8, this::foe);
+					DoomCombat.fire(level, this, eye.add(dir.scale(0.8)), dir.scale(1.5), 6, 0.25, 0, 40, null, 0, DoomVfx.GOLD, 0.26f, this::foe);
 					DoomFx.sound(level, eye, SoundEvents.BLAZE_SHOOT, 0.7f, 1.5f);
 				}
 			}
 			case BASTION -> {
 				if (t == 16) {
 					setFlag(FLAG_SHIELD, true);
-					DoomFx.bill(level, ModParticles.DOOM_IRON_BASTION, eye.add(this.getLookAngle().scale(1.2)), 2.4);
+					DoomVfx.on(level, DoomVfx.SHIELD, this, 1.3f, 24, DoomVfx.GREEN);
 					DoomFx.sound(level, eye, SoundEvents.IRON_GOLEM_REPAIR, 1f, 0.6f);
 					if (target != null && this.distanceTo(target) <= 3.8 && DoomCombat.hurt(level, target, this, 8)) {
 						Vec3 push = target.position().subtract(this.position()).normalize();
@@ -314,7 +314,7 @@ public class Doombot extends PathfinderMob {
 				if (t == 40) setFlag(FLAG_SHIELD, false);
 			}
 			case INTERCEPTOR -> {
-				if (t == 1) DoomFx.bill(level, ModParticles.DOOM_JET_EXHAUST, this.position(), 0);
+				if (t == 1) DoomVfx.on(level, DoomVfx.JET, this, 1, 36, DoomVfx.GOLD);
 				if (t <= 16) hover(this.position().add(0, 3, 0), 0.3);
 				if (t == 20 && target != null) aim = target.position();
 				if (t > 23 && t <= 33 && aim != null) hover(aim.add(0, 0.6, 0), 1.2);
@@ -337,7 +337,7 @@ public class Doombot extends PathfinderMob {
 						friend.ward();
 					} else if (target != null) {
 						Vec3 dir = target.position().add(0, 1, 0).subtract(eye).normalize();
-						DoomCombat.fire(level, this, eye.add(dir), dir.scale(0.65), 7, 0.3, 0, 80, target, 0.09, ModParticles.DOOM_SORCERY_BOLT, 0.9, this::foe);
+						DoomCombat.fire(level, this, eye.add(dir), dir.scale(0.65), 7, 0.3, 0, 80, target, 0.09, DoomVfx.GREEN, 0.36f, this::foe);
 						DoomFx.sound(level, eye, SoundEvents.EVOKER_CAST_SPELL, 0.9f, 1.3f);
 					}
 				}

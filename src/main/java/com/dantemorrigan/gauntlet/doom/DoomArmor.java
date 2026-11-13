@@ -3,7 +3,7 @@ package com.dantemorrigan.gauntlet.doom;
 import com.dantemorrigan.gauntlet.CoopRules;
 import com.dantemorrigan.gauntlet.InfinityGauntlet;
 import com.dantemorrigan.gauntlet.ModItems;
-import com.dantemorrigan.gauntlet.ModParticles;
+import com.dantemorrigan.gauntlet.mixin.ServerGamePacketListenerAccessor;
 import com.dantemorrigan.gauntlet.net.ModNetwork;
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
@@ -15,17 +15,20 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.tags.TagKey;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.monster.Enemy;
 import net.minecraft.world.entity.npc.villager.AbstractVillager;
+import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.item.Item;
-import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.equipment.ArmorMaterial;
 import net.minecraft.world.item.equipment.ArmorType;
 import net.minecraft.world.item.equipment.EquipmentAssets;
 import net.minecraft.world.level.ClipContext;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
@@ -39,11 +42,16 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * Doom's armor. The four pieces worn together open a wheel of six powers, each on its own cooldown: Gauntlet Bolt,
- * Iron Bastion, Jet Flight, Rift Step, Seven Suns and the Latverian Edict.
- *
- * <p>The powers never touch the player's flight abilities, so they do not fight with the Infinity Gauntlet or
- * Stormbreaker: the jets push the wearer along their line of sight and refuse to start while another flight is on.
+ * Doom's armor. The four pieces worn together open six powers:
+ * <ul>
+ *   <li>Gauntlet Bolt — a fast bolt from the hand that bursts on impact;</li>
+ *   <li>Iron Bastion — a shell around the wearer: arrows stop dead, blows lose four fifths, attackers are thrown back;</li>
+ *   <li>Jet Flight — toggled; the client flies (so it answers at once), the server keeps the fuel and the fall damage;</li>
+ *   <li>Rift Step — a jump to where the wearer looks, slipping through attacks for a second;</li>
+ *   <li>Seven Suns — seven suns orbit the wearer and strike nearby foes; cast again to loose them all at the crosshair;</li>
+ *   <li>Latverian Edict — a seal falls where the wearer looks and a column of light crushes and throws up what is in it.</li>
+ * </ul>
+ * None of them touches the player's flight abilities, so the armor never fights the Infinity Gauntlet or Stormbreaker.
  */
 public final class DoomArmor {
 	public static final ArmorMaterial MATERIAL = new ArmorMaterial(55,
@@ -53,13 +61,15 @@ public final class DoomArmor {
 			ResourceKey.create(EquipmentAssets.ROOT_ID, InfinityGauntlet.id("doom")));
 	public static final int BOLT = 0, BASTION = 1, JET = 2, RIFT = 3, SUNS = 4, EDICT = 5;
 	public static final String[] NAMES = {"gauntlet_bolt", "iron_bastion", "jet_flight", "rift_step", "seven_suns", "latverian_edict"};
-	private static final int[] COOLDOWN = {30, 500, 400, 140, 900, 1200};
-	private static final int BASTION_TICKS = 120, JET_TICKS = 160;
+	private static final int[] COOLDOWN = {10, 300, 20, 50, 400, 500};
+	public static final int BASTION_TICKS = 120, FUEL = 240, SUN_TICKS = 300, SUN_COUNT = 7, EDICT_DELAY = 20;
+	public static final double RIFT_RANGE = 24, EDICT_RANGE = 40, EDICT_RADIUS = 5;
 
 	private static final class Wearer {
 		final long[] ready = new long[6];
-		long bastionUntil, jetUntil;
-		boolean hadSet;
+		long bastionUntil, sunsUntil, nextSun;
+		int fuel = FUEL, suns;
+		boolean jet, hadSet;
 	}
 
 	private record Timed(long at, UUID owner, Runnable run) {}
@@ -86,19 +96,32 @@ public final class DoomArmor {
 
 	public static void init() {
 		ServerPlayNetworking.registerGlobalReceiver(ModNetwork.DoomCast.TYPE, (payload, context) -> cast(context.player(), payload.ability()));
-		// Iron Bastion: four fifths of every blow stop on the shield.
+		ServerPlayNetworking.registerGlobalReceiver(ModNetwork.DoomJet.TYPE, (payload, context) -> {
+			ServerPlayer p = context.player();
+			Wearer w = WEARERS.get(p.getUUID());
+			if (w != null && !payload.on() && w.jet) stopJet(p, w);
+		});
 		ServerLivingEntityEvents.ALLOW_DAMAGE.register((entity, source, amount) -> {
 			if (reentrant || !(entity instanceof ServerPlayer p)) return true;
 			Wearer w = WEARERS.get(p.getUUID());
-			if (w == null || p.level().getGameTime() >= w.bastionUntil || !fullSet(p)) return true;
+			ServerLevel level = p.level();
+			if (w == null || level.getGameTime() >= w.bastionUntil || !fullSet(p)) return true;
+			DoomVfx.on(level, DoomVfx.SHIELD_HIT, p, 1.6f, 8, DoomVfx.GREEN);
+			DoomFx.sound(level, p.position(), SoundEvents.SHIELD_BLOCK.value(), 1f, 0.7f);
+			if (source.getDirectEntity() instanceof Projectile projectile) {
+				projectile.setDeltaMovement(projectile.getDeltaMovement().scale(-0.3));
+				return false;
+			}
+			if (source.getEntity() instanceof LivingEntity attacker && attacker != p && attacker.distanceTo(p) < 5) {
+				Vec3 d = attacker.position().subtract(p.position()).normalize();
+				attacker.knockback(1.4, -d.x, -d.z);
+			}
 			reentrant = true;
 			try {
-				p.hurtServer(p.level(), source, amount * 0.2f);
+				p.hurtServer(level, source, amount * 0.2f);
 			} finally {
 				reentrant = false;
 			}
-			DoomFx.bill(p.level(), ModParticles.DOOM_IRON_BASTION, p.position().add(p.getLookAngle().scale(0.9)).add(0, 1.1, 0), 1.6);
-			DoomFx.sound(p.level(), p.position(), SoundEvents.SHIELD_BLOCK.value(), 1f, 0.7f);
 			return false;
 		});
 	}
@@ -108,20 +131,46 @@ public final class DoomArmor {
 		TIMED.clear();
 	}
 
-	/** Debug: every power is ready again. */
+	/** Debug: every power is ready again, the jets are full. */
 	public static void resetCooldowns(ServerPlayer p) {
 		Wearer w = WEARERS.computeIfAbsent(p.getUUID(), id -> new Wearer());
 		java.util.Arrays.fill(w.ready, 0);
+		w.fuel = FUEL;
 		sync(p, w);
 	}
 
 	private static boolean canHit(ServerPlayer owner, LivingEntity e) {
-		if (e == owner || e instanceof AbstractVillager || e instanceof Doombot b && b.allied()) return false;
+		if (e == owner || e instanceof AbstractVillager || e instanceof Doombot b && b.allied() || !e.isAlive()) return false;
 		return !(e instanceof ServerPlayer) || CoopRules.canAffect(owner, e);
+	}
+
+	/** Something the suns go after on their own: monsters, hostile Doombots and Doom, never players or animals. */
+	private static boolean hostile(ServerPlayer owner, LivingEntity e) {
+		return canHit(owner, e) && (e instanceof Enemy || e instanceof Doombot b && !b.allied() || e instanceof DoctorDoom);
 	}
 
 	private static void later(ServerPlayer owner, int ticks, Runnable run) {
 		TIMED.add(new Timed(owner.level().getGameTime() + ticks, owner.getUUID(), run));
+	}
+
+	private static Vec3 hand(ServerPlayer p) {
+		Vec3 look = p.getLookAngle();
+		Vec3 right = new Vec3(-look.z, 0, look.x).normalize();
+		return p.getEyePosition().add(look.scale(0.7)).add(right.scale(0.32)).add(0, -0.3, 0);
+	}
+
+	/** What the wearer aims at: the first living thing along the look within reach, or the block, or the far point. */
+	private static Vec3 aim(ServerPlayer p, double reach) {
+		Vec3 eye = p.getEyePosition(), end = eye.add(p.getLookAngle().scale(reach));
+		BlockHitResult block = p.level().clip(new ClipContext(eye, end, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, p));
+		Vec3 stop = block.getType() == HitResult.Type.MISS ? end : block.getLocation();
+		LivingEntity best = null;
+		double bestD = Double.MAX_VALUE;
+		for (LivingEntity e : p.level().getEntitiesOfClass(LivingEntity.class, new AABB(eye, stop).inflate(1.5), e -> canHit(p, e))) {
+			var hit = e.getBoundingBox().inflate(0.6).clip(eye, stop);
+			if (hit.isPresent() && hit.get().distanceToSqr(eye) < bestD) { bestD = hit.get().distanceToSqr(eye); best = e; }
+		}
+		return best != null ? best.position().add(0, best.getBbHeight() * 0.55, 0) : stop;
 	}
 
 	public static void cast(ServerPlayer p, int ability) {
@@ -130,69 +179,87 @@ public final class DoomArmor {
 		Wearer w = WEARERS.computeIfAbsent(p.getUUID(), id -> new Wearer());
 		ServerLevel level = p.level();
 		long now = level.getGameTime();
-		if (ability == JET && now < w.jetUntil) { stopJet(p, w); sync(p, w); return; }
+		if (ability == JET && w.jet) { stopJet(p, w); return; }
+		if (ability == SUNS && w.suns > 0) { volley(p, w); return; }
 		if (now < w.ready[ability] && !p.isCreative()) return;
 		Vec3 eye = p.getEyePosition(), look = p.getLookAngle();
 		switch (ability) {
 			case BOLT -> {
-				DoomCombat.fire(level, p, eye.add(look.scale(0.8)), look.scale(2.4), 14, 0.35, 1.2, 40, null, 0, ModParticles.DOOM_GAUNTLET_BOLT, 0.9, e -> canHit(p, e));
-				DoomFx.sound(level, eye, SoundEvents.BLAZE_SHOOT, 0.9f, 1.2f);
+				Vec3 from = hand(p), dir = aim(p, 64).subtract(from).normalize();
+				p.swing(InteractionHand.MAIN_HAND, true);
+				DoomVfx.on(level, DoomVfx.CHARGE, p, 0.5f, 5, DoomVfx.GOLD);
+				DoomCombat.fire(level, p, from, dir.scale(3.0), 12, 0.4, 1.4, 30, null, 0, DoomVfx.GOLD, 0.34f, e -> canHit(p, e));
+				DoomFx.sound(level, eye, SoundEvents.BLAZE_SHOOT, 0.8f, 1.5f);
+				DoomFx.sound(level, eye, SoundEvents.BEACON_POWER_SELECT, 0.4f, 2f);
 			}
 			case BASTION -> {
 				w.bastionUntil = now + BASTION_TICKS;
-				DoomFx.bill(level, ModParticles.DOOM_IRON_BASTION, eye.add(look.scale(1.2)), 0);
+				DoomVfx.on(level, DoomVfx.SHIELD, p, 1.7f, BASTION_TICKS, DoomVfx.GREEN);
+				DoomVfx.at(level, DoomVfx.SLAM, p.position(), 4.5f, 12, DoomVfx.GREEN);
 				DoomFx.sound(level, eye, SoundEvents.IRON_GOLEM_REPAIR, 1f, 0.6f);
+				DoomFx.sound(level, eye, SoundEvents.BEACON_ACTIVATE, 0.8f, 1.6f);
+				for (LivingEntity e : level.getEntitiesOfClass(LivingEntity.class, p.getBoundingBox().inflate(4.5, 2, 4.5), e -> canHit(p, e))) {
+					Vec3 d = e.position().subtract(p.position()).normalize();
+					DoomCombat.hurt(level, e, p, 4);
+					e.knockback(1.3, -d.x, -d.z);
+				}
 			}
 			case JET -> {
 				if (p.getAbilities().flying || p.isFallFlying()) { DoomFx.tell(p, "armor.already_flying"); return; }
-				w.jetUntil = now + JET_TICKS;
-				DoomFx.bill(level, ModParticles.DOOM_JET_EXHAUST, p.position(), 0);
-				DoomFx.sound(level, p.position(), SoundEvents.FIRECHARGE_USE, 1f, 0.7f);
+				if (w.fuel < 20) { DoomFx.tell(p, "armor.no_fuel"); return; }
+				w.jet = true;
+				p.removeEffect(MobEffects.SLOW_FALLING);
+				DoomVfx.on(level, DoomVfx.JET, p, 1, 20000, DoomVfx.GOLD);
+				DoomFx.sound(level, p.position(), SoundEvents.FIRECHARGE_USE, 1f, 0.6f);
 			}
 			case RIFT -> {
-				BlockHitResult hit = level.clip(new ClipContext(eye, eye.add(look.scale(18)), ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, p));
-				Vec3 to = hit.getType() == HitResult.Type.MISS ? eye.add(look.scale(18)) : hit.getLocation().subtract(look.scale(1.2));
-				BlockPos feet = BlockPos.containing(to.x, to.y - 1, to.z);
+				Vec3 to = aim(p, RIFT_RANGE);
+				BlockHitResult hit = level.clip(new ClipContext(eye, eye.add(look.scale(RIFT_RANGE)), ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, p));
+				Vec3 target = hit.getType() == HitResult.Type.MISS ? eye.add(look.scale(RIFT_RANGE)) : hit.getLocation().subtract(look.scale(0.8));
+				if (to.distanceToSqr(eye) < target.distanceToSqr(eye)) target = to.subtract(look.scale(1.6));
+				BlockPos feet = BlockPos.containing(target.x, target.y - 0.9, target.z);
 				for (int i = 0; i < 4 && !(free(level, feet) && free(level, feet.above())); i++) feet = feet.above();
 				if (!free(level, feet) || !free(level, feet.above())) { DoomFx.tell(p, "armor.no_room"); return; }
-				for (int i = 0; i < 6 && free(level, feet.below()); i++) feet = feet.below();
 				Vec3 from = p.position();
-				DoomFx.bill(level, ModParticles.DOOM_RIFT_STEP, from.add(0, 1.1, 0), 0.7);
-				p.teleportTo(feet.getX() + 0.5, feet.getY(), feet.getZ() + 0.5);
+				Vec3 dest = new Vec3(feet.getX() + 0.5, feet.getY(), feet.getZ() + 0.5);
+				p.teleportTo(level, dest.x, dest.y, dest.z, java.util.Set.of(), p.getYRot(), p.getXRot(), false);
 				p.fallDistance = 0;
-				DoomFx.bill(level, ModParticles.DOOM_RIFT_STEP, p.position().add(0, 1.1, 0), 0.7);
-				DoomFx.sound(level, p.position(), SoundEvents.ENDERMAN_TELEPORT, 1f, 0.7f);
+				DoomVfx.at(level, DoomVfx.RIFT, from.add(0, 1, 0), 1.1f, 14, DoomVfx.GREEN);
+				DoomVfx.at(level, DoomVfx.RIFT, dest.add(0, 1, 0), 1.1f, 14, DoomVfx.GREEN);
+				DoomVfx.line(level, DoomVfx.TRAIL, from.add(0, 1, 0), dest.add(0, 1, 0), 0.6f, 10, DoomVfx.GREEN);
+				DoomFx.sound(level, from, SoundEvents.ENDERMAN_TELEPORT, 0.8f, 0.8f);
+				DoomFx.sound(level, dest, SoundEvents.ENDERMAN_TELEPORT, 1f, 0.6f);
 				DoomCombat.dodge(p);
 			}
 			case SUNS -> {
-				DoomFx.bill(level, ModParticles.DOOM_SEVEN_SUNS, p.position().add(0, 2.2, 0), 0.6);
+				w.suns = SUN_COUNT;
+				w.sunsUntil = now + SUN_TICKS;
+				w.nextSun = now + 14;
+				DoomVfx.on(level, DoomVfx.ORBIT, p, SUN_COUNT, SUN_TICKS, DoomVfx.SUN);
 				DoomFx.sound(level, p.position(), SoundEvents.BEACON_ACTIVATE, 1.2f, 0.7f);
-				for (int i = 0; i < 7; i++) {
-					int n = i;
-					later(p, 32 + i * 4, () -> {
-						Vec3 at = p.position().add(Math.cos(n * 0.9) * 1.6, 2.6, Math.sin(n * 0.9) * 1.6);
-						List<LivingEntity> foes = level.getEntitiesOfClass(LivingEntity.class, p.getBoundingBox().inflate(28, 12, 28),
-								e -> e.isAlive() && canHit(p, e) && (e instanceof net.minecraft.world.entity.monster.Enemy || e instanceof Doombot || e instanceof ServerPlayer));
-						foes.sort(Comparator.comparingDouble(e -> e.distanceToSqr(p)));
-						LivingEntity target = foes.isEmpty() ? null : foes.get(n % foes.size());
-						Vec3 dir = target == null ? p.getLookAngle() : target.position().add(0, 1, 0).subtract(at).normalize();
-						DoomCombat.fire(level, p, at, dir.scale(1.1), 12, 0.4, 2.2, 70, target, 0.18, ModParticles.DOOM_SUN_PROJECTILE, 0, e -> canHit(p, e));
-						DoomFx.sound(level, at, SoundEvents.FIRECHARGE_USE, 0.8f, 1.3f);
-					});
-				}
+				DoomFx.sound(level, p.position(), SoundEvents.FIRECHARGE_USE, 0.8f, 0.5f);
 			}
 			default -> {
-				BlockHitResult hit = level.clip(new ClipContext(eye, eye.add(look.scale(28)), ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, p));
-				if (hit.getType() == HitResult.Type.MISS) { DoomFx.tell(p, "armor.no_target"); return; }
-				Vec3 at = hit.getLocation();
-				DoomFx.flat(level, ModParticles.DOOM_EDICT_WARNING, at, 1.05);
-				DoomFx.sound(level, at, SoundEvents.BEACON_AMBIENT, 2f, 0.6f);
-				later(p, 46, () -> {
-					DoomFx.bill(level, ModParticles.DOOM_EDICT_COLUMN, at.add(0, 2.3, 0), 0);
-					DoomFx.flat(level, ModParticles.DOOM_SLAM_WAVE, at, 7);
-					DoomFx.sound(level, at, SoundEvents.WARDEN_SONIC_BOOM, 1.6f, 0.7f);
-					for (LivingEntity e : level.getEntitiesOfClass(LivingEntity.class, new net.minecraft.world.phys.AABB(at, at).inflate(4.5, 6, 4.5), e -> e.isAlive() && canHit(p, e))) {
-						if (e.position().subtract(at).horizontalDistance() <= 4.8) DoomCombat.hurt(level, e, p, 40);
+				Vec3 at = aim(p, EDICT_RANGE);
+				BlockHitResult down = level.clip(new ClipContext(at.add(0, 0.5, 0), at.add(0, -24, 0), ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, p));
+				if (down.getType() == HitResult.Type.MISS) { DoomFx.tell(p, "armor.no_target"); return; }
+				Vec3 ground = down.getLocation();
+				p.swing(InteractionHand.MAIN_HAND, true);
+				DoomVfx.at(level, DoomVfx.EDICT, ground, (float) EDICT_RADIUS, EDICT_DELAY, DoomVfx.EDICT_GREEN);
+				DoomFx.sound(level, ground, SoundEvents.BEACON_AMBIENT, 2f, 0.8f);
+				DoomFx.sound(level, ground, SoundEvents.EVOKER_PREPARE_SUMMON, 1.2f, 0.8f);
+				later(p, EDICT_DELAY, () -> {
+					DoomVfx.at(level, DoomVfx.COLUMN, ground, (float) EDICT_RADIUS, 16, DoomVfx.EDICT_GREEN);
+					DoomVfx.at(level, DoomVfx.SLAM, ground, (float) EDICT_RADIUS * 1.8f, 14, DoomVfx.EDICT_GREEN);
+					DoomFx.sound(level, ground, SoundEvents.WARDEN_SONIC_BOOM, 1.6f, 0.7f);
+					DoomFx.sound(level, ground, SoundEvents.GENERIC_EXPLODE.value(), 1.2f, 0.6f);
+					DoomFx.near(level, ground, 32, DoomFx.SHAKE, 0, 0.9f, 10);
+					for (LivingEntity e : level.getEntitiesOfClass(LivingEntity.class, new AABB(ground, ground).inflate(EDICT_RADIUS, 6, EDICT_RADIUS), e -> canHit(p, e))) {
+						if (e.position().subtract(ground).horizontalDistance() > EDICT_RADIUS + 0.4) continue;
+						if (DoomCombat.hurt(level, e, p, 34)) {
+							e.setDeltaMovement(e.getDeltaMovement().add(0, 0.9, 0));
+							e.hurtMarked = true;
+						}
 					}
 				});
 			}
@@ -201,14 +268,46 @@ public final class DoomArmor {
 		sync(p, w);
 	}
 
+	/** Every sun still in orbit flies at what the wearer looks at. */
+	private static void volley(ServerPlayer p, Wearer w) {
+		Vec3 target = aim(p, 48);
+		LivingEntity lock = null;
+		for (LivingEntity e : p.level().getEntitiesOfClass(LivingEntity.class, new AABB(target, target).inflate(1.2), e -> canHit(p, e))) lock = e;
+		for (int i = 0; i < w.suns; i++) {
+			int n = i;
+			LivingEntity locked = lock;
+			later(p, i * 2, () -> launch(p, n, target, locked));
+		}
+		w.suns = 0;
+		w.sunsUntil = 0;
+		w.ready[SUNS] = p.level().getGameTime() + COOLDOWN[SUNS];
+		DoomVfx.on(p.level(), DoomVfx.ORBIT, p, 0, 0, DoomVfx.SUN);
+		sync(p, w);
+	}
+
+	private static Vec3 sunAt(ServerPlayer p, int i) {
+		double a = p.level().getGameTime() * 0.12 + i * Math.TAU / SUN_COUNT;
+		return p.position().add(Math.cos(a) * 1.5, 1.9 + Math.sin(a * 2) * 0.2, Math.sin(a) * 1.5);
+	}
+
+	private static void launch(ServerPlayer p, int i, Vec3 target, LivingEntity lock) {
+		Vec3 from = sunAt(p, i);
+		Vec3 dir = (lock != null ? lock.position().add(0, lock.getBbHeight() * 0.55, 0) : target).subtract(from).normalize();
+		DoomCombat.fire(p.level(), p, from, dir.scale(1.6), 11, 0.45, 2.2, 50, lock, lock == null ? 0 : 0.25, DoomVfx.SUN, 0.55f, e -> canHit(p, e));
+		DoomFx.sound(p.level(), from, SoundEvents.FIRECHARGE_USE, 0.7f, 1.4f);
+	}
+
 	private static boolean free(ServerLevel level, BlockPos pos) {
 		return level.getBlockState(pos).getCollisionShape(level, pos).isEmpty();
 	}
 
 	private static void stopJet(ServerPlayer p, Wearer w) {
-		w.jetUntil = 0;
-		p.removeEffect(MobEffects.LEVITATION);
-		p.addEffect(new MobEffectInstance(MobEffects.SLOW_FALLING, 120, 0, true, false));
+		if (!w.jet) return;
+		w.jet = false;
+		w.ready[JET] = p.level().getGameTime() + COOLDOWN[JET];
+		if (!p.onGround()) p.addEffect(new MobEffectInstance(MobEffects.SLOW_FALLING, 50, 0, true, false));
+		DoomVfx.on(p.level(), DoomVfx.JET, p, 0, 0, DoomVfx.GOLD);
+		sync(p, w);
 	}
 
 	public static void tick(MinecraftServer server) {
@@ -229,21 +328,40 @@ public final class DoomArmor {
 				WEARERS.put(p.getUUID(), w);
 			}
 			long now = p.level().getGameTime();
-			if (w.jetUntil > 0) {
-				if (!set || now >= w.jetUntil || !p.isAlive() || p.getAbilities().flying) {
+			boolean changed = set != w.hadSet;
+			if (w.jet) {
+				if (!set || !p.isAlive() || p.getAbilities().flying || w.fuel <= 0) {
 					stopJet(p, w);
 				} else {
-					// Thrust along the line of sight; sneaking holds the wearer in the air.
-					Vec3 thrust = p.isShiftKeyDown() ? Vec3.ZERO : p.getLookAngle().scale(0.72);
-					p.setDeltaMovement(thrust);
-					p.hurtMarked = true;
+					w.fuel--;
 					p.fallDistance = 0;
-					p.addEffect(new MobEffectInstance(MobEffects.LEVITATION, 10, 0, true, false, false));
-					if (now % 3 == 0) DoomFx.bill(p.level(), ModParticles.DOOM_JET_EXHAUST, p.position(), 0);
+					((ServerGamePacketListenerAccessor) p.connection).infinityGauntlet$setAboveGroundTickCount(0);
+					if (w.fuel % 20 == 0) changed = true;
+				}
+			} else if (w.fuel < FUEL && (p.onGround() || now % 3 == 0)) {
+				w.fuel = Math.min(FUEL, w.fuel + 2);
+				if (w.fuel % 40 == 0) changed = true;
+			}
+			if (w.suns > 0) {
+				if (!set || now >= w.sunsUntil || !p.isAlive()) {
+					w.suns = 0;
+					w.ready[SUNS] = now + COOLDOWN[SUNS];
+					DoomVfx.on(p.level(), DoomVfx.ORBIT, p, 0, 0, DoomVfx.SUN);
+					changed = true;
+				} else if (now >= w.nextSun) {
+					LivingEntity foe = p.level().getEntitiesOfClass(LivingEntity.class, p.getBoundingBox().inflate(18, 8, 18), e -> hostile(p, e) && p.hasLineOfSight(e))
+							.stream().min(Comparator.comparingDouble(e -> e.distanceToSqr(p))).orElse(null);
+					if (foe != null) {
+						w.suns--;
+						launch(p, w.suns, foe.position(), foe);
+						w.nextSun = now + 10;
+						DoomVfx.on(p.level(), DoomVfx.ORBIT, p, w.suns, (int) (w.sunsUntil - now), DoomVfx.SUN);
+						if (w.suns == 0) w.ready[SUNS] = now + COOLDOWN[SUNS];
+						changed = true;
+					}
 				}
 			}
-			if (now < w.bastionUntil && now % 20 == 0 && set) DoomFx.bill(p.level(), ModParticles.DOOM_IRON_BASTION, p.position().add(p.getLookAngle().scale(1.0)).add(0, 1.1, 0), 1.8);
-			if (set != w.hadSet || set && now % 10 == 0) {
+			if (changed || set && now % 20 == 0) {
 				w.hadSet = set;
 				sync(p, w);
 			}
@@ -253,7 +371,8 @@ public final class DoomArmor {
 	private static void sync(ServerPlayer p, Wearer w) {
 		if (!ServerPlayNetworking.canSend(p, ModNetwork.DoomSync.TYPE)) return;
 		long now = p.level().getGameTime();
-		StringBuilder s = new StringBuilder(fullSet(p) ? "1;" : "0;").append(Math.max(0, w.jetUntil - now)).append(';').append(Math.max(0, w.bastionUntil - now)).append(';');
+		StringBuilder s = new StringBuilder(fullSet(p) ? "1;" : "0;").append(w.jet ? 1 : 0).append(';').append(w.fuel).append(';')
+				.append(Math.max(0, w.bastionUntil - now)).append(';').append(w.suns).append(';');
 		for (int i = 0; i < 6; i++) s.append(i == 0 ? "" : ",").append(Math.max(0, w.ready[i] - now)).append('/').append(COOLDOWN[i]);
 		ServerPlayNetworking.send(p, new ModNetwork.DoomSync(s.toString()));
 	}

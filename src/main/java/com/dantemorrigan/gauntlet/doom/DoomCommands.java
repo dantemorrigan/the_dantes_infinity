@@ -128,7 +128,7 @@ public final class DoomCommands {
 					DoctorDoom d = Latveria.summon(level);
 					return d != null ? ok(ctx, "Doctor Doom rises") : fail(ctx, "could not summon him");
 				}))
-				.then(Commands.literal("stop").executes(ctx -> { Latveria.callOff(level(ctx)); return ok(ctx, "the fight is called off"); }))
+				.then(Commands.literal("stop").executes(ctx -> { Latveria.hold(level(ctx)); return ok(ctx, "the fight is called off; he stays away until the hall is empty"); }))
 				.then(Commands.literal("kill").executes(ctx -> boss(ctx, d -> d.hurtServer((ServerLevel) d.level(), d.level().damageSources().genericKill(), Float.MAX_VALUE), "defeated")))
 				.then(Commands.literal("heal").executes(ctx -> boss(ctx, DoctorDoom::heal, "healed")))
 				.then(Commands.literal("passive").executes(ctx -> {

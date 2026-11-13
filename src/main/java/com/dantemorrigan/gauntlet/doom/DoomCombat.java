@@ -1,7 +1,5 @@
 package com.dantemorrigan.gauntlet.doom;
 
-import com.dantemorrigan.gauntlet.ModParticles;
-import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
@@ -35,8 +33,8 @@ public final class DoomCombat {
 		double turn, radius, blast;
 		float damage;
 		int life;
-		ParticleOptions trail;
-		double size;
+		int id, style;
+		float size;
 		Entity owner;
 		Predicate<LivingEntity> hits;
 	}
@@ -54,18 +52,28 @@ public final class DoomCombat {
 	 * @param turn   how hard it steers at {@code target} each tick (0 = flies straight)
 	 * @param blast  radius hurt around the point of impact (0 = only what it touched)
 	 */
+	/**
+	 * A bolt: the client is told once and flies it itself (same steering), the server moves the real one and decides
+	 * what it hits. {@code style} is a {@link DoomVfx} colour, {@code size} the glow's radius in blocks.
+	 */
 	public static void fire(ServerLevel level, Entity owner, Vec3 from, Vec3 velocity, float damage, double radius, double blast,
-			int life, LivingEntity target, double turn, ParticleOptions trail, double size, Predicate<LivingEntity> hits) {
+			int life, LivingEntity target, double turn, int style, float size, Predicate<LivingEntity> hits) {
 		Bolt b = new Bolt();
 		b.level = level; b.owner = owner; b.pos = from; b.vel = velocity; b.damage = damage; b.radius = radius; b.blast = blast;
-		b.life = life; b.target = target == null ? null : target.getUUID(); b.turn = turn; b.trail = trail; b.size = size; b.hits = hits;
+		b.life = life; b.target = target == null ? null : target.getUUID(); b.turn = turn; b.style = style; b.size = size; b.hits = hits;
+		b.id = DoomVfx.nextId();
 		BOLTS.add(b);
+		DoomVfx.bolt(level, b.id, owner, target, from, velocity, size, (float) turn, life, style);
 	}
 
 	public static void tick() {
 		for (Iterator<Bolt> it = BOLTS.iterator(); it.hasNext();) {
 			Bolt b = it.next();
-			if (--b.life < 0 || b.owner == null || b.owner.isRemoved() || b.owner.level() != b.level) { it.remove(); continue; }
+			if (--b.life < 0 || b.owner == null || b.owner.isRemoved() || b.owner.level() != b.level) {
+				it.remove();
+				DoomVfx.boltEnd(b.level, b.id, b.pos, 0, b.style);
+				continue;
+			}
 			if (b.target != null && b.turn > 0 && b.level.getEntity(b.target) instanceof LivingEntity t && t.isAlive()) {
 				Vec3 want = t.position().add(0, t.getBbHeight() * 0.5, 0).subtract(b.pos).normalize().scale(b.vel.length());
 				b.vel = b.vel.lerp(want, b.turn);
@@ -80,12 +88,14 @@ public final class DoomCombat {
 				if (e.getBoundingBox().inflate(b.radius).clip(b.pos, next).isPresent() || e.getBoundingBox().inflate(b.radius).contains(next)) { struck = e; break; }
 			}
 			b.pos = next;
-			DoomFx.bill(b.level, b.trail, b.pos, b.size);
 			if (struck == null && !stopped) continue;
 			it.remove();
-			DoomFx.bill(b.level, ModParticles.DOOM_IMPACT, b.pos, Math.max(1, b.blast * 0.8));
-			DoomFx.sound(b.level, b.pos, SoundEvents.FIREWORK_ROCKET_BLAST, 0.8f, 0.7f);
-			if (struck != null) hurt(b.level, struck, b.owner, b.damage);
+			DoomVfx.boltEnd(b.level, b.id, b.pos, (float) Math.max(1.2, b.blast + 0.6), b.style);
+			DoomFx.sound(b.level, b.pos, b.blast > 1 ? SoundEvents.GENERIC_EXPLODE.value() : SoundEvents.FIREWORK_ROCKET_BLAST, b.blast > 1 ? 0.7f : 0.9f, b.blast > 1 ? 1.5f : 0.8f);
+			if (struck != null && hurt(b.level, struck, b.owner, b.damage)) {
+				Vec3 push = b.vel.normalize();
+				struck.knockback(0.35 + b.blast * 0.15, -push.x, -push.z);
+			}
 			if (b.blast > 0) {
 				for (LivingEntity e : b.level.getEntitiesOfClass(LivingEntity.class, new AABB(b.pos, b.pos).inflate(b.blast),
 						e -> e != b.owner && e != null && e.isAlive() && b.hits.test(e))) {
@@ -108,7 +118,7 @@ public final class DoomCombat {
 	/** One blow from Doom's side or from the armor. Returns false if it was dodged or refused. */
 	public static boolean hurt(ServerLevel level, LivingEntity victim, Entity owner, float amount) {
 		if (victim instanceof Player && dodging(victim)) {
-			DoomFx.bill(level, ModParticles.DOOM_RUNE_MOTE, victim.position().add(0, 1, 0), 2);
+			DoomVfx.at(level, DoomVfx.RIFT, victim.position().add(0, 1, 0), 0.8f, 8, DoomVfx.GREEN);
 			return false;
 		}
 		DamageSource source = owner instanceof Player p ? level.damageSources().indirectMagic(p, p)

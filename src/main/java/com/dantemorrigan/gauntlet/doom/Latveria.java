@@ -108,6 +108,8 @@ public final class Latveria {
 	private static final Map<UUID, Integer> inGate = new HashMap<>(), logoDue = new HashMap<>();
 	private static DoctorDoom boss;
 	private static int emptyArena;
+	/** Debug: Doom stays on his throne until the hall is empty or he is summoned by command. */
+	private static boolean held;
 
 	public static void init() {
 		for (LatveriaPlan.Op op : LatveriaPlan.FURNITURE) furnitureChunks.add(ChunkPos.pack(op.x0() >> 4, op.z0() >> 4));
@@ -116,6 +118,7 @@ public final class Latveria {
 		ServerLifecycleEvents.SERVER_STOPPED.register(server -> {
 			loaded = false;
 			boss = null;
+			held = false;
 			toFurnish.clear();
 			inGate.clear();
 			logoDue.clear();
@@ -537,7 +540,8 @@ public final class Latveria {
 		boolean anyone = false;
 		for (ServerPlayer p : level.players()) anyone |= inArena(p);
 		if (boss == null) {
-			if (anyone && level.isLoaded(BlockPos.containing(LatveriaPlan.THRONE))) summon(level);
+			if (!anyone) held = false;
+			if (anyone && !held && level.isLoaded(BlockPos.containing(LatveriaPlan.THRONE))) summon(level);
 			return;
 		}
 		emptyArena = anyone ? 0 : emptyArena + 10;
@@ -547,7 +551,14 @@ public final class Latveria {
 		}
 	}
 
+	/** Debug: calls the fight off and keeps Doom away until everyone leaves the hall. */
+	public static void hold(ServerLevel level) {
+		callOff(level);
+		held = true;
+	}
+
 	public static DoctorDoom summon(ServerLevel level) {
+		held = false;
 		if (boss != null && !boss.isRemoved()) return boss;
 		DoctorDoom doom = ModEntities.DOCTOR_DOOM.create(level, EntitySpawnReason.EVENT);
 		if (doom == null) return null;

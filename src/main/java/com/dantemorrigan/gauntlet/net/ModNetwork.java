@@ -498,6 +498,31 @@ public final class ModNetwork {
 		@Override public Type<DoomSync> type() { return TYPE; }
 	}
 
+	/**
+	 * S2C: one of Doom's world effects (kinds in {@code doom.DoomVfx}). The client simulates moving ones itself
+	 * (bolts fly, shields and jets follow their entity), so nothing is sent per tick.
+	 */
+	public record DoomVfx(int kind, int id, int entity, int target, Vec3 a, Vec3 b, float size, float turn, int ticks, int style) implements CustomPacketPayload {
+		public static final Type<DoomVfx> TYPE = newType("doom_vfx");
+		public static final StreamCodec<ByteBuf, DoomVfx> CODEC = StreamCodec.of((buf, v) -> {
+			ByteBufCodecs.VAR_INT.encode(buf, v.kind); ByteBufCodecs.VAR_INT.encode(buf, v.id);
+			ByteBufCodecs.VAR_INT.encode(buf, v.entity); ByteBufCodecs.VAR_INT.encode(buf, v.target + 1);
+			Vec3.STREAM_CODEC.encode(buf, v.a); Vec3.STREAM_CODEC.encode(buf, v.b);
+			buf.writeFloat(v.size); buf.writeFloat(v.turn);
+			ByteBufCodecs.VAR_INT.encode(buf, v.ticks); ByteBufCodecs.VAR_INT.encode(buf, v.style);
+		}, buf -> new DoomVfx(ByteBufCodecs.VAR_INT.decode(buf), ByteBufCodecs.VAR_INT.decode(buf), ByteBufCodecs.VAR_INT.decode(buf),
+				ByteBufCodecs.VAR_INT.decode(buf) - 1, Vec3.STREAM_CODEC.decode(buf), Vec3.STREAM_CODEC.decode(buf), buf.readFloat(), buf.readFloat(),
+				ByteBufCodecs.VAR_INT.decode(buf), ByteBufCodecs.VAR_INT.decode(buf)));
+		@Override public Type<DoomVfx> type() { return TYPE; }
+	}
+
+	/** C2S: the Doom armor's jets: on or off (the client flies, the server keeps the fuel and the fall damage). */
+	public record DoomJet(boolean on) implements CustomPacketPayload {
+		public static final Type<DoomJet> TYPE = newType("doom_jet");
+		public static final StreamCodec<ByteBuf, DoomJet> CODEC = StreamCodec.composite(ByteBufCodecs.BOOL, DoomJet::on, DoomJet::new);
+		@Override public Type<DoomJet> type() { return TYPE; }
+	}
+
 	/** C2S: cast an ability of the Doom armor (0..5). */
 	public record DoomCast(int ability) implements CustomPacketPayload {
 		public static final Type<DoomCast> TYPE = newType("doom_cast");
@@ -509,6 +534,8 @@ public final class ModNetwork {
 		PayloadTypeRegistry.clientboundPlay().register(DoomFx.TYPE, DoomFx.CODEC);
 		PayloadTypeRegistry.clientboundPlay().register(DoomSync.TYPE, DoomSync.CODEC);
 		PayloadTypeRegistry.serverboundPlay().register(DoomCast.TYPE, DoomCast.CODEC);
+		PayloadTypeRegistry.clientboundPlay().register(DoomVfx.TYPE, DoomVfx.CODEC);
+		PayloadTypeRegistry.serverboundPlay().register(DoomJet.TYPE, DoomJet.CODEC);
         PayloadTypeRegistry.clientboundPlay().register(CosmicFx.TYPE,CosmicFx.CODEC);
         PayloadTypeRegistry.clientboundPlay().register(TribunalBolt.TYPE,TribunalBolt.CODEC);
 		PayloadTypeRegistry.clientboundPlay().register(PowerShowerFx.TYPE, PowerShowerFx.CODEC);

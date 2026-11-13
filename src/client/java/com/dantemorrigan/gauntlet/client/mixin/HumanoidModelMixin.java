@@ -21,6 +21,28 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 /** Third person: the gauntlet arm of a gesturing player is lifted a little and slightly twisted (see the gesture). */
 @Mixin(HumanoidModel.class)
 public abstract class HumanoidModelMixin {
+	/** Under a piece of Doom's armor the wearer's own skin is not drawn: the piece is Doom's model (DoomArmorLayer). */
+	@Inject(method = "setupAnim(Lnet/minecraft/client/renderer/entity/state/HumanoidRenderState;)V", at = @At("TAIL"))
+	private void infinityGauntlet$doomArmor(HumanoidRenderState state, CallbackInfo ci) {
+		HumanoidModel<?> model = (HumanoidModel<?>) (Object) this;
+		boolean head = state.headEquipment.is(ModItems.DOOM_HELMET), chest = state.chestEquipment.is(ModItems.DOOM_CHESTPLATE);
+		boolean legs = state.legsEquipment.is(ModItems.DOOM_LEGGINGS);
+		model.head.skipDraw = head;
+		model.hat.skipDraw = head;
+		model.body.skipDraw = chest;
+		model.rightArm.skipDraw = chest;
+		model.leftArm.skipDraw = chest;
+		model.rightLeg.skipDraw = legs;
+		model.leftLeg.skipDraw = legs;
+		if (model instanceof net.minecraft.client.model.player.PlayerModel player) {
+			player.jacket.skipDraw = chest;
+			player.rightSleeve.skipDraw = chest;
+			player.leftSleeve.skipDraw = chest;
+			player.rightPants.skipDraw = legs;
+			player.leftPants.skipDraw = legs;
+		}
+	}
+
 	@Inject(method = "setupAnim(Lnet/minecraft/client/renderer/entity/state/HumanoidRenderState;)V", at = @At("TAIL"))
 	private void infinityGauntlet$gesture(HumanoidRenderState state, CallbackInfo ci) {
 		if (!(state instanceof AvatarRenderState avatar)) return;
