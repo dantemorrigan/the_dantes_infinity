@@ -100,6 +100,9 @@ add('doomfight',
 add('doomtricks',
  f"{H}Doom's tricks{R}\n{B}Searchlights{R} sweep the slope: caught, the alarm calls Interceptors.\nStage 2: three Dooms. The fakes are {B}Doombots{R}: the real one has the boss bar.\nStage 3: he {B}siphons{R} your Infinity Gauntlet. Break sight, blink or hit hard.",
  f"{H}Уловки Дума{R}\n{B}Прожекторы{R} обшаривают склон: поймают - тревога.\nЭтап 2: три Дума. Ложные - {B}думботы{R}, у настоящего полоса босса.\nЭтап 3: он {B}тянет силу{R} Перчатки. Скройся, блинк или бей сильно.")
+add('doomgod',
+ f"{H}God Emperor Doom{R}\nLet him drain all six stones, or fall to him wearing them, and he ascends: white robes, the power of a god, the end of the multiverse.\nThe {B}Time Stone{R} pulls you back, the gauntlet silent for a while. Try again.",
+ f"{H}Бог-Император Дум{R}\nОсушит все шесть камней или ты падёшь с ними - он вознесётся: белые одеяния, сила бога, конец мультивселенной.\n{B}Камень Времени{R} вернёт тебя, перчатка помолчит.")
 add('doomspoils',
  f"{H}The spoils{R}\nVictory gives you Doom's {B}armor{R}, gauntlet, grimoire, the {B}Latveria Key{R}, a Doombot controller and Castle Seals for friends.\nThe castle is yours; the {B}Key{R} opens it from any dimension.",
  f"{H}Трофеи{R}\nПобеда даёт {B}броню{R} Дума, перчатку, гримуар, {B}Ключ Латверии{R}, пульт Думботов и Печати замка для друзей.\nЗамок твой; {B}Ключ{R} открывает его из любого измерения.")

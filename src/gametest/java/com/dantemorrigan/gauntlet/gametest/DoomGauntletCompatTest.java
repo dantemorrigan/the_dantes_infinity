@@ -214,6 +214,8 @@ public class DoomGauntletCompatTest implements FabricClientGameTest {
 			}));
 
 			// ---- 4b. The Infinity Siphon: held, it silences the gauntlet; a blink or hard blows break it and open him up.
+			// Five stones short of the whole: an ordinary siphon (the whole gauntlet makes him ascend, see the end).
+			server.runCommand("execute as @p run gauntlet give_power");
 			server.runCommand("gamemode survival @p");
 			server.runCommand("effect give @p minecraft:resistance 120 4 true");
 			server.runCommand("effect give @p minecraft:regeneration 120 4 true");
@@ -261,6 +263,18 @@ public class DoomGauntletCompatTest implements FabricClientGameTest {
 			server.runCommand("execute as @p run gauntlet latveria tp throne");
 			ctx.waitTicks(60);
 			check(server.computeOnServer(s -> Latveria.boss() != null && Latveria.boss().isAlive()), "Doom did not rise again for a new challenger");
+			// ---- 6. A siphon that drains the whole gauntlet: God Emperor Doom.
+			server.runCommand("execute as @p run gauntlet full");
+			server.runCommand("gamemode survival @p");
+			server.runCommand("effect give @p minecraft:resistance 60 4 true");
+			faceDoom(server, ctx, 8);
+			server.runCommand("execute as @p run gauntlet doom action infinity_siphon");
+			ctx.waitTicks(DoctorDoom.SIPHON_DONE + 6);
+			check(server.computeOnServer(s -> Latveria.boss() != null && Latveria.boss().ascending()), "Draining all six stones did not make Doom ascend");
+			server.runCommand("execute as @p run gauntlet doom stop");
+			server.runCommand("gamemode creative @p");
+			ctx.waitTicks(10);
+
 			for (String line : REPORT) System.out.println("DOOM-COMPAT " + line);
 		}
 	}
