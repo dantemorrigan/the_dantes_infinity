@@ -286,6 +286,21 @@ def clips():
     c.k(1.9, body=24, head=6, aR=(-62, 0, -6), fR=-4, pos=(0, 0, -1.5), lL=-16, sL=14, lR=10, sR=14, cape=16)
     c.rest(2.6)
 
+    # The ascension (God Emperor Doom): he lifts his arms, takes the power, floats with arms spread over his hall,
+    # closes his fist as the multiverse breaks, and holds the pose of a god while everything turns white.
+    c = Clip("ascension", 24.0, group="magic", wind=2.2, period=1.6)
+    c.k(1.0, body=-6, head=-14, aR=(-40, 0, 40), aL=(-40, 0, -40), fR=-20, fL=-20, cape=12)
+    c.k(2.6, body=-14, head=-30, aR=(-160, 0, 20), aL=(-160, 0, -20), fR=-5, fL=-5, cape=30)
+    c.k(3.2, body=-4, head=-6, aR=(-20, 0, 95), aL=(-20, 0, -95), fR=0, fL=0, cape=46, wR=(0, 0, 30), wL=(0, 0, -30))
+    for t in (5.0, 8.0, 11.0, 14.0, 17.0):
+        j = 1 if int(t) % 2 else -1
+        c.k(t, body=-4 + j, head=-6 + j * 2, aR=(-20 + j * 3, 0, 92), aL=(-20 - j * 3, 0, -92), cape=34 + j * 6,
+            wR=(0, 0, 26 + j * 4), wL=(0, 0, -26 - j * 4), lL=6, lR=-6, sL=10, sR=10)
+    c.k(18.6, body=-10, head=-18, aR=(-150, 0, 10), fR=-60, aL=(-20, 0, -90), cape=40)
+    c.k(19.2, body=8, head=4, aR=(-95, 0, 0), fR=-10, aL=(-30, 0, -60), cape=52)
+    c.k(22.0, body=2, head=-2, aR=(-30, 0, 70), aL=(-30, 0, -70), fR=-10, fL=-10, cape=30)
+    c.k(24.0, body=0, head=0, aR=(-20, 0, 60), aL=(-20, 0, -60), cape=24)
+
     # Power siphon: the gauntlet hand reaches for the challenger's Infinity Gauntlet, the other hand braces the wrist,
     # and the whole body strains against the pull until it is released or broken.
     c = Clip("infinity_siphon", 5.0, group="magic", wind=1.6)
