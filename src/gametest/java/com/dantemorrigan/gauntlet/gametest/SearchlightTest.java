@@ -81,6 +81,21 @@ public class SearchlightTest implements FabricClientGameTest {
 			ctx.waitTicks(50);
 			check(!ctx.computeOnClient(mc -> DoomVfxClient.lightsOn()), "The searchlights still burn with the generator off");
 			ctx.takeScreenshot("searchlights_04_dark");
+
+			// Shadow of Doomstadt: an alarm spoils it; an assault reset and done unseen earns it.
+			java.util.function.Function<MinecraftServer, Boolean> unseen = s -> {
+				var adv = s.getAdvancements().get(com.dantemorrigan.gauntlet.InfinityGauntlet.id("unseen_in_latveria"));
+				return adv != null && player(s).getAdvancements().getOrStartProgress(adv).isDone();
+			};
+			server.runCommand("execute as @p run gauntlet latveria clear 1");
+			ctx.waitTicks(30);
+			check(!server.computeOnServer(unseen::apply), "The stealth advancement was given after an alarm");
+			server.runCommand("execute as @p run gauntlet latveria reset");
+			server.runCommand("execute as @p run gauntlet latveria squads");
+			ctx.waitTicks(10);
+			server.runCommand("execute as @p run gauntlet latveria clear 1");
+			ctx.waitTicks(30);
+			check(server.computeOnServer(unseen::apply), "Opening the gate unseen did not give Shadow of Doomstadt");
 		}
 	}
 }
