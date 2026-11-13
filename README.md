@@ -79,6 +79,29 @@ Requirements: **Java 25**. Build: `./gradlew build` → `build/libs/infinity_gau
 - If you die, flee more than ~100 blocks or log out, he withdraws (the music fades) and returns in `thanosReturnMinutes` (default 1 minute) (5).
 - Config: `thanos*` (health, damage, multipliers, threshold). Commands: `/gauntlet thanos start | now | spawn | stop | reset`. Test: `-PonlyTest=ThanosTest`. Art and models: `art/thanos/`.
 
+## The Fury of Doom — Latveria and Doctor Doom
+
+**Getting in.** With the Space Stone, the hidden fourth portal of the wheel shows Latveria once, and Doom seals it. After you beat Loki, carry the Mind Stone (in the gauntlet or the inventory): it reads Doom's seal, and the same portal option takes you to Latveria. Everyone standing within four blocks travels with you. The title card plays on your first arrival.
+
+**Latveria** is its own dimension: mountains around a valley, a river, a living city with townsfolk, and a road climbing to Castle Doom. Two themes alternate while you walk there (*Echoes of Latveria* and *Sovereign Sanctum*). The gate at the south end of the city (stand in it for two seconds) takes you back to where you came from.
+
+**The assault.** A patrol watches the road. The gate squad holds the portcullis, and the yard squad keeps the throne room shut. The other way in is the service door in the castle's east wall: it leads into the laboratory. Right-click the generator to switch it off. That weakens Doom's armor and the Bastions' shields and opens a side door into the throne room.
+
+**Doombots** come in six roles. The Soldier shoots from its gauntlet, the Bastion raises a shield that also covers nearby Doombots, the Interceptor hovers and dives, the Arcanist casts homing bolts and wards allies, the Engineer repairs damaged Doombots, and the Royal Guard strikes with a halberd. They drop circuits, arc reactors and jade shards.
+
+**Doctor Doom** rises from his throne when you enter the hall, and *Iron Monarch* starts. He fights in three stages:
+1. Armor: gauntlet combos, bolts, jet slams, the Iron Bastion shield, and Doombot drops.
+2. Sorcery: rift steps, homing bolts, hex barrages, and the Seven Suns (marked circles on the floor).
+3. The Latverian Edict: the hall is marked in four sectors. Break a glowing seal node to make its sector safe, or interrupt the cast: 24 damage during it, or a single Stormbreaker blow.
+
+After every heavy attack he is exposed for a moment and takes more damage. A Space Stone blink lets you slip through his attacks for a second, and rewinding with the Time Stone next to him freezes him in place. If every challenger dies or leaves the hall, the fight resets.
+
+**The reward** is paid once per player: Doom's armor, Doom's Gauntlet, the Grimoire, the Latveria Key, the Doombot Controller, four Castle Seals, the Time Platform and the Banner of Latveria. The castle becomes your base, and the surviving Doombots obey you. The Doombot Controller switches them between following you and standing guard, and a Mechanical Heart builds a new Soldier. The Latveria Key takes you to the castle hall from any dimension and back, even when you are not wearing the armor (sneak to arrive in the valley instead). Give a Castle Seal to a friend so they can travel to Latveria too.
+
+**Doom's armor.** All four pieces worn together unlock the powers wheel (**M**): Gauntlet Bolt, Iron Bastion, Jet Flight, Rift Step, Seven Suns and the Latverian Edict. Pick a power with the mouse or 1–6. Cooldowns are shown on the right edge of the screen. The jets never touch vanilla flight, so they do not clash with the Infinity Gauntlet or Stormbreaker. The armor's keys are separate from the gauntlet's (**V**/**R**).
+
+Commands (operator): `/gauntlet latveria enter|leave|unlock|gate|lab|throne|logo|status|reset|clear <0-3>`, `/gauntlet doom armor|phase2|phase3|kill`.
+
 ## Language, client settings, advancements, and field guide
 
 - **Settings screen**: Options or Pause menu → **Infinity Gauntlet ⚙** button (bottom left).

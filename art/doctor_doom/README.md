@@ -49,6 +49,8 @@ python3 art/source/doctor_doom/make_animations.py art/doctor_doom/preview/animat
 
 Скрипты заменяют в проекте Blockbench кубы, текстуру и анимации. Правки вносятся в скрипты, а не в `.bbmodel`.
 
-Для подключения анимаций к сущности понадобится чтение по идентификатору ресурса: `GeoAnimation.load(Identifier)`. Вариант `load(String)` ищет файлы в каталоге `thanos/`.
+## Аддон The Fury of Doom
 
-Дум хранится как отдельный ассет без регистрации сущности. В игре его показывает только сцена «Латверия» (`DoomTeaserRenderer`).
+Сущность босса — `doom/DoctorDoom`, Думботы — `doom/Doombot`. Модели Думботов, их текстуры и общий файл анимаций `doombot.animation.json` генерирует `art/source/doctor_doom/make_doombots.py` на основе того же генератора. Иконки предметов, броня на игроке и текстура логотипа собираются скриптом `make_items.py` из пака `doombots/` и картинки `logo/`.
+
+Латверию строит `doom/LatveriaGenerator` по плану `doom/LatveriaPlan`: рельеф и все постройки описаны функциями координат. Чанк записывается один раз при генерации, дальше это обычный сохранённый чанк. Штурм, отряды и владельцев замка хранит `doom/Latveria`. Сценарий проверки — `LatveriaTest`.
