@@ -46,16 +46,18 @@ import java.util.UUID;
 public class DoctorDoom extends Monster {
 	public static final int A_IDLE = 0, A_INTRO = 1, A_COMBO = 2, A_BOLT = 3, A_BASTION = 4, A_DROP = 5, A_SLAM = 6, A_SHIFT = 7,
 			A_RIFT = 8, A_SORCERY = 9, A_HEX = 10, A_SUNS = 11, A_NOVA = 12, A_EDICT = 13, A_LIGHTNING = 14, A_CLEAVE = 15,
-			A_SMASH = 16, A_STAGGER = 17, A_DEFEAT = 18, A_TAUNT = 19, A_SIPHON = 20, A_DECOY = 21;
+			A_SMASH = 16, A_STAGGER = 17, A_DEFEAT = 18, A_TAUNT = 19, A_SIPHON = 20, A_DECOY = 21, A_ASCEND = 22;
 	/** Clip of each action, in action order. */
 	public static final String[] CLIPS = {"idle", "intro", "armored_combo", "gauntlet_bolt", "iron_bastion", "doombot_drop", "jet_slam",
 			"phase_shift", "rift_step", "sorcery_bolt", "hex_barrage", "seven_suns", "arcane_nova", "latverian_edict", "lightning_call",
-			"cleave", "overhead_smash", "stagger_heavy", "defeat", "taunt", "infinity_siphon", "decoy_gambit"};
-	private static final int[] TICKS = {0, 100, 39, 38, 87, 53, 59, 42, 38, 55, 48, 119, 60, 126, 52, 30, 32, 32, 72, 48, 100, 42};
+			"cleave", "overhead_smash", "stagger_heavy", "defeat", "taunt", "infinity_siphon", "decoy_gambit", "ascension"};
+	private static final int[] TICKS = {0, 100, 39, 38, 87, 53, 59, 42, 38, 55, 48, 119, 60, 126, 52, 30, 32, 32, 72, 48, 100, 42, 480};
 	/** The siphon: wind-up, then the pull until it completes; blows that break it, and how long a drained gauntlet stays silent. */
 	public static final int SIPHON_START = 14, SIPHON_DONE = 92, SIPHON_SILENCE = 300;
 	public static final float SIPHON_BREAK = 30;
-	public static final int FLAG_FIGHT = 1, FLAG_SHIELD = 2, FLAG_EXPOSED = 4, FLAG_CASTING = 8;
+	public static final int FLAG_FIGHT = 1, FLAG_SHIELD = 2, FLAG_EXPOSED = 4, FLAG_CASTING = 8, FLAG_GOD = 16;
+	/** The ascension: its length, and the tick he turns into God Emperor Doom. */
+	public static final int ASCEND_TICKS = 480, ASCEND_TURN = 60;
 	public static final int EDICT_BLAST = 80;
 	private static final float MAX_HIT = 45;
 
@@ -71,7 +73,8 @@ public class DoctorDoom extends Monster {
 	private int actionTicks, cooldown = 30, exposed, blowsTaken, sinceSuns = 200, sinceEdict = 400, sinceDrop = 100;
 	private float castDamage, siphonDamage;
 	private int sinceSiphon = 200, sinceDecoy = 300;
-	private UUID siphonId;
+	private UUID siphonId, ascendVictim;
+	private Vec3 ascendFrom;
 	private UUID targetId;
 	private Vec3 aim, from;
 	private final boolean[] safe = new boolean[4];
@@ -164,6 +167,68 @@ public class DoctorDoom extends Monster {
 		this.yHeadRot = yaw;
 	}
 
+	public boolean ascending() { return action() == A_ASCEND; }
+
+	public boolean god() { return flag(FLAG_GOD); }
+
+	/**
+	 * Doom beats the whole Infinity Gauntlet (its power siphoned, or its bearer struck down) and ascends: God Emperor Doom,
+	 * as in Secret Wars. Everyone in Latveria watches; then the Time Stone pulls them back and the duel starts over.
+	 */
+	public void ascend(ServerLevel level, ServerPlayer victim) {
+		if (ascending() || this.isDeadOrDying()) return;
+		ascendVictim = victim == null ? null : victim.getUUID();
+		setAction(A_ASCEND);
+	}
+
+	private void ascension(ServerLevel level, int t) {
+		this.setInvulnerable(true);
+		this.getNavigation().stop();
+		Vec3 at = this.position();
+		if (t == 1) {
+			DoomFx.bill(level, ModParticles.DOOM_PHASE_SHIFT, at.add(0, 1.4, 0), 2);
+			ascendFrom = LatveriaPlan.THRONE.add(0, 0.2, 2.5);
+			this.setNoGravity(true);
+			this.setPos(ascendFrom.x, ascendFrom.y, ascendFrom.z);
+			this.setYRot(0);
+			this.yBodyRot = this.yHeadRot = 0;
+			for (ServerPlayer p : level.players()) {
+				DoomFx.send(p, DoomFx.GOD, this.getId(), ascendFrom, 0, ASCEND_TICKS);
+				DoomFx.send(p, DoomFx.CUTSCENE, this.getId(), ascendFrom, 0, ASCEND_TICKS - 24);
+			}
+			DoomFx.line(level, ascendFrom, 160, "doom.ascend_1");
+			DoomFx.sound(level, ascendFrom, SoundEvents.BEACON_ACTIVATE, 3f, 0.5f);
+		}
+		if (ascendFrom != null) {
+			double lift = Math.min(1, t / 90.0);
+			lift = lift * lift * (3 - 2 * lift) * 3.2;
+			this.setDeltaMovement(Vec3.ZERO);
+			this.setPos(ascendFrom.x, ascendFrom.y + lift, ascendFrom.z);
+			this.setYRot(0);
+			this.yBodyRot = this.yHeadRot = 0;
+		}
+		if (t == ASCEND_TURN) {
+			setFlag(FLAG_GOD, true);
+			DoomFx.near(level, at, 160, DoomFx.FLASH, 0, 1.4f, 24);
+			DoomFx.sound(level, at, SoundEvents.WITHER_SPAWN, 3f, 0.55f);
+			DoomVfx.at(level, DoomVfx.IMPACT, at.add(0, 1.6, 0), 3f, 22, DoomVfx.SUN);
+		}
+		if (t == 150) DoomFx.line(level, at, 160, "doom.ascend_2");
+		if (t == 170) DoomFx.sound(level, at, SoundEvents.END_PORTAL_SPAWN, 3f, 0.6f);
+		if (t >= 170 && t < 380 && t % 30 == 0) DoomFx.near(level, at, 160, DoomFx.SHAKE, 0, 0.3f + (t - 170) / 210f * 1.5f, 32);
+		if (t >= 200 && t < 380 && t % 23 == 0) LatveriaCourt.strikeRandom(level);
+		if (t == 300) DoomFx.line(level, at, 160, "doom.ascend_3");
+		if (t == 380) {
+			for (ServerPlayer p : level.players()) {
+				level.playSound(null, p.getX(), p.getY(), p.getZ(), SoundEvents.ENDER_DRAGON_DEATH, net.minecraft.sounds.SoundSource.HOSTILE, 1.4f, 0.6f);
+			}
+		}
+		if (t == ASCEND_TICKS - 14) {
+			this.setNoGravity(false);
+			Latveria.afterAscension(level, ascendVictim);
+		}
+	}
+
 	/** A challenger whose Infinity Gauntlet works and holds at least one stone. */
 	public static boolean siphonable(ServerPlayer p) {
 		var g = com.dantemorrigan.gauntlet.GauntletState.activeGauntlet(p);
@@ -226,6 +291,14 @@ public class DoctorDoom extends Monster {
 		}
 		if (t == SIPHON_DONE) {
 			siphonId = null;
+			// The whole gauntlet drained: he takes its power and becomes a god.
+			var full = com.dantemorrigan.gauntlet.GauntletState.activeGauntlet(victim);
+			if (!full.isEmpty() && com.dantemorrigan.gauntlet.GauntletState.inserted(full).size() >= 6) {
+				GauntletSilence.silence(victim, SIPHON_SILENCE);
+				com.dantemorrigan.gauntlet.ability.AbilityController.cancel(victim);
+				ascend(level, victim);
+				return;
+			}
 			this.heal(this.getMaxHealth() * 0.08f);
 			GauntletSilence.silence(victim, SIPHON_SILENCE);
 			com.dantemorrigan.gauntlet.ability.AbilityController.cancel(victim);
@@ -329,6 +402,7 @@ public class DoctorDoom extends Monster {
 		if (target != null && action != A_SLAM && action != A_EDICT && action != A_SUNS && action != A_STAGGER && t < 20) face(target.position());
 		switch (action) {
 			case A_SIPHON -> siphon(level, t);
+			case A_ASCEND -> ascension(level, t);
 			case A_DECOY -> {
 				// The decoy gambit: he spins away into a shimmer, and three Dooms step out of it; only one is real.
 				this.setInvulnerable(t < 30);

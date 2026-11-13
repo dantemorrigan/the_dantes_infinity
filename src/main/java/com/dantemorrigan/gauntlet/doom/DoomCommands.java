@@ -50,6 +50,7 @@ public final class DoomCommands {
 			"§a/gauntlet doom spawn | stop | kill | heal | passive§r",
 			"§a/gauntlet doom stage <1-3>§r · §aaction <clip>§r — e.g. latverian_edict, seven_suns, jet_slam",
 			"§a/gauntlet doom armor [player]§r · §acooldowns§r — every armor power ready",
+			"§a/gauntlet doom ascend§r — God Emperor Doom: the ascension scene now",
 			"§a/gauntlet doombot spawn <variant> [allied] [x y z]§r · §akill§r · §aallies§r — every Doombot near obeys you");
 
 	public static LiteralArgumentBuilder<CommandSourceStack> latveria() {
@@ -157,6 +158,12 @@ public final class DoomCommands {
 							if (d == null) return fail(ctx, "Doctor Doom is not in his throne room");
 							return d.force(clip) ? ok(ctx, "action " + clip) : fail(ctx, "unknown action: " + clip);
 						})))
+				.then(Commands.literal("ascend").executes(ctx -> {
+					DoctorDoom d = Latveria.boss();
+					if (d == null) return fail(ctx, "Doctor Doom is not in his throne room (try /gauntlet doom spawn)");
+					d.ascend(level(ctx), ctx.getSource().getPlayer());
+					return ok(ctx, "God Emperor Doom rises");
+				}))
 				.then(Commands.literal("armor")
 						.executes(ctx -> armor(ctx, ctx.getSource().getPlayerOrException()))
 						.then(Commands.argument("player", net.minecraft.commands.arguments.EntityArgument.player())

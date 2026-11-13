@@ -234,7 +234,8 @@ public final class DoomVfxClient {
 		if (mc.level == null) return;
 		boolean gate = LatveriaSky.active() && cam().distanceToSqr(GATE) < 200 * 200;
 		boolean lamps = LatveriaSky.active() && lightsOn;
-		boolean anything = gate || lamps || !FX.isEmpty() || !BOLTS.isEmpty() || !SHIELDS.isEmpty() || !JETS.isEmpty() || !ORBITS.isEmpty() || preview != null;
+		Entity god = GodDoomScene.radiantDoom();
+		boolean anything = gate || lamps || god != null || !FX.isEmpty() || !BOLTS.isEmpty() || !SHIELDS.isEmpty() || !JETS.isEmpty() || !ORBITS.isEmpty() || preview != null;
 		if (!anything) return;
 		float partial = mc.getDeltaTracker().getGameTimeDeltaPartialTick(false);
 		var camera = mc.gameRenderer.getMainCamera();
@@ -254,6 +255,18 @@ public final class DoomVfxClient {
 			d.plane(frame, GATE, 3.6f, 3.6f, 0xFFFFFF, 0.97f);
 		}
 		if (lamps) searchlights(d, mc, partial);
+		if (god != null) {
+			// The radiance of God Emperor Doom: a glow, a halo behind his head, a pillar of pale light.
+			float rad = GodDoomScene.radiance(partial);
+			Vec3 body = god.getPosition(partial).add(0, 1.4, 0);
+			if (rad > 0) {
+				d.billboard(GLOW, body, 8f * rad, 0xFFE6B0, 0.5f * rad);
+				d.billboard(CORE, body.add(0, 0.9, 0), 2.6f * rad, 0xFFFFFF, 0.55f * rad);
+				d.vertical(RING, body.add(0, 1.2, 0), 1.7f, 0xFFD27A, 0.95f * rad);
+				d.vertical(RING, body.add(0, 1.2, 0), 2.3f, 0xFFF2D0, 0.4f * rad);
+				d.cylinder(COLUMN, god.getPosition(partial).add(0, -3, 0), 1.6f * rad, 40, 0xFFF4D6, 0.32f * rad);
+			}
+		}
 		for (Fx b : BOLTS.values()) {
 			Vec3 head = b.prev.lerp(b.pos, partial);
 			float s = b.size;

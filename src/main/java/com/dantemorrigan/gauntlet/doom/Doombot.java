@@ -225,6 +225,11 @@ public class Doombot extends PathfinderMob {
 		super.customServerAiStep(level);
 		actionTicks++;
 			if (this.isDeadOrDying()) return;
+			if (Latveria.boss() != null && Latveria.boss().ascending()) {
+				// Everything in the hall stops to watch a god being made.
+				this.getNavigation().stop();
+				return;
+			}
 			if (decoy()) {
 				DoctorDoom doom = Latveria.boss();
 				if (++decoyAge > DECOY_LIFE || doom == null || !doom.isAlive() || doom.isDeadOrDying()) {

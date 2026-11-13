@@ -103,6 +103,7 @@ public final class DoomClient {
 				case DoomFx.FLASH -> { flashAge = 0; flashTicks = Math.max(4, fx.ticks()); flashStrength = fx.f(); }
 				case DoomFx.MUSIC -> force(Minecraft.getInstance(), fx.id());
 				case DoomFx.LIGHTS -> DoomVfxClient.lights(fx.f() > 0.5f);
+				case DoomFx.GOD -> GodDoomScene.start(fx.id(), fx.ticks());
 				case DoomFx.ALARM -> { DoomVfxClient.alarm(fx.id(), fx.ticks()); flashAge = 0; flashTicks = 8; flashStrength = 0.25f; }
 				default -> {}
 			}
@@ -133,12 +134,14 @@ public final class DoomClient {
 		});
 		HudElementRegistry.addFirst(InfinityGauntlet.id("latveria_filter"), (g, delta) -> filter(g));
 		HudElementRegistry.addLast(InfinityGauntlet.id("doom_hud"), (g, delta) -> hud(g));
+		GodDoomScene.init();
 	}
 
 	private static void reset() {
 		set = false;
 		logoAge = barsAge = flashAge = -1;
-		subtitle = null;
+				subtitle = null;
+				GodDoomScene.stop();
 		if (track != null) track.halt();
 		track = null;
 		silence = 0;
@@ -157,6 +160,7 @@ public final class DoomClient {
 		if (logoAge >= 0 && ++logoAge > logoTicks) logoAge = -1;
 		if (barsAge >= 0 && ++barsAge > barsTicks) barsAge = -1;
 		if (subtitle != null && ++subtitleAge > 90) subtitle = null;
+		GodDoomScene.tick();
 		if (flashAge >= 0 && ++flashAge > flashTicks) flashAge = -1;
 		while (WHEEL.consumeClick()) {
 			if (set && mc.screen == null) mc.setScreen(new DoomWheelScreen());
@@ -347,6 +351,7 @@ public final class DoomClient {
 			float a = flashStrength * (1 - flashAge / (float) flashTicks) * com.dantemorrigan.gauntlet.GauntletConfig.get().flashIntensity;
 			g.fill(0, 0, w, h, ARGB.color((int) (Mth.clamp(a, 0, 1) * 96), 190, 255, 205));
 		}
+		GodDoomScene.hudUnder(g);
 		if (barsAge >= 0) {
 			float k = Mth.clamp(Math.min(barsAge / 12f, (barsTicks - barsAge) / 12f), 0, 1);
 			int bar = (int) (h * 0.13f * k);
@@ -356,8 +361,10 @@ public final class DoomClient {
 			if (barsAge > 30 && barsTicks - barsAge > 14 && bar >= 22) {
 				int a = (int) (255 * Mth.clamp((barsAge - 30) / 15f, 0, 1));
 				if (a > 8) {
-					g.centeredText(mc.font, Component.translatable("entity.infinity_gauntlet.doctor_doom").withStyle(net.minecraft.ChatFormatting.BOLD), w / 2, bar / 2 - 10, ARGB.color(a, 120, 255, 150));
-					g.centeredText(mc.font, Component.translatable("boss.infinity_gauntlet.doom.title"), w / 2, bar / 2 + 1, ARGB.color(a, 232, 214, 150));
+					boolean god = GodDoomScene.crowned();
+					g.centeredText(mc.font, Component.translatable(god ? "boss.infinity_gauntlet.doom.god_name" : "entity.infinity_gauntlet.doctor_doom").withStyle(net.minecraft.ChatFormatting.BOLD),
+							w / 2, bar / 2 - 10, god ? ARGB.color(a, 255, 236, 180) : ARGB.color(a, 120, 255, 150));
+					g.centeredText(mc.font, Component.translatable(god ? "boss.infinity_gauntlet.doom.god_title" : "boss.infinity_gauntlet.doom.title"), w / 2, bar / 2 + 1, ARGB.color(a, 232, 214, 150));
 				}
 			}
 			if (subtitle != null && bar >= 12) {
@@ -368,6 +375,7 @@ public final class DoomClient {
 				for (int i = 0; i < n; i++) g.centeredText(mc.font, lines.get(i), w / 2, y + i * 10, ARGB.color(Math.max(a, 9), 255, 255, 255));
 			}
 		}
+		GodDoomScene.hud(g);
 		if (logoAge >= 0) {
 			// Darken the world, bring the logo up, hold, let both go.
 			float dark = Mth.clamp(Math.min(logoAge / 20f, (logoTicks - logoAge) / 30f), 0, 1);

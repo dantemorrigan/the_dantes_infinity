@@ -57,6 +57,11 @@ public final class LatveriaCourt {
 		level.addFreshEntity(bolt);
 	}
 
+	/** A bolt on a spire chosen at random. */
+	public static void strikeRandom(ServerLevel level) {
+		strike(level, SPIRES[level.getRandom().nextInt(SPIRES.length)]);
+	}
+
 	/** A click on the throne's gold or cloth. */
 	public static boolean isThrone(BlockPos p) {
 		return p.getX() >= -2 && p.getX() <= 2 && p.getZ() >= -292 && p.getZ() <= -290

@@ -21,7 +21,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public abstract class ItemInHandRendererMixin {
     @Inject(method = "renderHandsWithItems", at = @At("HEAD"), cancellable = true)
     private void infinityGauntlet$tribunalCinematic(CallbackInfo ci) {
-        if (com.dantemorrigan.gauntlet.client.boss.TribunalClient.cinematic()) ci.cancel();
+        if (com.dantemorrigan.gauntlet.client.boss.TribunalClient.cinematic() || com.dantemorrigan.gauntlet.client.doom.GodDoomScene.active()) ci.cancel();
     }
 
     @Inject(method = "renderArmWithItem", at = @At("HEAD"))

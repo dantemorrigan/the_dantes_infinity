@@ -806,5 +806,16 @@
   "guide.infinity_gauntlet.p31.3": "M",
   "guide.infinity_gauntlet.p31.4": ", выбери силу, ",
   "guide.infinity_gauntlet.p31.5": "N",
-  "guide.infinity_gauntlet.p31.6": " применяет.\nРазряд, Бастион, Полёт (Пробел вверх), Шаг, Солнца, Эдикт. Шаг и Эдикт показывают цель; солнца ждут, по одному за нажатие."
+  "guide.infinity_gauntlet.p31.6": " применяет.\nРазряд, Бастион, Полёт (Пробел вверх), Шаг, Солнца, Эдикт. Шаг и Эдикт показывают цель; солнца ждут, по одному за нажатие.",
+  "advancements.infinity_gauntlet.god_emperor_doom.title": "Нет бога, кроме Дума",
+  "advancements.infinity_gauntlet.god_emperor_doom.description": "Проиграйте Доктору Думу всю Перчатку Бесконечности и увидьте конец мультивселенной",
+  "boss.infinity_gauntlet.doom.god_name": "Бог-Император Дум",
+  "boss.infinity_gauntlet.doom.god_title": "Владыка Боевого мира",
+  "msg.infinity_gauntlet.latveria.doom.ascend_1": "Доктор Дум: Шесть камней. Вся сила мироздания. И вся она... принадлежит Думу.",
+  "msg.infinity_gauntlet.latveria.doom.ascend_2": "Доктор Дум: Узрите своего бога. Я стираю каждый мир, что когда-либо существовал.",
+  "msg.infinity_gauntlet.latveria.doom.ascend_3": "Доктор Дум: Из пепла мультивселенной - Боевой мир. НА КОЛЕНИ.",
+  "msg.infinity_gauntlet.latveria.god.ended": "МУЛЬТИВСЕЛЕННАЯ ПАЛА",
+  "msg.infinity_gauntlet.latveria.god.battleworld": "БОЕВОЙ МИР",
+  "msg.infinity_gauntlet.latveria.god.no_god": "Нет бога, кроме Дума.",
+  "msg.infinity_gauntlet.latveria.god.end": "Камень Времени вырывает тебя в мгновение до этого. Боевой мир Дума ещё не случился... пока. Твоя перчатка какое-то время молчит."
 }

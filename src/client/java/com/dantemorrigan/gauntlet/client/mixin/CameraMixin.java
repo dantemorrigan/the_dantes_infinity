@@ -14,11 +14,26 @@ public abstract class CameraMixin {
 	@Shadow private float yRot;
 	@Shadow private float xRot;
 
+	@Shadow private boolean detached;
+
 	@Shadow
 	protected abstract void setRotation(float yRot, float xRot);
 
+	@Shadow
+	protected abstract void setPosition(net.minecraft.world.phys.Vec3 pos);
+
 	@Inject(method = "alignWithEntity", at = @At("TAIL"))
 	private void infinityGauntlet$shake(float partialTicks, CallbackInfo ci) {
+		var shot = com.dantemorrigan.gauntlet.client.doom.GodDoomScene.shot(partialTicks);
+		if (shot != null) {
+			// The ascension's own camera, free of the player: they are drawn, their hand is not.
+			this.detached = true;
+			this.setPosition(shot[0]);
+			var to = shot[1].subtract(shot[0]);
+			this.setRotation((float) Math.toDegrees(Math.atan2(-to.x, to.z)), (float) -Math.toDegrees(Math.atan2(to.y, to.horizontalDistance()))
+					+ Cutscene.shakePitch(partialTicks));
+			return;
+		}
 		var focus = com.dantemorrigan.gauntlet.client.boss.TribunalClient.cameraFocus(partialTicks);
 		if (focus != null) {
 			var camera = (Camera) (Object) this;

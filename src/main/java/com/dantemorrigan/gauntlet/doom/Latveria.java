@@ -165,6 +165,19 @@ public final class Latveria {
 
 	public static void init() {
 		DoomItems.Heart.init();
+		// The whole gauntlet beaten: a bearer who would fall to Doom is spared for the ascension instead.
+		net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents.ALLOW_DEATH.register((entity, source, amount) -> {
+			if (!(entity instanceof ServerPlayer p) || p.level().dimension() != LEVEL || boss == null || !boss.isAlive()) return true;
+			if (boss.ascending()) { p.setHealth(1); return false; }
+			if (!boss.fighting() || !(source.getEntity() instanceof DoctorDoom || source.getEntity() instanceof Doombot b && !b.allied())) return true;
+			var g = com.dantemorrigan.gauntlet.GauntletState.activeGauntlet(p);
+			if (g.isEmpty() || com.dantemorrigan.gauntlet.GauntletState.inserted(g).size() < 6) return true;
+			p.setHealth(1);
+			boss.ascend(p.level(), p);
+			return false;
+		});
+		net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents.ALLOW_DAMAGE.register((entity, source, amount) ->
+				!(entity instanceof ServerPlayer && entity.level().dimension() == LEVEL && boss != null && boss.ascending()));
 		net.fabricmc.fabric.api.event.player.PlayerBlockBreakEvents.BEFORE.register((level, player, pos, state, be) -> {
 			if (level.dimension() != LEVEL) return true;
 			if (player.isCreative()) { bypass = true; return true; }
@@ -633,6 +646,23 @@ public final class Latveria {
 			callOff(level);
 			for (ServerPlayer p : level.players()) DoomFx.tell(p, "fight.reset");
 		}
+	}
+
+	/**
+	 * After the ascension: the multiverse is gone, and the Time Stone pulls everyone back to the moment before. They
+	 * stand in the yard, whole again, the drained gauntlet still silent; the duel starts over when they return.
+	 */
+	public static void afterAscension(ServerLevel level, java.util.UUID victim) {
+		for (ServerPlayer p : List.copyOf(level.players())) {
+			p.setHealth(p.getMaxHealth());
+			p.removeAllEffects();
+			DoomFx.tell(p, "god.end");
+			ModAdvancements.award(p, "god_emperor_doom");
+			if (LatveriaPlan.ARENA_BOX.inflate(16).contains(p.position())) tp(p, "yard");
+		}
+		ServerPlayer v = victim == null ? null : level.getServer().getPlayerList().getPlayer(victim);
+		if (v != null) GauntletSilence.silence(v, 600);
+		callOff(level);
 	}
 
 	/** Debug: calls the fight off and keeps Doom away until everyone leaves the hall. */

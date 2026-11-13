@@ -31,6 +31,7 @@ public final class DoomRenderers {
 		static final GeoModel MODEL = GeoModel.load(InfinityGauntlet.id("doctor_doom/doctor_doom.geo.json"));
 		static final Map<String, GeoAnimation> CLIPS = GeoAnimation.load(InfinityGauntlet.id("doctor_doom/doctor_doom.animation.json"));
 		static final Identifier TEXTURE = InfinityGauntlet.id("textures/entity/doctor_doom/doctor_doom.png");
+		static final Identifier GOD = InfinityGauntlet.id("textures/entity/doctor_doom/god_emperor_doom.png");
 	}
 
 	private static final class BotAssets {
@@ -63,6 +64,7 @@ public final class DoomRenderers {
 	}
 
 	public static final class DoomState extends EntityRenderState {
+		boolean god;
 		float bodyYaw, actionTime, walkPos, walkSpeed, deathTime, headPitch, headYaw;
 		int action, phase;
 		boolean hurt, shield, exposed;
@@ -97,6 +99,7 @@ public final class DoomRenderers {
 			s.headYaw = Mth.wrapDegrees(Mth.rotLerp(partial, e.yHeadRotO, e.yHeadRot) - s.bodyYaw);
 			s.shield = e.flag(DoctorDoom.FLAG_SHIELD);
 			s.exposed = e.flag(DoctorDoom.FLAG_EXPOSED);
+			s.god = e.flag(DoctorDoom.FLAG_GOD);
 		}
 
 		@Override
@@ -115,12 +118,13 @@ public final class DoomRenderers {
 			}
 			float fade = s.deathTime > 88 ? Mth.clamp(1 - (s.deathTime - 88) / 12f, 0, 1) : 1;
 			int overlay = OverlayTexture.pack(OverlayTexture.u(0), OverlayTexture.v(s.hurt));
-			int light = lit(s.lightCoords);
+			int light = s.god ? 0xF000F0 : lit(s.lightCoords);
 			int color = s.shield ? ARGB.color((int) (fade * 255), 200, 235, 255) : s.exposed ? ARGB.color((int) (fade * 255), 255, 226, 200)
 					: ARGB.color((int) (fade * 255), 255, 255, 255);
 			pose.pushPose();
 			pose.mulPose(Axis.YP.rotationDegrees(180f - s.bodyYaw));
-			var type = fade < 1 ? RenderTypes.entityTranslucent(DoomAssets.TEXTURE) : RenderTypes.entityCutout(DoomAssets.TEXTURE);
+			Identifier tex = s.god ? DoomAssets.GOD : DoomAssets.TEXTURE;
+			var type = fade < 1 ? RenderTypes.entityTranslucent(tex) : RenderTypes.entityCutout(tex);
 			collector.submitCustomGeometry(pose, type, (p, out) -> DoomAssets.MODEL.render(stack(p), out, bones, light, overlay, (b, c) -> color));
 			pose.popPose();
 			super.submit(s, pose, collector, camera);

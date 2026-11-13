@@ -1,0 +1,23 @@
+{
+  "parent": "infinity_gauntlet:defeat_doom",
+  "display": {
+    "icon": {
+      "id": "infinity_gauntlet:doom_helmet"
+    },
+    "title": {
+      "translate": "advancements.infinity_gauntlet.god_emperor_doom.title"
+    },
+    "description": {
+      "translate": "advancements.infinity_gauntlet.god_emperor_doom.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": true
+  },
+  "criteria": {
+    "done": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

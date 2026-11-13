@@ -806,5 +806,16 @@
   "guide.infinity_gauntlet.p31.3": "M",
   "guide.infinity_gauntlet.p31.4": " to pick a power, ",
   "guide.infinity_gauntlet.p31.5": "N",
-  "guide.infinity_gauntlet.p31.6": " casts it.\nBolt, Bastion, Jets (Space climbs), Rift Step, Suns, Edict. Rift and Edict show where they land; the suns wait, one per press."
+  "guide.infinity_gauntlet.p31.6": " casts it.\nBolt, Bastion, Jets (Space climbs), Rift Step, Suns, Edict. Rift and Edict show where they land; the suns wait, one per press.",
+  "advancements.infinity_gauntlet.god_emperor_doom.title": "There Is No God But Doom",
+  "advancements.infinity_gauntlet.god_emperor_doom.description": "Lose the whole Infinity Gauntlet to Doctor Doom and watch the multiverse end",
+  "boss.infinity_gauntlet.doom.god_name": "God Emperor Doom",
+  "boss.infinity_gauntlet.doom.god_title": "Sovereign of Battleworld",
+  "msg.infinity_gauntlet.latveria.doom.ascend_1": "Doctor Doom: Six stones. Every power in creation. And all of it... Doom's.",
+  "msg.infinity_gauntlet.latveria.doom.ascend_2": "Doctor Doom: Behold your god. I unmake every world there ever was.",
+  "msg.infinity_gauntlet.latveria.doom.ascend_3": "Doctor Doom: From the ashes of the multiverse, Battleworld. KNEEL.",
+  "msg.infinity_gauntlet.latveria.god.ended": "THE MULTIVERSE HAS ENDED",
+  "msg.infinity_gauntlet.latveria.god.battleworld": "BATTLEWORLD",
+  "msg.infinity_gauntlet.latveria.god.no_god": "There is no god but Doom.",
+  "msg.infinity_gauntlet.latveria.god.end": "The Time Stone tears you back to the moment before. Doom's Battleworld has not happened... yet. Your gauntlet is silent for a while."
 }

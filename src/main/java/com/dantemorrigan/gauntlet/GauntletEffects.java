@@ -89,6 +89,9 @@ public final class GauntletEffects {
 		ServerLivingEntityEvents.ALLOW_DAMAGE.register((entity, source, amount) -> {
 			if (entity instanceof ServerPlayer player && state(player).phase == Phase.AWAKENED) {
 				if (source.is(com.dantemorrigan.gauntlet.stormbreaker.Stormbreaker.DAMAGE)) return true;
+				// Doom's science and sorcery are a match for the stones: he and his robots can still hurt the bearer.
+				if (source.getEntity() instanceof com.dantemorrigan.gauntlet.doom.DoctorDoom
+						|| source.getEntity() instanceof com.dantemorrigan.gauntlet.doom.Doombot bot && !bot.allied()) return true;
 				return source.is(DamageTypeTags.BYPASSES_INVULNERABILITY); // only /kill, void
 			}
 			return true;

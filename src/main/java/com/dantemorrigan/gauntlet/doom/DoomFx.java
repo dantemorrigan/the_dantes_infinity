@@ -19,6 +19,8 @@ public final class DoomFx {
 	public static final int MUSIC = 5;
 	/** The castle searchlights: f 1 burning, 0 out. ALARM: they hold on entity {@code id} and burn red for {@code ticks}. */
 	public static final int LIGHTS = 6, ALARM = 7;
+	/** The ascension of God Emperor Doom: id is Doom's entity id, ticks the scene's length. */
+	public static final int GOD = 8;
 
 	/**
 	 * An effect at a point. The pack's flat sprites hung in the air and lagged, so the bursts, rifts, waves and
