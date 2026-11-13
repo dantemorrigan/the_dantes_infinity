@@ -97,6 +97,28 @@ public final class ModItems {
 	public static final Item URU_LEGGINGS = register("uru_leggings", uru(net.minecraft.world.item.equipment.ArmorType.LEGGINGS));
 	public static final Item URU_BOOTS = register("uru_boots", uru(net.minecraft.world.item.equipment.ArmorType.BOOTS));
 
+	// The Fury of Doom: the armor and the trophies of Latveria (see doom/DoomArmor and doom/DoomItems).
+	public static final Item DOOM_HELMET = register("doom_helmet", doom(net.minecraft.world.item.equipment.ArmorType.HELMET));
+	public static final Item DOOM_CHESTPLATE = register("doom_chestplate", doom(net.minecraft.world.item.equipment.ArmorType.CHESTPLATE));
+	public static final Item DOOM_LEGGINGS = register("doom_leggings", doom(net.minecraft.world.item.equipment.ArmorType.LEGGINGS));
+	public static final Item DOOM_BOOTS = register("doom_boots", doom(net.minecraft.world.item.equipment.ArmorType.BOOTS));
+	public static final Item DOOM_GAUNTLET = register("doom_gauntlet", p -> new com.dantemorrigan.gauntlet.doom.DoomItems.Caster(p, false), epic());
+	public static final Item DOOM_GRIMOIRE = register("doom_grimoire", p -> new com.dantemorrigan.gauntlet.doom.DoomItems.Caster(p, true), epic());
+	public static final Item LATVERIA_KEY = register("latveria_key", com.dantemorrigan.gauntlet.doom.DoomItems.Key::new, epic());
+	public static final Item CASTLE_SEAL = register("castle_seal", com.dantemorrigan.gauntlet.doom.DoomItems.Seal::new, new Item.Properties().rarity(Rarity.RARE));
+	public static final Item DOOMBOT_CONTROLLER = register("doombot_controller", com.dantemorrigan.gauntlet.doom.DoomItems.Controller::new, epic());
+	public static final Item MECHANICAL_HEART = register("mechanical_heart", com.dantemorrigan.gauntlet.doom.DoomItems.Heart::new, new Item.Properties().rarity(Rarity.RARE));
+	public static final Item TIME_PLATFORM = register("time_platform", com.dantemorrigan.gauntlet.doom.DoomItems.Platform::new, epic());
+	public static final Item ARC_REACTOR = register("arc_reactor", new Item.Properties().rarity(Rarity.UNCOMMON));
+	public static final Item DOOM_CIRCUIT = register("doom_circuit", new Item.Properties());
+	public static final Item JADE_SHARD = register("jade_shard", new Item.Properties().rarity(Rarity.UNCOMMON));
+	public static final Item REPAIR_TOOL = register("repair_tool", new Item.Properties().stacksTo(1));
+	public static final Item LATVERIA_BANNER = register("latveria_banner", new Item.Properties().rarity(Rarity.UNCOMMON));
+
+	private static Item.Properties doom(net.minecraft.world.item.equipment.ArmorType type) {
+		return new Item.Properties().humanoidArmor(com.dantemorrigan.gauntlet.doom.DoomArmor.MATERIAL, type).rarity(Rarity.EPIC).fireResistant();
+	}
+
 	private static Item.Properties uru(net.minecraft.world.item.equipment.ArmorType type) {
 		return new Item.Properties().humanoidArmor(com.dantemorrigan.gauntlet.uru.UruArmor.MATERIAL, type).rarity(Rarity.EPIC).fireResistant();
 	}

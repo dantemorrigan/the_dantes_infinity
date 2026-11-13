@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "J": "infinity_gauntlet:jade_shard",
+    "G": "minecraft:gold_ingot"
+  },
+  "pattern": [
+    " J ",
+    "JGJ",
+    " J "
+  ],
+  "result": {
+    "id": "infinity_gauntlet:castle_seal",
+    "count": 1
+  }
+}

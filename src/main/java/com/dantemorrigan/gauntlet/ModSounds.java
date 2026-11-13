@@ -39,6 +39,9 @@ public final class ModSounds {
 	public static final SoundEvent TRIBUNAL_DEFEAT = register("tribunal.defeat");
 	public static final SoundEvent TRIBUNAL_MUSIC = register("tribunal.battle_music");
 	public static final SoundEvent DOOM_WARNING = register("doctor_doom.latveria_warning");
+	public static final SoundEvent DOOM_BOSS_THEME = register("doctor_doom.boss_theme");
+	public static final SoundEvent LATVERIA_ECHOES = register("doctor_doom.echoes_of_latveria");
+	public static final SoundEvent LATVERIA_SANCTUM = register("doctor_doom.sovereign_sanctum");
 
 	private static SoundEvent register(String name) {
 		Identifier id = InfinityGauntlet.id(name);

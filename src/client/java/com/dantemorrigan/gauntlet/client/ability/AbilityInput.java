@@ -51,6 +51,8 @@ public final class AbilityInput {
     public static int portal() { return portal; }
     public static boolean latveriaActive() { return states.has("latveriaActive") && states.get("latveriaActive").getAsBoolean(); }
     public static boolean latveriaSealed() { return states.has("latveriaSealed") && states.get("latveriaSealed").getAsBoolean(); }
+    /** The Mind Stone has read Doom's seal: the sealed option is a way in. */
+    public static boolean latveriaOpen() { return states.has("latveriaOpen") && states.get("latveriaOpen").getAsBoolean(); }
     public static int powerCharge() { return selected.power() && button?charge:0; }
     public static Ability last(Stone s) { return LAST.getOrDefault(s,Ability.of(s,CosmosClient.inCosmos()).getFirst()); }
     public static String reason(Ability a) {

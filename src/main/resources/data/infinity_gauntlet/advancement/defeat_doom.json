@@ -1,0 +1,23 @@
+{
+  "parent": "infinity_gauntlet:enter_latveria",
+  "display": {
+    "icon": {
+      "id": "infinity_gauntlet:doom_helmet"
+    },
+    "title": {
+      "translate": "advancements.infinity_gauntlet.defeat_doom.title"
+    },
+    "description": {
+      "translate": "advancements.infinity_gauntlet.defeat_doom.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "done": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

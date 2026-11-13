@@ -124,6 +124,29 @@ public final class GauntletCommand {
 									}
 									return 1;
 								})))
+						// The Fury of Doom: travel, the state of the assault and shortcuts for testing.
+						.then(Commands.literal("latveria")
+								.then(Commands.literal("enter").executes(ctx -> latveria(ctx.getSource(), "enter")))
+								.then(Commands.literal("leave").executes(ctx -> latveria(ctx.getSource(), "leave")))
+								.then(Commands.literal("unlock").executes(ctx -> latveria(ctx.getSource(), "unlock")))
+								.then(Commands.literal("gate").executes(ctx -> latveria(ctx.getSource(), "gate")))
+								.then(Commands.literal("lab").executes(ctx -> latveria(ctx.getSource(), "lab")))
+								.then(Commands.literal("throne").executes(ctx -> latveria(ctx.getSource(), "throne")))
+								.then(Commands.literal("logo").executes(ctx -> latveria(ctx.getSource(), "logo")))
+								.then(Commands.literal("status").executes(ctx -> latveria(ctx.getSource(), "status")))
+								.then(Commands.literal("reset").executes(ctx -> latveria(ctx.getSource(), "reset")))
+								.then(Commands.literal("clear").then(Commands.argument("squad", com.mojang.brigadier.arguments.IntegerArgumentType.integer(0, 3))
+										.executes(ctx -> {
+											int n = com.dantemorrigan.gauntlet.doom.Latveria.clearSquad(ctx.getSource().getServer(),
+													com.mojang.brigadier.arguments.IntegerArgumentType.getInteger(ctx, "squad"));
+											ctx.getSource().sendSuccess(() -> Component.literal("Latveria: squad cleared, Doombots destroyed: " + n), false);
+											return 1;
+										}))))
+						.then(Commands.literal("doom")
+								.then(Commands.literal("armor").executes(ctx -> doom(ctx.getSource(), "armor")))
+								.then(Commands.literal("kill").executes(ctx -> doom(ctx.getSource(), "kill")))
+								.then(Commands.literal("phase2").executes(ctx -> doom(ctx.getSource(), "phase2")))
+								.then(Commands.literal("phase3").executes(ctx -> doom(ctx.getSource(), "phase3"))))
 						.then(Commands.literal("thanos")
 								// start: the full scene with the warning; now: the scene without the warning; spawn: a fighting Thanos here.
 								.then(Commands.literal("start").executes(ctx -> thanosCommand(ctx.getSource(), 0)))
@@ -528,6 +551,58 @@ public final class GauntletCommand {
 		}
 		GauntletState.setInUse(gauntlet, stones);
 		source.sendSuccess(() -> Component.translatable("command.infinity_gauntlet.in_use", String.valueOf(GauntletState.inUse(gauntlet))), false);
+		return 1;
+	}
+
+	private static int latveria(net.minecraft.commands.CommandSourceStack source, String what) throws com.mojang.brigadier.exceptions.CommandSyntaxException {
+		net.minecraft.server.MinecraftServer server = source.getServer();
+		if (what.equals("status")) {
+			source.sendSuccess(() -> Component.literal("Latveria: " + com.dantemorrigan.gauntlet.doom.Latveria.status(server)), false);
+			return 1;
+		}
+		if (what.equals("reset")) {
+			com.dantemorrigan.gauntlet.doom.Latveria.reset(server);
+			source.sendSuccess(() -> Component.literal("Latveria: the assault is reset"), false);
+			return 1;
+		}
+		ServerPlayer p = source.getPlayerOrException();
+		switch (what) {
+			case "unlock" -> com.dantemorrigan.gauntlet.doom.Latveria.grantAccess(p);
+			case "leave" -> com.dantemorrigan.gauntlet.doom.Latveria.leave(p);
+			case "logo" -> com.dantemorrigan.gauntlet.doom.Latveria.showLogo(p);
+			default -> {
+				com.dantemorrigan.gauntlet.doom.Latveria.grantAccess(p);
+				if (p.level().dimension() != com.dantemorrigan.gauntlet.doom.Latveria.LEVEL && !com.dantemorrigan.gauntlet.doom.Latveria.enter(p, false)) {
+					source.sendFailure(Component.literal("The Latveria dimension is missing"));
+					return 0;
+				}
+				int floor = com.dantemorrigan.gauntlet.doom.LatveriaPlan.FLOOR;
+				if (what.equals("gate")) p.teleportTo(p.level(), 0.5, floor, -186.5, java.util.Set.of(), 180f, 0f, false);
+				if (what.equals("lab")) p.teleportTo(p.level(), 50.5, floor, -283.5, java.util.Set.of(), 90f, 0f, false);
+				if (what.equals("throne")) p.teleportTo(p.level(), 0.5, floor, -256.5, java.util.Set.of(), 180f, 0f, false);
+			}
+		}
+		source.sendSuccess(() -> Component.literal("Latveria: " + what), false);
+		return 1;
+	}
+
+	private static int doom(net.minecraft.commands.CommandSourceStack source, String what) throws com.mojang.brigadier.exceptions.CommandSyntaxException {
+		if (what.equals("armor")) {
+			ServerPlayer p = source.getPlayerOrException();
+			p.setItemSlot(net.minecraft.world.entity.EquipmentSlot.HEAD, new ItemStack(ModItems.DOOM_HELMET));
+			p.setItemSlot(net.minecraft.world.entity.EquipmentSlot.CHEST, new ItemStack(ModItems.DOOM_CHESTPLATE));
+			p.setItemSlot(net.minecraft.world.entity.EquipmentSlot.LEGS, new ItemStack(ModItems.DOOM_LEGGINGS));
+			p.setItemSlot(net.minecraft.world.entity.EquipmentSlot.FEET, new ItemStack(ModItems.DOOM_BOOTS));
+			return 1;
+		}
+		var boss = com.dantemorrigan.gauntlet.doom.Latveria.boss();
+		if (boss == null || !(boss.level() instanceof net.minecraft.server.level.ServerLevel level)) {
+			source.sendFailure(Component.literal("Doctor Doom is not in his throne room"));
+			return 0;
+		}
+		if (what.equals("kill")) boss.hurtServer(level, level.damageSources().genericKill(), Float.MAX_VALUE);
+		else boss.setHealth(boss.getMaxHealth() * (what.equals("phase2") ? 0.65f : 0.32f));
+		source.sendSuccess(() -> Component.literal("Doctor Doom: " + what), false);
 		return 1;
 	}
 

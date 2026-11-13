@@ -32,6 +32,7 @@ FACES = ("north", "south", "east", "west", "up", "down")
 
 BONES = {}
 CUBES = []
+EXTRA = {}
 
 
 def bone(name, parent, pivot, rot=None):
@@ -293,7 +294,7 @@ def paint(mat, c):
     elif mat == "sole":
         col = (20, 20, 22)
     else:
-        raise KeyError(mat)
+        col = EXTRA[mat](c)  # materials added by other generators (the Doombots)
 
     f = 1 + grain * noise(ix, iy, iz)
     if mat not in ("eyes", "hood_in", "cape_in"): f *= FACE_LIGHT[face]

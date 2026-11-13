@@ -1,0 +1,23 @@
+{
+  "parent": "infinity_gauntlet:decipher_seal",
+  "display": {
+    "icon": {
+      "id": "infinity_gauntlet:latveria_banner"
+    },
+    "title": {
+      "translate": "advancements.infinity_gauntlet.enter_latveria.title"
+    },
+    "description": {
+      "translate": "advancements.infinity_gauntlet.enter_latveria.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": false,
+    "hidden": false
+  },
+  "criteria": {
+    "done": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

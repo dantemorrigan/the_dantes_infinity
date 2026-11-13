@@ -166,6 +166,9 @@ public final class TimeAbility {
 			return;
 		}
 		ACTIVE.put(player.getUUID(), new Rewind(path, false, cfg.timeRewindPlaybackTicks));
+		// Turned back beside Doctor Doom, time holds him for a moment: an opening for a counter-attack.
+		var doom = com.dantemorrigan.gauntlet.doom.Latveria.boss();
+		if (doom != null && doom.level() == player.level() && doom.distanceTo(player) < 24) doom.timeLock(player.level());
 		HISTORY.remove(player.getUUID());
 		ModNetwork.TimeRewindFx fx = new ModNetwork.TimeRewindFx(player.getId(), false, cfg.timeRewindPlaybackTicks);
 		for (ServerPlayer p : PlayerLookup.around(player.level(), player.position(), 64)) ServerPlayNetworking.send(p, fx);

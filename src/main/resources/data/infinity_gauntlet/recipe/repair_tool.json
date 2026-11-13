@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "key": {
+    "C": "infinity_gauntlet:doom_circuit",
+    "I": "minecraft:iron_ingot"
+  },
+  "pattern": [
+    " C",
+    " I",
+    "I "
+  ],
+  "result": {
+    "id": "infinity_gauntlet:repair_tool",
+    "count": 1
+  }
+}

@@ -59,9 +59,23 @@ public final class ModEntities {
 							com.dantemorrigan.gauntlet.stormbreaker.StormbreakerEntity::new, MobCategory.MISC)
 							.sized(.95f, 1.8f).clientTrackingRange(12).updateInterval(1).noSave().noSummon().noLootTable().build(STORMBREAKER_KEY));
 
+	private static final ResourceKey<EntityType<?>> DOCTOR_DOOM_KEY = ResourceKey.create(Registries.ENTITY_TYPE, InfinityGauntlet.id("doctor_doom"));
+	/** The lord of Latveria. Never saved: an abandoned fight starts over. */
+	public static final EntityType<com.dantemorrigan.gauntlet.doom.DoctorDoom> DOCTOR_DOOM = Registry.register(BuiltInRegistries.ENTITY_TYPE, DOCTOR_DOOM_KEY,
+			EntityType.Builder.<com.dantemorrigan.gauntlet.doom.DoctorDoom>of(com.dantemorrigan.gauntlet.doom.DoctorDoom::new, MobCategory.MONSTER)
+					.sized(0.9f, 2.4f).eyeHeight(2.15f).fireImmune().clientTrackingRange(16).updateInterval(1).noSave().noLootTable().build(DOCTOR_DOOM_KEY));
+
+	private static final ResourceKey<EntityType<?>> DOOMBOT_KEY = ResourceKey.create(Registries.ENTITY_TYPE, InfinityGauntlet.id("doombot"));
+	/** A Doombot in one of six roles; saved with the world, hostile until Castle Doom is taken. */
+	public static final EntityType<com.dantemorrigan.gauntlet.doom.Doombot> DOOMBOT = Registry.register(BuiltInRegistries.ENTITY_TYPE, DOOMBOT_KEY,
+			EntityType.Builder.<com.dantemorrigan.gauntlet.doom.Doombot>of(com.dantemorrigan.gauntlet.doom.Doombot::new, MobCategory.MISC)
+					.sized(0.75f, 1.95f).eyeHeight(1.7f).fireImmune().clientTrackingRange(12).updateInterval(1).noLootTable().build(DOOMBOT_KEY));
+
 	public static void init() {
 		FabricDefaultAttributeRegistry.register(TRIBUNAL, com.dantemorrigan.gauntlet.boss.LivingTribunal.attributes());
 		FabricDefaultAttributeRegistry.register(LOKI, Loki.createAttributes());
+		FabricDefaultAttributeRegistry.register(DOCTOR_DOOM, com.dantemorrigan.gauntlet.doom.DoctorDoom.createAttributes());
+		FabricDefaultAttributeRegistry.register(DOOMBOT, com.dantemorrigan.gauntlet.doom.Doombot.createAttributes());
 		FabricDefaultAttributeRegistry.register(THANOS, com.dantemorrigan.gauntlet.boss.Thanos.createAttributes());
 		FabricDefaultAttributeRegistry.register(GAUNTLET_DOLL, GauntletDoll.createAttributes());
 		FabricDefaultAttributeRegistry.register(MIND_ZOMBIE, com.dantemorrigan.gauntlet.stones.MindZombie.createAttributes());

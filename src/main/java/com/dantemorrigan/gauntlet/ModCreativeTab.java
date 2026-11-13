@@ -44,6 +44,22 @@ public final class ModCreativeTab {
 				output.accept(ModItems.URU_CHESTPLATE);
 				output.accept(ModItems.URU_LEGGINGS);
 				output.accept(ModItems.URU_BOOTS);
+				output.accept(ModItems.DOOM_HELMET);
+				output.accept(ModItems.DOOM_CHESTPLATE);
+				output.accept(ModItems.DOOM_LEGGINGS);
+				output.accept(ModItems.DOOM_BOOTS);
+				output.accept(ModItems.DOOM_GAUNTLET);
+				output.accept(ModItems.DOOM_GRIMOIRE);
+				output.accept(ModItems.LATVERIA_KEY);
+				output.accept(ModItems.CASTLE_SEAL);
+				output.accept(ModItems.DOOMBOT_CONTROLLER);
+				output.accept(ModItems.MECHANICAL_HEART);
+				output.accept(ModItems.TIME_PLATFORM);
+				output.accept(ModItems.ARC_REACTOR);
+				output.accept(ModItems.DOOM_CIRCUIT);
+				output.accept(ModItems.JADE_SHARD);
+				output.accept(ModItems.REPAIR_TOOL);
+				output.accept(ModItems.LATVERIA_BANNER);
 				output.accept(ModItems.INFINITY_EXTRACTOR);
 				output.accept(ModItems.GAUNTLET_DOLL_SPAWN_EGG);
 			})

@@ -147,5 +147,8 @@
   "doctor_doom.latveria_warning": {
     "subtitle": "msg.infinity_gauntlet.latveria.doom",
     "sounds": [{"name": "infinity_gauntlet:doctor_doom/latveria_warning"}]
-  }
+  },
+  "doctor_doom.boss_theme": {"sounds": [{"name": "infinity_gauntlet:doctor_doom/boss_theme", "stream": true}]},
+  "doctor_doom.echoes_of_latveria": {"sounds": [{"name": "infinity_gauntlet:doctor_doom/echoes_of_latveria", "stream": true}]},
+  "doctor_doom.sovereign_sanctum": {"sounds": [{"name": "infinity_gauntlet:doctor_doom/sovereign_sanctum", "stream": true}]}
 }

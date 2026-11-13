@@ -1,0 +1,10 @@
+{
+  "type": "infinity_gauntlet:latveria",
+  "generator": {
+    "type": "infinity_gauntlet:latveria",
+    "biome_source": {
+      "type": "minecraft:fixed",
+      "biome": "infinity_gauntlet:latveria"
+    }
+  }
+}

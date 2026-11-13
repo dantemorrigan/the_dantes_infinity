@@ -422,6 +422,7 @@ public final class SpaceStone {
 		player.level().playSound(null, BlockPos.containing(from), SoundEvents.PLAYER_TELEPORT, SoundSource.PLAYERS, 0.8f, 1.4f);
 		player.level().playSound(null, BlockPos.containing(target), SoundEvents.PLAYER_TELEPORT, SoundSource.PLAYERS, 1f, 1.2f);
 		sendFx(player.level(), from, target);
+		com.dantemorrigan.gauntlet.doom.DoomCombat.dodge(player);
 		if (!g.isEmpty()) {
 			GauntletState.setInUse(g, EnumSet.of(Stone.SPACE));
 			CLEAR_GLOW.put(player.getUUID(), now + 20);

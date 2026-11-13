@@ -26,14 +26,18 @@ abstract class BossHealthOverlayMixin {
 
 	@Inject(method = "extractRenderState", at = @At("HEAD"), cancellable = true)
 	private void infinityGauntlet$drawLokiBars(GuiGraphicsExtractor graphics, CallbackInfo ci) {
-		if (events.values().stream().noneMatch(event -> infinityGauntlet$art(event) != null) && !ThanosClient.hasBossBar()) return;
+		if (events.values().stream().noneMatch(event -> infinityGauntlet$art(event) != null || infinityGauntlet$doom(event)) && !ThanosClient.hasBossBar()) return;
 		ci.cancel();
 		graphics.nextStratum();
 		int center = graphics.guiWidth() / 2;
 		int y = ThanosClient.hasBossBar() ? 59 : 4;
 		for (LerpingBossEvent event : events.values()) {
 			BossBarArt art = infinityGauntlet$art(event);
-			if (art == null) {
+			if (infinityGauntlet$doom(event)) {
+				graphics.centeredText(minecraft.font, com.dantemorrigan.gauntlet.text.BossText.name(event.getName()), center, y, 0xff9cffb4);
+				com.dantemorrigan.gauntlet.client.doom.DoomClient.bossBar(graphics, y + 9, event.getProgress());
+				y += 44;
+			} else if (art == null) {
 				extractBar(graphics, center - 91, y + 9, event);
 				graphics.centeredText(minecraft.font, event.getName(), center, y, 0xffffffff);
 				y += 19;
@@ -44,6 +48,10 @@ abstract class BossHealthOverlayMixin {
 			}
 			if (y >= graphics.guiHeight() / 3) break;
 		}
+	}
+
+	private static boolean infinityGauntlet$doom(BossEvent event) {
+		return event.getName().getContents() instanceof TranslatableContents title && title.getKey().equals("entity.infinity_gauntlet.doctor_doom");
 	}
 
 	private static BossBarArt infinityGauntlet$art(BossEvent event) {

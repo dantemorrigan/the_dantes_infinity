@@ -482,7 +482,33 @@ public final class ModNetwork {
         @Override public Type<CosmicFx> type() {return TYPE;}
     }
 
+	/** S2C: a one-off Latveria / Doctor Doom event on the client; kinds are {@code doom.DoomFx.*}. */
+	public record DoomFx(int kind, int id, Vec3 at, float f, int ticks) implements CustomPacketPayload {
+		public static final Type<DoomFx> TYPE = newType("doom_fx");
+		public static final StreamCodec<ByteBuf, DoomFx> CODEC = StreamCodec.composite(ByteBufCodecs.VAR_INT, DoomFx::kind,
+				ByteBufCodecs.VAR_INT, DoomFx::id, Vec3.STREAM_CODEC, DoomFx::at, ByteBufCodecs.FLOAT, DoomFx::f,
+				ByteBufCodecs.VAR_INT, DoomFx::ticks, DoomFx::new);
+		@Override public Type<DoomFx> type() { return TYPE; }
+	}
+
+	/** S2C: the Doom armor's state for the wheel and the HUD: "set;jet;c0,c1,c2,c3,c4,c5" (cooldowns in ticks). */
+	public record DoomSync(String state) implements CustomPacketPayload {
+		public static final Type<DoomSync> TYPE = newType("doom_sync");
+		public static final StreamCodec<ByteBuf, DoomSync> CODEC = StreamCodec.composite(ByteBufCodecs.STRING_UTF8, DoomSync::state, DoomSync::new);
+		@Override public Type<DoomSync> type() { return TYPE; }
+	}
+
+	/** C2S: cast an ability of the Doom armor (0..5). */
+	public record DoomCast(int ability) implements CustomPacketPayload {
+		public static final Type<DoomCast> TYPE = newType("doom_cast");
+		public static final StreamCodec<ByteBuf, DoomCast> CODEC = StreamCodec.composite(ByteBufCodecs.VAR_INT, DoomCast::ability, DoomCast::new);
+		@Override public Type<DoomCast> type() { return TYPE; }
+	}
+
 	public static void init() {
+		PayloadTypeRegistry.clientboundPlay().register(DoomFx.TYPE, DoomFx.CODEC);
+		PayloadTypeRegistry.clientboundPlay().register(DoomSync.TYPE, DoomSync.CODEC);
+		PayloadTypeRegistry.serverboundPlay().register(DoomCast.TYPE, DoomCast.CODEC);
         PayloadTypeRegistry.clientboundPlay().register(CosmicFx.TYPE,CosmicFx.CODEC);
         PayloadTypeRegistry.clientboundPlay().register(TribunalBolt.TYPE,TribunalBolt.CODEC);
 		PayloadTypeRegistry.clientboundPlay().register(PowerShowerFx.TYPE, PowerShowerFx.CODEC);

@@ -142,7 +142,7 @@ public final class AbilityWheelScreen extends Screen {
     }
     private boolean destinationAllowed(int i) {
         if(submenu==2)return AbilityInput.selectable(Ability.WARP);
-        if(i==SpaceStone.LATVERIA_OPTION) return i<portalCount() && !AbilityInput.latveriaActive() && !AbilityInput.latveriaSealed();
+        if(i==SpaceStone.LATVERIA_OPTION) return i<portalCount() && !AbilityInput.latveriaActive() && (!AbilityInput.latveriaSealed() || AbilityInput.latveriaOpen());
         var l=Minecraft.getInstance().level;
         return AbilityInput.selectable(Ability.PORTAL) && l!=null && !(i==0&&l.dimension().equals(Level.NETHER)||i==1&&l.dimension().equals(Level.END)||i==2&&l.dimension().equals(Level.OVERWORLD));
     }
@@ -177,14 +177,15 @@ public final class AbilityWheelScreen extends Screen {
                 button(g,x,y,null,null,i==target,enabled,Stone.SPACE,54);
                 Component label;
                 if(i==SpaceStone.LATVERIA_OPTION) {
-                    boolean sealed=AbilityInput.latveriaSealed();
+                    boolean open=AbilityInput.latveriaOpen();
+                    boolean sealed=AbilityInput.latveriaSealed() && !open;
                     g.pose().pushMatrix();
                     g.pose().translate((float)(cx()+x*scale()),(float)(cy()+y*scale()));
                     g.pose().scale(2*scale(),2*scale());
-                    text(g,Component.literal(sealed?"×":"?").withStyle(net.minecraft.ChatFormatting.BOLD),0,-4,
-                        sealed?0xFF85818A:0xFFC7E69E);
+                    text(g,Component.literal(sealed?"×":open?"◆":"?").withStyle(net.minecraft.ChatFormatting.BOLD),0,-4,
+                        sealed?0xFF85818A:open?0xFF6CFF9A:0xFFC7E69E);
                     g.pose().popMatrix();
-                    label=sealed?Component.translatable("ability.infinity_gauntlet.dimension.latveria"):Component.empty();
+                    label=sealed||open?Component.translatable("ability.infinity_gauntlet.dimension.latveria"):Component.empty();
                 } else {
                     String id=SpaceStone.DESTINATIONS[i];
                     blit(g,"icons_64/portal_"+id,(float)(cx()+(x-16)*scale()),(float)(cy()+(y-16)*scale()),32*scale(),32*scale(),64,64);
@@ -215,7 +216,9 @@ public final class AbilityWheelScreen extends Screen {
                 : Component.translatable("ability.infinity_gauntlet.favorites_bound", slot + 1);
             tooltipLine(g, binding, firstLine + 20, 0xFFF4D68D);
         } else {
-            String key=submenu==1 && target==SpaceStone.LATVERIA_OPTION && AbilityInput.latveriaSealed()
+            String key=submenu==1 && target==SpaceStone.LATVERIA_OPTION && AbilityInput.latveriaOpen()
+                ?"ability.infinity_gauntlet.latveria_open"
+                :submenu==1 && target==SpaceStone.LATVERIA_OPTION && AbilityInput.latveriaSealed()
                 ?"ability.infinity_gauntlet.latveria_sealed":"ability.infinity_gauntlet.pick_destination";
             tooltipLine(g, Component.translatable(key), firstLine, 0xFFDED7EA);
         }

@@ -1,0 +1,26 @@
+{
+  "soldier": [
+    "gauntlet_bolt",
+    "impact"
+  ],
+  "bastion": [
+    "iron_bastion",
+    "phase_shift"
+  ],
+  "interceptor": [
+    "jet_exhaust",
+    "slam_wave"
+  ],
+  "arcanist": [
+    "sorcery_bolt",
+    "rune_mote"
+  ],
+  "engineer": [
+    "rune_mote",
+    "impact"
+  ],
+  "royal_guard": [
+    "armored_combo",
+    "edict_warning"
+  ]
+}

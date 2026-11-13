@@ -1,0 +1,23 @@
+{
+  "parent": "infinity_gauntlet:defeat_loki",
+  "display": {
+    "icon": {
+      "id": "infinity_gauntlet:mind_stone"
+    },
+    "title": {
+      "translate": "advancements.infinity_gauntlet.decipher_seal.title"
+    },
+    "description": {
+      "translate": "advancements.infinity_gauntlet.decipher_seal.description"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": false,
+    "hidden": false
+  },
+  "criteria": {
+    "done": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}
