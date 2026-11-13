@@ -213,6 +213,42 @@ public class DoomGauntletCompatTest implements FabricClientGameTest {
 				return o.toString();
 			}));
 
+			// ---- 4b. The Infinity Siphon: held, it silences the gauntlet; a blink or hard blows break it and open him up.
+			server.runCommand("gamemode survival @p");
+			server.runCommand("effect give @p minecraft:resistance 120 4 true");
+			server.runCommand("effect give @p minecraft:regeneration 120 4 true");
+			server.runCommand("execute as @p run gauntlet doom heal");
+			faceDoom(server, ctx, 8);
+			server.runCommand("execute as @p run gauntlet doom action infinity_siphon");
+			ctx.waitTicks(40);
+			ctx.runOnClient(mc -> mc.options.setCameraType(net.minecraft.client.CameraType.THIRD_PERSON_BACK));
+			ctx.waitTicks(4);
+			ctx.takeScreenshot("doom_siphon_tether");
+			ctx.runOnClient(mc -> mc.options.setCameraType(net.minecraft.client.CameraType.FIRST_PERSON));
+			ctx.waitTicks(70);
+			check(server.computeOnServer(s -> com.dantemorrigan.gauntlet.doom.GauntletSilence.silenced(player(s))), "A held siphon did not silence the gauntlet");
+			check(server.computeOnServer(s -> AbilityController.reason(player(s), Ability.STRIKE)).equals("silenced"), "A silenced gauntlet still casts");
+			server.runOnServer(s -> com.dantemorrigan.gauntlet.doom.GauntletSilence.lift(player(s)));
+
+			server.runCommand("execute as @p run gauntlet doom action infinity_siphon");
+			ctx.waitTicks(30);
+			server.runOnServer(s -> com.dantemorrigan.gauntlet.doom.DoomCombat.dodge(player(s)));
+			ctx.waitTicks(4);
+			check(server.computeOnServer(s -> Latveria.boss().action() == DoctorDoom.A_STAGGER && Latveria.boss().flag(DoctorDoom.FLAG_EXPOSED)),
+					"A blink did not break the siphon and leave Doom open");
+			check(!server.computeOnServer(s -> com.dantemorrigan.gauntlet.doom.GauntletSilence.silenced(player(s))), "A broken siphon still silenced the gauntlet");
+
+			ctx.waitTicks(40);
+			server.runCommand("execute as @p run gauntlet doom action infinity_siphon");
+			ctx.waitTicks(24);
+			server.runOnServer(s -> {
+				DoctorDoom d = Latveria.boss();
+				for (int i = 0; i < 4; i++) { d.invulnerableTime = 0; d.hurtServer(latveria(s), latveria(s).damageSources().playerAttack(player(s)), 20); }
+			});
+			ctx.waitTicks(3);
+			check(server.computeOnServer(s -> Latveria.boss().action() == DoctorDoom.A_STAGGER), "Hard blows did not break the siphon");
+			server.runCommand("gamemode creative @p");
+
 			// ---- 5. Leaving mid-fight: the duel is called off, Doom's guards go, and the fight can be had again.
 			faceDoom(server, ctx, 7);
 			server.runCommand("execute as @p run gauntlet latveria leave");

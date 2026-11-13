@@ -286,6 +286,18 @@ def clips():
     c.k(1.9, body=24, head=6, aR=(-62, 0, -6), fR=-4, pos=(0, 0, -1.5), lL=-16, sL=14, lR=10, sR=14, cape=16)
     c.rest(2.6)
 
+    # Power siphon: the gauntlet hand reaches for the challenger's Infinity Gauntlet, the other hand braces the wrist,
+    # and the whole body strains against the pull until it is released or broken.
+    c = Clip("infinity_siphon", 5.0, group="magic", wind=1.6)
+    brace = dict(lL=-14, sL=10, lR=12, sR=6)
+    c.k(0.6, body=-6, head=-4, aR=(-92, 8, 0), fR=-4, aL=(-62, -34, 0), fL=-40, cape=10, pos=(0, -0.4, 0), **brace)
+    for i, t in enumerate([1.0, 1.4, 1.8, 2.2, 2.6, 3.0, 3.4, 3.8, 4.2]):
+        j = 1 if i % 2 else -1
+        c.k(t, body=-7 + j * 1.5, head=-5 - j * 2, aR=(-94 + j * 3, 8 + j * 2, j * 2), fR=-4 - j * 2,
+            aL=(-62 + j * 2, -34, 0), fL=-40, cape=12 + j * 3, pos=(0, -0.5 + j * 0.1, 0), **brace)
+    c.k(4.5, body=10, head=4, aR=(-70, 0, 0), fR=-30, aL=(-20, 0, -10), fL=-10, cape=24, pos=(0, -0.2, 0))
+    c.rest(5.0)
+
     c = Clip("seven_suns", 5.95, group="magic", wind=2.0, period=1.1)
     hang = dict(lR=6, sR=14, lL=-8, sL=24)
     c.k(1.6, body=-8, head=-12, aR=(-100, -30, 0), aL=(-100, 30, 0), fR=-25, fL=-25, pos=(0, 3, 0), cape=18, **hang)

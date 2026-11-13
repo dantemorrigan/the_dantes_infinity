@@ -66,6 +66,7 @@ public final class AbilityController {
     }
     public static String reason(ServerPlayer p,Ability a) {
         if(!p.isAlive() || p.isSpectator() || com.dantemorrigan.gauntlet.boss.TribunalEncounter.awaitingReturn(p)) return "unavailable";
+        if(com.dantemorrigan.gauntlet.doom.GauntletSilence.silenced(p) && a!=Ability.DESTINATIONS) return "silenced";
         GauntletConfig config = GauntletConfig.get();
         if (a == Ability.PLANET && !config.allowPlanetDestruction
                 || a == Ability.CELESTIAL && !config.allowCelestialDestruction

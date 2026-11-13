@@ -56,16 +56,20 @@ public class DoomArmorTest implements FabricClientGameTest {
 			ctx.takeScreenshot("doom_armor_04_first_person");
 			// With the Infinity Gauntlet on the off hand: Doom's forearm and fingers give way to it.
 			server.runCommand("execute as @p run gauntlet full");
-			ctx.waitTicks(10);
+			ctx.waitTicks(80);
+			ctx.runOnClient(mc -> mc.gui.getChat().clearMessages(false));
+			ctx.waitTicks(2);
 			ctx.takeScreenshot("doom_armor_04b_gauntlet_first_person");
+			ctx.runOnClient(mc -> mc.options.hideGui = true);
 			ctx.runOnClient(mc -> mc.options.setCameraType(CameraType.THIRD_PERSON_FRONT));
-			server.runCommand("execute as @p at @s run tp @s ~ ~ ~ 150 0");
+			server.runCommand("execute as @p at @s run tp @s ~ ~ ~ 150 20");
 			ctx.waitTicks(10);
 			ctx.takeScreenshot("doom_armor_04c_gauntlet_front");
 			server.runCommand("execute as @p at @s run tp @s ~ ~ ~ 60 0");
 			ctx.waitTicks(10);
 			ctx.takeScreenshot("doom_armor_04d_gauntlet_side");
 			server.runCommand("item replace entity @p weapon.offhand with minecraft:air");
+			ctx.runOnClient(mc -> mc.options.hideGui = false);
 			ctx.runOnClient(mc -> mc.options.setCameraType(CameraType.FIRST_PERSON));
 			server.runCommand("execute as @p at @s run tp @s ~ ~ ~ 180 10");
 			ctx.waitTicks(10);

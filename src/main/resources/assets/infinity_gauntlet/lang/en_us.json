@@ -776,5 +776,10 @@
   "guide.infinity_gauntlet.p29.4": " to pick a power, ",
   "guide.infinity_gauntlet.p29.5": "N",
   "guide.infinity_gauntlet.p29.6": " casts it.\nBolt, Bastion, Jets (Space climbs), Rift Step, Suns, Edict. Rift and Edict show where they land; the suns wait, one per press.",
-  "msg.infinity_gauntlet.latveria.alarm": "§cALARM!§r A searchlight has found an intruder. Interceptors launch from the towers."
+  "msg.infinity_gauntlet.latveria.alarm": "§cALARM!§r A searchlight has found an intruder. Interceptors launch from the towers.",
+  "ability.infinity_gauntlet.reason.silenced": "Doom drained the gauntlet: it is silent for a while",
+  "msg.infinity_gauntlet.latveria.doom.siphon": "Doctor Doom: That gauntlet was always meant for a worthier hand. Give it to Doom!",
+  "msg.infinity_gauntlet.latveria.doom.siphon_broken": "Doctor Doom: Insolent wretch! You will pay for that!",
+  "msg.infinity_gauntlet.latveria.doom.siphon_done": "Doctor Doom: Yes... the power of Infinity answers Doom now!",
+  "msg.infinity_gauntlet.latveria.siphon.warn": "Doom drains your gauntlet! Break his line of sight, blink away or strike him hard: %s s"
 }

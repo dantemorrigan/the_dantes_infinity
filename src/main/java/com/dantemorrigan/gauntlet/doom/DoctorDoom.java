@@ -46,12 +46,15 @@ import java.util.UUID;
 public class DoctorDoom extends Monster {
 	public static final int A_IDLE = 0, A_INTRO = 1, A_COMBO = 2, A_BOLT = 3, A_BASTION = 4, A_DROP = 5, A_SLAM = 6, A_SHIFT = 7,
 			A_RIFT = 8, A_SORCERY = 9, A_HEX = 10, A_SUNS = 11, A_NOVA = 12, A_EDICT = 13, A_LIGHTNING = 14, A_CLEAVE = 15,
-			A_SMASH = 16, A_STAGGER = 17, A_DEFEAT = 18, A_TAUNT = 19;
+			A_SMASH = 16, A_STAGGER = 17, A_DEFEAT = 18, A_TAUNT = 19, A_SIPHON = 20;
 	/** Clip of each action, in action order. */
 	public static final String[] CLIPS = {"idle", "intro", "armored_combo", "gauntlet_bolt", "iron_bastion", "doombot_drop", "jet_slam",
 			"phase_shift", "rift_step", "sorcery_bolt", "hex_barrage", "seven_suns", "arcane_nova", "latverian_edict", "lightning_call",
-			"cleave", "overhead_smash", "stagger_heavy", "defeat", "taunt"};
-	private static final int[] TICKS = {0, 100, 39, 38, 87, 53, 59, 42, 38, 55, 48, 119, 60, 126, 52, 30, 32, 32, 72, 48};
+			"cleave", "overhead_smash", "stagger_heavy", "defeat", "taunt", "infinity_siphon"};
+	private static final int[] TICKS = {0, 100, 39, 38, 87, 53, 59, 42, 38, 55, 48, 119, 60, 126, 52, 30, 32, 32, 72, 48, 100};
+	/** The siphon: wind-up, then the pull until it completes; blows that break it, and how long a drained gauntlet stays silent. */
+	public static final int SIPHON_START = 14, SIPHON_DONE = 92, SIPHON_SILENCE = 300;
+	public static final float SIPHON_BREAK = 30;
 	public static final int FLAG_FIGHT = 1, FLAG_SHIELD = 2, FLAG_EXPOSED = 4, FLAG_CASTING = 8;
 	public static final int EDICT_BLAST = 80;
 	private static final float MAX_HIT = 45;
@@ -66,7 +69,9 @@ public class DoctorDoom extends Monster {
 	public int actionStartTick;
 	private boolean passive;
 	private int actionTicks, cooldown = 30, exposed, blowsTaken, sinceSuns = 200, sinceEdict = 400, sinceDrop = 100;
-	private float castDamage;
+	private float castDamage, siphonDamage;
+	private int sinceSiphon = 200;
+	private UUID siphonId;
 	private UUID targetId;
 	private Vec3 aim, from;
 	private final boolean[] safe = new boolean[4];
@@ -159,6 +164,78 @@ public class DoctorDoom extends Monster {
 		this.yHeadRot = yaw;
 	}
 
+	/** A challenger whose Infinity Gauntlet works and holds at least one stone. */
+	public static boolean siphonable(ServerPlayer p) {
+		var g = com.dantemorrigan.gauntlet.GauntletState.activeGauntlet(p);
+		return !g.isEmpty() && !com.dantemorrigan.gauntlet.GauntletState.inserted(g).isEmpty() && !GauntletSilence.silenced(p);
+	}
+
+	/** Where the challenger's gauntlet is: the off hand, at chest height. */
+	private static Vec3 glove(ServerPlayer p) {
+		Vec3 look = p.getViewVector(1f);
+		Vec3 right = new Vec3(-look.z, 0, look.x).normalize();
+		double side = p.getMainArm() == net.minecraft.world.entity.HumanoidArm.RIGHT ? -1 : 1;
+		return p.position().add(0, 1.05, 0).add(right.scale(0.4 * side)).add(look.scale(0.25));
+	}
+
+	public UUID siphonTarget() { return action() == A_SIPHON ? siphonId : null; }
+
+	/**
+	 * The Infinity Siphon: a tether from Doom's gauntlet to the challenger's. It breaks if they get out of sight or reach,
+	 * blink away, or strike him hard enough; then he reels and stands open. If it holds, he drinks some of the stones' power
+	 * and the drained gauntlet answers nothing for fifteen seconds.
+	 */
+	private void siphon(ServerLevel level, int t) {
+		if (t == 1 && siphonId == null) { ServerPlayer near = target(level); siphonId = near == null ? null : near.getUUID(); }
+		ServerPlayer victim = siphonId == null ? null : level.getServer().getPlayerList().getPlayer(siphonId);
+		if (t == 1) {
+			siphonDamage = 0;
+			setFlag(FLAG_CASTING, true);
+			DoomFx.line(level, this.position(), 64, "doom.siphon");
+			DoomVfx.on(level, DoomVfx.CHARGE, this, 0.9f, SIPHON_START, DoomVfx.SUN);
+			DoomFx.sound(level, this.position(), SoundEvents.BEACON_POWER_SELECT, 1.5f, 0.6f);
+		}
+		if (victim != null && victim.level() == level) face(victim.position());
+		if (t < SIPHON_START) return;
+		boolean broken = victim == null || !victim.isAlive() || victim.level() != level || !valid(victim)
+				|| com.dantemorrigan.gauntlet.GauntletState.activeGauntlet(victim).isEmpty() || this.distanceTo(victim) > 22
+				|| !this.hasLineOfSight(victim) || DoomCombat.dodging(victim) || siphonDamage >= SIPHON_BREAK;
+		if (broken) {
+			siphonId = null;
+			DoomFx.line(level, this.position(), 64, "doom.siphon_broken");
+			DoomFx.bill(level, ModParticles.DOOM_IMPACT, hand(), 2);
+			DoomFx.sound(level, this.position(), SoundEvents.BEACON_DEACTIVATE, 2f, 1.4f);
+			DoomFx.near(level, this.position(), 40, DoomFx.SHAKE, 0, 0.8f, 10);
+			setAction(A_STAGGER);
+			expose(70);
+			return;
+		}
+		Vec3 g = glove(victim), h = hand();
+		if (t % 2 == 0) {
+			DoomVfx.line(level, DoomVfx.TRAIL, g, h, 0.55f, 5, DoomVfx.SUN);
+			DoomVfx.line(level, DoomVfx.TRAIL, g, h, 0.28f, 5, DoomVfx.GREEN);
+		}
+		if (t % 10 == 0) {
+			DoomFx.sound(level, g, SoundEvents.BEACON_AMBIENT, 1.4f, 0.6f + (t - SIPHON_START) / (float) (SIPHON_DONE - SIPHON_START));
+			com.dantemorrigan.gauntlet.net.ModStatus.send(victim, Component.translatable("msg.infinity_gauntlet.latveria.siphon.warn",
+					(SIPHON_DONE - t + 19) / 20));
+			// The pull: a slow drag toward him.
+			Vec3 pull = this.position().subtract(victim.position()).normalize().scale(0.12);
+			victim.push(pull.x, 0, pull.z);
+			victim.hurtMarked = true;
+		}
+		if (t == SIPHON_DONE) {
+			siphonId = null;
+			this.heal(this.getMaxHealth() * 0.08f);
+			GauntletSilence.silence(victim, SIPHON_SILENCE);
+			com.dantemorrigan.gauntlet.ability.AbilityController.cancel(victim);
+			DoomFx.line(level, this.position(), 64, "doom.siphon_done");
+			DoomVfx.at(level, DoomVfx.IMPACT, h, 1.6f, 14, DoomVfx.SUN);
+			DoomFx.near(level, this.position(), 40, DoomFx.FLASH, 0, 0.7f, 12);
+			DoomFx.sound(level, this.position(), SoundEvents.WARDEN_SONIC_BOOM, 1.2f, 1.5f);
+		}
+	}
+
 	private Vec3 hand() {
 		Vec3 look = Vec3.directionFromRotation(0, this.getYRot());
 		return this.position().add(look.scale(1.1)).add(0, 1.7, 0);
@@ -189,6 +266,7 @@ public class DoctorDoom extends Monster {
 		sinceSuns++;
 		sinceEdict++;
 		sinceDrop++;
+		sinceSiphon++;
 		ServerPlayer target = target(level);
 		for (ServerPlayer p : level.players()) if (valid(p)) challengers.add(p.getUUID());
 		if (action != A_IDLE) {
@@ -220,6 +298,13 @@ public class DoctorDoom extends Monster {
 		cooldown = phase == 1 ? 26 : phase == 2 ? 20 : 14;
 		face(target.position());
 		if (phase == 3 && sinceEdict > 420) { sinceEdict = 0; setAction(A_EDICT); return; }
+		// Doom has always wanted the cosmic power others carry: a challenger with the Infinity Gauntlet is a temptation.
+		if (phase == 3 && sinceSiphon > 520 && d <= 18 && this.hasLineOfSight(target) && siphonable(target)) {
+			sinceSiphon = 0;
+			siphonId = target.getUUID();
+			setAction(A_SIPHON);
+			return;
+		}
 		if (phase >= 2 && sinceSuns > (phase == 2 ? 480 : 700)) { sinceSuns = 0; setAction(A_SUNS); return; }
 		if (phase == 1 && blowsTaken >= 5) { blowsTaken = 0; setAction(A_BASTION); return; }
 		if (d <= 4.4) {
@@ -241,6 +326,7 @@ public class DoctorDoom extends Monster {
 		Vec3 at = this.position();
 		if (target != null && action != A_SLAM && action != A_EDICT && action != A_SUNS && action != A_STAGGER && t < 20) face(target.position());
 		switch (action) {
+			case A_SIPHON -> siphon(level, t);
 			case A_COMBO -> {
 				if (t == 8) DoomFx.sound(level, at, SoundEvents.PLAYER_ATTACK_SWEEP, 1.2f, 0.6f);
 				if (t == 12 || t == 17 || t == 20) {
@@ -587,6 +673,7 @@ public class DoctorDoom extends Monster {
 		if (!hurt) return false;
 		blowsTaken++;
 		DoomFx.bill(level, ModParticles.DOOM_IMPACT, this.position().add(0, 1.6, 0), 1.2);
+		if (action() == A_SIPHON) siphonDamage += scaled;
 		if (action() == A_EDICT && actionTicks < EDICT_BLAST && !this.isDeadOrDying()) {
 			castDamage += scaled;
 			if (axe || castDamage >= 24) interrupt(level);

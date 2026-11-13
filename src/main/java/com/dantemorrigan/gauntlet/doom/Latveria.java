@@ -182,6 +182,7 @@ public final class Latveria {
 			toFurnish.clear();
 			placed = null;
 			Searchlights.clear();
+			GauntletSilence.clear();
 			placedDirty = false;
 			inGate.clear();
 			logoDue.clear();
