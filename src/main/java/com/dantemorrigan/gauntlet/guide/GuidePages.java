@@ -28,9 +28,11 @@ final class GuidePages {
 		"HTBTBT",
 		"HTBTBTBT",
 		"HTBTBT",
-		"HTBTBTBTBT",
+		"HTBTBTBTBTBT",
 		"HTBTBTBTBTBTBT",
 		"HTBTBT",
+		"HTBTBTBT",
+		"HTBTBTBT",
 		"HTBTBTBT",
 		"HTBTBT"
 	};
