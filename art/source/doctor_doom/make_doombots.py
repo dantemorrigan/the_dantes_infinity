@@ -49,7 +49,29 @@ def black(c):
     return (34, 36, 42)
 
 
-m.EXTRA.update({"botface": face, "glow": glow, "reactor": reactor, "trim": trim, "black": black})
+def shield_face(c):
+    """The Bastion's tower shield: a gold frame, a green field with a steel plate and Doom's mask in the middle."""
+    fu, fv, x, y = c["fu"], c["fv"], abs(c["fu"] - 0.5), c["fv"]
+    if c["face"] != "north": return (74, 80, 88)
+    if fu < 0.06 or fu > 0.94 or fv < 0.035 or fv > 0.965: return (196, 158, 72)
+    if fu < 0.10 or fu > 0.90 or fv < 0.06 or fv > 0.94: return (110, 82, 34)
+    base = (30, 84, 48) if (int(fv * 28) + int(fu * 12)) % 2 else (26, 74, 42)
+    # the steel boss with the mask
+    dx, dy = (fu - 0.5) / 0.34, (fv - 0.40) / 0.25
+    if dx * dx + dy * dy < 1:
+        r = dx * dx + dy * dy
+        col = (126, 132, 138) if r < 0.82 else (176, 140, 62)
+        if 0.30 < fv < 0.36 and 0.16 < x < 0.30: col = (96, 255, 128) if r < 0.82 else col
+        if 0.43 < fv < 0.50 and x < 0.07: col = (74, 78, 84)
+        if 0.50 < fv < 0.56 and x < 0.13: col = (30, 32, 34) if int(fu * 40) % 2 else (150, 156, 160)
+        return col
+    # chevrons below the boss
+    for k, off in enumerate((0.66, 0.74, 0.82)):
+        if abs((fv - off) - 0.14 * x * 2) < 0.012: return (196, 158, 72)
+    return base
+
+
+m.EXTRA.update({"botface": face, "glow": glow, "reactor": reactor, "trim": trim, "black": black, "shield_face": shield_face})
 
 
 def chassis(wide=0.0, hood=True, eye=25.0, steel="steel", legs=True):
@@ -105,15 +127,63 @@ def soldier():
 
 
 def bastion():
-    chassis(wide=1.4, hood=True)
-    m.box("body", -3.4, 3.4, 15, 20.6, -3.9, -3.3, "steel", north="reactor", name="reactor")
-    m.box("body", -3.0, 3.0, 9, 13, -3.7, -3.3, "tunic", north="quilt", name="tasset")
-    for s in (m.Side(-1), m.Side(1)):
-        p = s.bone("bind_plate", "arm" + s.suf, (-9, 22.6, 0), (0, 0, 14))
-        s.box(p, -11.4, -6.4, 21.6, 24.6, -3.6, 3.6, "trim", name="shoulder_plate")
-    m.box("arm_l", 6.6, 9.4, 8, 12.4, -5.2, -2.6, "steel_dark", name="shield_grip")
-    m.box("arm_l", 3.2, 12.8, 3.4, 19.6, -6.0, -5.2, "trim", name="shield")
-    m.box("arm_l", 6.2, 9.8, 9.6, 14.4, -6.4, -6.0, "gold", name="shield_boss")
+    """A walking fortress: broad plated torso, stacked pauldrons, a glowing reactor and a tower shield planted at its side."""
+    w = 2.0
+    m.bone("root", None, (0, 0, 0))
+    m.bone("body", "root", (0, 12, 0))
+    m.bone("head", "body", (0, 22.5, 0))
+    m.bone("shield", "body", (12, 14, -4))
+    # head: a masked helm with a gold crest
+    m.box("head", -3.5, 3.5, 23, 29, -3.9, 3.1, "mask", north="botface", eye=26.2, name="mask")
+    m.box("head", -4.1, 4.1, 28.4, 30.4, -4.4, 3.7, "steel", name="helmet_top")
+    m.box("head", -1.0, 1.0, 30.2, 34.2, -3.4, 3.6, "gold", name="crest")
+    m.box("head", -4.5, 4.5, 22.8, 28.6, 0.9, 4.1, "steel_dark", name="helmet_back")
+    m.box("head", -0.6, 0.6, 25.0, 28.4, -4.7, -3.9, "mask", name="nose_guard")
+    for side in (m.Side(-1), m.Side(1)):
+        side.box("head", -4.6, -3.6, 23, 28.6, -4.0, 0.9, "steel", name="cheek")
+    # torso
+    m.box("body", -7.6, 7.6, 14, 23, -3.9, 3.9, "steel", bands=4, name="torso")
+    m.box("body", -6.2, 6.2, 14.8, 22, -4.7, -3.9, "steel", name="breastplate")
+    m.box("body", -3.0, 3.0, 15.8, 20.8, -5.3, -4.7, "gold", name="reactor_ring")
+    m.box("body", -2.0, 2.0, 16.8, 19.8, -5.6, -5.3, "reactor", name="reactor")
+    m.box("body", -3.2, 3.2, 23, 24.8, -2.8, 2.8, "steel_dark", name="neck")
+    m.box("body", -7.9, 7.9, 11.4, 14.2, -4.3, 4.3, "leather", name="belt")
+    m.box("body", -1.7, 1.7, 11.6, 14, -4.8, -4.3, "gold", north="buckle", name="buckle")
+    m.box("body", -4.6, 4.6, 5.6, 11.4, -4.1, -3.3, "trim", name="tabard")
+    m.box("body", -5.2, 5.2, 12.2, 22.6, 3.9, 7.2, "steel_dark", name="backpack")
+    for x in (-3.2, 0, 3.2):
+        m.box("body", x - 0.5, x + 0.5, 13.5, 21.5, 7.2, 7.6, "gold", name="vent")
+    for side in (m.Side(-1), m.Side(1)):
+        side.box("body", -7.8, -1.2, 6.8, 11.6, -4.3, 4.3, "steel_dark", name="tasset")
+        side.box("body", -3.6, -2.4, 22.4, 26.4, 4.2, 5.6, "steel", name="exhaust")
+    # arms, each with a three-tier pauldron
+    for side in (m.Side(-1), m.Side(1)):
+        arm = "arm" + side.suf
+        m.bone(arm, "body", ((6.4 + w) * side.k, 21.4, 0))
+        side.box(arm, -13.0, -6.4, 20.6, 25.6, -4.0, 4.0, "steel", name="pauldron")
+        side.box(arm, -13.6, -7.4, 24.6, 27.0, -3.5, 3.5, "trim", name="pauldron_trim")
+        side.box(arm, -12.4, -8.2, 26.6, 28.4, -2.6, 2.6, "steel", name="pauldron_top")
+        side.box(arm, -12.2, -6.8, 13.2, 20.8, -3.0, 3.0, "steel", bands=3, name="upper_arm")
+        side.box(arm, -12.8, -6.2, 10.8, 13.8, -3.5, 3.5, "steel", name="elbow")
+        side.box(arm, -12.4, -6.6, 4.4, 11.0, -3.2, 3.2, "steel", bands=3, name="forearm")
+        side.box(arm, -12.9, -6.1, 5.4, 6.6, -3.5, 3.5, "gold", name="cuff")
+        side.box(arm, -12.0, -7.0, 0.6, 4.8, -2.9, 2.9, "steel_dark", name="fist")
+        side.box(arm, -12.2, -6.8, 0.2, 1.4, -3.1, 3.1, "gold", name="knuckles")
+    for side in (m.Side(-1), m.Side(1)):
+        leg = "leg" + side.suf
+        m.bone(leg, "root", (3.4 * side.k, 12, 0))
+        side.box(leg, -6.6, -0.6, 6.2, 12.4, -3.0, 3.0, "steel", bands=3, name="thigh")
+        side.box(leg, -6.8, -0.4, 4.6, 7.6, -3.6, 3.1, "steel", name="knee")
+        side.box(leg, -6.4, -0.8, 1.6, 5.0, -2.8, 2.8, "steel", bands=3, name="shin")
+        side.box(leg, -7.0, -0.2, 0, 2.2, -4.6, 3.2, "steel_dark", name="boot")
+        side.box(leg, -6.8, -0.4, 2.0, 2.8, -3.2, 3.0, "gold", name="boot_band")
+    # the tower shield, planted at the left side: 11 wide, 22 tall
+    m.box("shield", 7.0, 18.0, 4.0, 26.0, -7.0, -4.6, "steel", north="shield_face", name="shield")
+    m.box("shield", 6.4, 18.6, 25.6, 26.6, -7.4, -4.4, "gold", name="shield_top")
+    m.box("shield", 6.4, 7.2, 4.0, 26.0, -7.4, -4.4, "gold", name="shield_edge_l")
+    m.box("shield", 17.8, 18.6, 4.0, 26.0, -7.4, -4.4, "gold", name="shield_edge_r")
+    m.box("shield", 11.0, 14.0, 12.0, 17.0, -7.9, -7.0, "steel_dark", name="shield_boss")
+    m.box("arm_l", 6.6, 9.4, 4.0, 8.0, -5.4, -2.6, "steel_dark", name="grip")
 
 
 def interceptor():
@@ -187,7 +257,8 @@ CLIPS = {}
 def clip(name, length, loop=False):
     CLIPS[name] = {"length": length, "loop": loop, "rot": {}, "pos": {}}
 
-    def k(t, pos=None, **bones):
+    def k(t, pos=None, spos=None, **bones):
+        if spos is not None: CLIPS[name]["pos"].setdefault("shield", {})[round(t, 3)] = [float(a) for a in spos]
         for b, v in bones.items():
             v = (v, 0, 0) if isinstance(v, (int, float)) else v
             CLIPS[name]["rot"].setdefault(b, {})[round(t, 3)] = [float(a) for a in v]
@@ -228,10 +299,10 @@ def clips():
     k(0.4, arm_r=(-88, 0, 0), body=(0, 10, 0), head=(0, -6, 0)); k(0.65, arm_r=(-92, 0, 0))
     k(0.75, arm_r=(-104, 0, 0), body=(-5, 10, 0), pos=(0, 0, 0.6)); k(1.2, arm_r=0, body=0, head=0, pos=(0, 0, 0))
     k = clip("shield", 2.4)
-    k(0.4, leg_l=-16, leg_r=14, body=(8, 0, 0), pos=(0, -0.5, 0))
-    k(0.8, arm_l=(-78, -30, 0), arm_r=(-20, 0, 10), body=(10, 12, 0))
-    k(2.0, arm_l=(-80, -30, 0), arm_r=(-20, 0, 10), body=(10, 12, 0), leg_l=-16, leg_r=14, pos=(0, -0.5, 0))
-    k(2.4, arm_l=0, arm_r=0, body=0, leg_l=0, leg_r=0, pos=(0, 0, 0))
+    k(0.4, leg_l=-16, leg_r=14, body=(6, 0, 0), pos=(0, -0.5, 0), spos=(3, 0, -2), arm_l=(-30, 0, 0))
+    k(0.8, arm_l=(-70, 0, 0), arm_r=(-20, 0, -10), body=(8, 0, 0), spos=(11.5, 1, -5.5))
+    k(2.0, arm_l=(-72, 0, 0), arm_r=(-20, 0, -10), body=(8, 0, 0), leg_l=-16, leg_r=14, pos=(0, -0.5, 0), spos=(11.5, 1, -5.5))
+    k(2.4, arm_l=0, arm_r=0, body=0, leg_l=0, leg_r=0, pos=(0, 0, 0), spos=(0, 0, 0))
     k = clip("dive", 2.2)
     k(0.35, body=(18, 0, 0), leg_l=-28, leg_r=-28, pos=(0, -1.0, 0))
     k(0.8, body=(-8, 0, 0), leg_l=10, leg_r=18, arm_r=(10, 0, 20), arm_l=(10, 0, -20), cape=6)

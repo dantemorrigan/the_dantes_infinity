@@ -217,6 +217,17 @@ public final class Latveria {
 		save(server);
 	}
 
+	/** Loads and furnishes every chunk that holds furniture or townsfolk (debug, and the furniture check of the tests). */
+	public static int furnishAll(ServerLevel level) {
+		int n = 0;
+		for (long chunk : furnitureChunks) {
+			level.getChunk(ChunkPos.getX(chunk), ChunkPos.getZ(chunk));
+			furnish(level, chunk);
+			n++;
+		}
+		return n;
+	}
+
 	/** Debug: destroys a squad as if the players had beaten it. */
 	public static int clearSquad(MinecraftServer server, int squad) {
 		ServerLevel level = server.getLevel(LEVEL);
@@ -435,7 +446,6 @@ public final class Latveria {
 				if (held >= 40) { inGate.remove(p.getUUID()); leave(p); }
 			} else inGate.remove(p.getUUID());
 		}
-		if (time % 20 == 0) DoomFx.bill(level, ModParticles.DOOM_LATVERIA_GATE, new Vec3(0.5, LatveriaPlan.VALLEY_Y + 3.5, 128.5), 1.5);
 		if (time % 10 != 0) return;
 		squads(level);
 		barriers(level);
@@ -651,7 +661,7 @@ public final class Latveria {
 
 	// ------------------------------------------------------------------ furniture and townsfolk
 
-	private static void furnish(ServerLevel level, long chunk) {
+	static void furnish(ServerLevel level, long chunk) {
 		if (furnished.contains(chunk)) return;
 		int cx = ChunkPos.getX(chunk), cz = ChunkPos.getZ(chunk);
 		if (!level.hasChunk(cx, cz)) return;

@@ -44,8 +44,15 @@ public class Doombot extends PathfinderMob {
 	public static final int A_IDLE = 0, A_ALERT = 1, A_ATTACK = 2, A_STAGGER = 3, A_SALUTE = 4, A_ACTIVATE = 5;
 	public static final int FLAG_ALLIED = 1, FLAG_SHIELD = 2, FLAG_WARD = 4, FLAG_FLYING = 8;
 	private static final int[] ATTACK_TICKS = {24, 48, 44, 40, 60, 48};
-	private static final double[] HEALTH = {30, 70, 24, 26, 28, 80};
+	private static final double[] HEALTH = {90, 320, 80, 90, 100, 240};
 	private static final double[] SPEED = {0.27, 0.2, 0.3, 0.23, 0.28, 0.29};
+	private static final double[] ARMOR = {12, 24, 8, 8, 12, 20};
+	/** Body size: all of them stand 1 to 1.5 blocks over a player, the Bastion towers over the rest. */
+	public static final double[] SCALE = {1.65, 2.2, 1.55, 1.6, 1.5, 1.8};
+	/** Blows: a Doombot hits hard enough to matter for a player in iron or diamond. */
+	private static final float[] BLOW = {10, 16, 14, 11, 7, 15};
+	/** The most health one blow can take, as a share of the maximum: a nuke does not delete a robot. */
+	private static final float MAX_SHARE = 0.34f;
 
 	private static final EntityDataAccessor<Integer> VARIANT = SynchedEntityData.defineId(Doombot.class, EntityDataSerializers.INT);
 	private static final EntityDataAccessor<Integer> ACTION = SynchedEntityData.defineId(Doombot.class, EntityDataSerializers.INT);
@@ -66,9 +73,9 @@ public class Doombot extends PathfinderMob {
 	}
 
 	public static AttributeSupplier.Builder createAttributes() {
-		return PathfinderMob.createMobAttributes().add(Attributes.MAX_HEALTH, 30).add(Attributes.MOVEMENT_SPEED, 0.27)
-				.add(Attributes.FOLLOW_RANGE, 40).add(Attributes.ARMOR, 6).add(Attributes.KNOCKBACK_RESISTANCE, 0.4)
-				.add(Attributes.STEP_HEIGHT, 1.1);
+		return PathfinderMob.createMobAttributes().add(Attributes.MAX_HEALTH, 90).add(Attributes.MOVEMENT_SPEED, 0.27)
+				.add(Attributes.FOLLOW_RANGE, 44).add(Attributes.ARMOR, 12).add(Attributes.ARMOR_TOUGHNESS, 4)
+				.add(Attributes.KNOCKBACK_RESISTANCE, 0.5).add(Attributes.STEP_HEIGHT, 1.8).add(Attributes.SCALE, 1.65);
 	}
 
 	@Override
@@ -107,7 +114,12 @@ public class Doombot extends PathfinderMob {
 		int v = variant();
 		this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(HEALTH[v]);
 		this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(SPEED[v]);
-		this.getAttribute(Attributes.ARMOR).setBaseValue(v == BASTION ? 14 : v == ROYAL_GUARD ? 12 : 6);
+		this.getAttribute(Attributes.ARMOR).setBaseValue(ARMOR[v]);
+		this.getAttribute(Attributes.ARMOR_TOUGHNESS).setBaseValue(v == BASTION ? 8 : 4);
+		this.getAttribute(Attributes.KNOCKBACK_RESISTANCE).setBaseValue(v == BASTION ? 0.95 : v == ROYAL_GUARD ? 0.7 : 0.5);
+		this.getAttribute(Attributes.SCALE).setBaseValue(SCALE[v]);
+		this.getAttribute(Attributes.STEP_HEIGHT).setBaseValue(1.1 * SCALE[v]);
+		this.refreshDimensions();
 		boolean flies = v == INTERCEPTOR;
 		this.setNoGravity(flies);
 		setFlag(FLAG_FLYING, flies);
@@ -211,27 +223,27 @@ public class Doombot extends PathfinderMob {
 				if (d > 13) this.getNavigation().moveTo(target, 1.0);
 				else if (d < 5) retreat(target);
 				else this.getNavigation().stop();
-				if (cooldown <= 0 && d <= 18 && this.hasLineOfSight(target)) begin(variant() == SOLDIER ? 46 : 70);
+				if (cooldown <= 0 && d <= 20 && this.hasLineOfSight(target)) begin(variant() == SOLDIER ? 30 : 52);
 			}
 			case BASTION -> {
 				this.getNavigation().moveTo(target, 1.0);
-				if (cooldown <= 0 && (d <= 3.4 || d <= 14)) begin(110);
+				if (cooldown <= 0 && (d <= 6.5 || d <= 14)) begin(70);
 			}
 			case INTERCEPTOR -> {
-				hover(target.position().add(Math.cos(this.tickCount * 0.05) * 5, 6.5, Math.sin(this.tickCount * 0.05) * 5), 0.32);
-				if (cooldown <= 0 && d <= 20) begin(84);
+				hover(target.position().add(Math.cos(this.tickCount * 0.05) * 6, 9, Math.sin(this.tickCount * 0.05) * 6), 0.36);
+				if (cooldown <= 0 && d <= 24) begin(56);
 			}
 			case ENGINEER -> {
-				if (d > 2.6) this.getNavigation().moveTo(target, 1.0);
-				if (cooldown <= 0 && d <= 2.8) {
-					DoomCombat.hurt(level, target, this, 4);
+				if (d > 3.6) this.getNavigation().moveTo(target, 1.1);
+				if (cooldown <= 0 && d <= 4.4) {
+					DoomCombat.hurt(level, target, this, BLOW[ENGINEER]);
 					this.swing(InteractionHand.MAIN_HAND);
-					cooldown = 26;
+					cooldown = 20;
 				}
 			}
 			default -> {
-				this.getNavigation().moveTo(target, 1.15);
-				if (cooldown <= 0 && d <= 4.2) begin(34);
+				this.getNavigation().moveTo(target, 1.2);
+				if (cooldown <= 0 && d <= 7) begin(20);
 			}
 		}
 	}
@@ -297,8 +309,13 @@ public class Doombot extends PathfinderMob {
 				if (t == 6) DoomVfx.on(level, DoomVfx.CHARGE, this, 0.4f, 8, DoomVfx.GOLD);
 				if (t == 13 && aim != null) {
 					Vec3 dir = aim.subtract(eye).normalize();
-					DoomCombat.fire(level, this, eye.add(dir.scale(0.8)), dir.scale(1.5), 6, 0.25, 0, 40, null, 0, DoomVfx.GOLD, 0.26f, this::foe);
-					DoomFx.sound(level, eye, SoundEvents.BLAZE_SHOOT, 0.7f, 1.5f);
+					DoomCombat.fire(level, this, eye.add(dir.scale(0.8)), dir.scale(1.9), BLOW[SOLDIER], 0.3, 1.0, 40, null, 0, DoomVfx.GOLD, 0.34f, this::foe);
+					DoomFx.sound(level, eye, SoundEvents.BLAZE_SHOOT, 0.8f, 1.4f);
+				}
+				if (t == 19 && target != null) {
+					Vec3 dir = target.position().add(0, target.getBbHeight() * 0.6, 0).subtract(eye).normalize();
+					DoomCombat.fire(level, this, eye.add(dir.scale(0.8)), dir.scale(1.9), BLOW[SOLDIER], 0.3, 1.0, 40, null, 0, DoomVfx.GOLD, 0.34f, this::foe);
+					DoomFx.sound(level, eye, SoundEvents.BLAZE_SHOOT, 0.8f, 1.6f);
 				}
 			}
 			case BASTION -> {
@@ -306,9 +323,12 @@ public class Doombot extends PathfinderMob {
 					setFlag(FLAG_SHIELD, true);
 					DoomVfx.on(level, DoomVfx.SHIELD, this, 1.3f, 24, DoomVfx.GREEN);
 					DoomFx.sound(level, eye, SoundEvents.IRON_GOLEM_REPAIR, 1f, 0.6f);
-					if (target != null && this.distanceTo(target) <= 3.8 && DoomCombat.hurt(level, target, this, 8)) {
-						Vec3 push = target.position().subtract(this.position()).normalize();
-						target.knockback(1.1, -push.x, -push.z);
+					DoomVfx.at(level, DoomVfx.SLAM, this.position(), 5.5f, 12, DoomVfx.GREEN);
+					for (LivingEntity e : level.getEntitiesOfClass(LivingEntity.class, this.getBoundingBox().inflate(4.5, 1.5, 4.5), this::foe)) {
+						if (DoomCombat.hurt(level, e, this, BLOW[BASTION])) {
+							Vec3 push = e.position().subtract(this.position()).normalize();
+							e.knockback(1.5, -push.x, -push.z);
+						}
 					}
 				}
 				if (t == 40) setFlag(FLAG_SHIELD, false);
@@ -321,8 +341,8 @@ public class Doombot extends PathfinderMob {
 				if (t == 33 && aim != null) {
 					DoomFx.flat(level, ModParticles.DOOM_SLAM_WAVE, this.position(), 4.5);
 					DoomFx.sound(level, this.position(), SoundEvents.GENERIC_EXPLODE.value(), 0.7f, 1.4f);
-					for (LivingEntity e : level.getEntitiesOfClass(LivingEntity.class, this.getBoundingBox().inflate(2.6, 1.5, 2.6), this::foe)) {
-						DoomCombat.hurt(level, e, this, 9);
+					for (LivingEntity e : level.getEntitiesOfClass(LivingEntity.class, this.getBoundingBox().inflate(3.4, 2.5, 3.4), this::foe)) {
+						DoomCombat.hurt(level, e, this, BLOW[INTERCEPTOR]);
 					}
 				}
 				if (t > 33) hover(this.position().add(0, 4, 0), 0.35);
@@ -337,7 +357,7 @@ public class Doombot extends PathfinderMob {
 						friend.ward();
 					} else if (target != null) {
 						Vec3 dir = target.position().add(0, 1, 0).subtract(eye).normalize();
-						DoomCombat.fire(level, this, eye.add(dir), dir.scale(0.65), 7, 0.3, 0, 80, target, 0.09, DoomVfx.GREEN, 0.36f, this::foe);
+						DoomCombat.fire(level, this, eye.add(dir), dir.scale(0.8), BLOW[ARCANIST], 0.35, 1.2, 80, target, 0.1, DoomVfx.GREEN, 0.42f, this::foe);
 						DoomFx.sound(level, eye, SoundEvents.EVOKER_CAST_SPELL, 0.9f, 1.3f);
 					}
 				}
@@ -358,7 +378,7 @@ public class Doombot extends PathfinderMob {
 					}
 					DoomFx.bill(level, ModParticles.DOOM_ARMORED_COMBO, eye.add(this.getLookAngle().scale(1.6)), 1.6);
 					DoomFx.sound(level, eye, SoundEvents.PLAYER_ATTACK_SWEEP, 1f, 0.7f);
-					if (this.distanceTo(target) <= (lunge ? 5.0 : 3.6)) DoomCombat.hurt(level, target, this, lunge ? 13 : 10);
+					if (this.distanceTo(target) <= (lunge ? 8.0 : 5.8)) DoomCombat.hurt(level, target, this, lunge ? BLOW[ROYAL_GUARD] * 1.3f : BLOW[ROYAL_GUARD]);
 				}
 			}
 		}
@@ -398,9 +418,10 @@ public class Doombot extends PathfinderMob {
 				DoomFx.bill(level, ModParticles.DOOM_IRON_BASTION, this.position().add(0, 1, 0), 1.4);
 			}
 		}
+		amount = Math.min(amount, this.getMaxHealth() * MAX_SHARE);
 		boolean hurt = super.hurtServer(level, source, amount);
 		if (hurt && source.getEntity() instanceof LivingEntity attacker && foe(attacker)) targetId = attacker.getUUID();
-		if (hurt && amount >= 8 && action() == A_IDLE && !this.isDeadOrDying()) setAction(A_STAGGER);
+		if (hurt && amount >= 24 && variant() != BASTION && action() == A_IDLE && !this.isDeadOrDying()) setAction(A_STAGGER);
 		return hurt;
 	}
 

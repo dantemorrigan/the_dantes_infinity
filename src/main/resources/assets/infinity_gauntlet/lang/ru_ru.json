@@ -662,7 +662,7 @@
   "entity.infinity_gauntlet.doombot.royal_guard": "Королевский страж",
   "key.infinity_gauntlet.doom_wheel": "Броня Дума: колесо способностей",
   "doom.infinity_gauntlet.wheel": "Силы Дума",
-  "doom.infinity_gauntlet.wheel_help": "Наведите и отпустите (или щёлкните): выбрать и применить · 1–6 сразу · N повторяет выбранную силу · Esc закрывает",
+  "doom.infinity_gauntlet.wheel_help": "Наведите и отпустите (или щёлкните), чтобы ВЫБРАТЬ · 1–6 выбирают сразу · клавиша применения запускает выбранную силу · Esc закрывает",
   "doom.infinity_gauntlet.power.gauntlet_bolt": "Разряд перчатки",
   "doom.infinity_gauntlet.power.iron_bastion": "Железный бастион",
   "doom.infinity_gauntlet.power.jet_flight": "Реактивный полёт",
@@ -714,5 +714,6 @@
   "advancements.infinity_gauntlet.defeat_doom.title": "Ярость Дума",
   "advancements.infinity_gauntlet.defeat_doom.description": "Победите Доктора Дума и заберите его замок",
   "msg.infinity_gauntlet.latveria.armor.no_fuel": "Двигатели пусты. Приземлитесь, чтобы они наполнились.",
-  "key.infinity_gauntlet.doom_cast": "Броня Дума: применить выбранную силу"
+  "key.infinity_gauntlet.doom_cast": "Броня Дума: применить выбранную силу",
+  "doom.infinity_gauntlet.cast_hint": "%s — применить"
 }

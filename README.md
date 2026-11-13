@@ -92,9 +92,11 @@ Requirements: **Java 25**. Build: `./gradlew build` → `build/libs/infinity_gau
 
 **Latveria** is its own dimension: mountains around a valley, a river, a living city with townsfolk, and a road climbing to Castle Doom. Two themes alternate while you walk there (*Echoes of Latveria* and *Sovereign Sanctum*). The gate at the south end of the city (stand in it for two seconds) takes you back to where you came from.
 
+**The look of Latveria.** A stormy Carpathian night under a great pale moon with a green halo, heavy clouds turning at two speeds, green curtains of light over the north, snow-capped ridges all around, and lightning that flashes over the mountains with thunder rolling in a few seconds later. The whole screen carries a cold teal grade with dark vignette corners; it is the same for every player in the dimension.
+
 **The assault.** A patrol watches the road. The gate squad holds the portcullis, and the yard squad keeps the throne room shut. The other way in is the service door in the castle's east wall: it leads into the laboratory. Right-click the generator to switch it off. That weakens Doom's armor and the Bastions' shields and opens a side door into the throne room.
 
-**Doombots** come in six roles. The Soldier shoots from its gauntlet, the Bastion raises a shield that also covers nearby Doombots, the Interceptor hovers and dives, the Arcanist casts homing bolts and wards allies, the Engineer repairs damaged Doombots, and the Royal Guard strikes with a halberd. They drop circuits, arc reactors and jade shards.
+**Doombots** come in six roles and tower over a player: three to three and a half blocks, the Bastion over four. They are armored and hit hard, and no single blow takes more than a third of their health. The Soldier shoots from its gauntlet, the Bastion raises a shield that also covers nearby Doombots, the Interceptor hovers and dives, the Arcanist casts homing bolts and wards allies, the Engineer repairs damaged Doombots, and the Royal Guard strikes with a halberd. They drop circuits, arc reactors and jade shards.
 
 **Doctor Doom** rises from his throne when you enter the hall, and *Iron Monarch* starts. He fights in three stages:
 1. Armor: gauntlet combos, bolts, jet slams, the Iron Bastion shield, and Doombot drops.
@@ -105,13 +107,13 @@ After every heavy attack he is exposed for a moment and takes more damage. A Spa
 
 **The reward** is paid once per player: Doom's armor, Doom's Gauntlet, the Grimoire, the Latveria Key, the Doombot Controller, four Castle Seals, the Time Platform and the Banner of Latveria. The castle becomes your base, and the surviving Doombots obey you. The Doombot Controller switches them between following you and standing guard, and a Mechanical Heart builds a new Soldier. The Latveria Key takes you to the castle hall from any dimension and back, even when you are not wearing the armor (sneak to arrive in the valley instead). Give a Castle Seal to a friend so they can travel to Latveria too.
 
-**Doom's armor.** On the player it is Doom himself: the same model, texture and living cloak as the boss. All four pieces worn together unlock six powers. Hold **M** for the wheel and release over a power (or press 1–6) to pick and cast it; **N** casts the selected power again.
+**Doom's armor.** On the player it is Doom himself: the same model, texture and living cloak as the boss. All four pieces worn together unlock six powers. Hold **M** for the wheel and release over a power (or press 1–6) to **select** it, like the Infinity Gauntlet's wheel; **N** casts the selected power. Nothing fires until you press the cast key, and the powers that go where you point show where first.
 - **Gauntlet Bolt**: a fast bolt from the hand that bursts on impact (0.5 s).
 - **Iron Bastion**: a hex shell for 6 s. Arrows stop dead, blows lose four fifths, attackers are thrown back.
 - **Jet Flight**: toggled. **W** thrusts along the view (sprint is faster), **S** brakes, **A**/**D** slide, **Space** climbs, **Shift** sinks; with no key held you hover. The fuel bar is under the icon and refills on the ground.
-- **Rift Step**: jump up to 24 blocks to where you look and slip through attacks for a second.
-- **Seven Suns**: seven suns orbit you and strike nearby monsters on their own; cast again to loose the rest at the crosshair.
-- **Latverian Edict**: a circle shows where it will fall; a second later a column of light crushes and throws up everything in it.
+- **Rift Step**: a marker on the ground shows where you will land; **N** jumps up to 24 blocks there and you slip through attacks for a second.
+- **Seven Suns**: seven suns orbit you and wait. Each press of **N** sends one to the crosshair (hold to keep them coming).
+- **Latverian Edict**: a circle shows where it will fall; **N** places it and a second later a column of light crushes and throws up everything in it.
 
 The jets never touch vanilla flight, so the armor does not clash with the Infinity Gauntlet or Stormbreaker, and its keys are separate from the gauntlet's (**V**/**R**).
 
@@ -133,7 +135,7 @@ The jets never touch vanilla flight, so the armor does not clash with the Infini
 | `/gauntlet doom spawn` · `stop` · `kill` · `heal` · `passive` | Summon, call off, defeat, heal, or freeze Doom as a training dummy. |
 | `/gauntlet doom stage <1-3>` · `action <clip>` | Jump to a stage; force an attack such as `latverian_edict`, `seven_suns` or `jet_slam`. |
 | `/gauntlet doom armor [player]` · `cooldowns` | Put on Doom's armor; make every power ready. |
-| `/gauntlet doombot spawn <variant> [allied]` · `kill` · `allies` | Spawn a Doombot; destroy hostile ones nearby; make every Doombot nearby obey you. |
+| `/gauntlet doombot spawn <variant> [allied] [x y z]` · `kill` · `allies` | Spawn a Doombot; destroy hostile ones nearby; make every Doombot nearby obey you. |
 
 ## Language, client settings, advancements, and field guide
 

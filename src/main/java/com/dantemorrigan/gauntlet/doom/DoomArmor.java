@@ -48,7 +48,7 @@ import java.util.UUID;
  *   <li>Iron Bastion — a shell around the wearer: arrows stop dead, blows lose four fifths, attackers are thrown back;</li>
  *   <li>Jet Flight — toggled; the client flies (so it answers at once), the server keeps the fuel and the fall damage;</li>
  *   <li>Rift Step — a jump to where the wearer looks, slipping through attacks for a second;</li>
- *   <li>Seven Suns — seven suns orbit the wearer and strike nearby foes; cast again to loose them all at the crosshair;</li>
+ *   <li>Seven Suns — seven suns orbit the wearer; each further cast sends one at the crosshair (hold to keep firing);</li>
  *   <li>Latverian Edict — a seal falls where the wearer looks and a column of light crushes and throws up what is in it.</li>
  * </ul>
  * None of them touches the player's flight abilities, so the armor never fights the Infinity Gauntlet or Stormbreaker.
@@ -180,7 +180,7 @@ public final class DoomArmor {
 		ServerLevel level = p.level();
 		long now = level.getGameTime();
 		if (ability == JET && w.jet) { stopJet(p, w); return; }
-		if (ability == SUNS && w.suns > 0) { volley(p, w); return; }
+		if (ability == SUNS && w.suns > 0) { launchOne(p, w); return; }
 		if (now < w.ready[ability] && !p.isCreative()) return;
 		Vec3 eye = p.getEyePosition(), look = p.getLookAngle();
 		switch (ability) {
@@ -268,20 +268,18 @@ public final class DoomArmor {
 		sync(p, w);
 	}
 
-	/** Every sun still in orbit flies at what the wearer looks at. */
-	private static void volley(ServerPlayer p, Wearer w) {
-		Vec3 target = aim(p, 48);
+	/** One sun leaves the orbit and flies where the wearer looks; the last one starts the cooldown. */
+	private static void launchOne(ServerPlayer p, Wearer w) {
+		long now = p.level().getGameTime();
+		if (now < w.nextSun) return;
+		Vec3 target = aim(p, 64);
 		LivingEntity lock = null;
-		for (LivingEntity e : p.level().getEntitiesOfClass(LivingEntity.class, new AABB(target, target).inflate(1.2), e -> canHit(p, e))) lock = e;
-		for (int i = 0; i < w.suns; i++) {
-			int n = i;
-			LivingEntity locked = lock;
-			later(p, i * 2, () -> launch(p, n, target, locked));
-		}
-		w.suns = 0;
-		w.sunsUntil = 0;
-		w.ready[SUNS] = p.level().getGameTime() + COOLDOWN[SUNS];
-		DoomVfx.on(p.level(), DoomVfx.ORBIT, p, 0, 0, DoomVfx.SUN);
+		for (LivingEntity e : p.level().getEntitiesOfClass(LivingEntity.class, new AABB(target, target).inflate(1.4), e -> canHit(p, e))) lock = e;
+		w.suns--;
+		w.nextSun = now + 5;
+		launch(p, w.suns, target, lock);
+		DoomVfx.on(p.level(), DoomVfx.ORBIT, p, w.suns, (int) Math.max(1, w.sunsUntil - now), DoomVfx.SUN);
+		if (w.suns == 0) { w.sunsUntil = 0; w.ready[SUNS] = now + COOLDOWN[SUNS]; }
 		sync(p, w);
 	}
 
@@ -293,7 +291,7 @@ public final class DoomArmor {
 	private static void launch(ServerPlayer p, int i, Vec3 target, LivingEntity lock) {
 		Vec3 from = sunAt(p, i);
 		Vec3 dir = (lock != null ? lock.position().add(0, lock.getBbHeight() * 0.55, 0) : target).subtract(from).normalize();
-		DoomCombat.fire(p.level(), p, from, dir.scale(1.6), 11, 0.45, 2.2, 50, lock, lock == null ? 0 : 0.25, DoomVfx.SUN, 0.55f, e -> canHit(p, e));
+		DoomCombat.fire(p.level(), p, from, dir.scale(2.0), 16, 0.5, 2.6, 60, lock, lock == null ? 0 : 0.18, DoomVfx.SUN, 0.6f, e -> canHit(p, e));
 		DoomFx.sound(p.level(), from, SoundEvents.FIRECHARGE_USE, 0.7f, 1.4f);
 	}
 
@@ -348,17 +346,6 @@ public final class DoomArmor {
 					w.ready[SUNS] = now + COOLDOWN[SUNS];
 					DoomVfx.on(p.level(), DoomVfx.ORBIT, p, 0, 0, DoomVfx.SUN);
 					changed = true;
-				} else if (now >= w.nextSun) {
-					LivingEntity foe = p.level().getEntitiesOfClass(LivingEntity.class, p.getBoundingBox().inflate(18, 8, 18), e -> hostile(p, e) && p.hasLineOfSight(e))
-							.stream().min(Comparator.comparingDouble(e -> e.distanceToSqr(p))).orElse(null);
-					if (foe != null) {
-						w.suns--;
-						launch(p, w.suns, foe.position(), foe);
-						w.nextSun = now + 10;
-						DoomVfx.on(p.level(), DoomVfx.ORBIT, p, w.suns, (int) (w.sunsUntil - now), DoomVfx.SUN);
-						if (w.suns == 0) w.ready[SUNS] = now + COOLDOWN[SUNS];
-						changed = true;
-					}
 				}
 			}
 			if (changed || set && now % 20 == 0) {

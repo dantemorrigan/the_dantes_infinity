@@ -59,6 +59,7 @@ public class InfinityGauntletClient implements ClientModInitializer {
 		net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry.register(com.dantemorrigan.gauntlet.ModEntities.DOOMBOT, com.dantemorrigan.gauntlet.client.doom.DoomRenderers.Bot::new);
 		com.dantemorrigan.gauntlet.client.doom.DoomClient.init();
 		com.dantemorrigan.gauntlet.client.doom.DoomVfxClient.init();
+		com.dantemorrigan.gauntlet.client.doom.LatveriaSky.init();
 		net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry.register(com.dantemorrigan.gauntlet.ModEntities.THANOS_SWORD, com.dantemorrigan.gauntlet.client.boss.ThanosSwordRenderer::new);
 		com.dantemorrigan.gauntlet.client.screen.SettingsButtons.init();
 		com.dantemorrigan.gauntlet.client.stormbreaker.StormbreakerClient.init();

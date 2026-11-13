@@ -59,16 +59,24 @@ public class DoomArmorTest implements FabricClientGameTest {
 			server.runCommand("execute as @p at @s run summon minecraft:zombie ~ ~ ~-7 {NoAI:1b,PersistenceRequired:1b}");
 			server.runCommand("execute as @p at @s run summon minecraft:zombie ~3 ~ ~-6 {NoAI:1b,PersistenceRequired:1b}");
 			server.runCommand("execute as @p at @s run summon minecraft:zombie ~-3 ~ ~-6 {NoAI:1b,PersistenceRequired:1b}");
+			server.runCommand("effect give @e[type=minecraft:zombie] minecraft:fire_resistance infinite 0 true");
 			server.runCommand("gamemode survival @p");
 			server.runCommand("effect give @p minecraft:resistance 9999 4 true");
 			ctx.waitTicks(10);
 
-			// Bolt: the number key picks and casts at once.
+			// The wheel only selects. Nothing is cast until the cast key is pressed.
 			ctx.getInput().holdKey(GLFW.GLFW_KEY_M);
 			ctx.waitFor(mc -> mc.screen instanceof com.dantemorrigan.gauntlet.client.doom.DoomWheelScreen, 100);
 			ctx.takeScreenshot("doom_armor_05_wheel");
-			ctx.getInput().pressKey(GLFW.GLFW_KEY_1);
+			ctx.getInput().pressKey(GLFW.GLFW_KEY_2);
 			ctx.getInput().releaseKey(GLFW.GLFW_KEY_M);
+			ctx.waitTicks(10);
+			check(ctx.computeOnClient(mc -> DoomClient.selected()) == DoomArmor.BASTION, "The wheel did not select the Iron Bastion");
+			check(ctx.computeOnClient(mc -> DoomVfxClient.count(DoomVfx.SHIELD)) == 0, "The wheel cast the power on release");
+			ctx.runOnClient(mc -> DoomClient.select(DoomArmor.BOLT));
+			ctx.waitTicks(10);
+			check(ctx.computeOnClient(mc -> DoomVfxClient.count(DoomVfx.BOLT) + DoomVfxClient.count(DoomVfx.IMPACT)) == 0, "A bolt flew without the cast key");
+			ctx.getInput().pressKey(GLFW.GLFW_KEY_N);
 			ctx.waitTicks(2);
 			check(ctx.computeOnClient(mc -> DoomVfxClient.count(DoomVfx.BOLT)) > 0 || ctx.computeOnClient(mc -> DoomVfxClient.count(DoomVfx.IMPACT)) > 0,
 					"The bolt did not fly on the client");
@@ -78,7 +86,7 @@ public class DoomArmorTest implements FabricClientGameTest {
 			ctx.takeScreenshot("doom_armor_07_bolt_impacts");
 
 			// Iron Bastion.
-			ctx.runOnClient(mc -> DoomClient.choose(DoomArmor.BASTION));
+			ctx.runOnClient(mc -> { DoomClient.select(DoomArmor.BASTION); DoomClient.cast(); });
 			ctx.waitTicks(4);
 			check(ctx.computeOnClient(mc -> DoomVfxClient.count(DoomVfx.SHIELD)) == 1, "The Bastion shell is not shown");
 			ctx.runOnClient(mc -> mc.options.setCameraType(CameraType.THIRD_PERSON_BACK));
@@ -86,24 +94,34 @@ public class DoomArmorTest implements FabricClientGameTest {
 			ctx.takeScreenshot("doom_armor_08_bastion");
 			ctx.runOnClient(mc -> mc.options.setCameraType(CameraType.FIRST_PERSON));
 
-			// Seven Suns: they orbit, then strike the zombies on their own; a second cast looses the rest.
-			ctx.runOnClient(mc -> DoomClient.choose(DoomArmor.SUNS));
+			// Seven Suns: they orbit and wait. Each press of the cast key sends one at the crosshair; holding keeps them coming.
+			float healthBefore = server.computeOnServer(s -> (float) s.getLevel(net.minecraft.world.level.Level.OVERWORLD)
+					.getEntitiesOfClass(net.minecraft.world.entity.monster.zombie.Zombie.class, player(s).getBoundingBox().inflate(30)).stream().mapToDouble(z -> z.getHealth()).sum());
+			ctx.runOnClient(mc -> { DoomClient.select(DoomArmor.SUNS); DoomClient.cast(); });
 			ctx.waitTicks(8);
 			check(ctx.computeOnClient(mc -> DoomVfxClient.count(DoomVfx.ORBIT)) == 1, "The suns do not orbit");
 			ctx.runOnClient(mc -> mc.options.setCameraType(CameraType.THIRD_PERSON_BACK));
-			ctx.waitTicks(4);
+			ctx.waitTicks(40);
 			ctx.takeScreenshot("doom_armor_09_suns_orbit");
-			ctx.waitTicks(14);
+			check(ctx.computeOnClient(mc -> DoomVfxClient.count(DoomVfx.ORBIT)) == 1 && server.computeOnServer(s -> s.getLevel(net.minecraft.world.level.Level.OVERWORLD)
+					.getEntitiesOfClass(net.minecraft.world.entity.monster.zombie.Zombie.class, player(s).getBoundingBox().inflate(30), z -> true).stream().mapToDouble(z -> z.getHealth()).sum() >= healthBefore),
+					"The suns left the orbit on their own");
+			ctx.getInput().pressKey(GLFW.GLFW_KEY_N);
+			ctx.waitTicks(3);
 			ctx.takeScreenshot("doom_armor_10_suns_strike");
-			ctx.runOnClient(mc -> DoomClient.cast());
-			ctx.waitTicks(6);
+			ctx.getInput().holdKey(GLFW.GLFW_KEY_N);
+			ctx.waitTicks(40);
+			ctx.getInput().releaseKey(GLFW.GLFW_KEY_N);
 			ctx.takeScreenshot("doom_armor_11_suns_volley");
 			ctx.runOnClient(mc -> mc.options.setCameraType(CameraType.FIRST_PERSON));
 
 			// Edict: the aiming circle, then the seal and the column.
 			server.runCommand("execute as @p at @s run tp @s ~ ~ ~ 180 25");
-			ctx.runOnClient(mc -> DoomClient.choose(DoomArmor.EDICT));
+			ctx.runOnClient(mc -> DoomClient.select(DoomArmor.EDICT));
 			ctx.waitTicks(10);
+			ctx.takeScreenshot("doom_armor_12a_edict_aim");
+			ctx.getInput().pressKey(GLFW.GLFW_KEY_N);
+			ctx.waitTicks(4);
 			ctx.takeScreenshot("doom_armor_12_edict_seal");
 			ctx.waitTicks(DoomArmor.EDICT_DELAY - 6);
 			ctx.takeScreenshot("doom_armor_13_edict_column");
@@ -112,7 +130,7 @@ public class DoomArmorTest implements FabricClientGameTest {
 			// Rift Step.
 			server.runCommand("execute as @p at @s run tp @s ~ ~ ~ 180 0");
 			double z0 = server.computeOnServer(s -> player(s).getZ());
-			ctx.runOnClient(mc -> DoomClient.choose(DoomArmor.RIFT));
+			ctx.runOnClient(mc -> { DoomClient.select(DoomArmor.RIFT); DoomClient.cast(); });
 			ctx.waitTicks(3);
 			check(server.computeOnServer(s -> player(s).getZ()) < z0 - 4, "Rift Step did not move the wearer");
 			ctx.runOnClient(mc -> mc.options.setCameraType(CameraType.THIRD_PERSON_FRONT));
@@ -122,7 +140,7 @@ public class DoomArmorTest implements FabricClientGameTest {
 			server.runCommand("execute as @p at @s run tp @s ~ ~ ~ 180 -20");
 			ctx.runOnClient(mc -> mc.options.setCameraType(CameraType.THIRD_PERSON_BACK));
 			double y0 = server.computeOnServer(s -> player(s).getY());
-			ctx.runOnClient(mc -> DoomClient.choose(DoomArmor.JET));
+			ctx.runOnClient(mc -> { DoomClient.select(DoomArmor.JET); DoomClient.cast(); });
 			ctx.waitTicks(3);
 			check(ctx.computeOnClient(mc -> DoomClient.jetActive()), "The jets did not light");
 			ctx.getInput().holdKey(GLFW.GLFW_KEY_SPACE);
@@ -136,7 +154,7 @@ public class DoomArmorTest implements FabricClientGameTest {
 			ctx.waitTicks(20);
 			check(server.computeOnServer(s -> player(s).getY()) > y0 + 3, "With no key held the wearer should hover");
 			ctx.takeScreenshot("doom_armor_16_hover");
-			ctx.runOnClient(mc -> DoomClient.choose(DoomArmor.JET));
+			ctx.runOnClient(mc -> { DoomClient.select(DoomArmor.JET); DoomClient.cast(); });
 			ctx.waitTicks(60);
 			check(server.computeOnServer(s -> player(s).isAlive() && player(s).getHealth() > 18), "Landing after the jets must not hurt");
 			ctx.runOnClient(mc -> mc.options.setCameraType(CameraType.FIRST_PERSON));

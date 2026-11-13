@@ -26,7 +26,8 @@ public final class BossText {
         if(k.startsWith("tribunal.infinity_gauntlet.") || k.equals("entity.infinity_gauntlet.living_tribunal"))return Kind.COSMIC;
         if(k.startsWith("thanos.infinity_gauntlet.line.") || k.startsWith("msg.infinity_gauntlet.thanos.") || (k.equals("entity.infinity_gauntlet.thanos") || k.equals("entity.infinity_gauntlet.thanos.title")) || k.startsWith("boss.infinity_gauntlet.thanos.") || k.startsWith("command.infinity_gauntlet.thanos_"))return Kind.TITAN;
         if(k.equals("entity.infinity_gauntlet.loki") || k.startsWith("boss.infinity_gauntlet.loki.") || k.startsWith("msg.infinity_gauntlet.loki.") || k.startsWith("msg.infinity_gauntlet.mind_quest.") || k.startsWith("command.infinity_gauntlet.loki."))return Kind.TRICKSTER;
-        if(k.equals("ability.infinity_gauntlet.latveria_sealed") || k.startsWith("msg.infinity_gauntlet.latveria."))return Kind.SOVEREIGN;
+        // Only what Doom himself says is set in his type. Messages about Latveria, its gate or the Doombots are plain.
+        if(k.equals("ability.infinity_gauntlet.latveria_sealed") || k.equals("msg.infinity_gauntlet.latveria.doom") || k.startsWith("msg.infinity_gauntlet.latveria.doom."))return Kind.SOVEREIGN;
         return null;
     }
     public static MutableComponent name(Component text) {
@@ -36,6 +37,17 @@ public final class BossText {
         return text.copy().withStyle(s->s.withFont(ACTION).withBold(false).withItalic(false));
     }
     public static Component notice(Component text) {return kind(text)==null?text:action(text);}
+    /** Index of the first occurrence of {@code alias} as a whole word, or -1: "Doom" is not found inside "Doombot". */
+    public static int word(String value,String alias) {
+        if(alias.isEmpty())return -1;
+        for(int i=value.indexOf(alias);i>=0;i=value.indexOf(alias,i+1)) {
+            int end=i+alias.length();
+            boolean before=i==0 || !Character.isLetterOrDigit(value.charAt(i-1));
+            boolean after=end>=value.length() || !Character.isLetterOrDigit(value.charAt(end));
+            if(before && after)return i;
+        }
+        return -1;
+    }
     private static boolean title(String key){return key.startsWith("entity.") || key.startsWith("boss.");}
     /** Only called on system-chat entry points; player-authored messages never pass through this formatter. */
     public static Component chat(Component text) {
@@ -50,10 +62,11 @@ public final class BossText {
                 if(theme==Kind.TITAN)aliases.addAll(List.of("Таноса","Таносу","Таносом","Таносе","Безумный Титан","Безумного Титана","Mad Titan"));
                 if(theme==Kind.COSMIC)aliases.addAll(List.of("Трибунала","Трибуналу","Трибуналом","Трибунале","Трибунал","Tribunal"));
                 if(theme==Kind.TRICKSTER)aliases.addAll(List.of("Фенрира","Фенриру","Фенриром","Фенрир","Fenrir"));
-                if(theme==Kind.SOVEREIGN){aliases.addAll(List.of("Доктор Дум","Doctor Doom","Дум","Doom"));}
+                // Doom is highlighted only as the speaker ("Doctor Doom: ..."), never in the middle of a sentence.
+                if(theme==Kind.SOVEREIGN){for(String speaker:List.of("Доктор Дум","Doctor Doom"))if(value.startsWith(speaker+":")){aliases.add(speaker);break;}}
                 while(!value.isEmpty()) {
                     int at=Integer.MAX_VALUE;String match=null;
-                    for(String alias:aliases){int i=value.indexOf(alias);if(!alias.isEmpty() && i>=0 && (i<at || i==at && (match==null || alias.length()>match.length()))){at=i;match=alias;}}
+                    for(String alias:aliases){int i=word(value,alias);if(!alias.isEmpty() && i>=0 && (i<at || i==at && (match==null || alias.length()>match.length()))){at=i;match=alias;}}
                     if(match==null){out.append(Component.literal(value));break;}
                     if(at>0)out.append(Component.literal(value.substring(0,at)));
                     out.append(name(Component.literal(match)).withStyle(s->s.withColor(theme.accent)));

@@ -35,10 +35,11 @@ public final class DoomWheelScreen extends Screen {
 	/** Screen position of a power's button; used by the visual tests. */
 	public double[] abilityPoint(int i) { return point(i); }
 
-	private void cast() {
+	/** Letting go of the key (or a click) only picks the power under the pointer; the cast key fires it. */
+	private void select() {
 		int choice = hovered;
 		Minecraft.getInstance().setScreen(null);
-		if (choice >= 0) DoomClient.choose(choice);
+		if (choice >= 0) DoomClient.select(choice);
 	}
 
 	@Override
@@ -49,20 +50,20 @@ public final class DoomWheelScreen extends Screen {
 
 	@Override
 	public boolean keyReleased(KeyEvent event) {
-		if (event.key() == KeyMappingHelper.getBoundKeyOf(DoomClient.WHEEL).getValue()) cast();
+		if (event.key() == KeyMappingHelper.getBoundKeyOf(DoomClient.WHEEL).getValue()) select();
 		return true;
 	}
 
 	@Override
 	public boolean keyPressed(KeyEvent event) {
 		if (event.key() == GLFW.GLFW_KEY_ESCAPE) { Minecraft.getInstance().setScreen(null); return true; }
-		if (event.key() >= GLFW.GLFW_KEY_1 && event.key() <= GLFW.GLFW_KEY_6) { hovered = event.key() - GLFW.GLFW_KEY_1; cast(); }
+		if (event.key() >= GLFW.GLFW_KEY_1 && event.key() <= GLFW.GLFW_KEY_6) { hovered = event.key() - GLFW.GLFW_KEY_1; select(); }
 		return true;
 	}
 
 	@Override
 	public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
-		if (event.button() == 0) { pick(event.x(), event.y()); cast(); }
+		if (event.button() == 0) { pick(event.x(), event.y()); select(); }
 		else Minecraft.getInstance().setScreen(null);
 		return true;
 	}
@@ -95,7 +96,12 @@ public final class DoomWheelScreen extends Screen {
 			if (!ready) g.centeredText(font, Component.literal(String.valueOf((DoomClient.cooldown(i) + 19) / 20)), (int) p[0], (int) p[1] - 4, 0xFFFFE08A);
 		}
 		blit(g, "textures/gui/doctor_doom/latveria_emblem.png", width / 2 - size / 2, height / 2 - size / 2, size, -1);
-		g.centeredText(font, Component.translatable("doom.infinity_gauntlet.wheel_help"), width / 2, height - 24, 0xFFDED7EA);
+		var help = font.split(Component.translatable("doom.infinity_gauntlet.wheel_help"), Math.max(120, width - 40));
+		int y = height - 14 - help.size() * 10;
+		for (var line : help) {
+			g.text(font, line, width / 2 - font.width(line) / 2, y, 0xFFDED7EA, true);
+			y += 10;
+		}
 	}
 
 	private static void blit(GuiGraphicsExtractor g, String path, int x, int y, int size, int color) {

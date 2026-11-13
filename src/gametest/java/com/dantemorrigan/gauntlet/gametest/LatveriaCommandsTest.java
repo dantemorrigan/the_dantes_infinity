@@ -79,7 +79,9 @@ public class LatveriaCommandsTest implements FabricClientGameTest {
 			server.runCommand("execute as @p run gauntlet doombot spawn bastion true");
 			server.runCommand("execute as @p run gauntlet doombot spawn interceptor");
 			ctx.waitTicks(10);
-			check(server.computeOnServer(s -> player(s).level().getEntitiesOfClass(Doombot.class, player(s).getBoundingBox().inflate(10), Doombot::allied).size()) == 1, "an allied Bastion was not made");
+			String near = server.computeOnServer(s -> player(s).level().getEntitiesOfClass(Doombot.class, player(s).getBoundingBox().inflate(20))
+					.stream().map(b -> Doombot.NAMES[b.variant()] + (b.allied() ? "+" : "-") + (b.isAlive() ? "" : "dead") + "@" + b.blockPosition().toShortString()).toList().toString());
+			check(near.contains("bastion+") && !near.contains("bastion+dead"), "an allied Bastion was not made: " + near);
 			server.runCommand("execute as @p run gauntlet doombot kill");
 			ctx.waitTicks(5);
 			server.runCommand("execute as @p run gauntlet latveria music sanctum");

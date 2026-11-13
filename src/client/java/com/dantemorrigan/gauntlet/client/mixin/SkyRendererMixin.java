@@ -91,6 +91,11 @@ public abstract class SkyRendererMixin {
 	/** Dead Space uses skybox "end" only to get a sky pass; we replace the End sky with the space cube-map. */
 	@Inject(method = "renderEndSky", at = @At("HEAD"), cancellable = true)
 	private void infinityGauntlet$deadSpaceSky(CallbackInfo ci) {
+		if (com.dantemorrigan.gauntlet.client.doom.LatveriaSky.active()) {
+			com.dantemorrigan.gauntlet.client.doom.LatveriaSky.draw();
+			ci.cancel();
+			return;
+		}
 		if (com.dantemorrigan.gauntlet.client.quest.SoulQuestClient.inSoulWorld()) {
 			com.dantemorrigan.gauntlet.client.quest.SoulQuestClient.drawSky();
 			ci.cancel();

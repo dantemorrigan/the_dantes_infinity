@@ -24,6 +24,15 @@ public abstract class FogRendererMixin {
 			cir.getReturnValue().color.set(1f, 1f, 1f, 1f);
 			return;
 		}
+		if (level != null && com.dantemorrigan.gauntlet.client.doom.LatveriaSky.active()) {
+			// Lightning lights the fog for a moment.
+			float flash = com.dantemorrigan.gauntlet.client.doom.LatveriaSky.flash(deltaTracker.getGameTimeDeltaPartialTick(false));
+			if (flash > 0) {
+				FogData fog = cir.getReturnValue();
+				fog.color.set(fog.color.x + (0.62f - fog.color.x) * flash * 0.4f, fog.color.y + (0.9f - fog.color.y) * flash * 0.4f,
+						fog.color.z + (0.74f - fog.color.z) * flash * 0.4f, fog.color.w);
+			}
+		}
 		float red = level != null ? com.dantemorrigan.gauntlet.client.celestial.CelestialClient.redFactor(camera.position(), deltaTracker.getGameTimeDeltaPartialTick(false)) : 0;
 		if (red > 0) {
 			float day = CelestialClientAccess.daylight(deltaTracker.getGameTimeDeltaPartialTick(false));

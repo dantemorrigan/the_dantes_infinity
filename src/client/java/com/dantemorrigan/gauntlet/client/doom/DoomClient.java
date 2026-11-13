@@ -49,7 +49,7 @@ public final class DoomClient {
 	// Armor state from the server.
 	private static boolean set, jet;
 	private static final int[] cooldown = new int[6], cooldownMax = {1, 1, 1, 1, 1, 1};
-	private static int fuel = DoomArmor.FUEL, bastion, suns, selected;
+	private static int fuel = DoomArmor.FUEL, bastion, suns, selected, holdTicks;
 	// One-off scenes.
 	private static int logoAge = -1, logoTicks, barsAge = -1, barsTicks, flashAge = -1, flashTicks;
 	private static float flashStrength;
@@ -67,10 +67,9 @@ public final class DoomClient {
 
 	public static boolean jetActive() { return jet; }
 
-	/** Picks a power and casts it at once (the wheel, the number keys). */
-	public static void choose(int ability) {
+	/** Picks a power. Casting is a separate press of the cast key, like with the Infinity Gauntlet. */
+	public static void select(int ability) {
 		selected = Mth.clamp(ability, 0, 5);
-		cast();
 	}
 
 	/** Casts the selected power. Seven Suns cast again while they orbit looses them at the crosshair. */
@@ -120,6 +119,7 @@ public final class DoomClient {
 		});
 		ClientPlayConnectionEvents.DISCONNECT.register((handler, mc) -> reset());
 		ClientTickEvents.END_CLIENT_TICK.register(DoomClient::tick);
+		HudElementRegistry.addFirst(InfinityGauntlet.id("latveria_filter"), (g, delta) -> filter(g));
 		HudElementRegistry.addLast(InfinityGauntlet.id("doom_hud"), (g, delta) -> hud(g));
 	}
 
@@ -147,7 +147,12 @@ public final class DoomClient {
 		while (WHEEL.consumeClick()) {
 			if (set && mc.screen == null) mc.setScreen(new DoomWheelScreen());
 		}
-		while (CAST.consumeClick()) if (mc.screen == null) cast();
+		boolean pressed = false;
+		while (CAST.consumeClick()) if (mc.screen == null) { cast(); pressed = true; holdTicks = 0; }
+		// Holding the cast key keeps a bolt or a sun coming.
+		if (!pressed && CAST.isDown() && mc.screen == null && (selected == DoomArmor.BOLT || selected == DoomArmor.SUNS && suns > 0)) {
+			if (++holdTicks >= 8) { cast(); holdTicks = 5; }
+		} else if (!CAST.isDown()) holdTicks = 0;
 		if (!set) jet = false;
 		fly(mc);
 		edictPreview(mc);
@@ -183,18 +188,22 @@ public final class DoomClient {
 		if (fuel <= 0 && ClientPlayNetworking.canSend(ModNetwork.DoomJet.TYPE)) ClientPlayNetworking.send(new ModNetwork.DoomJet(false));
 	}
 
-	/** With the Edict selected, a circle shows where it would fall. */
+	/** With the Edict or the Rift Step selected, the ground shows where it would land: aim first, then cast. */
 	private static void edictPreview(Minecraft mc) {
-		if (!set || selected != DoomArmor.EDICT || mc.player == null || mc.screen != null || cooldown[DoomArmor.EDICT] > 0) {
-			DoomVfxClient.preview(null, 0);
+		boolean edict = selected == DoomArmor.EDICT, rift = selected == DoomArmor.RIFT;
+		if (!set || !(edict || rift) || mc.player == null || mc.screen != null || cooldown[selected] > 0) {
+			DoomVfxClient.preview(null, 0, 0);
 			return;
 		}
-		var hit = mc.player.pick(DoomArmor.EDICT_RANGE, 1f, false);
-		if (hit.getType() != net.minecraft.world.phys.HitResult.Type.BLOCK) { DoomVfxClient.preview(null, 0); return; }
-		Vec3 at = hit.getLocation();
+		double reach = edict ? DoomArmor.EDICT_RANGE : DoomArmor.RIFT_RANGE;
+		var hit = mc.player.pick(reach, 1f, false);
+		Vec3 at = hit.getType() == net.minecraft.world.phys.HitResult.Type.BLOCK ? hit.getLocation()
+				: mc.player.getEyePosition().add(mc.player.getLookAngle().scale(reach));
+		if (rift) at = at.subtract(mc.player.getLookAngle().scale(hit.getType() == net.minecraft.world.phys.HitResult.Type.BLOCK ? 0.8 : 0));
 		var down = mc.level.clip(new net.minecraft.world.level.ClipContext(at.add(0, 0.5, 0), at.add(0, -24, 0),
 				net.minecraft.world.level.ClipContext.Block.COLLIDER, net.minecraft.world.level.ClipContext.Fluid.NONE, mc.player));
-		DoomVfxClient.preview(down.getType() == net.minecraft.world.phys.HitResult.Type.MISS ? null : down.getLocation(), (float) DoomArmor.EDICT_RADIUS);
+		DoomVfxClient.preview(down.getType() == net.minecraft.world.phys.HitResult.Type.MISS ? null : down.getLocation(),
+				edict ? (float) DoomArmor.EDICT_RADIUS : 0.9f, edict ? 1 : 2);
 	}
 
 	// ------------------------------------------------------------------ music
@@ -300,6 +309,22 @@ public final class DoomClient {
 		pose.popMatrix();
 	}
 
+	/**
+	 * The dimension's screen filter: a cold teal grade, dark vignette corners that breathe a little, and a green
+	 * flush when lightning strikes. Under the HUD, so the hotbar and the boss bar stay clean.
+	 */
+	private static void filter(GuiGraphicsExtractor g) {
+		Minecraft mc = Minecraft.getInstance();
+		if (mc.player == null || mc.options.hideGui || !LatveriaSky.active()) return;
+		int w = g.guiWidth(), h = g.guiHeight();
+		float time = mc.level.getGameTime() + mc.getDeltaTracker().getGameTimeDeltaPartialTick(false);
+		float flash = LatveriaSky.flash(mc.getDeltaTracker().getGameTimeDeltaPartialTick(false));
+		g.fill(0, 0, w, h, ARGB.color(26, 12, 64, 52));
+		float breathe = 0.92f + 0.08f * Mth.sin(time * 0.02f);
+		image(g, InfinityGauntlet.id(GUI + "vignette.png"), 0, 0, w, h, 256, 256, ARGB.color((int) (255 * breathe * (1 - flash * 0.5f)), 255, 255, 255));
+		if (flash > 0.05f) g.fill(0, 0, w, h, ARGB.color((int) (flash * 46), 170, 255, 205));
+	}
+
 	private static void hud(GuiGraphicsExtractor g) {
 		Minecraft mc = Minecraft.getInstance();
 		if (mc.player == null) return;
@@ -350,8 +375,10 @@ public final class DoomClient {
 			}
 			if (i == DoomArmor.SUNS && suns > 0) g.text(mc.font, Component.literal(String.valueOf(suns)), x - 8, y + 5, 0xFFFFE9A8, true);
 		}
-		g.text(mc.font, Component.translatable("doom.infinity_gauntlet.power." + DoomArmor.NAMES[selected]), x - 4 - mc.font.width(Component.translatable("doom.infinity_gauntlet.power." + DoomArmor.NAMES[selected])),
-				y0 + 6 * (size + 4) + 2, 0xFFFFE08A, true);
+		Component name = Component.translatable("doom.infinity_gauntlet.power." + DoomArmor.NAMES[selected]);
+		Component hint = Component.translatable("doom.infinity_gauntlet.cast_hint", CAST.getTranslatedKeyMessage());
+		g.text(mc.font, name, w - 6 - mc.font.width(name), y0 + 6 * (size + 4) + 2, 0xFFFFE08A, true);
+		g.text(mc.font, hint, w - 6 - mc.font.width(hint), y0 + 6 * (size + 4) + 13, 0xFFCFE8D8, true);
 	}
 
 	/** Doom's boss bar from the pack: track, a fill for the current stage, frame and seal. */

@@ -128,7 +128,7 @@ public final class DoomRenderers {
 	}
 
 	public static final class BotState extends EntityRenderState {
-		float bodyYaw, actionTime, walkPos, walkSpeed, deathTime, headYaw;
+		float bodyYaw, actionTime, walkPos, walkSpeed, deathTime, headYaw, scale;
 		int action, variant;
 		boolean hurt, ward, allied, flying;
 	}
@@ -136,7 +136,7 @@ public final class DoomRenderers {
 	public static final class Bot extends EntityRenderer<Doombot, BotState> {
 		public Bot(EntityRendererProvider.Context context) {
 			super(context);
-			this.shadowRadius = 0.5f;
+			this.shadowRadius = 0.9f;
 		}
 
 		@Override
@@ -162,6 +162,7 @@ public final class DoomRenderers {
 			s.ward = e.flag(Doombot.FLAG_WARD);
 			s.allied = e.flag(Doombot.FLAG_ALLIED);
 			s.flying = e.flag(Doombot.FLAG_FLYING);
+			s.scale = e.getScale();
 		}
 
 		@Override
@@ -188,7 +189,7 @@ public final class DoomRenderers {
 			int overlay = OverlayTexture.pack(OverlayTexture.u(0), OverlayTexture.v(s.hurt));
 			int light = lit(s.lightCoords);
 			int color = s.ward ? ARGB.color(255, 170, 255, 190) : s.allied ? ARGB.color(255, 235, 255, 240) : -1;
-			float scale = v == Doombot.BASTION ? 1.12f : v == Doombot.ROYAL_GUARD ? 1.06f : 1f;
+			float scale = s.scale;
 			pose.pushPose();
 			pose.mulPose(Axis.YP.rotationDegrees(180f - s.bodyYaw));
 			pose.scale(scale, scale, scale);

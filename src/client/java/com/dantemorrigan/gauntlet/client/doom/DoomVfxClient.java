@@ -62,6 +62,7 @@ public final class DoomVfxClient {
 	/** The Edict's aiming circle for the local wearer: centre and radius, or null. */
 	private static Vec3 preview;
 	private static float previewRadius;
+	private static int previewMode;
 
 	private static Identifier tex(String name) {
 		return InfinityGauntlet.id("textures/fx/doom/" + name + ".png");
@@ -83,9 +84,11 @@ public final class DoomVfxClient {
 		preview = null;
 	}
 
-	public static void preview(Vec3 at, float radius) {
+	/** The aiming mark of the selected power: mode 1 the Edict's circle, mode 2 the Rift Step's landing. */
+	public static void preview(Vec3 at, float radius, int mode) {
 		preview = at;
 		previewRadius = radius;
+		previewMode = mode;
 	}
 
 	/** Test hook: how many effects of a kind are alive. */
@@ -217,7 +220,8 @@ public final class DoomVfxClient {
 	private static void render(LevelRenderContext ctx) {
 		Minecraft mc = Minecraft.getInstance();
 		if (mc.level == null) return;
-		boolean anything = !FX.isEmpty() || !BOLTS.isEmpty() || !SHIELDS.isEmpty() || !JETS.isEmpty() || !ORBITS.isEmpty() || preview != null;
+		boolean gate = LatveriaSky.active() && cam().distanceToSqr(GATE) < 200 * 200;
+		boolean anything = gate || !FX.isEmpty() || !BOLTS.isEmpty() || !SHIELDS.isEmpty() || !JETS.isEmpty() || !ORBITS.isEmpty() || preview != null;
 		if (!anything) return;
 		float partial = mc.getDeltaTracker().getGameTimeDeltaPartialTick(false);
 		var camera = mc.gameRenderer.getMainCamera();
@@ -227,6 +231,15 @@ public final class DoomVfxClient {
 		PoseStack pose = ctx.poseStack();
 		Draw d = new Draw(ctx, pose, cam, right, upV);
 
+		if (gate) {
+			// The gate home stands in its arch and never turns: a fixed upright plane (north-south), seen from both sides.
+			float time = clock + partial;
+			Identifier frame = InfinityGauntlet.id(String.format("textures/particle/doctor_doom/latveria_gate_%02d.png", (int) (time / 2.2f) % 16));
+			float pulse = 0.85f + 0.15f * Mth.sin(time * 0.09f);
+			d.plane(CORE, GATE, 2.5f, 3.0f, 0x0A3A24, 0.62f);
+			d.plane(GLOW, GATE, 4.6f, 5.0f, STYLE[DoomVfx.GREEN][1], 0.32f * pulse);
+			d.plane(frame, GATE, 3.6f, 3.6f, 0xFFFFFF, 0.97f);
+		}
 		for (Fx b : BOLTS.values()) {
 			Vec3 head = b.prev.lerp(b.pos, partial);
 			float s = b.size;
@@ -324,9 +337,25 @@ public final class DoomVfxClient {
 			}
 		}
 		if (preview != null) {
-			d.flat(RING, preview.add(0, 0.06, 0), previewRadius, 0, STYLE[DoomVfx.EDICT_GREEN][1], 0.55f);
-			d.flat(GLOW, preview.add(0, 0.06, 0), previewRadius * 0.5f, 0, STYLE[DoomVfx.EDICT_GREEN][0], 0.18f);
+			float time = clock + partial;
+			float pulse = 0.75f + 0.25f * Mth.sin(time * 0.35f);
+			if (previewMode == 1) {
+				d.flat(RING, preview.add(0, 0.06, 0), previewRadius, time * 1.5f, STYLE[DoomVfx.EDICT_GREEN][1], 0.55f * pulse);
+				d.flat(RING, preview.add(0, 0.07, 0), previewRadius * 0.62f, -time * 2.2f, STYLE[DoomVfx.EDICT_GREEN][0], 0.4f * pulse);
+				d.flat(GLOW, preview.add(0, 0.06, 0), previewRadius * 0.6f, 0, STYLE[DoomVfx.EDICT_GREEN][0], 0.16f);
+			} else {
+				d.flat(RING, preview.add(0, 0.06, 0), previewRadius, time * 3f, STYLE[DoomVfx.GREEN][1], 0.8f * pulse);
+				d.flat(GLOW, preview.add(0, 0.06, 0), previewRadius * 1.3f, 0, STYLE[DoomVfx.GREEN][0], 0.3f);
+				d.tear(preview.add(0, 1.0, 0), 0.22f, 1.8f, STYLE[DoomVfx.GREEN], 0.5f * pulse);
+			}
 		}
+	}
+
+	/** The gate back to the wider world: centre of its arch in the city wall. */
+	private static final Vec3 GATE = new Vec3(0.5, com.dantemorrigan.gauntlet.doom.LatveriaPlan.VALLEY_Y + 4.0, 128.5);
+
+	private static Vec3 cam() {
+		return Minecraft.getInstance().gameRenderer.getMainCamera().position();
 	}
 
 	private static Vec3 hand(LivingEntity e, float partial) {
@@ -356,6 +385,14 @@ public final class DoomVfxClient {
 			double a = Math.toRadians(spin);
 			Vec3 x = new Vec3(Math.cos(a), 0, Math.sin(a)).scale(radius), z = new Vec3(-Math.sin(a), 0, Math.cos(a)).scale(radius);
 			quads(texture, e -> e.quad(c.subtract(x).subtract(z), c.add(x).subtract(z), c.add(x).add(z), c.subtract(x).add(z), color, true));
+		}
+
+		/** An upright rectangle in the plane of the X axis (facing north and south), both sides, fixed in the world. */
+		void plane(Identifier texture, Vec3 c, float halfW, float halfH, int rgb, float alpha) {
+			if (alpha <= 0.01f) return;
+			int color = argb(rgb, alpha);
+			Vec3 x = new Vec3(halfW, 0, 0), y = new Vec3(0, halfH, 0);
+			quads(texture, e -> e.quad(c.subtract(x).subtract(y), c.add(x).subtract(y), c.add(x).add(y), c.subtract(x).add(y), color, true));
 		}
 
 		/** An upright disc turned toward the camera around the vertical axis. */

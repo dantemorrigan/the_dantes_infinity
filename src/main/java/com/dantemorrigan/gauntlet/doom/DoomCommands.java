@@ -49,7 +49,7 @@ public final class DoomCommands {
 			"§a/gauntlet doom spawn | stop | kill | heal | passive§r",
 			"§a/gauntlet doom stage <1-3>§r · §aaction <clip>§r — e.g. latverian_edict, seven_suns, jet_slam",
 			"§a/gauntlet doom armor [player]§r · §acooldowns§r — every armor power ready",
-			"§a/gauntlet doombot spawn <variant> [allied]§r · §akill§r · §aallies§r — every Doombot near obeys you");
+			"§a/gauntlet doombot spawn <variant> [allied] [x y z]§r · §akill§r · §aallies§r — every Doombot near obeys you");
 
 	public static LiteralArgumentBuilder<CommandSourceStack> latveria() {
 		return Commands.literal("latveria")
@@ -161,8 +161,11 @@ public final class DoomCommands {
 		return Commands.literal("doombot")
 				.then(Commands.literal("spawn").then(Commands.argument("variant", StringArgumentType.word())
 						.suggests((ctx, b) -> SharedSuggestionProvider.suggest(Doombot.NAMES, b))
-						.executes(ctx -> spawnBot(ctx, false))
-						.then(Commands.argument("allied", BoolArgumentType.bool()).executes(ctx -> spawnBot(ctx, BoolArgumentType.getBool(ctx, "allied"))))))
+						.executes(ctx -> spawnBot(ctx, false, null))
+						.then(Commands.argument("allied", BoolArgumentType.bool()).executes(ctx -> spawnBot(ctx, BoolArgumentType.getBool(ctx, "allied"), null))
+								.then(Commands.argument("pos", net.minecraft.commands.arguments.coordinates.Vec3Argument.vec3())
+										.executes(ctx -> spawnBot(ctx, BoolArgumentType.getBool(ctx, "allied"),
+												net.minecraft.commands.arguments.coordinates.Vec3Argument.getVec3(ctx, "pos")))))))
 				.then(Commands.literal("kill").executes(ctx -> {
 					ServerPlayer p = ctx.getSource().getPlayerOrException();
 					int n = 0;
@@ -222,15 +225,16 @@ public final class DoomCommands {
 		return ok(ctx, "Doom's armor on " + p.getName().getString());
 	}
 
-	private static int spawnBot(CommandContext<CommandSourceStack> ctx, boolean allied) throws CommandSyntaxException {
+	private static int spawnBot(CommandContext<CommandSourceStack> ctx, boolean allied, net.minecraft.world.phys.Vec3 where) throws CommandSyntaxException {
 		ServerPlayer p = ctx.getSource().getPlayerOrException();
 		int v = Arrays.asList(Doombot.NAMES).indexOf(StringArgumentType.getString(ctx, "variant"));
 		if (v < 0) return fail(ctx, "variants: " + String.join(", ", Doombot.NAMES));
 		Doombot bot = ModEntities.DOOMBOT.create(p.level(), EntitySpawnReason.COMMAND);
 		if (bot == null) return 0;
 		bot.setup(v, -1);
-		var at = p.position().add(p.getLookAngle().multiply(3, 0, 3));
-		bot.snapTo(at.x, p.getY() + (v == Doombot.INTERCEPTOR ? 3 : 0), at.z, p.getYRot() + 180, 0);
+		// In front of the player, or at the given position.
+		var at = where == null ? p.position().add(p.getLookAngle().multiply(3, 0, 3)) : where;
+		bot.snapTo(at.x, at.y + (v == Doombot.INTERCEPTOR ? 3 : 0), at.z, p.getYRot() + 180, 0);
 		p.level().addFreshEntity(bot);
 		if (allied) bot.obey(p);
 		return ok(ctx, (allied ? "allied " : "hostile ") + Doombot.NAMES[v]);

@@ -44,6 +44,47 @@ public final class BossTypographyTest implements FabricClientGameTest {
                 ctx.waitTicks(8);ctx.getInput().pressKey(GLFW.GLFW_KEY_T);ctx.waitTicks(3);ctx.takeScreenshot("boss_typography_chat_"+language);
                 ctx.getInput().pressKey(GLFW.GLFW_KEY_ESCAPE);ctx.waitTicks(2);
             }
+            // ---- Regression over every line of every boss in both languages: a highlighted name is always a whole word,
+            // Doom is only highlighted as a speaker, and nothing about Doombots, the gate or the castle is set in a boss font.
+            for(String language:new String[]{"en","ru"}){
+                ctx.runOnClient(mc->{
+                    ModLang.set(language);
+                    var gson=new com.google.gson.Gson();
+                    java.util.Map<String,String> lang;
+                    try(var in=BossTypographyTest.class.getResourceAsStream("/assets/infinity_gauntlet/lang/"+(language.equals("ru")?"ru_ru":"en_us")+".json");
+                        var reader=new java.io.InputStreamReader(in,java.nio.charset.StandardCharsets.UTF_8)){
+                        lang=gson.<java.util.Map<String,String>>fromJson(reader,new com.google.gson.reflect.TypeToken<java.util.Map<String,String>>(){}.getType());
+                    } catch(java.io.IOException e){throw new AssertionError(e);}
+                    int themed=0,plain=0;
+                    for(String key:lang.keySet()){
+                        int args=0;for(int i=0;i<lang.get(key).length()-1;i++)if(lang.get(key).charAt(i)=='%' && lang.get(key).charAt(i+1)=='s')args++;
+                        Object[] values=new Object[args];java.util.Arrays.fill(values,Component.translatable("entity.infinity_gauntlet.doombot.soldier"));
+                        var source=Component.translatable(key,values);var kind=BossText.kind(source);var rich=BossText.chat(source);
+                        String whole=rich.getString();
+                        check(whole.equals(source.getString()),"Styling changed the text of "+key);
+                        java.util.List<int[]> names=new java.util.ArrayList<>();int[] at={0};
+                        rich.visit((Style style,String value)->{
+                            if(style.getFont().equals(BossText.NAME) && !value.isBlank())names.add(new int[]{at[0],value.length()});
+                            at[0]+=value.length();return Optional.empty();},Style.EMPTY);
+                        for(int[] n:names){
+                            boolean before=n[0]==0 || !Character.isLetterOrDigit(whole.charAt(n[0]-1));
+                            boolean after=n[0]+n[1]>=whole.length() || !Character.isLetterOrDigit(whole.charAt(n[0]+n[1]));
+                            check(before && after,"A boss name is highlighted inside a word in "+key+" ("+language+"): "+whole);
+                            if(kind==BossText.Kind.SOVEREIGN)check(n[0]==0 && whole.startsWith(whole.substring(0,n[1])+":"),"Doom is highlighted outside the speaker position in "+key+": "+whole);
+                        }
+                        if(key.startsWith("msg.infinity_gauntlet.latveria.") && !key.startsWith("msg.infinity_gauntlet.latveria.doom"))
+                            check(kind==null && !font(rich,BossText.NAME) && !font(rich,BossText.ACTION),"A Latveria notice is set in a boss font: "+key);
+                        if(kind!=null)themed++;else plain++;
+                    }
+                    check(themed>20 && plain>200,"The language file scan looks wrong: themed "+themed+", plain "+plain);
+                    var guard=BossText.chat(Component.translatable("msg.infinity_gauntlet.latveria.bot.guard",Component.translatable("entity.infinity_gauntlet.doombot.bastion")));
+                    check(!font(guard,BossText.NAME) && !font(guard,BossText.ACTION),"A Doombot's name is set in a boss font");
+                    var speech=BossText.chat(Component.translatable("msg.infinity_gauntlet.latveria.doom.intro_1"));
+                    check(font(speech,BossText.NAME) && font(speech,BossText.ACTION),"Doom's speech lost its type");
+                    var inline=BossText.chat(Component.translatable("msg.infinity_gauntlet.latveria.conquered"));
+                    check(!font(inline,BossText.NAME),"'Doom' is highlighted in a notice that is not his speech");
+                });
+            }
             System.out.println("BOSS TYPOGRAPHY: custom RU/EN glyphs, name/action weights, source preservation, ordinary chat and live chat/HUD passed");
         }
     }

@@ -245,7 +245,8 @@ public final class LatveriaPlan {
 		BlockState wall = style % 2 == 0 ? Blocks.STONE_BRICKS.defaultBlockState() : PLANKS;
 		Block roof = style % 3 == 0 ? Blocks.DEEPSLATE_TILE_STAIRS : Blocks.DARK_OAK_STAIRS;
 		BlockState ridge = style % 3 == 0 ? TILE : Blocks.DARK_OAK_PLANKS.defaultBlockState();
-		fill(x0, y - 1, z0, x1, y - 1, z1, Blocks.COBBLESTONE);
+		// The ground is the block row at y - 1 (VALLEY_Y); the floor is planks there and people stand at y.
+		fill(x0, y - 4, z0, x1, y - 1, z1, Blocks.COBBLESTONE);
 		fill(x0, y, z0, x1, y + h - 1, z1, wall);
 		fill(x0, y, z0, x1, y, z1, Blocks.COBBLESTONE);
 		fill(x0 + 1, y, z0 + 1, x1 - 1, y + h - 1, z1 - 1, AIR);
@@ -273,8 +274,9 @@ public final class LatveriaPlan {
 		}
 		int dx = door.getAxis() == Direction.Axis.X ? (door == Direction.EAST ? x1 : x0) : x0 + w / 2;
 		int dz = door.getAxis() == Direction.Axis.Z ? (door == Direction.SOUTH ? z1 : z0) : z0 + d / 2;
-		fill(dx, y + 1, dz, dx, y + 2, dz, AIR);
-		set(dx, y, dz, Blocks.COBBLESTONE);
+		// The doorway is at ground level: no sill to jump over, a cobblestone step outside.
+		fill(dx, y, dz, dx, y + 1, dz, AIR);
+		set(dx, y - 1, dz, Blocks.COBBLESTONE);
 		set(dx + door.getStepX(), y - 1, dz + door.getStepZ(), Blocks.COBBLESTONE);
 		// Windows on the walls beside the door's.
 		if (door.getAxis() == Direction.Axis.X) {
@@ -290,10 +292,10 @@ public final class LatveriaPlan {
 		Direction in = door.getOpposite();
 		int bx = in == Direction.EAST ? x1 - 2 : in == Direction.WEST ? x0 + 2 : x0 + 1;
 		int bz = in == Direction.SOUTH ? z1 - 2 : in == Direction.NORTH ? z0 + 2 : z0 + 1;
-		bed(bx, y + 1, bz, in, style % 2 == 0 ? Blocks.GREEN_BED : Blocks.WHITE_BED);
+		bed(bx, y, bz, in, style % 2 == 0 ? Blocks.GREEN_BED : Blocks.WHITE_BED);
 		int cx = in.getAxis() == Direction.Axis.X ? bx : x1 - 1, cz = in.getAxis() == Direction.Axis.Z ? bz : z1 - 1;
-		set(cx, y + 1, cz, Blocks.CRAFTING_TABLE);
-		VILLAGERS.add(new BlockPos(dx + door.getStepX() * 2, y, dz + door.getStepZ() * 2));
+		furn(cx, y, cz, Blocks.CRAFTING_TABLE.defaultBlockState());
+		VILLAGERS.add(new BlockPos(dx + door.getStepX() * 2, y - 1, dz + door.getStepZ() * 2));
 	}
 
 	private static void city() {
@@ -339,6 +341,7 @@ public final class LatveriaPlan {
 			lamp(x - 2, y + 1, 27); lamp(-x + 2, y + 1, 33);
 		}
 		// The watch tower at the head of the main street.
+		fill(7, y - 8, -63, 15, y, -57, WALL_BASE);
 		shell(8, y + 1, -62, 14, y + 16, -56, 1, WALL);
 		fill(11, y + 1, -56, 11, y + 2, -56, AIR);
 		fill(7, y + 17, -63, 15, y + 17, -57, TILE);
@@ -530,7 +533,6 @@ public final class LatveriaPlan {
 			fill(38, f, z, 39, f + 2, z + 2, Blocks.GLASS); fill(38, f, z + 1, 38, f + 1, z + 1, Blocks.WATER);
 			set(26, f, z, Blocks.CAULDRON); set(26, f, z + 1, Blocks.SMITHING_TABLE);
 		}
-		furn(26, f, -257, Blocks.BREWING_STAND.defaultBlockState());
 		fill(26, f, -258, 26, f, -256, Blocks.POLISHED_DEEPSLATE); furn(26, f + 1, -257, Blocks.BREWING_STAND.defaultBlockState());
 		chest(39, f, -257, Direction.WEST, 2); chest(39, f, -259, Direction.WEST, 2);
 		fill(41, f, -285, 46, f + 2, -283, AIR);

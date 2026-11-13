@@ -92,9 +92,15 @@ def armor():
         rect(b, x, 20, w, 3, GREEN, 15, False)
     rect(b, 4, 16, 4, 4, STEEL, 17)
     for x in range(0, 16): dot(b, x, 25, STEEL_LO)
-    # The worn armor is Doom's own model, drawn by DoomArmorLayer; the vanilla layers stay empty.
+    # The worn armor is Doom's own model, drawn by DoomArmorLayer; the vanilla layers get fully transparent sheets.
+    blank = Image.new("RGBA", (64, 32), (0, 0, 0, 0))
+    for sub in ("humanoid", "humanoid_leggings"):
+        path = ASSETS + "textures/entity/equipment/%s/doom.png" % sub
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        blank.save(path)
     with open(ASSETS + "equipment/doom.json", "w") as f:
-        json.dump({"layers": {}}, f)
+        json.dump({"layers": {"humanoid": [{"texture": "infinity_gauntlet:doom"}],
+                              "humanoid_leggings": [{"texture": "infinity_gauntlet:doom"}]}}, f, indent=2)
         f.write("\n")
 
 
