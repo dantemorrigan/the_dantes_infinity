@@ -196,6 +196,12 @@ public final class InfinityBeam {
                     float pulse = Math.min(cap - spent, amount * 4);
                     if (((com.dantemorrigan.gauntlet.boss.Thanos) target).hurtByBeam(c.level, c.owner, pulse)) c.damage.put(target.getUUID(), spent + pulse);
                 }
+            } else if (target instanceof com.dantemorrigan.gauntlet.doom.DoctorDoom || target instanceof com.dantemorrigan.gauntlet.doom.Doombot) {
+                // Doom and his robots take the beam as heavy blows through their own guards and caps, never as a delete.
+                if ((c.age - c.charge) % 4 == 0) {
+                    target.invulnerableTime = 0;
+                    GauntletDamage.hurt(c.level, target, c.owner, c.owner.damageSources().playerAttack(c.owner), 40, CombatTargets.impact(target, from, to, radius));
+                }
             } else if (target instanceof com.dantemorrigan.gauntlet.boss.LivingTribunal) {
                 if ((c.age - c.charge) % 8 == 0)
                     GauntletDamage.hurt(c.level, target, c.owner, c.owner.damageSources().playerAttack(c.owner), 48,CombatTargets.impact(target,from,to,radius));

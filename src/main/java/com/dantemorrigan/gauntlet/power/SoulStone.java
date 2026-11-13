@@ -117,6 +117,11 @@ public final class SoulStone {
 			MASS_CD.put(player.getUUID(), now + cfg.soulMassCooldownTicks);
 		} else {
 			if (now < POINT_CD.getOrDefault(player.getUUID(), 0L) && !player.isCreative()) return;
+			if (burnDoom(player, cfg.soulRange, 30f)) {
+				POINT_CD.put(player.getUUID(), now + cfg.soulPointCooldownTicks);
+				GauntletState.setInUse(g, EnumSet.of(Stone.SOUL));
+				return;
+			}
 			LivingEntity target = MindStone.lookTarget(player, com.dantemorrigan.gauntlet.cosmos.CosmosTravel.inCosmos(player)?CosmicGauntlet.reach(player,170):cfg.soulRange, cfg.soulPlayerDrain);
 			if (target == null || busy(target) || !player.hasLineOfSight(target)) return;
 			POINT_CD.put(player.getUUID(), now + cfg.soulPointCooldownTicks);
@@ -145,6 +150,7 @@ public final class SoulStone {
 			player.level().playSound(null, thanos.blockPosition(), SoundEvents.SOUL_ESCAPE.value(), SoundSource.PLAYERS, 2.0F, 0.5F);
 			return true;
 		}
+		if (burnDoom(player, 10, 20f)) return true;
 		LivingEntity target = MindStone.lookTarget(player, 8);
 		if (target == null || busy(target) || !player.hasLineOfSight(target)) return false;
 		start(player, target, 0, POINT_EXTRACT, POINT_FLIGHT);
@@ -176,6 +182,24 @@ public final class SoulStone {
 
 	public static boolean isExtracting(LivingEntity e) {
 		for (Extraction x : ACTIVE) if (x.target == e) return true;
+		return false;
+	}
+
+	/**
+	 * Doctor Doom's soul is his own and stays where it is: like Thanos, he cannot be frozen and drained, so the stone
+	 * strikes it instead, a heavy blow that goes through his armor's guard rules like any other.
+	 */
+	private static boolean burnDoom(ServerPlayer player, double range, float damage) {
+		Vec3 look = player.getViewVector(1f);
+		for (com.dantemorrigan.gauntlet.doom.DoctorDoom doom : player.level().getEntitiesOfClass(com.dantemorrigan.gauntlet.doom.DoctorDoom.class,
+				player.getBoundingBox().inflate(range), d -> d.isAlive() && player.hasLineOfSight(d))) {
+			Vec3 to = doom.position().add(0, 1.6, 0).subtract(player.getEyePosition());
+			if (to.length() > range || to.normalize().dot(look) < 0.94) continue;
+			doom.hurtServer(player.level(), player.damageSources().playerAttack(player), damage);
+			player.level().sendParticles(net.minecraft.core.particles.ParticleTypes.SOUL, doom.getX(), doom.getY() + 1.6, doom.getZ(), 40, 0.6, 0.9, 0.6, 0.05);
+			player.level().playSound(null, doom.blockPosition(), SoundEvents.SOUL_ESCAPE.value(), SoundSource.PLAYERS, 2.0F, 0.5F);
+			return true;
+		}
 		return false;
 	}
 

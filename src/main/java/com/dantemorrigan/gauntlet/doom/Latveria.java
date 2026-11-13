@@ -111,15 +111,77 @@ public final class Latveria {
 	/** Debug: Doom stays on his throne until the hall is empty or he is summoned by command. */
 	private static boolean held;
 
+	// ------------------------------------------------------------------ the city cannot be broken
+
+	private static int editing;
+	private static boolean bypass;
+	/** Blocks visitors put down in Latveria: theirs to take back, unlike the city's own. Kept on the Latveria level. */
+	private static final AttachmentType<List<Long>> PLACED = AttachmentRegistry.<List<Long>>builder().persistent(Codec.LONG.listOf())
+			.buildAndRegister(com.dantemorrigan.gauntlet.InfinityGauntlet.id("latveria_placed"));
+	private static it.unimi.dsi.fastutil.longs.LongOpenHashSet placed;
+	private static boolean placedDirty;
+
+	private static it.unimi.dsi.fastutil.longs.LongOpenHashSet placed(ServerLevel level) {
+		if (placed == null) {
+			placed = new it.unimi.dsi.fastutil.longs.LongOpenHashSet();
+			List<Long> saved = level.getAttached(PLACED);
+			if (saved != null) placed.addAll(saved);
+		}
+		return placed;
+	}
+
+	private static void flushPlaced(MinecraftServer server) {
+		ServerLevel level = server.getLevel(LEVEL);
+		if (!placedDirty || placed == null || level == null) return;
+		placedDirty = false;
+		level.setAttached(PLACED, List.copyOf(placed));
+	}
+
+	/** Runs Latveria's own block changes (gates, generator, furniture, Doom's seal nodes) past the protection. */
+	public static void edit(Runnable change) {
+		editing++;
+		try { change.run(); } finally { editing--; }
+	}
+
+	/**
+	 * True when {@code next} may not replace the block at {@code pos}: in Latveria the city, the castle and the ground stay
+	 * as built, whatever beam, blast or stone hits them, so the route of the assault cannot be cut short. Air, grass, fire
+	 * and other replaceable blocks may change, and so may a block's own state (doors, trapdoors, levers).
+	 */
+	public static boolean protects(net.minecraft.world.level.Level level, BlockPos pos, net.minecraft.world.level.block.state.BlockState next) {
+		if (editing > 0 || level.isClientSide() || level.dimension() != LEVEL || !(level instanceof ServerLevel sl)) return false;
+		net.minecraft.world.level.block.state.BlockState old = level.getBlockState(pos);
+		if (old.isAir() || old.canBeReplaced() || old.getBlock() == next.getBlock()) return false;
+		return !bypass && !placed(sl).contains(pos.asLong());
+	}
+
+	/** Bookkeeping after a change was let through: a block set down in the open becomes the visitor's, a cleared one is forgotten. */
+	public static void changed(net.minecraft.world.level.Level level, BlockPos pos, net.minecraft.world.level.block.state.BlockState old, net.minecraft.world.level.block.state.BlockState next) {
+		if (editing > 0 || level.isClientSide() || level.dimension() != LEVEL || !(level instanceof ServerLevel sl)) return;
+		if (next.isAir() || next.canBeReplaced()) {
+			if (placed(sl).remove(pos.asLong())) placedDirty = true;
+		} else if ((old.isAir() || old.canBeReplaced()) && placed(sl).add(pos.asLong())) placedDirty = true;
+	}
+
 	public static void init() {
+		net.fabricmc.fabric.api.event.player.PlayerBlockBreakEvents.BEFORE.register((level, player, pos, state, be) -> {
+			if (level.dimension() != LEVEL) return true;
+			if (player.isCreative()) { bypass = true; return true; }
+			return !protects(level, pos, Blocks.AIR.defaultBlockState());
+		});
+		net.fabricmc.fabric.api.event.player.PlayerBlockBreakEvents.AFTER.register((level, player, pos, state, be) -> bypass = false);
+		net.fabricmc.fabric.api.event.player.PlayerBlockBreakEvents.CANCELED.register((level, player, pos, state, be) -> bypass = false);
+		ServerTickEvents.START_SERVER_TICK.register(server -> bypass = false);
 		for (LatveriaPlan.Op op : LatveriaPlan.FURNITURE) furnitureChunks.add(ChunkPos.pack(op.x0() >> 4, op.z0() >> 4));
 		for (BlockPos p : LatveriaPlan.VILLAGERS) furnitureChunks.add(ChunkPos.pack(p.getX() >> 4, p.getZ() >> 4));
-		ServerLifecycleEvents.SERVER_STOPPING.register(server -> DoomItems.TimePlatforms.tick(true));
+		ServerLifecycleEvents.SERVER_STOPPING.register(server -> { DoomItems.TimePlatforms.tick(true); flushPlaced(server); });
 		ServerLifecycleEvents.SERVER_STOPPED.register(server -> {
 			loaded = false;
 			boss = null;
 			held = false;
 			toFurnish.clear();
+			placed = null;
+			placedDirty = false;
 			inGate.clear();
 			logoDue.clear();
 			DoomCombat.clear();
@@ -208,7 +270,7 @@ public final class Latveria {
 			set(level, LatveriaPlan.GATE, Blocks.IRON_BARS);
 			set(level, LatveriaPlan.THRONE_DOOR, Blocks.GREEN_STAINED_GLASS);
 			set(level, LatveriaPlan.LAB_DOOR, Blocks.GREEN_STAINED_GLASS);
-			level.setBlockAndUpdate(LatveriaPlan.GENERATOR, Blocks.SEA_LANTERN.defaultBlockState());
+			edit(() -> level.setBlockAndUpdate(LatveriaPlan.GENERATOR, Blocks.SEA_LANTERN.defaultBlockState()));
 		}
 		spawned = 0;
 		flags = 0;
@@ -319,7 +381,7 @@ public final class Latveria {
 		level.getChunk(LatveriaPlan.GENERATOR);
 		if (off) barriers(level);
 		else {
-			level.setBlockAndUpdate(LatveriaPlan.GENERATOR, Blocks.SEA_LANTERN.defaultBlockState());
+			edit(() -> level.setBlockAndUpdate(LatveriaPlan.GENERATOR, Blocks.SEA_LANTERN.defaultBlockState()));
 			set(level, LatveriaPlan.LAB_DOOR, Blocks.GREEN_STAINED_GLASS);
 		}
 	}
@@ -419,6 +481,7 @@ public final class Latveria {
 		DoomArmor.tick(server);
 		DoomItems.TimePlatforms.tick(false);
 		long time = server.overworld().getGameTime();
+		if (time % 100 == 0) flushPlaced(server);
 		if (time % 20 == 0) {
 			for (ServerPlayer p : server.getPlayerList().getPlayers()) {
 				if (Boolean.TRUE.equals(p.getAttached(ACCESS)) || !SpaceStone.latveriaSealed(p) || !ModAdvancements.completed(p, "defeat_loki") || !hasMind(p)) continue;
@@ -497,7 +560,7 @@ public final class Latveria {
 		if ((flags & GENERATOR) != 0) {
 			open(level, LatveriaPlan.LAB_DOOR, Blocks.GREEN_STAINED_GLASS);
 			if (level.isLoaded(LatveriaPlan.GENERATOR) && level.getBlockState(LatveriaPlan.GENERATOR).is(Blocks.SEA_LANTERN)) {
-				level.setBlockAndUpdate(LatveriaPlan.GENERATOR, Blocks.COAL_BLOCK.defaultBlockState());
+				edit(() -> level.setBlockAndUpdate(LatveriaPlan.GENERATOR, Blocks.COAL_BLOCK.defaultBlockState()));
 			}
 		}
 	}
@@ -517,9 +580,11 @@ public final class Latveria {
 
 	private static void set(ServerLevel level, int[] box, Block block) {
 		if (!level.isLoaded(new BlockPos(box[0], box[1], box[2]))) return;
-		for (BlockPos p : BlockPos.betweenClosed(box[0], box[1], box[2], box[3], box[4], box[5])) {
-			level.setBlock(p, block.defaultBlockState(), Block.UPDATE_ALL);
-		}
+		edit(() -> {
+			for (BlockPos p : BlockPos.betweenClosed(box[0], box[1], box[2], box[3], box[4], box[5])) {
+				level.setBlock(p, block.defaultBlockState(), Block.UPDATE_ALL);
+			}
+		});
 	}
 
 	/** Switches the generator off (a right click on it does this). False if it was off already. */
@@ -669,7 +734,7 @@ public final class Latveria {
 		save(level.getServer());
 		for (LatveriaPlan.Op op : LatveriaPlan.FURNITURE) {
 			if (op.x0() >> 4 != cx || op.z0() >> 4 != cz) continue;
-			level.setBlock(new BlockPos(op.x0(), op.y0(), op.z0()), op.state(), Block.UPDATE_CLIENTS);
+			edit(() -> level.setBlock(new BlockPos(op.x0(), op.y0(), op.z0()), op.state(), Block.UPDATE_CLIENTS));
 		}
 		for (int[] c : LatveriaPlan.CHESTS) {
 			if (c[0] >> 4 != cx || c[2] >> 4 != cz || !(level.getBlockEntity(new BlockPos(c[0], c[1], c[2])) instanceof Container chest)) continue;

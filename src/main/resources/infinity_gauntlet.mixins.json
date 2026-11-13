@@ -16,7 +16,9 @@
 		"EnderDragonWingMixin",
 		"MindArenaTeleportMixin",
 		"MindArenaMovementMixin",
-		"ServerGamePacketListenerAccessor"
+		"ServerGamePacketListenerAccessor",
+		"LatveriaGuardMixin",
+		"LatveriaExplosionMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1

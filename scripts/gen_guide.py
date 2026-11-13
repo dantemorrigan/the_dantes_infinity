@@ -86,14 +86,14 @@ add('doom',
  f"{H}The Fury of Doom{R}\nBeat {B}Loki{R}. Carry the {B}Mind Stone{R}: it reads Doom's seal on the Space Stone portal. Pick {B}Latveria{R} on the portal wheel.\nFriends within 4 blocks come along.",
  f"{H}Ярость Дума{R}\nПобеди {B}Локи{R}. Носи {B}Камень Разума{R}: он прочтёт печать Дума на портале Пространства. Выбери {B}Латверию{R} в колесе порталов.\nДрузья в 4 блоках идут с тобой.")
 add('latveria',
- f"{H}Latveria{R}\nA stormy Carpathian night: a city, a road, {B}Castle Doom{R}. Two themes play as you walk.\nThe {B}gate{R} at the city's south end takes you home: stand in it for 2 seconds.",
- f"{H}Латверия{R}\nБурная карпатская ночь: город, дорога, {B}замок Дума{R}. Пока идёшь, играют две темы.\n{B}Врата{R} на юге города вернут домой: постой в них 2 секунды.")
+ f"{H}Latveria{R}\nA stormy Carpathian night: a city, a road, {B}Castle Doom{R}. Two themes play as you walk.\nThe {B}gate{R} at the city's south end takes you home: stand in it for 2 seconds.\nIts stone does not break: no beam, blast or pick cuts a way in.",
+ f"{H}Латверия{R}\nБурная карпатская ночь: город, дорога, {B}замок Дума{R}. Пока идёшь, играют две темы.\n{B}Врата{R} на юге города вернут домой: постой в них 2 секунды.\nКамень города не ломается: ни луч, ни взрыв, ни кирка не пробьют путь.")
 add('assault',
  f"{H}The assault{R}\nSquads hold the {B}gate{R} and the {B}yard{R}: beat them and the doors open.\nOr go east: the {B}service door{R} leads to the lab. Right-click the {B}generator{R}: Doom and the shields weaken, a side door opens.",
  f"{H}Штурм{R}\nОтряды держат {B}ворота{R} и {B}двор{R}: разбей их, и двери откроются.\nИли иди на восток: {B}служебная дверь{R} ведёт в лабораторию. ПКМ по {B}генератору{R}: Дум и щиты слабеют, открывается боковая дверь.")
 add('doombots',
- f"{H}Doombots{R}\nTall and tough.\n{B}Soldier{R} shoots. {B}Bastion{R} shields. {B}Interceptor{R} dives. {B}Arcanist{R} wards. {B}Engineer{R} repairs. {B}Guard{R} swings a halberd.\nAfter the fight they obey you.",
- f"{H}Думботы{R}\nВысокие и крепкие.\n{B}Солдат{R} стреляет. {B}Бастион{R} прикрывает. {B}Перехватчик{R} пикирует. {B}Арканист{R} ставит защиту. {B}Инженер{R} чинит. {B}Страж{R} бьёт алебардой.\nПосле боя слушаются тебя.")
+ f"{H}Doombots{R}\nThey take turns to strike.\n{B}Soldier{R} shoots. {B}Bastion{R} shields its front. {B}Interceptor{R} dives, then is dazed. {B}Arcanist{R} wards. {B}Engineer{R} repairs. {B}Guard{R} swings a halberd.\nAfter the fight they obey you.",
+ f"{H}Думботы{R}\nБьют по очереди.\n{B}Солдат{R} стреляет. {B}Бастион{R} закрыт спереди. {B}Перехватчик{R} пикирует и оглушён. {B}Арканист{R} ставит защиту. {B}Инженер{R} чинит. {B}Страж{R} с алебардой.\nПосле боя слушаются тебя.")
 add('doomfight',
  f"{H}Doctor Doom{R}\nThree stages: steel, sorcery, the {B}Edict{R}.\nIn the Edict break a glowing {B}seal node{R} to save its side of the hall, or hit him hard to stop the cast.\nAfter big attacks he is open.",
  f"{H}Доктор Дум{R}\nТри этапа: сталь, магия, {B}Эдикт{R}.\nВ Эдикт разбей светящийся {B}узел печати{R}, чтобы спасти свою часть зала, или сильно ударь Дума, чтобы сорвать каст.\nПосле мощных атак он открыт.")

@@ -480,8 +480,10 @@ public class DoctorDoom extends Monster {
 		nodesUp = up;
 		for (int i = 0; i < 4; i++) {
 			BlockPos p = LatveriaPlan.SEAL_NODES[i];
-			level.setBlockAndUpdate(p, up ? Blocks.SEA_LANTERN.defaultBlockState() : Blocks.AIR.defaultBlockState());
-			level.setBlockAndUpdate(p.below(), up ? Blocks.POLISHED_DEEPSLATE_WALL.defaultBlockState() : Blocks.AIR.defaultBlockState());
+			Latveria.edit(() -> {
+				level.setBlockAndUpdate(p, up ? Blocks.SEA_LANTERN.defaultBlockState() : Blocks.AIR.defaultBlockState());
+				level.setBlockAndUpdate(p.below(), up ? Blocks.POLISHED_DEEPSLATE_WALL.defaultBlockState() : Blocks.AIR.defaultBlockState());
+			});
 			if (up) DoomFx.bill(level, ModParticles.DOOM_RUNE_MOTE, p.getCenter(), 4);
 		}
 	}
@@ -493,8 +495,10 @@ public class DoctorDoom extends Monster {
 			BlockPos p = LatveriaPlan.SEAL_NODES[i];
 			if (safe[i] || !(p.equals(pos) || p.below().equals(pos))) continue;
 			safe[i] = true;
-			level.setBlockAndUpdate(p, Blocks.AIR.defaultBlockState());
-			level.setBlockAndUpdate(p.below(), Blocks.AIR.defaultBlockState());
+			Latveria.edit(() -> {
+				level.setBlockAndUpdate(p, Blocks.AIR.defaultBlockState());
+				level.setBlockAndUpdate(p.below(), Blocks.AIR.defaultBlockState());
+			});
 			DoomFx.bill(level, ModParticles.DOOM_IMPACT, p.getCenter(), 2.5);
 			DoomFx.sound(level, p.getCenter(), SoundEvents.GLASS_BREAK, 1.5f, 0.7f);
 			DoomFx.sound(level, p.getCenter(), SoundEvents.BEACON_DEACTIVATE, 1.5f, 1.4f);

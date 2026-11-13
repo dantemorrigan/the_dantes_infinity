@@ -168,7 +168,7 @@ public final class DoomItems {
 		public static void tick(boolean all) {
 			LIVE.removeIf(e -> {
 				if (!all && e.level().getGameTime() < e.until()) return false;
-				for (BlockPos p : e.blocks()) if (e.level().getBlockState(p).is(Blocks.PURPLE_STAINED_GLASS)) e.level().setBlockAndUpdate(p, Blocks.AIR.defaultBlockState());
+				Latveria.edit(() -> { for (BlockPos p : e.blocks()) if (e.level().getBlockState(p).is(Blocks.PURPLE_STAINED_GLASS)) e.level().setBlockAndUpdate(p, Blocks.AIR.defaultBlockState()); });
 				return true;
 			});
 		}

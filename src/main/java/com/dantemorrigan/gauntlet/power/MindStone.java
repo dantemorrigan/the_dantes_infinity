@@ -182,7 +182,7 @@ public final class MindStone {
 
 	public static boolean isBoss(Entity e) {
 		return e instanceof EnderDragon || e instanceof WitherBoss || e instanceof com.dantemorrigan.gauntlet.boss.Thanos
-				|| e instanceof com.dantemorrigan.gauntlet.boss.LivingTribunal;
+				|| e instanceof com.dantemorrigan.gauntlet.boss.LivingTribunal || e instanceof com.dantemorrigan.gauntlet.doom.DoctorDoom;
 	}
 
 	// ------------------------------------------------------------------ grab

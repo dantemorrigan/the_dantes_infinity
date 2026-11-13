@@ -154,6 +154,7 @@ public final class PowerAbility {
 			push = push.normalize().scale(cfg.strikeKnockback * charge * falloff);
             double brace = e instanceof ServerPlayer guarded && com.dantemorrigan.gauntlet.stormbreaker.Stormbreaker.guarded(guarded) ? .36 : 1;
             if (e instanceof com.dantemorrigan.gauntlet.boss.Thanos) brace = .1; // the Titan barely budges
+            else if (e instanceof com.dantemorrigan.gauntlet.doom.DoctorDoom) brace = .15; // nor does the armored monarch
 			e.push(push.x * brace, (com.dantemorrigan.gauntlet.cosmos.CosmosTravel.inCosmos(player)?push.y:0.35 + 0.3 * charge * falloff) * brace, push.z * brace);
 			e.hurtMarked = true;
 		}

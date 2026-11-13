@@ -43,12 +43,12 @@ public class Doombot extends PathfinderMob {
 	public static final String[] NAMES = {"soldier", "bastion", "interceptor", "arcanist", "engineer", "royal_guard"};
 	public static final int A_IDLE = 0, A_ALERT = 1, A_ATTACK = 2, A_STAGGER = 3, A_SALUTE = 4, A_ACTIVATE = 5;
 	public static final int FLAG_ALLIED = 1, FLAG_SHIELD = 2, FLAG_WARD = 4, FLAG_FLYING = 8;
-	private static final int[] ATTACK_TICKS = {24, 48, 44, 40, 60, 48};
-	private static final double[] HEALTH = {90, 320, 80, 90, 100, 240};
+	private static final int[] ATTACK_TICKS = {24, 56, 44, 40, 60, 48};
+	private static final double[] HEALTH = {90, 170, 80, 90, 100, 190};
 	private static final double[] SPEED = {0.27, 0.2, 0.3, 0.23, 0.28, 0.29};
-	private static final double[] ARMOR = {12, 24, 8, 8, 12, 20};
+	private static final double[] ARMOR = {12, 8, 8, 8, 12, 14};
 	/** Body size: all of them stand 1 to 1.5 blocks over a player, the Bastion towers over the rest. */
-	public static final double[] SCALE = {1.65, 2.2, 1.55, 1.6, 1.5, 1.8};
+	public static final double[] SCALE = {1.65, 2.0, 1.55, 1.6, 1.5, 1.8};
 	/** Blows: a Doombot hits hard enough to matter for a player in iron or diamond. */
 	private static final float[] BLOW = {10, 16, 14, 11, 7, 15};
 	/** The most health one blow can take, as a share of the maximum: a nuke does not delete a robot. */
@@ -60,7 +60,8 @@ public class Doombot extends PathfinderMob {
 
 	/** Client: tickCount when the current action began. */
 	public int actionStartTick;
-	private int actionTicks, cooldown = 20, casts, wardTicks, retarget;
+	private int actionTicks, cooldown = 20, casts, wardTicks, retarget, airTimer = 90, groundTimer, meleeCd;
+		private final java.util.Set<UUID> struck = new java.util.HashSet<>();
 	private int squad = -1;
 	private UUID commander, targetId, patient;
 	private boolean guarding;
@@ -115,8 +116,8 @@ public class Doombot extends PathfinderMob {
 		this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(HEALTH[v]);
 		this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(SPEED[v]);
 		this.getAttribute(Attributes.ARMOR).setBaseValue(ARMOR[v]);
-		this.getAttribute(Attributes.ARMOR_TOUGHNESS).setBaseValue(v == BASTION ? 8 : 4);
-		this.getAttribute(Attributes.KNOCKBACK_RESISTANCE).setBaseValue(v == BASTION ? 0.95 : v == ROYAL_GUARD ? 0.7 : 0.5);
+		this.getAttribute(Attributes.ARMOR_TOUGHNESS).setBaseValue(2);
+		this.getAttribute(Attributes.KNOCKBACK_RESISTANCE).setBaseValue(v == BASTION ? 0.7 : v == ROYAL_GUARD ? 0.6 : 0.5);
 		this.getAttribute(Attributes.SCALE).setBaseValue(SCALE[v]);
 		this.getAttribute(Attributes.STEP_HEIGHT).setBaseValue(1.1 * SCALE[v]);
 		this.refreshDimensions();
@@ -222,37 +223,120 @@ public class Doombot extends PathfinderMob {
 			case SOLDIER, ARCANIST -> {
 				if (d > 13) this.getNavigation().moveTo(target, 1.0);
 				else if (d < 5) retreat(target);
-				else this.getNavigation().stop();
-				if (cooldown <= 0 && d <= 20 && this.hasLineOfSight(target)) begin(variant() == SOLDIER ? 30 : 52);
+				else if (this.getNavigation().isDone() && this.random.nextInt(25) == 0) strafe(target);
+					if (cooldown <= 0 && d <= 20 && this.hasLineOfSight(target) && mayAttack(level, target)) begin(variant() == SOLDIER ? 40 : 70);
 			}
 			case BASTION -> {
 				this.getNavigation().moveTo(target, 1.0);
-				if (cooldown <= 0 && (d <= 6.5 || d <= 14)) begin(70);
+				if (cooldown <= 0 && d <= 13 && mayAttack(level, target)) begin(50);
 			}
 			case INTERCEPTOR -> {
-				hover(target.position().add(Math.cos(this.tickCount * 0.05) * 6, 9, Math.sin(this.tickCount * 0.05) * 6), 0.36);
-				if (cooldown <= 0 && d <= 24) begin(56);
+				flyer(level, target);
 			}
 			case ENGINEER -> {
 				if (d > 3.6) this.getNavigation().moveTo(target, 1.1);
-				if (cooldown <= 0 && d <= 4.4) {
+				if (cooldown <= 0 && d <= 4.4 && mayAttack(level, target)) {
 					DoomCombat.hurt(level, target, this, BLOW[ENGINEER]);
 					this.swing(InteractionHand.MAIN_HAND);
-					cooldown = 20;
+					cooldown = 32 + this.random.nextInt(16);
 				}
 			}
 			default -> {
 				this.getNavigation().moveTo(target, 1.2);
-				if (cooldown <= 0 && d <= 7) begin(20);
+				if (cooldown <= 0 && d <= 7 && mayAttack(level, target)) begin(40);
 			}
 		}
 	}
 
 	private void begin(int nextCooldown) {
 		setAction(A_ATTACK);
-		cooldown = nextCooldown + ATTACK_TICKS[variant()];
+		cooldown = nextCooldown + this.random.nextInt(nextCooldown / 2 + 1) + ATTACK_TICKS[variant()];
 		aim = null;
-		if (variant() != INTERCEPTOR) this.getNavigation().stop();
+		struck.clear();
+			if (variant() != INTERCEPTOR) this.getNavigation().stop();
+		}
+
+		private boolean airborne() { return flag(FLAG_FLYING); }
+
+		/** Turns the whole body, not only the head: a hovering robot has no legs to drag the body round. */
+		private void face(Vec3 at) {
+			float yaw = (float) Math.toDegrees(Math.atan2(-(at.x - this.getX()), at.z - this.getZ()));
+			this.setYRot(yaw);
+			this.yBodyRot = yaw;
+			this.yHeadRot = yaw;
+		}
+
+		/**
+		 * The Interceptor's rhythm: it circles low enough to be shot at, dives, lands in a daze (the window for the player),
+		 * scrambles on foot for a moment and takes off again.
+		 */
+		private void flyer(ServerLevel level, LivingEntity target) {
+			if (airborne()) {
+				face(target.position());
+				double a = this.tickCount * 0.05 + this.getId();
+				hover(target.position().add(Math.cos(a) * 7, 5, Math.sin(a) * 7), 0.3);
+				if (--airTimer <= 0 && cooldown <= 0 && this.distanceTo(target) <= 26 && mayAttack(level, target)) begin(8);
+				return;
+			}
+			groundStep(level, target);
+		}
+
+		private void groundStep(ServerLevel level, LivingEntity target) {
+			if (meleeCd > 0) meleeCd--;
+			if (--groundTimer <= 0) {
+				takeOff(level);
+				return;
+			}
+			if (target == null || groundTimer > 40) {
+				this.getNavigation().stop();
+				if (target != null) face(target.position());
+				return;
+			}
+			this.getNavigation().moveTo(target, 1.2);
+			if (meleeCd <= 0 && this.distanceTo(target) <= 3.6) {
+				DoomCombat.hurt(level, target, this, BLOW[INTERCEPTOR] * 0.7f);
+				this.swing(InteractionHand.MAIN_HAND);
+				meleeCd = 26;
+			}
+		}
+
+		private void takeOff(ServerLevel level) {
+			setFlag(FLAG_FLYING, true);
+			this.setNoGravity(true);
+			airTimer = 100 + this.random.nextInt(50);
+			this.getNavigation().stop();
+			this.setDeltaMovement(0, 0.7, 0);
+			DoomVfx.on(level, DoomVfx.JET, this, 1, 30, DoomVfx.GOLD);
+			DoomFx.sound(level, this.position(), SoundEvents.FIREWORK_ROCKET_LAUNCH, 0.8f, 1.2f);
+		}
+
+		private void land() {
+			setFlag(FLAG_FLYING, false);
+			this.setNoGravity(false);
+			groundTimer = 80;
+			meleeCd = 20;
+		}
+
+	/**
+	 * Attack tokens: at most two robots swing or fire at the same target at once, the rest hold, reposition and wait their
+	 * turn, so a squad comes in waves with gaps a player can use instead of one wall of blows.
+	 */
+	private boolean mayAttack(ServerLevel level, LivingEntity target) {
+		int busy = 0;
+		for (Doombot b : level.getEntitiesOfClass(Doombot.class, target.getBoundingBox().inflate(32), b -> b != this && b.isAlive() && b.allied() == allied())) {
+			if (b.action() == A_ATTACK && target.getUUID().equals(b.targetId) && ++busy >= 2) {
+				cooldown = 10 + this.random.nextInt(20);
+				return false;
+			}
+		}
+		return true;
+	}
+
+	/** Sidesteps across the line of fire between volleys. */
+	private void strafe(LivingEntity target) {
+		Vec3 to = target.position().subtract(this.position());
+		Vec3 side = new Vec3(-to.z, 0, to.x).normalize().scale(this.random.nextBoolean() ? 4 : -4);
+		this.getNavigation().moveTo(this.getX() + side.x, this.getY(), this.getZ() + side.z, 0.9);
 	}
 
 	private void retreat(LivingEntity from) {
@@ -271,13 +355,15 @@ public class Doombot extends PathfinderMob {
 		if (allied() && !guarding && commander != null && level.getEntity(commander) instanceof ServerPlayer owner) {
 			double d = this.distanceTo(owner);
 			if (d > 34) this.teleportTo(owner.getX() + (this.random.nextDouble() - 0.5) * 4, owner.getY(), owner.getZ() + (this.random.nextDouble() - 0.5) * 4);
+			else if (variant() == INTERCEPTOR && !airborne()) groundStep(level, null);
 			else if (variant() == INTERCEPTOR) hover(owner.position().add(Math.cos(this.getId()) * 3, 4, Math.sin(this.getId()) * 3), 0.3);
 			else if (d > 6) this.getNavigation().moveTo(owner, 1.15);
 			else this.getNavigation().stop();
 			return;
 		}
 		if (home == null) home = this.position();
-		if (variant() == INTERCEPTOR) hover(home.add(Math.cos(this.tickCount * 0.03) * 4, 5, Math.sin(this.tickCount * 0.03) * 4), 0.2);
+		if (variant() == INTERCEPTOR && !airborne()) groundStep(level, null);
+		else if (variant() == INTERCEPTOR) hover(home.add(Math.cos(this.tickCount * 0.03) * 4, 5, Math.sin(this.tickCount * 0.03) * 4), 0.2);
 		else if (this.position().distanceToSqr(home) > 36 && this.getNavigation().isDone()) this.getNavigation().moveTo(home.x, home.y, home.z, 0.9);
 	}
 
@@ -318,35 +404,51 @@ public class Doombot extends PathfinderMob {
 					DoomFx.sound(level, eye, SoundEvents.BLAZE_SHOOT, 0.8f, 1.6f);
 				}
 			}
-			case BASTION -> {
-				if (t == 16) {
-					setFlag(FLAG_SHIELD, true);
-					DoomVfx.on(level, DoomVfx.SHIELD, this, 1.3f, 24, DoomVfx.GREEN);
-					DoomFx.sound(level, eye, SoundEvents.IRON_GOLEM_REPAIR, 1f, 0.6f);
-					DoomVfx.at(level, DoomVfx.SLAM, this.position(), 5.5f, 12, DoomVfx.GREEN);
-					for (LivingEntity e : level.getEntitiesOfClass(LivingEntity.class, this.getBoundingBox().inflate(4.5, 1.5, 4.5), this::foe)) {
-						if (DoomCombat.hurt(level, e, this, BLOW[BASTION])) {
-							Vec3 push = e.position().subtract(this.position()).normalize();
-							e.knockback(1.5, -push.x, -push.z);
+				case BASTION -> {
+					// guard up, charge behind the shield, slam, then a long open recovery
+					if (t == 4) {
+						setFlag(FLAG_SHIELD, true);
+						DoomVfx.on(level, DoomVfx.SHIELD, this, 1.3f, 26, DoomVfx.GREEN);
+						DoomFx.sound(level, eye, SoundEvents.IRON_GOLEM_REPAIR, 1f, 0.6f);
+					}
+					if (t == 14 && target != null) {
+						Vec3 d = target.position().subtract(this.position());
+						aim = new Vec3(d.x, 0, d.z).normalize();
+						DoomFx.sound(level, eye, SoundEvents.RAVAGER_ROAR, 0.7f, 0.8f);
+					}
+					if (t >= 14 && t < 24 && aim != null) {
+						this.setDeltaMovement(aim.x * 0.62, this.getDeltaMovement().y, aim.z * 0.62);
+						for (LivingEntity e : level.getEntitiesOfClass(LivingEntity.class, this.getBoundingBox().inflate(1.1, 0.2, 1.1), this::foe)) {
+							if (struck.add(e.getUUID()) && DoomCombat.hurt(level, e, this, BLOW[BASTION])) e.knockback(1.8, -aim.x, -aim.z);
+						}
+					}
+					if (t == 25) {
+						DoomVfx.at(level, DoomVfx.SLAM, this.position(), 5.0f, 12, DoomVfx.GREEN);
+						DoomFx.sound(level, this.position(), SoundEvents.GENERIC_EXPLODE.value(), 0.6f, 1.2f);
+						for (LivingEntity e : level.getEntitiesOfClass(LivingEntity.class, this.getBoundingBox().inflate(4.0, 1.5, 4.0), this::foe)) {
+							if (struck.add(e.getUUID()) && DoomCombat.hurt(level, e, this, BLOW[BASTION] * 0.7f)) {
+								Vec3 push = e.position().subtract(this.position()).normalize();
+								e.knockback(1.2, -push.x, -push.z);
+							}
+						}
+					}
+					if (t == 30) setFlag(FLAG_SHIELD, false);
+				}
+				case INTERCEPTOR -> {
+					if (t == 1) DoomVfx.on(level, DoomVfx.JET, this, 1, 36, DoomVfx.GOLD);
+					if (target != null && t <= 33) face(target.position());
+					if (t <= 16) hover(this.position().add(0, 3, 0), 0.3);
+					if (t == 20 && target != null) aim = target.position();
+					if (t > 23 && t <= 33 && aim != null) hover(aim.add(0, 0.3, 0), 1.2);
+					if (t == 33) {
+						land();
+						DoomFx.flat(level, ModParticles.DOOM_SLAM_WAVE, this.position(), 4.5);
+						DoomFx.sound(level, this.position(), SoundEvents.GENERIC_EXPLODE.value(), 0.7f, 1.4f);
+						for (LivingEntity e : level.getEntitiesOfClass(LivingEntity.class, this.getBoundingBox().inflate(3.4, 2.5, 3.4), this::foe)) {
+							DoomCombat.hurt(level, e, this, BLOW[INTERCEPTOR]);
 						}
 					}
 				}
-				if (t == 40) setFlag(FLAG_SHIELD, false);
-			}
-			case INTERCEPTOR -> {
-				if (t == 1) DoomVfx.on(level, DoomVfx.JET, this, 1, 36, DoomVfx.GOLD);
-				if (t <= 16) hover(this.position().add(0, 3, 0), 0.3);
-				if (t == 20 && target != null) aim = target.position();
-				if (t > 23 && t <= 33 && aim != null) hover(aim.add(0, 0.6, 0), 1.2);
-				if (t == 33 && aim != null) {
-					DoomFx.flat(level, ModParticles.DOOM_SLAM_WAVE, this.position(), 4.5);
-					DoomFx.sound(level, this.position(), SoundEvents.GENERIC_EXPLODE.value(), 0.7f, 1.4f);
-					for (LivingEntity e : level.getEntitiesOfClass(LivingEntity.class, this.getBoundingBox().inflate(3.4, 2.5, 3.4), this::foe)) {
-						DoomCombat.hurt(level, e, this, BLOW[INTERCEPTOR]);
-					}
-				}
-				if (t > 33) hover(this.position().add(0, 4, 0), 0.35);
-			}
 			case ARCANIST -> {
 				if (t == 10) DoomFx.bill(level, ModParticles.DOOM_RUNE_MOTE, eye, 3);
 				if (t == 24) {
@@ -388,6 +490,17 @@ public class Doombot extends PathfinderMob {
 		}
 	}
 
+	/** The shield covers the front half only: a blow from behind lands in full. */
+	private boolean fromFront(DamageSource source) {
+		Vec3 at = source.getSourcePosition();
+		if (at == null) return true;
+		Vec3 to = new Vec3(at.x - this.getX(), 0, at.z - this.getZ());
+		if (to.lengthSqr() < 1e-4) return true;
+		float yaw = this.yBodyRot * ((float) Math.PI / 180f);
+		Vec3 look = new Vec3(-Math.sin(yaw), 0, Math.cos(yaw));
+		return look.dot(to.normalize()) > 0.1;
+	}
+
 	/** An Arcanist's ward: the next blow is swallowed whole. */
 	public void ward() {
 		wardTicks = 160;
@@ -411,10 +524,13 @@ public class Doombot extends PathfinderMob {
 			return false;
 		}
 		if (!source.is(DamageTypeTags.BYPASSES_ARMOR)) {
-			if (flag(FLAG_SHIELD)) amount *= 0.25f;
+			if (flag(FLAG_SHIELD) && fromFront(source)) {
+				amount *= 0.3f;
+				DoomFx.sound(level, this.position().add(0, 1.2, 0), SoundEvents.SHIELD_BLOCK.value(), 0.9f, 0.8f);
+			}
 			else if (!Latveria.generatorOff(level.getServer()) && !level.getEntitiesOfClass(Doombot.class, this.getBoundingBox().inflate(7),
 					b -> b != this && b.isAlive() && b.flag(FLAG_SHIELD) && b.allied() == allied()).isEmpty()) {
-				amount *= 0.4f;
+				amount *= 0.6f;
 				DoomFx.bill(level, ModParticles.DOOM_IRON_BASTION, this.position().add(0, 1, 0), 1.4);
 			}
 		}
@@ -471,6 +587,13 @@ public class Doombot extends PathfinderMob {
 			if (this.level() instanceof ServerLevel level) DoomFx.bill(level, ModParticles.DOOM_DOOM_SMOKE, this.position().add(0, 0.6, 0), 1.6);
 			this.remove(RemovalReason.KILLED);
 		}
+	}
+
+	/** Taken out of the world some other way (a command, another mod): its squad still counts it as fallen. */
+	@Override
+	public void remove(RemovalReason reason) {
+		if (reason == RemovalReason.DISCARDED && !this.dead && !allied() && this.level() instanceof ServerLevel level) Latveria.onBotDeath(level.getServer(), squad);
+		super.remove(reason);
 	}
 
 	@Override

@@ -52,6 +52,9 @@ public final class DoomClient {
 	private static int fuel = DoomArmor.FUEL, bastion, suns, selected, holdTicks;
 	// One-off scenes.
 	private static int logoAge = -1, logoTicks, barsAge = -1, barsTicks, flashAge = -1, flashTicks;
+	/** Doom's last spoken line and its age in ticks: during the entrance it is shown as a subtitle inside the letterbox. */
+	private static Component subtitle;
+	private static int subtitleAge;
 	private static float flashStrength;
 	// Music.
 	private static Track track;
@@ -119,6 +122,13 @@ public final class DoomClient {
 		});
 		ClientPlayConnectionEvents.DISCONNECT.register((handler, mc) -> reset());
 		ClientTickEvents.END_CLIENT_TICK.register(DoomClient::tick);
+		net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents.GAME.register((message, overlay) -> {
+			if (!overlay && message.getContents() instanceof net.minecraft.network.chat.contents.TranslatableContents tc
+					&& tc.getKey().startsWith("msg.infinity_gauntlet.latveria.doom.")) {
+				subtitle = message;
+				subtitleAge = 0;
+			}
+		});
 		HudElementRegistry.addFirst(InfinityGauntlet.id("latveria_filter"), (g, delta) -> filter(g));
 		HudElementRegistry.addLast(InfinityGauntlet.id("doom_hud"), (g, delta) -> hud(g));
 	}
@@ -126,6 +136,7 @@ public final class DoomClient {
 	private static void reset() {
 		set = false;
 		logoAge = barsAge = flashAge = -1;
+		subtitle = null;
 		if (track != null) track.halt();
 		track = null;
 		silence = 0;
@@ -143,6 +154,7 @@ public final class DoomClient {
 		if (jet && fuel > 0) fuel--;
 		if (logoAge >= 0 && ++logoAge > logoTicks) logoAge = -1;
 		if (barsAge >= 0 && ++barsAge > barsTicks) barsAge = -1;
+		if (subtitle != null && ++subtitleAge > 90) subtitle = null;
 		if (flashAge >= 0 && ++flashAge > flashTicks) flashAge = -1;
 		while (WHEEL.consumeClick()) {
 			if (set && mc.screen == null) mc.setScreen(new DoomWheelScreen());
@@ -338,12 +350,20 @@ public final class DoomClient {
 			int bar = (int) (h * 0.13f * k);
 			g.fill(0, 0, w, bar, 0xFF000000);
 			g.fill(0, h - bar, w, h, 0xFF000000);
-			if (barsAge > 30 && barsTicks - barsAge > 14) {
+			// Name and title in the top bar; Doom's words as subtitles in the bottom one, where the bars would hide the chat.
+			if (barsAge > 30 && barsTicks - barsAge > 14 && bar >= 22) {
 				int a = (int) (255 * Mth.clamp((barsAge - 30) / 15f, 0, 1));
 				if (a > 8) {
-					g.centeredText(mc.font, Component.translatable("entity.infinity_gauntlet.doctor_doom").withStyle(net.minecraft.ChatFormatting.BOLD), w / 2, h - bar - 26, ARGB.color(a, 120, 255, 150));
-					g.centeredText(mc.font, Component.translatable("boss.infinity_gauntlet.doom.title"), w / 2, h - bar - 14, ARGB.color(a, 232, 214, 150));
+					g.centeredText(mc.font, Component.translatable("entity.infinity_gauntlet.doctor_doom").withStyle(net.minecraft.ChatFormatting.BOLD), w / 2, bar / 2 - 10, ARGB.color(a, 120, 255, 150));
+					g.centeredText(mc.font, Component.translatable("boss.infinity_gauntlet.doom.title"), w / 2, bar / 2 + 1, ARGB.color(a, 232, 214, 150));
 				}
+			}
+			if (subtitle != null && bar >= 12) {
+				int a = (int) (255 * Mth.clamp(Math.min(subtitleAge / 6f, (90 - subtitleAge) / 10f), 0, 1));
+				var lines = mc.font.split(subtitle, (int) (w * 0.8f));
+				int n = Math.min(lines.size(), Math.max(1, (bar - 4) / 10));
+				int y = h - bar / 2 - n * 10 / 2 + 1;
+				for (int i = 0; i < n; i++) g.centeredText(mc.font, lines.get(i), w / 2, y + i * 10, ARGB.color(Math.max(a, 9), 255, 255, 255));
 			}
 		}
 		if (logoAge >= 0) {
