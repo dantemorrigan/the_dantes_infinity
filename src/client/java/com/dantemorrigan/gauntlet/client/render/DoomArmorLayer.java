@@ -29,6 +29,14 @@ public class DoomArmorLayer<S extends HumanoidRenderState, M extends HumanoidMod
 	/** Doom is 39 units tall, a player 32. */
 	public static final float SCALE = 32f / 39f;
 	private static final Identifier TEXTURE = InfinityGauntlet.id("textures/entity/doctor_doom/doctor_doom.png");
+	/** Worn with the whole Infinity Gauntlet, the armor is God Emperor Doom's: ivory, silver and gold. */
+	private static final Identifier GOD_TEXTURE = InfinityGauntlet.id("textures/entity/doctor_doom/god_emperor_doom.png");
+
+	/** A working Infinity Gauntlet holding all six stones. */
+	public static boolean wholeGauntlet(net.minecraft.world.item.ItemStack stack) {
+		return stack.is(ModItems.GAUNTLET) && !Boolean.TRUE.equals(stack.get(com.dantemorrigan.gauntlet.ModComponents.SNAPPED))
+				&& com.dantemorrigan.gauntlet.GauntletState.inserted(stack).size() >= 6;
+	}
 	/** Doom's points that sit on each part's pivot: the neck, the shoulders and the hips (Doom units, Y up). */
 	private static final float[] NECK = {0, 29.1f, 0}, SHOULDER_GEO_NEG = {-6.28f, 26.65f, 0}, SHOULDER_GEO_POS = {6.28f, 26.65f, 0},
 			HIP_GEO_NEG = {-2.39f, 15.25f, 0}, HIP_GEO_POS = {2.39f, 15.25f, 0};
@@ -81,18 +89,19 @@ public class DoomArmorLayer<S extends HumanoidRenderState, M extends HumanoidMod
 		boolean legs = state.legsEquipment.is(ModItems.DOOM_LEGGINGS), boots = state.feetEquipment.is(ModItems.DOOM_BOOTS);
 		int overlay = OverlayTexture.pack(OverlayTexture.u(0), OverlayTexture.v(state.hasRedOverlay));
 		Map<String, GeoModel.BonePose> bones = cloak(state);
-		if (head) piece(pose, collector, light, overlay, model.head, NECK, Group.HEAD, bones, true, true);
+		Identifier tex = head && chest && legs && boots && (wholeGauntlet(state.leftHandItemStack) || wholeGauntlet(state.rightHandItemStack)) ? GOD_TEXTURE : TEXTURE;
+		if (head) piece(pose, collector, light, overlay, model.head, NECK, Group.HEAD, bones, true, true, false, tex);
 		if (chest) {
-			piece(pose, collector, light, overlay, model.body, NECK, Group.BODY, bones, true, true);
+			piece(pose, collector, light, overlay, model.body, NECK, Group.BODY, bones, true, true, false, tex);
 			// Doom's arm on the -X side of his model is the one on the player's left (+X in model-part space).
 			piece(pose, collector, light, overlay, model.leftArm, SHOULDER_GEO_NEG, Group.ARM_GEO_NEG, bones, true, true,
-					state.leftHandItemStack.is(ModItems.GAUNTLET));
+					state.leftHandItemStack.is(ModItems.GAUNTLET), tex);
 			piece(pose, collector, light, overlay, model.rightArm, SHOULDER_GEO_POS, Group.ARM_GEO_POS, bones, true, true,
-					state.rightHandItemStack.is(ModItems.GAUNTLET));
+					state.rightHandItemStack.is(ModItems.GAUNTLET), tex);
 		}
 		if (legs || boots) {
-			piece(pose, collector, light, overlay, model.leftLeg, HIP_GEO_NEG, Group.LEG_GEO_NEG, bones, legs, boots);
-			piece(pose, collector, light, overlay, model.rightLeg, HIP_GEO_POS, Group.LEG_GEO_POS, bones, legs, boots);
+			piece(pose, collector, light, overlay, model.leftLeg, HIP_GEO_NEG, Group.LEG_GEO_NEG, bones, legs, boots, false, tex);
+			piece(pose, collector, light, overlay, model.rightLeg, HIP_GEO_POS, Group.LEG_GEO_POS, bones, legs, boots, false, tex);
 		}
 	}
 
@@ -121,18 +130,18 @@ public class DoomArmorLayer<S extends HumanoidRenderState, M extends HumanoidMod
 	 */
 	public static void piece(PoseStack pose, SubmitNodeCollector collector, int light, int overlay, ModelPart part, float[] anchor, Group group,
 			Map<String, GeoModel.BonePose> bones, boolean upper, boolean boots) {
-				piece(pose, collector, light, overlay, part, anchor, group, bones, upper, boots, false);
+				piece(pose, collector, light, overlay, part, anchor, group, bones, upper, boots, false, TEXTURE);
 			}
 
 			public static void piece(PoseStack pose, SubmitNodeCollector collector, int light, int overlay, ModelPart part, float[] anchor, Group group,
-					Map<String, GeoModel.BonePose> bones, boolean upper, boolean boots, boolean underGauntlet) {
+					Map<String, GeoModel.BonePose> bones, boolean upper, boolean boots, boolean underGauntlet, Identifier texture) {
 				if (!part.visible) return;
 		pose.pushPose();
 		part.translateAndRotate(pose);
 		pose.mulPose(Axis.ZP.rotationDegrees(180));
 		pose.scale(SCALE, SCALE, SCALE);
 		pose.translate(-anchor[0] / 16f, -anchor[1] / 16f, -anchor[2] / 16f);
-		collector.submitCustomGeometry(pose, RenderTypes.entityCutout(TEXTURE), (p, out) -> {
+		collector.submitCustomGeometry(pose, RenderTypes.entityCutout(texture), (p, out) -> {
 			PoseStack s = new PoseStack();
 			s.last().pose().set(p.pose());
 			s.last().normal().set(p.normal());
@@ -150,7 +159,9 @@ public class DoomArmorLayer<S extends HumanoidRenderState, M extends HumanoidMod
 	/** First person: Doom's arm on the arm the hand renderer draws. */
 	public static void firstPersonArm(PoseStack pose, SubmitNodeCollector collector, int light, ModelPart arm, boolean rightArm) {
 		piece(pose, collector, light, OverlayTexture.NO_OVERLAY, arm, rightArm ? SHOULDER_GEO_POS : SHOULDER_GEO_NEG,
-				rightArm ? Group.ARM_GEO_POS : Group.ARM_GEO_NEG, cloakless(), true, true, WornGauntlet.firstPersonStack != null);
+				rightArm ? Group.ARM_GEO_POS : Group.ARM_GEO_NEG, cloakless(), true, true, WornGauntlet.firstPersonStack != null,
+						net.minecraft.client.Minecraft.getInstance().player != null && wholeGauntlet(net.minecraft.client.Minecraft.getInstance().player.getOffhandItem())
+				&& com.dantemorrigan.gauntlet.client.doom.DoomClient.fullSet() ? GOD_TEXTURE : TEXTURE);
 	}
 
 	private static Map<String, GeoModel.BonePose> cloakless() { return new HashMap<>(); }

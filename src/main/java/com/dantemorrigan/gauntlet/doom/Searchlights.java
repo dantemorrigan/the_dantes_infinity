@@ -90,6 +90,7 @@ public final class Searchlights {
 	public static void alarm(ServerLevel level, ServerPlayer caught) {
 		long now = level.getGameTime();
 		cooldownUntil = now + ALARM_COOLDOWN;
+		Latveria.markAlarmed(level.getServer());
 		for (ServerPlayer p : level.players()) {
 			DoomFx.send(p, DoomFx.ALARM, caught.getId(), caught.position(), 1, ALARM_TICKS);
 			level.playSound(null, p.getX(), p.getY(), p.getZ(), SoundEvents.RAID_HORN.value(), SoundSource.HOSTILE, 1.4f, 0.8f);

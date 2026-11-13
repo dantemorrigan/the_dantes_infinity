@@ -96,7 +96,7 @@ Requirements: **Java 25**. Build: `./gradlew build` → `build/libs/infinity_gau
 
 **The assault.** A patrol watches the road. The gate squad holds the portcullis, and the yard squad keeps the throne room shut. The other way in is the service door in the castle's east wall: it leads into the laboratory. Right-click the generator to switch it off. That weakens Doom's armor and the Bastions' shields, puts out the searchlights and opens a side door into the throne room.
 
-**Searchlights.** While the gate is shut and the generator runs, three lamps on the towers sweep the slope before the gate. Walk into a beam and the alarm sounds: a horn, the beams turn red and hold on you, you glow, and Interceptors launch from the towers. Keep to the shadows, or kill the generator first.
+**Searchlights.** While the gate is shut and the generator runs, three lamps on the towers sweep the slope before the gate. Walk into a beam and the alarm sounds: a horn, the beams turn red and hold on you, you glow, and Interceptors launch from the towers. Keep to the shadows, or kill the generator first. Open the gate without a single alarm for the *Shadow of Doomstadt* advancement.
 
 **Doombots** come in six roles and tower over a player: three to three and a half blocks, the Bastion nearly four. They are armored and hit hard, and no single blow takes more than a third of their health. They take turns: at most two strike at the same target at once, and every attack has a recovery you can punish. The Soldier fires bursts and sidesteps between them; the Bastion raises a shield that covers its front (and nearby Doombots), charges behind it, slams the ground and then stands winded; the Interceptor circles low, dives, lands dazed for two seconds, fights on foot and takes off again; the Arcanist casts homing bolts and wards allies; the Engineer repairs damaged Doombots; the Royal Guard strikes with a halberd. They drop circuits, arc reactors and jade shards.
 
@@ -118,6 +118,8 @@ After every heavy attack he is exposed for a moment and takes more damage. A Spa
 - **Rift Step**: a marker on the ground shows where you will land; **N** jumps up to 24 blocks there and you slip through attacks for a second.
 - **Seven Suns**: seven suns orbit you and wait. Each press of **N** sends one to the crosshair (hold to keep them coming).
 - **Latverian Edict**: a circle shows where it will fall; **N** places it and a second later a column of light crushes and throws up everything in it.
+
+Wear the whole armor with the whole Infinity Gauntlet and you become God Emperor Doom yourself: the armor turns to his ivory, silver and gold.
 
 The jets never touch vanilla flight, so the armor does not clash with the Infinity Gauntlet or Stormbreaker, and its keys are separate from the gauntlet's (**V**/**R**).
 

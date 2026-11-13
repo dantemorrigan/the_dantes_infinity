@@ -65,7 +65,7 @@ import java.util.UUID;
  */
 public final class Latveria {
 	public static final ResourceKey<Level> LEVEL = ResourceKey.create(Registries.DIMENSION, InfinityGauntlet.id("latveria"));
-	private static final int GATE = 1, THRONE = 2, GENERATOR = 4, CONQUERED = 8;
+	private static final int GATE = 1, THRONE = 2, GENERATOR = 4, CONQUERED = 8, ALARMED = 16;
 	private static final int[][] SQUADS = {
 			{Doombot.SOLDIER, Doombot.SOLDIER},
 			{Doombot.BASTION, Doombot.SOLDIER, Doombot.SOLDIER, Doombot.SOLDIER, Doombot.ENGINEER},
@@ -253,6 +253,14 @@ public final class Latveria {
 	public static boolean generatorOff(MinecraftServer server) { load(server); return (flags & GENERATOR) != 0; }
 
 	public static boolean gateOpen(MinecraftServer server) { load(server); return (flags & GATE) != 0; }
+
+	/** The searchlights found someone during this assault. */
+	static void markAlarmed(MinecraftServer server) {
+		load(server);
+		if ((flags & ALARMED) != 0) return;
+		flags |= ALARMED;
+		save(server);
+	}
 
 	public static boolean isOwner(Player player) {
 		if (player.level().getServer() == null) return false;
@@ -580,7 +588,13 @@ public final class Latveria {
 	/** Opens what the assault has earned, and re-applies it to chunks that were not loaded at the time. */
 	private static void barriers(ServerLevel level) {
 		MinecraftServer server = level.getServer();
-		if ((flags & GATE) == 0 && cleared(SQUAD_GATE)) { flags |= GATE; save(server); announce(level, "gate.open", SoundEvents.IRON_DOOR_OPEN); }
+		if ((flags & GATE) == 0 && cleared(SQUAD_GATE)) {
+			flags |= GATE;
+			save(server);
+			announce(level, "gate.open", SoundEvents.IRON_DOOR_OPEN);
+			// Through the gate without a searchlight ever finding you.
+			if ((flags & ALARMED) == 0) for (ServerPlayer p : level.players()) ModAdvancements.award(p, "unseen_in_latveria");
+		}
 		if ((flags & THRONE) == 0 && cleared(SQUAD_YARD)) { flags |= THRONE; save(server); announce(level, "throne.open", SoundEvents.BEACON_DEACTIVATE); }
 		if ((flags & GATE) != 0) open(level, LatveriaPlan.GATE, Blocks.IRON_BARS);
 		if ((flags & THRONE) != 0) open(level, LatveriaPlan.THRONE_DOOR, Blocks.GREEN_STAINED_GLASS);
