@@ -770,6 +770,19 @@ public final class Latveria {
 
 	// ------------------------------------------------------------------ furniture and townsfolk
 
+	/** "The Chronicle of Victor von Doom", as his servant Boris wrote it: four pages of who Doom is and why. */
+	public static ItemStack chronicle() {
+		ItemStack book = new ItemStack(Items.WRITTEN_BOOK);
+		List<net.minecraft.server.network.Filterable<net.minecraft.network.chat.Component>> pages = new ArrayList<>();
+		for (int i = 1; i <= 4; i++) pages.add(net.minecraft.server.network.Filterable.passThrough(
+				net.minecraft.network.chat.Component.translatable("book.infinity_gauntlet.chronicle.p" + i)));
+		book.set(net.minecraft.core.component.DataComponents.WRITTEN_BOOK_CONTENT, new net.minecraft.world.item.component.WrittenBookContent(
+				net.minecraft.server.network.Filterable.passThrough("The Chronicle of Victor von Doom"), "Boris", 0, pages, true));
+		book.set(net.minecraft.core.component.DataComponents.CUSTOM_NAME, net.minecraft.network.chat.Component.translatable("book.infinity_gauntlet.chronicle.title")
+				.withStyle(st -> st.withItalic(false).withColor(net.minecraft.ChatFormatting.DARK_GREEN).withBold(true)));
+		return book;
+	}
+
 	static void furnish(ServerLevel level, long chunk) {
 		if (furnished.contains(chunk)) return;
 		int cx = ChunkPos.getX(chunk), cz = ChunkPos.getZ(chunk);
@@ -779,6 +792,11 @@ public final class Latveria {
 		for (LatveriaPlan.Op op : LatveriaPlan.FURNITURE) {
 			if (op.x0() >> 4 != cx || op.z0() >> 4 != cz) continue;
 			edit(() -> level.setBlock(new BlockPos(op.x0(), op.y0(), op.z0()), op.state(), Block.UPDATE_CLIENTS));
+			// The castle library's lectern holds Boris's chronicle of his master.
+			if (op.state().is(Blocks.LECTERN) && op.z0() < -200) {
+				BlockPos at = new BlockPos(op.x0(), op.y0(), op.z0());
+				edit(() -> net.minecraft.world.level.block.LecternBlock.tryPlaceBook(null, level, at, level.getBlockState(at), chronicle()));
+			}
 		}
 		for (int[] c : LatveriaPlan.CHESTS) {
 			if (c[0] >> 4 != cx || c[2] >> 4 != cz || !(level.getBlockEntity(new BlockPos(c[0], c[1], c[2])) instanceof Container chest)) continue;

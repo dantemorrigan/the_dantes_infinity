@@ -31,6 +31,20 @@ public class LatveriaThroneTest implements FabricClientGameTest {
 			ctx.waitTicks(30);
 			check(!server.computeOnServer(s -> LatveriaCourt.sit(player(s))), "A visitor sat on Doom's throne before the castle was taken");
 
+			// The library's lectern holds Boris's chronicle.
+			server.runCommand("execute as @p run gauntlet latveria tp library");
+			ctx.waitTicks(40);
+			String chronicle = server.computeOnServer(s -> {
+				var be = s.getLevel(Latveria.LEVEL).getBlockEntity(new net.minecraft.core.BlockPos(28, LatveriaPlan.FLOOR + 10, -276));
+				return be instanceof net.minecraft.world.level.block.entity.LecternBlockEntity lectern && lectern.hasBook() ? lectern.getBook().getHoverName().getString() : "none";
+			});
+			check(!chronicle.equals("none"), "The library lectern has no chronicle");
+			ctx.runOnClient(mc -> mc.setScreen(new net.minecraft.client.gui.screens.inventory.BookViewScreen(
+					net.minecraft.client.gui.screens.inventory.BookViewScreen.BookAccess.fromItem(com.dantemorrigan.gauntlet.doom.Latveria.chronicle()))));
+			ctx.waitTicks(5);
+			ctx.takeScreenshot("latveria_chronicle_p1");
+			ctx.runOnClient(mc -> mc.setScreen(null));
+
 			// The storm on the spires, seen from the yard.
 			server.runCommand("execute as @p run gauntlet latveria tp yard");
 			server.runCommand("execute in infinity_gauntlet:latveria run tp @p 0.5 " + (LatveriaPlan.FLOOR + 1) + " -212.5 135 -25");
