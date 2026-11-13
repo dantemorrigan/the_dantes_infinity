@@ -86,7 +86,8 @@ public final class GuideBook {
 				continue;
 			}
 			page.append(switch (styles.charAt(j)) {
-				case 'H' -> part.withStyle(ChatFormatting.DARK_PURPLE, ChatFormatting.BOLD);
+				case 'H' -> number >= DOOM_FIRST_PAGE ? part.withStyle(style -> style.withColor(0x1d6b4a).withBold(true))
+						: part.withStyle(ChatFormatting.DARK_PURPLE, ChatFormatting.BOLD);
 				case 'B' -> part.withStyle(ChatFormatting.BLACK, ChatFormatting.BOLD);
 				case 'G' -> part.withStyle(ChatFormatting.DARK_GRAY);
 				default -> part.withStyle(ChatFormatting.BLACK);
@@ -95,10 +96,13 @@ public final class GuideBook {
 		return page;
 	}
 
-	/** Boss chapter headings (Loki p13, Thanos p16) use the boss typography in parchment-legible accents. */
+	/** The first page of The Fury of Doom chapter (pages 23 to 29): its headings are Latverian green. */
+	private static final int DOOM_FIRST_PAGE = 23;
+
+	/** Boss chapter headings (Loki p13, Thanos p16, Doom p23) use the boss typography in parchment-legible accents. */
 	private static Integer bossColor(int page, int segment) {
 		if (segment != 1) return null;
-		return switch (page) { case 13 -> 0x1f7a45; case 16 -> 0x8a5a00; default -> null; };
+		return switch (page) { case 13 -> 0x1f7a45; case 16 -> 0x8a5a00; case DOOM_FIRST_PAGE -> 0x1d6b4a; default -> null; };
 	}
 
 	private static Stone stoneForSegment(int page, int segment) {

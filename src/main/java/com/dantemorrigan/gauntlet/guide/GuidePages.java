@@ -5,7 +5,7 @@ final class GuidePages {
 	/** H heading, T text, B bold, G gray. */
 	static final String[] STYLES = {
 		"THTGTG",
-		"HTGTGTGTGTGTGTGTGTGTGTGTG",
+		"HTGTGTGTGTGTGTGTGTGTGTGTGTG",
 		"HTBTBTBT",
 		"HTBTBTBTBTBTBT",
 		"HTBTBTBT",
@@ -25,6 +25,13 @@ final class GuidePages {
 		"HTBTBTBTG",
 		"HTBT",
 		"HTBTBTBTBTBT",
+		"HTBTBT",
+		"HTBTBTBT",
+		"HTBTBT",
+		"HTBTBTBTBT",
+		"HTBTBTBTBTBTBT",
+		"HTBTBT",
+		"HTBTBTBT",
 		"HTBTBT"
 	};
 

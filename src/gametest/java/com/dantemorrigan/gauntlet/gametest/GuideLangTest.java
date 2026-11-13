@@ -16,7 +16,8 @@ public class GuideLangTest implements FabricClientGameTest {
 		ctx.waitFor(mc -> mc.screen instanceof BookViewScreen, 100);
 		ctx.waitTicks(4);
 		ctx.takeScreenshot(name + "_cover");
-		for (int page : new int[]{pages, 3, 8}) {
+		for (int page : new int[]{pages, 1, 3, 8, 22, 23, 24, 25, 26, 27, 28}) {
+			if (page >= com.dantemorrigan.gauntlet.guide.GuideBook.PAGE_COUNT) continue;
 			ctx.runOnClient(mc -> ((BookViewScreen) mc.screen).setPage(page));
 			ctx.waitTicks(2);
 			ctx.takeScreenshot(name + "_p" + (page + 1));
