@@ -3,7 +3,8 @@
 Space is the one GeoModel uses: Y up, the model faces -Z, 16 units per block, feet at the origin. The eight animated
 bones (root, body, head, arm_r, arm_l, cape, leg_r, leg_l) keep the pivots the animation file was authored for.
 Slanted parts live in `bind_*` child bones with a fixed rotation, because GeoModel has no per-cube rotation.
-Angles below are right-handed; Bedrock's `bind_rotation` is their negative.
+Angles below are right-handed; Bedrock's `bind_rotation` is their negative. Elbows (`forearm_*`), knees (`shin_*`)
+and the cloak's segments (`cape_mid`, `cape_low`, `cape_wing_*`) are extra animated bones.
 
 Every face gets its own texture rectangle at 2 texels per unit, painted from the texel's model-space position so
 patterns line up across neighbouring boxes.
@@ -135,6 +136,8 @@ def build():
         s.box(p2, -9.7, -6.0, 24.6, 26.6, -2.5, 2.5, "steel", name="pauldron_mid")
         p3 = s.bone("bind_pauldron_low", arm, (-8.0, 24.8, 0), (0, 0, -18))
         s.box(p3, -9.6, -6.6, 23.3, 24.8, -2.2, 2.2, "steel", name="pauldron_low")
+        arm = "forearm" + s.suf
+        bone(arm, "arm" + s.suf, (6.6 * s.k, 20.2, 0))
         s.box(arm, -8.6, -4.6, 19.2, 21.0, -2.1, 2.1, "steel", name="elbow")
         s.box(arm, -7.4, -5.8, 19.4, 20.8, 2.1, 2.8, "steel", name="elbow_spike")
         s.box(arm, -8.4, -4.8, 14.0, 19.2, -1.9, 1.9, "steel", bands=3, name="forearm")
@@ -151,15 +154,17 @@ def build():
     bone("cape", "body", (0, 27.45, 2.95))
     box("cape", -5.9, 5.9, 26.6, 28.2, 2.6, 4.0, "cloth", name="cape_collar")
     hems = [1.2, 0.4, 0.9, 0.2, 0.6, 0.1, 1.0, 0.3, 1.4]
-    tiers = [(18.5, 27.0, 1.3, 3.2), (9.5, 18.5, 1.55, 3.7), (None, 9.5, 1.8, 4.3)]
+    bone("cape_mid", "cape", (0, 18.5, 4.0))
+    bone("cape_low", "cape_mid", (0, 9.5, 4.6))
+    tiers = [("cape", 18.5, 27.0, 1.3, 3.2), ("cape_mid", 9.5, 18.5, 1.55, 3.7), ("cape_low", None, 9.5, 1.8, 4.3)]
     for k in range(-4, 5):
-        for y0, y1, w, z in tiers:
+        for tier, y0, y1, w, z in tiers:
             hem = hems[k + 4]
             z += 0.35 * (k % 2)
-            box("cape", (k - 0.5) * w, (k + 0.5) * w, hem if y0 is None else y0, y1, z, z + 0.8, "cape",
+            box(tier, (k - 0.5) * w, (k + 0.5) * w, hem if y0 is None else y0, y1, z, z + 0.8, "cape",
                 north="cape_in", hem=hem, name="cape_strip")
     for s in (Side(-1), Side(1)):
-        side = s.bone("bind_cape_side", "cape", (-6.2, 26.6, 3.4), (0, 0, -7))
+        side = s.bone("cape_wing", "cape", (-6.2, 26.6, 3.4), (0, 0, -7))
         s.box(side, -7.2, -5.6, 1.4, 26.6, 2.9, 4.0, "cape", north="cape_in", hem=1.4, name="cape_side")
         edge = s.bone("bind_cape_edge", "cape", (-7.6, 22.5, 3.2), (0, 0, -11))
         s.box(edge, -8.6, -7.0, 2.2, 22.5, 2.5, 3.7, "cape", north="cape_in", hem=2.2, name="cape_edge")
@@ -170,6 +175,8 @@ def build():
         bone(leg, "root", (2.39 * s.k, 15.25, 0))
         s.box(leg, -4.35, -0.45, 8.4, 15.4, -1.85, 1.85, "mail", name="thigh")
         s.box(leg, -4.0, -0.8, 9.2, 14.2, -2.2, -1.85, "steel", name="cuisse")
+        leg = "shin" + s.suf
+        bone(leg, "leg" + s.suf, (2.4 * s.k, 8.0, 0))
         s.box(leg, -4.55, -0.25, 6.8, 9.2, -2.5, 2.0, "steel", name="knee")
         s.box(leg, -3.3, -1.5, 7.3, 8.7, -2.95, -2.5, "steel", name="knee_boss")
         s.box(leg, -4.25, -0.55, 2.6, 6.9, -1.9, 1.85, "steel", bands=3, name="greave")
@@ -370,6 +377,11 @@ def write_geo():
         f.write("\n")
 
 
+def fixed(b):
+    """`bind_*` bones only carry a slant; in the Blockbench project they become rotated boxes of the parent group."""
+    return b["name"].startswith("bind_")
+
+
 def write_bbmodel(img):
     """Keeps the project's animations and the animated groups' ids; replaces the boxes and the texture."""
     with open(BBMODEL) as f:
@@ -386,20 +398,21 @@ def write_bbmodel(img):
     elements, members = [], {}
     for i, c in enumerate(CUBES):
         b = BONES[c["bone"]]
-        group = b if not b["rot"] else BONES[b["parent"]]
+        group = BONES[b["parent"]] if fixed(b) else b
         e = {"name": c["name"], "type": "cube", "box_uv": False, "autouv": 0, "color": 0,
              "from": [r3(v) for v in c["o"]], "to": [r3(c["o"][a] + c["s"][a]) for a in range(3)],
              "origin": [r3(v) for v in b["pivot"]], "uuid": str(uuid.uuid5(space, "cube%d" % i)),
              "faces": {f: {"uv": [c["uv"][f][0], c["uv"][f][1], c["uv"][f][0] + c["uv"][f][2],
                                   c["uv"][f][1] + c["uv"][f][3]], "texture": 0} for f in FACES}}
-        if b["rot"]: e["rotation"] = [r3(v) for v in b["rot"]]
+        if fixed(b): e["rotation"] = [r3(v) for v in b["rot"]]
         elements.append(e)
         members.setdefault(group["name"], []).append(e["uuid"])
 
     def group(name):
         b = BONES[name]
-        kids = [group(k["name"]) for k in BONES.values() if k["parent"] == name and not k["rot"]]
-        return {"name": name, "origin": [r3(v) for v in b["pivot"]], "rotation": [0, 0, 0], "color": 0,
+        kids = [group(k["name"]) for k in BONES.values() if k["parent"] == name and not fixed(k)]
+        return {"name": name, "origin": [r3(v) for v in b["pivot"]], "rotation": [r3(v) for v in b["rot"] or (0, 0, 0)],
+                "color": 0,
                 "uuid": ids.get(name) or str(uuid.uuid5(space, name)), "export": True, "isOpen": True,
                 "children": kids + members.get(name, [])}
 
@@ -427,7 +440,7 @@ def rotation(tx, ty, tz):
 
 
 def sample(clip, time):
-    """Bedrock keyframes -> {bone: (rotation, position)} with linear interpolation, as GeoAnimation does."""
+    """Bedrock keyframes -> {bone: (rotation, position)}, eased between keys exactly as GeoAnimation does."""
     out = {}
     for name, channels in clip["bones"].items():
         vals = []
@@ -437,6 +450,7 @@ def sample(clip, time):
             for (t0, v0), (t1, v1) in zip(keys, keys[1:]):
                 if t0 <= time <= t1:
                     f = (time - t0) / (t1 - t0) if t1 > t0 else 0
+                    f = f * f * (3 - 2 * f)
                     v = [v0[a] + (v1[a] - v0[a]) * f for a in range(3)]
             if keys and time >= keys[-1][0]: v = keys[-1][1]
             if keys and time <= keys[0][0]: v = keys[0][1]
@@ -540,10 +554,11 @@ def preview(img, path):
 
 
 if __name__ == "__main__":
-    build()
+    if not BONES: build()
     image = texture()
     image.save(TEXTURE)
     write_geo()
     write_bbmodel(image)
     print(len(CUBES), "cubes,", len(BONES), "bones")
     if len(sys.argv) > 1: preview(image, sys.argv[1])
+    print("animations and the Blockbench timeline: python3 art/source/doctor_doom/make_animations.py")

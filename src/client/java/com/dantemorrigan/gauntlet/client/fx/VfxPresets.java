@@ -97,7 +97,29 @@ public final class VfxPresets {
 			Map.entry("thanos/sword_sparks", new Spec(8, 1, 8, false, 1.7f, true, Orientation.CAMERA)),
 			Map.entry("thanos/slam_wave", new Spec(8, 2, 16, false, 6.0f, true, Orientation.FLAT)),
 			Map.entry("thanos/slam_dust", new Spec(8, 3, 24, false, 4.0f, false, Orientation.CAMERA)),
-			Map.entry("thanos/armor_hit", new Spec(8, 1, 8, false, 1.5f, true, Orientation.CAMERA)));
+			Map.entry("thanos/armor_hit", new Spec(8, 1, 8, false, 1.5f, true, Orientation.CAMERA)),
+			Map.entry("doctor_doom/armored_combo", new Spec(8, 1, 8, false, 2.6f, true, Orientation.CAMERA)),
+			Map.entry("doctor_doom/gauntlet_bolt", new Spec(8, 2, 16, true, 1.4f, true, Orientation.CAMERA)),
+			Map.entry("doctor_doom/iron_bastion", new Spec(12, 2, 24, false, 3.6f, true, Orientation.CAMERA)),
+			Map.entry("doctor_doom/doombot_drop", new Spec(10, 2, 20, false, 4.0f, true, Orientation.CAMERA)),
+			Map.entry("doctor_doom/drop_marker", new Spec(10, 2, 20, false, 4.0f, true, Orientation.FLAT)),
+			Map.entry("doctor_doom/jet_slam", new Spec(12, 2, 24, false, 5.0f, true, Orientation.CAMERA)),
+			Map.entry("doctor_doom/slam_wave", new Spec(12, 2, 24, false, 7.0f, true, Orientation.FLAT)),
+			Map.entry("doctor_doom/jet_exhaust", new Spec(8, 1, 8, false, 1.2f, true, Orientation.CAMERA)),
+			Map.entry("doctor_doom/sorcery_bolt", new Spec(10, 2, 20, true, 1.6f, true, Orientation.CAMERA)),
+			Map.entry("doctor_doom/seven_suns", new Spec(16, 2, 32, false, 7.0f, true, Orientation.CAMERA)),
+			Map.entry("doctor_doom/sun_projectile", new Spec(10, 2, 20, true, 1.3f, true, Orientation.CAMERA)),
+			Map.entry("doctor_doom/rift_step", new Spec(12, 2, 24, false, 3.4f, true, Orientation.CAMERA)),
+			Map.entry("doctor_doom/ovoid_echo", new Spec(12, 2, 24, false, 3.2f, true, Orientation.CAMERA)),
+			Map.entry("doctor_doom/time_platform", new Spec(16, 2, 32, false, 6.0f, true, Orientation.FLAT)),
+			Map.entry("doctor_doom/latverian_edict", new Spec(18, 2, 36, false, 8.0f, true, Orientation.CAMERA)),
+			Map.entry("doctor_doom/edict_warning", new Spec(12, 3, 36, false, 9.0f, true, Orientation.FLAT)),
+			Map.entry("doctor_doom/edict_column", new Spec(12, 1, 12, false, 9.0f, true, Orientation.CAMERA)),
+			Map.entry("doctor_doom/phase_shift", new Spec(12, 2, 24, false, 3.4f, true, Orientation.CAMERA)),
+			Map.entry("doctor_doom/latveria_gate", new Spec(16, 2, 32, false, 4.0f, true, Orientation.CAMERA)),
+			Map.entry("doctor_doom/impact", new Spec(8, 1, 8, false, 1.6f, true, Orientation.CAMERA)),
+			Map.entry("doctor_doom/doom_smoke", new Spec(10, 4, 40, false, 1.8f, false, Orientation.CAMERA)),
+			Map.entry("doctor_doom/rune_mote", new Spec(8, 3, 24, false, 0.35f, true, Orientation.CAMERA)));
 
 	private static Map<String, Spec> loaded;
 

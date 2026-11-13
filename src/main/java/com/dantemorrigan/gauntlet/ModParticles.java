@@ -88,6 +88,30 @@ public final class ModParticles {
 	public static final SimpleParticleType THANOS_ARMOR_HIT = register("thanos/armor_hit");
 	public static final SimpleParticleType THANOS_RIFT_CLOSE = register("thanos/rift_close");
 
+	// Doctor Doom (pack: The_Fury_of_Doom_VFX_Pack). xa = size multiplier; flat ones: (xa,ya,za) = normal, length = size.
+	public static final SimpleParticleType DOOM_ARMORED_COMBO = register("doctor_doom/armored_combo");
+	public static final SimpleParticleType DOOM_GAUNTLET_BOLT = register("doctor_doom/gauntlet_bolt");
+	public static final SimpleParticleType DOOM_IRON_BASTION = register("doctor_doom/iron_bastion");
+	public static final SimpleParticleType DOOM_DOOMBOT_DROP = register("doctor_doom/doombot_drop");
+	public static final SimpleParticleType DOOM_DROP_MARKER = register("doctor_doom/drop_marker");
+	public static final SimpleParticleType DOOM_JET_SLAM = register("doctor_doom/jet_slam");
+	public static final SimpleParticleType DOOM_SLAM_WAVE = register("doctor_doom/slam_wave");
+	public static final SimpleParticleType DOOM_JET_EXHAUST = register("doctor_doom/jet_exhaust");
+	public static final SimpleParticleType DOOM_SORCERY_BOLT = register("doctor_doom/sorcery_bolt");
+	public static final SimpleParticleType DOOM_SEVEN_SUNS = register("doctor_doom/seven_suns");
+	public static final SimpleParticleType DOOM_SUN_PROJECTILE = register("doctor_doom/sun_projectile");
+	public static final SimpleParticleType DOOM_RIFT_STEP = register("doctor_doom/rift_step");
+	public static final SimpleParticleType DOOM_OVOID_ECHO = register("doctor_doom/ovoid_echo");
+	public static final SimpleParticleType DOOM_TIME_PLATFORM = register("doctor_doom/time_platform");
+	public static final SimpleParticleType DOOM_LATVERIAN_EDICT = register("doctor_doom/latverian_edict");
+	public static final SimpleParticleType DOOM_EDICT_WARNING = register("doctor_doom/edict_warning");
+	public static final SimpleParticleType DOOM_EDICT_COLUMN = register("doctor_doom/edict_column");
+	public static final SimpleParticleType DOOM_PHASE_SHIFT = register("doctor_doom/phase_shift");
+	public static final SimpleParticleType DOOM_LATVERIA_GATE = register("doctor_doom/latveria_gate");
+	public static final SimpleParticleType DOOM_IMPACT = register("doctor_doom/impact");
+	public static final SimpleParticleType DOOM_DOOM_SMOKE = register("doctor_doom/doom_smoke");
+	public static final SimpleParticleType DOOM_RUNE_MOTE = register("doctor_doom/rune_mote");
+
 	public static final SimpleParticleType URU_GUARD = register("uru_guard");
 
 	// Space Stone quest (pack: 01_Space_Quest). xa = size multiplier; obsidian_wave: (xa,ya,za) = normal, length = size.

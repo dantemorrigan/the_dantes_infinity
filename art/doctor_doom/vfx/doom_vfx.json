@@ -1,0 +1,464 @@
+{
+  "namespace": "infinity_gauntlet",
+  "minecraft": "26.1.2",
+  "ticks_per_second": 20,
+  "effects": [
+    {
+      "id": "armored_combo",
+      "name_ru": "Стальной натиск",
+      "name_en": "Armored Combo",
+      "family": "tech",
+      "animation": "animation.doctor_doom.armored_combo",
+      "animation_duration_ticks": 39,
+      "keyframes": [
+        {
+          "tick": 8,
+          "cue": "Взмах справа"
+        },
+        {
+          "tick": 12,
+          "cue": "Удар справа"
+        },
+        {
+          "tick": 17,
+          "cue": "Удар слева"
+        },
+        {
+          "tick": 20,
+          "cue": "Финальный удар"
+        }
+      ],
+      "particle_description": "infinity_gauntlet:doctor_doom/armored_combo",
+      "texture_size": 64,
+      "frames": 8,
+      "icon": "infinity_gauntlet:textures/gui/doctor_doom/icons/armored_combo.png",
+      "direction_ru": "Мировая дуга у кулака, в направлении удара. Белый край и короткие искры."
+    },
+    {
+      "id": "gauntlet_bolt",
+      "name_ru": "Импульс перчатки",
+      "name_en": "Gauntlet Bolt",
+      "family": "tech",
+      "animation": "animation.doctor_doom.gauntlet_bolt",
+      "animation_duration_ticks": 38,
+      "keyframes": [
+        {
+          "tick": 10,
+          "cue": "Заряд"
+        },
+        {
+          "tick": 18,
+          "cue": "Вылет снаряда"
+        }
+      ],
+      "particle_description": "infinity_gauntlet:doctor_doom/gauntlet_bolt",
+      "texture_size": 64,
+      "frames": 8,
+      "icon": "infinity_gauntlet:textures/gui/doctor_doom/icons/gauntlet_bolt.png",
+      "direction_ru": "Спрайт вдоль направления полёта. Золотые сегменты вокруг белого сердечника."
+    },
+    {
+      "id": "iron_bastion",
+      "name_ru": "Железный бастион",
+      "name_en": "Iron Bastion",
+      "family": "tech",
+      "animation": "animation.doctor_doom.iron_bastion",
+      "animation_duration_ticks": 87,
+      "keyframes": [
+        {
+          "tick": 8,
+          "cue": "Контур"
+        },
+        {
+          "tick": 12,
+          "cue": "Поднять щит"
+        },
+        {
+          "tick": 61,
+          "cue": "Начать распад"
+        }
+      ],
+      "particle_description": "infinity_gauntlet:doctor_doom/iron_bastion",
+      "texture_size": 96,
+      "frames": 12,
+      "icon": "infinity_gauntlet:textures/gui/doctor_doom/icons/iron_bastion.png",
+      "direction_ru": "Вертикальные пластины перед Думом. На попадании проигрывать impact в точке контакта."
+    },
+    {
+      "id": "doombot_drop",
+      "name_ru": "Десант Думботов",
+      "name_en": "Doombot Drop",
+      "family": "tech",
+      "animation": "animation.doctor_doom.doombot_drop",
+      "animation_duration_ticks": 53,
+      "keyframes": [
+        {
+          "tick": 12,
+          "cue": "Разметка площадки"
+        },
+        {
+          "tick": 28,
+          "cue": "Луч сверху"
+        },
+        {
+          "tick": 32,
+          "cue": "Приземление"
+        }
+      ],
+      "particle_description": "infinity_gauntlet:doctor_doom/doombot_drop",
+      "texture_size": 96,
+      "frames": 10,
+      "icon": "infinity_gauntlet:textures/gui/doctor_doom/icons/doombot_drop.png",
+      "direction_ru": "Наземная рамка под точкой высадки, вертикальный луч и пыль после посадки."
+    },
+    {
+      "id": "jet_slam",
+      "name_ru": "Реактивный таран",
+      "name_en": "Jet Slam",
+      "family": "tech",
+      "animation": "animation.doctor_doom.jet_slam",
+      "animation_duration_ticks": 59,
+      "keyframes": [
+        {
+          "tick": 7,
+          "cue": "Выхлоп"
+        },
+        {
+          "tick": 23,
+          "cue": "Пик прыжка"
+        },
+        {
+          "tick": 28,
+          "cue": "Наземная волна"
+        }
+      ],
+      "particle_description": "infinity_gauntlet:doctor_doom/jet_slam",
+      "texture_size": 96,
+      "frames": 12,
+      "icon": "infinity_gauntlet:textures/gui/doctor_doom/icons/jet_slam.png",
+      "direction_ru": "Выхлоп у сапог. Разлом и кольцо лежат на полу с небольшим смещением по высоте."
+    },
+    {
+      "id": "sorcery_bolt",
+      "name_ru": "Чародейский разряд",
+      "name_en": "Sorcery Bolt",
+      "family": "magic",
+      "animation": "animation.doctor_doom.sorcery_bolt",
+      "animation_duration_ticks": 55,
+      "keyframes": [
+        {
+          "tick": 12,
+          "cue": "Сбор рун"
+        },
+        {
+          "tick": 18,
+          "cue": "Замыкание печати"
+        },
+        {
+          "tick": 22,
+          "cue": "Вылет снаряда"
+        }
+      ],
+      "particle_description": "infinity_gauntlet:doctor_doom/sorcery_bolt",
+      "texture_size": 64,
+      "frames": 10,
+      "icon": "infinity_gauntlet:textures/gui/doctor_doom/icons/sorcery_bolt.png",
+      "direction_ru": "Билборд на снаряде. Ромб в центре, три разомкнутые руны по орбите."
+    },
+    {
+      "id": "seven_suns",
+      "name_ru": "Семь солнц",
+      "name_en": "Seven Suns",
+      "family": "magic",
+      "animation": "animation.doctor_doom.seven_suns",
+      "animation_duration_ticks": 119,
+      "keyframes": [
+        {
+          "tick": 18,
+          "cue": "Первые орбиты"
+        },
+        {
+          "tick": 32,
+          "cue": "Заряд собран"
+        },
+        {
+          "tick": 36,
+          "cue": "Начать залп"
+        },
+        {
+          "tick": 84,
+          "cue": "Затухание"
+        }
+      ],
+      "particle_description": "infinity_gauntlet:doctor_doom/seven_suns",
+      "texture_size": 128,
+      "frames": 16,
+      "icon": "infinity_gauntlet:textures/gui/doctor_doom/icons/seven_suns.png",
+      "direction_ru": "Орбита из семи светил вокруг Дума. Для залпа использовать тот же центр каждого светила как точку старта."
+    },
+    {
+      "id": "rift_step",
+      "name_ru": "Шаг сквозь разлом",
+      "name_en": "Rift Step",
+      "family": "magic",
+      "animation": "animation.doctor_doom.rift_step",
+      "animation_duration_ticks": 38,
+      "keyframes": [
+        {
+          "tick": 7,
+          "cue": "Линия разлома"
+        },
+        {
+          "tick": 14,
+          "cue": "Переход"
+        },
+        {
+          "tick": 21,
+          "cue": "Схлопывание"
+        }
+      ],
+      "particle_description": "infinity_gauntlet:doctor_doom/rift_step",
+      "texture_size": 96,
+      "frames": 12,
+      "icon": "infinity_gauntlet:textures/gui/doctor_doom/icons/rift_step.png",
+      "direction_ru": "Вертикальный разлом у исходной и конечной точки. Плоскость зеркалится только по задумке рендера."
+    },
+    {
+      "id": "ovoid_echo",
+      "name_ru": "Овоидное эхо",
+      "name_en": "Ovoid Echo",
+      "family": "magic",
+      "animation": "animation.doctor_doom.ovoid_echo",
+      "animation_duration_ticks": 73,
+      "keyframes": [
+        {
+          "tick": 18,
+          "cue": "Первый силуэт"
+        },
+        {
+          "tick": 30,
+          "cue": "Следующий отголосок"
+        },
+        {
+          "tick": 34,
+          "cue": "Белая вспышка"
+        }
+      ],
+      "particle_description": "infinity_gauntlet:doctor_doom/ovoid_echo",
+      "texture_size": 96,
+      "frames": 12,
+      "icon": "infinity_gauntlet:textures/gui/doctor_doom/icons/ovoid_echo.png",
+      "direction_ru": "Контуры маски растворяются наружу. Поворот силуэта следует за оригиналом."
+    },
+    {
+      "id": "time_platform",
+      "name_ru": "Платформа времени",
+      "name_en": "Time Platform",
+      "family": "hybrid",
+      "animation": "animation.doctor_doom.time_platform",
+      "animation_duration_ticks": 80,
+      "keyframes": [
+        {
+          "tick": 16,
+          "cue": "Разметка пола"
+        },
+        {
+          "tick": 28,
+          "cue": "Стрелки и деления"
+        },
+        {
+          "tick": 32,
+          "cue": "Платформа активна"
+        },
+        {
+          "tick": 52,
+          "cue": "Сброс"
+        }
+      ],
+      "particle_description": "infinity_gauntlet:doctor_doom/time_platform",
+      "texture_size": 128,
+      "frames": 16,
+      "icon": "infinity_gauntlet:textures/gui/doctor_doom/icons/time_platform.png",
+      "direction_ru": "Наземный диск с вращающимися отметками и двумя стрелками. Палитра серебристо-фиолетовая."
+    },
+    {
+      "id": "latverian_edict",
+      "name_ru": "Латверийский эдикт",
+      "name_en": "Latverian Edict",
+      "family": "hybrid",
+      "animation": "animation.doctor_doom.latverian_edict",
+      "animation_duration_ticks": 126,
+      "keyframes": [
+        {
+          "tick": 10,
+          "cue": "Границы зоны"
+        },
+        {
+          "tick": 46,
+          "cue": "Печать заряжена"
+        },
+        {
+          "tick": 50,
+          "cue": "Раскрытие колонны"
+        },
+        {
+          "tick": 80,
+          "cue": "Сброс рун"
+        }
+      ],
+      "particle_description": "infinity_gauntlet:doctor_doom/latverian_edict",
+      "texture_size": 128,
+      "frames": 18,
+      "icon": "infinity_gauntlet:textures/gui/doctor_doom/icons/latverian_edict.png",
+      "direction_ru": "Напольная корона, затем вертикальный луч и разлёт осколков. Предупреждение читается по форме короны."
+    },
+    {
+      "id": "phase_shift",
+      "name_ru": "Смена фазы",
+      "name_en": "Phase Shift",
+      "family": "hybrid",
+      "animation": "animation.doctor_doom.phase_shift",
+      "animation_duration_ticks": 42,
+      "keyframes": [
+        {
+          "tick": 5,
+          "cue": "Сбор дуг"
+        },
+        {
+          "tick": 18,
+          "cue": "Смена фазы"
+        },
+        {
+          "tick": 33,
+          "cue": "Разлёт осколков"
+        }
+      ],
+      "particle_description": "infinity_gauntlet:doctor_doom/phase_shift",
+      "texture_size": 96,
+      "frames": 12,
+      "icon": "infinity_gauntlet:textures/gui/doctor_doom/icons/phase_shift.png",
+      "direction_ru": "Восьмиугольные створки и зелёный импульс от груди Дума."
+    },
+    {
+      "id": "latveria_gate",
+      "name_ru": "Врата Латверии",
+      "name_en": "Latveria Gate",
+      "family": "hybrid",
+      "animation": null,
+      "animation_duration_ticks": null,
+      "keyframes": [],
+      "particle_description": "infinity_gauntlet:doctor_doom/latveria_gate",
+      "texture_size": 128,
+      "frames": 16,
+      "icon": "infinity_gauntlet:textures/gui/doctor_doom/icons/latveria_gate.png",
+      "direction_ru": "Вертикальный ромб с тёмным проёмом. Использовать события тизера, кадр раскрытия удерживать до ухода Дума."
+    },
+    {
+      "id": "impact",
+      "name_ru": "Попадание",
+      "name_en": "Impact",
+      "family": "tech",
+      "animation": null,
+      "animation_duration_ticks": null,
+      "keyframes": [],
+      "particle_description": "infinity_gauntlet:doctor_doom/impact",
+      "texture_size": 48,
+      "frames": 8,
+      "icon": "infinity_gauntlet:textures/gui/doctor_doom/icons/impact.png",
+      "direction_ru": "Короткая вспышка в точке контакта. Прицельные лучи и осколки."
+    },
+    {
+      "id": "doom_smoke",
+      "name_ru": "Изумрудный дым",
+      "name_en": "Doom Smoke",
+      "family": "magic",
+      "animation": null,
+      "animation_duration_ticks": null,
+      "keyframes": [],
+      "particle_description": "infinity_gauntlet:doctor_doom/doom_smoke",
+      "texture_size": 48,
+      "frames": 10,
+      "icon": "infinity_gauntlet:textures/gui/doctor_doom/icons/doom_smoke.png",
+      "direction_ru": "Медленный дым для ухода, догорания атаки и распада щита."
+    },
+    {
+      "id": "rune_mote",
+      "name_ru": "Руна",
+      "name_en": "Rune Mote",
+      "family": "magic",
+      "animation": null,
+      "animation_duration_ticks": null,
+      "keyframes": [],
+      "particle_description": "infinity_gauntlet:doctor_doom/rune_mote",
+      "texture_size": 32,
+      "frames": 8,
+      "icon": "infinity_gauntlet:textures/gui/doctor_doom/icons/rune_mote.png",
+      "direction_ru": "Свободные частицы для связки магических эффектов."
+    }
+  ],
+  "latveria_teaser_ticks": {
+    "open": 24,
+    "arrive": 28,
+    "fully_visible": 92,
+    "push": 130,
+    "depart": 193,
+    "vanish": 229,
+    "close_duration": 24
+  },
+  "layers": [
+    {
+      "id": "edict_warning",
+      "effect": "latverian_edict",
+      "plane": "ground",
+      "frames": 12,
+      "suggested_lifetime_ticks": 40,
+      "particle_description": "infinity_gauntlet:doctor_doom/edict_warning",
+      "direction_ru": "Форма зоны до удара. Плоскость по XZ."
+    },
+    {
+      "id": "edict_column",
+      "effect": "latverian_edict",
+      "plane": "vertical",
+      "frames": 12,
+      "suggested_lifetime_ticks": 16,
+      "particle_description": "infinity_gauntlet:doctor_doom/edict_column",
+      "direction_ru": "Вертикальный луч после подготовки. Для объёма две плоскости крестом."
+    },
+    {
+      "id": "drop_marker",
+      "effect": "doombot_drop",
+      "plane": "ground",
+      "frames": 10,
+      "suggested_lifetime_ticks": 20,
+      "particle_description": "infinity_gauntlet:doctor_doom/drop_marker",
+      "direction_ru": "Угловая разметка места посадки на земле."
+    },
+    {
+      "id": "slam_wave",
+      "effect": "jet_slam",
+      "plane": "ground",
+      "frames": 12,
+      "suggested_lifetime_ticks": 16,
+      "particle_description": "infinity_gauntlet:doctor_doom/slam_wave",
+      "direction_ru": "Расширяющееся кольцо в плоскости XZ после касания земли."
+    },
+    {
+      "id": "jet_exhaust",
+      "effect": "jet_slam",
+      "plane": "vertical",
+      "frames": 8,
+      "suggested_lifetime_ticks": 12,
+      "particle_description": "infinity_gauntlet:doctor_doom/jet_exhaust",
+      "direction_ru": "Отдельный выхлоп для каждого сапога."
+    },
+    {
+      "id": "sun_projectile",
+      "effect": "seven_suns",
+      "plane": "billboard",
+      "frames": 10,
+      "suggested_lifetime_ticks": 14,
+      "particle_description": "infinity_gauntlet:doctor_doom/sun_projectile",
+      "direction_ru": "Самостоятельное светило для залпа и размещения на орбите."
+    }
+  ]
+}

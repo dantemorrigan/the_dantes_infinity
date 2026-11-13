@@ -112,6 +112,29 @@ public final class ModParticleProviders {
 				new FxParticle(level, x, y, z, sprites, VfxPresets.get("uru_guard"), 1f, null, (int) xa,
 						e -> e.isAlive() ? e.position().add(0, e.getBbHeight() * 0.62, 0) : null, 1f));
 		// Thanos
+		// Doctor Doom: ground telegraphs lie flat, everything else faces the camera.
+		billboard(ModParticles.DOOM_ARMORED_COMBO, "doctor_doom/armored_combo");
+		billboard(ModParticles.DOOM_GAUNTLET_BOLT, "doctor_doom/gauntlet_bolt");
+		billboard(ModParticles.DOOM_IRON_BASTION, "doctor_doom/iron_bastion");
+		billboard(ModParticles.DOOM_DOOMBOT_DROP, "doctor_doom/doombot_drop");
+		flat(ModParticles.DOOM_DROP_MARKER, "doctor_doom/drop_marker");
+		billboard(ModParticles.DOOM_JET_SLAM, "doctor_doom/jet_slam");
+		flat(ModParticles.DOOM_SLAM_WAVE, "doctor_doom/slam_wave");
+		billboard(ModParticles.DOOM_JET_EXHAUST, "doctor_doom/jet_exhaust");
+		billboard(ModParticles.DOOM_SORCERY_BOLT, "doctor_doom/sorcery_bolt");
+		billboard(ModParticles.DOOM_SEVEN_SUNS, "doctor_doom/seven_suns");
+		billboard(ModParticles.DOOM_SUN_PROJECTILE, "doctor_doom/sun_projectile");
+		billboard(ModParticles.DOOM_RIFT_STEP, "doctor_doom/rift_step");
+		billboard(ModParticles.DOOM_OVOID_ECHO, "doctor_doom/ovoid_echo");
+		flat(ModParticles.DOOM_TIME_PLATFORM, "doctor_doom/time_platform");
+		billboard(ModParticles.DOOM_LATVERIAN_EDICT, "doctor_doom/latverian_edict");
+		flat(ModParticles.DOOM_EDICT_WARNING, "doctor_doom/edict_warning");
+		billboard(ModParticles.DOOM_EDICT_COLUMN, "doctor_doom/edict_column");
+		billboard(ModParticles.DOOM_PHASE_SHIFT, "doctor_doom/phase_shift");
+		billboard(ModParticles.DOOM_LATVERIA_GATE, "doctor_doom/latveria_gate");
+		billboard(ModParticles.DOOM_IMPACT, "doctor_doom/impact");
+		billboard(ModParticles.DOOM_DOOM_SMOKE, "doctor_doom/doom_smoke");
+		billboard(ModParticles.DOOM_RUNE_MOTE, "doctor_doom/rune_mote");
 		flat(ModParticles.THANOS_ARRIVAL_RING, "thanos/arrival_ring");
 		flat(ModParticles.THANOS_SLAM_WAVE, "thanos/slam_wave");
 		billboard(ModParticles.THANOS_ARRIVAL_FLASH, "thanos/arrival_flash");
