@@ -280,6 +280,11 @@ public class DoctorDoom extends Monster {
 			DoomVfx.line(level, DoomVfx.TRAIL, g, h, 0.55f, 5, DoomVfx.SUN);
 			DoomVfx.line(level, DoomVfx.TRAIL, g, h, 0.28f, 5, DoomVfx.GREEN);
 		}
+		// The stones' power flowing out of the gauntlet along the tether, toward his hand.
+		for (int k = 0; k < 3; k++) {
+			double along = ((t * 0.06) + k / 3.0) % 1.0;
+			DoomFx.bill(level, ModParticles.DOOM_RUNE_MOTE, g.lerp(h, along), 0.6);
+		}
 		if (t % 10 == 0) {
 			DoomFx.sound(level, g, SoundEvents.BEACON_AMBIENT, 1.4f, 0.6f + (t - SIPHON_START) / (float) (SIPHON_DONE - SIPHON_START));
 			com.dantemorrigan.gauntlet.net.ModStatus.send(victim, Component.translatable("msg.infinity_gauntlet.latveria.siphon.warn",

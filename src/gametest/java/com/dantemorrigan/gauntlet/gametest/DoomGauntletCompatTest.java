@@ -130,6 +130,22 @@ public class DoomGauntletCompatTest implements FabricClientGameTest {
 			check(server.computeOnServer(s -> latveria(s).getEntitiesOfClass(net.minecraft.world.entity.item.ItemEntity.class,
 					new AABB(-12, LatveriaPlan.FLOOR - 4, -262, 12, LatveriaPlan.FLOOR + 12, -244)).isEmpty()), "The blast dropped castle blocks");
 
+			// ---- 1b. A survival visitor: their own block comes back out, the castle's does not.
+			String visitor = server.computeOnServer(s -> {
+				ServerLevel l = latveria(s);
+				ServerPlayer p = player(s);
+				p.setGameMode(net.minecraft.world.level.GameType.SURVIVAL);
+				BlockPos mine = new BlockPos(3, LatveriaPlan.FLOOR, -262);
+				BlockPos wall = new BlockPos(0, LatveriaPlan.FLOOR - 1, -262);
+				p.teleportTo(l, 3.5, LatveriaPlan.FLOOR, -259.5, java.util.Set.of(), 180, 30, true);
+				l.setBlock(mine, Blocks.OAK_PLANKS.defaultBlockState(), 3);
+				boolean ownBroken = p.gameMode.destroyBlock(mine) && l.getBlockState(mine).isAir();
+				boolean wallKept = !p.gameMode.destroyBlock(wall) && !l.getBlockState(wall).isAir();
+				p.setGameMode(net.minecraft.world.level.GameType.CREATIVE);
+				return ownBroken + "/" + wallKept;
+			});
+			check(visitor.equals("true/true"), "Survival visitor: own block broken / castle kept = " + visitor);
+
 			// ---- 2. Doom in his hall with the whole gauntlet against him.
 			server.runCommand("execute as @p run gauntlet latveria unlock throne");
 			server.runCommand("execute as @p run gauntlet doom spawn");

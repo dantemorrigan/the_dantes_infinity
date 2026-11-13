@@ -157,10 +157,15 @@ public final class Latveria {
 
 	/** Bookkeeping after a change was let through: a block set down in the open becomes the visitor's, a cleared one is forgotten. */
 	public static void changed(net.minecraft.world.level.Level level, BlockPos pos, net.minecraft.world.level.block.state.BlockState old, net.minecraft.world.level.block.state.BlockState next) {
-		if (editing > 0 || level.isClientSide() || level.dimension() != LEVEL || !(level instanceof ServerLevel sl)) return;
+		if (level.isClientSide() || level.dimension() != LEVEL || !(level instanceof ServerLevel sl)) return;
 		if (next.isAir() || next.canBeReplaced()) {
+			// A cleared spot is forgotten whoever cleared it, Latveria's own edits included.
 			if (placed(sl).remove(pos.asLong())) placedDirty = true;
-		} else if ((old.isAir() || old.canBeReplaced()) && placed(sl).add(pos.asLong())) placedDirty = true;
+			return;
+		}
+		// Only what a visitor sets down counts as theirs: not Latveria's own edits, not ice or snow the weather makes.
+		if (editing > 0 || next.is(net.minecraft.tags.BlockTags.ICE) || next.is(net.minecraft.tags.BlockTags.SNOW)) return;
+		if ((old.isAir() || old.canBeReplaced()) && placed(sl).add(pos.asLong())) placedDirty = true;
 	}
 
 	public static void init() {
