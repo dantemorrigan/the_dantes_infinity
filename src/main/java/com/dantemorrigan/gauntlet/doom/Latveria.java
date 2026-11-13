@@ -181,6 +181,7 @@ public final class Latveria {
 			held = false;
 			toFurnish.clear();
 			placed = null;
+			Searchlights.clear();
 			placedDirty = false;
 			inGate.clear();
 			logoDue.clear();
@@ -228,6 +229,8 @@ public final class Latveria {
 	public static boolean conquered(MinecraftServer server) { load(server); return (flags & CONQUERED) != 0; }
 
 	public static boolean generatorOff(MinecraftServer server) { load(server); return (flags & GENERATOR) != 0; }
+
+	public static boolean gateOpen(MinecraftServer server) { load(server); return (flags & GATE) != 0; }
 
 	public static boolean isOwner(Player player) {
 		if (player.level().getServer() == null) return false;
@@ -497,6 +500,7 @@ public final class Latveria {
 			return;
 		}
 		for (int n = 0; n < 2 && !toFurnish.isEmpty(); n++) furnish(level, toFurnish.poll());
+		Searchlights.tick(level);
 		for (ServerPlayer p : level.players()) {
 			Integer due = logoDue.get(p.getUUID());
 			if (due != null) {

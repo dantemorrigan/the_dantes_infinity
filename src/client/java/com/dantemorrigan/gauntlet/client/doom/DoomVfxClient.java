@@ -42,7 +42,16 @@ import java.util.Map;
  */
 public final class DoomVfxClient {
 	private static final Identifier GLOW = tex("glow"), CORE = tex("core"), RING = tex("ring"), STREAK = tex("streak"),
-			FLAME = tex("flame"), COLUMN = tex("column"), HEX = tex("hex");
+			FLAME = tex("flame"), COLUMN = tex("column"), HEX = tex("hex"), SEARCH = tex("searchlight");
+			/** The castle searchlights: burning or out, and the alarm (red beams held on one entity). */
+			private static boolean lightsOn;
+			private static int alarmTicks, alarmEntity = -1;
+
+			public static void lights(boolean on) { lightsOn = on; if (!on) alarmTicks = 0; }
+
+			public static void alarm(int entity, int ticks) { alarmEntity = entity; alarmTicks = ticks; }
+
+			public static boolean lightsOn() { return lightsOn; }
 	/** Inner and outer colour of each style (RGB). */
 	private static final int[][] STYLE = {
 			{0xFFF4C8, 0xFFA437}, {0xD6FFE0, 0x37E87A}, {0xFFFBE0, 0xFFB436}, {0xC8FFD8, 0x1FD67A}, {0xC8FFF6, 0x2DD6C8}};
@@ -76,6 +85,8 @@ public final class DoomVfxClient {
 	}
 
 	private static void clear() {
+		lightsOn = false;
+		alarmTicks = 0;
 		FX.clear();
 		BOLTS.clear();
 		SHIELDS.clear();
@@ -172,6 +183,7 @@ public final class DoomVfxClient {
 		if (mc.level == null) { if (!FX.isEmpty() || !BOLTS.isEmpty()) clear(); return; }
 		if (mc.isPaused()) return;
 		clock++;
+		if (alarmTicks > 0) alarmTicks--;
 		ClientLevel level = mc.level;
 		for (Iterator<Fx> it = BOLTS.values().iterator(); it.hasNext();) {
 			Fx b = it.next();
@@ -221,7 +233,8 @@ public final class DoomVfxClient {
 		Minecraft mc = Minecraft.getInstance();
 		if (mc.level == null) return;
 		boolean gate = LatveriaSky.active() && cam().distanceToSqr(GATE) < 200 * 200;
-		boolean anything = gate || !FX.isEmpty() || !BOLTS.isEmpty() || !SHIELDS.isEmpty() || !JETS.isEmpty() || !ORBITS.isEmpty() || preview != null;
+		boolean lamps = LatveriaSky.active() && lightsOn;
+		boolean anything = gate || lamps || !FX.isEmpty() || !BOLTS.isEmpty() || !SHIELDS.isEmpty() || !JETS.isEmpty() || !ORBITS.isEmpty() || preview != null;
 		if (!anything) return;
 		float partial = mc.getDeltaTracker().getGameTimeDeltaPartialTick(false);
 		var camera = mc.gameRenderer.getMainCamera();
@@ -240,6 +253,7 @@ public final class DoomVfxClient {
 			d.plane(GLOW, GATE, 4.6f, 5.0f, STYLE[DoomVfx.GREEN][1], 0.32f * pulse);
 			d.plane(frame, GATE, 3.6f, 3.6f, 0xFFFFFF, 0.97f);
 		}
+		if (lamps) searchlights(d, mc, partial);
 		for (Fx b : BOLTS.values()) {
 			Vec3 head = b.prev.lerp(b.pos, partial);
 			float s = b.size;
@@ -351,6 +365,31 @@ public final class DoomVfxClient {
 		}
 	}
 
+	/** Three cones from the castle towers, sweeping the slope; red and fixed on the intruder while the alarm sounds. */
+	private static void searchlights(Draw d, Minecraft mc, float partial) {
+		double t = mc.level.getGameTime() + partial;
+		Entity caught = alarmTicks > 0 ? mc.level.getEntity(alarmEntity) : null;
+		boolean red = alarmTicks > 0;
+		int color = red ? 0xFF3A28 : 0xFFF0C8;
+		float flicker = red ? 0.8f + 0.2f * Mth.sin((float) t * 1.7f) : 1;
+		for (int i = 0; i < com.dantemorrigan.gauntlet.doom.Searchlights.LAMPS.length; i++) {
+			Vec3 lamp = com.dantemorrigan.gauntlet.doom.Searchlights.LAMPS[i];
+			Vec3 dir = caught != null ? caught.getPosition(partial).add(0, caught.getBbHeight() * 0.5, 0).subtract(lamp).normalize()
+					: com.dantemorrigan.gauntlet.doom.Searchlights.direction(i, t);
+			Vec3 spot = com.dantemorrigan.gauntlet.doom.Searchlights.spot(mc.level, i, dir);
+			float spotR = com.dantemorrigan.gauntlet.doom.Searchlights.SPOT;
+			// A beam held on the viewer would fill the screen: it thins out toward them instead.
+			float end = caught == mc.getCameraEntity() ? 0.25f : 1;
+			d.cone(SEARCH, lamp, spot, 0.7f, spotR * 2.4f, color, 0.34f * flicker, 0.12f * flicker * end);
+			d.cone(SEARCH, lamp, spot, 0.3f, spotR * 1.1f, color, 0.3f * flicker, 0.1f * flicker * end);
+			d.billboard(GLOW, lamp, 3.2f, color, 0.8f * flicker);
+			d.billboard(CORE, lamp, 1.1f, 0xFFFFFF, 0.95f);
+			if (spot.distanceTo(lamp) > com.dantemorrigan.gauntlet.doom.Searchlights.RANGE - 1) continue;
+		d.flat(GLOW, spot.add(0, 0.08, 0), spotR * 1.25f, 0, color, 0.42f * flicker);
+			d.flat(GLOW, spot.add(0, 0.09, 0), spotR * 0.55f, 0, 0xFFFFFF, 0.25f * flicker);
+		}
+	}
+
 	/** The gate back to the wider world: centre of its arch in the city wall. */
 	private static final Vec3 GATE = new Vec3(0.5, com.dantemorrigan.gauntlet.doom.LatveriaPlan.VALLEY_Y + 4.0, 128.5);
 
@@ -439,6 +478,24 @@ public final class DoomVfxClient {
 					e.vertex(p0.add(side0), u0, 1, c0);
 					e.vertex(p0.subtract(side0), u0, 0, c0);
 					e.vertex(p1.subtract(side1), u1, 0, c1);
+				}
+			});
+		}
+
+		/** A camera-facing cone from {@code a} (width {@code w0}) to {@code b} (width {@code w1}), its alpha fading from a to b. */
+		void cone(Identifier texture, Vec3 a, Vec3 b, float w0, float w1, int rgb, float alphaA, float alphaB) {
+			Vec3 dir = b.subtract(a);
+			if (dir.lengthSqr() < 1e-4) return;
+			int segs = 6;
+			quads(texture, e -> {
+				for (int i = 0; i < segs; i++) {
+					float k0 = i / (float) segs, k1 = (i + 1) / (float) segs;
+					Vec3 p0 = a.add(dir.scale(k0)), p1 = a.add(dir.scale(k1));
+					Vec3 s0 = dir.cross(p0.subtract(cam)).normalize().scale((w0 + (w1 - w0) * k0) * 0.5);
+					Vec3 s1 = dir.cross(p1.subtract(cam)).normalize().scale((w0 + (w1 - w0) * k1) * 0.5);
+					int c0 = argb(rgb, alphaA + (alphaB - alphaA) * k0), c1 = argb(rgb, alphaA + (alphaB - alphaA) * k1);
+					e.vertex(p0.subtract(s0), 0, k0, c0); e.vertex(p0.add(s0), 1, k0, c0); e.vertex(p1.add(s1), 1, k1, c1); e.vertex(p1.subtract(s1), 0, k1, c1);
+					e.vertex(p1.subtract(s1), 0, k1, c1); e.vertex(p1.add(s1), 1, k1, c1); e.vertex(p0.add(s0), 1, k0, c0); e.vertex(p0.subtract(s0), 0, k0, c0);
 				}
 			});
 		}

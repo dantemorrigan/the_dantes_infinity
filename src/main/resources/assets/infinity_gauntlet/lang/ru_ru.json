@@ -508,7 +508,7 @@
   "msg.infinity_gauntlet.latveria.gate.leaving": "Врата возвращают вас обратно. Выйдите из них, чтобы остаться.",
   "msg.infinity_gauntlet.latveria.gate.open": "Отряд у ворот разбит. Решётка замка Дума поднимается.",
   "msg.infinity_gauntlet.latveria.throne.open": "Двор ваш. Двери тронного зала открываются.",
-  "msg.infinity_gauntlet.latveria.generator.off": "Генератор гаснет. Броня Дума и щиты Бастионов слабеют, боковая дверь в тронный зал открыта.",
+  "msg.infinity_gauntlet.latveria.generator.off": "Генератор гаснет. Прожекторы тухнут, броня Дума и щиты Бастионов слабеют, боковая дверь в тронный зал открыта.",
   "msg.infinity_gauntlet.latveria.fight.reset": "Дум возвращается на трон. Бой начнётся заново.",
   "msg.infinity_gauntlet.latveria.conquered": "Замок Дума ваш. Думботы ждут ваших приказов.",
   "msg.infinity_gauntlet.latveria.key.denied": "Ключ остаётся холодным: печать Дума ещё не прочитана.",
@@ -775,5 +775,6 @@
   "guide.infinity_gauntlet.p29.3": "M",
   "guide.infinity_gauntlet.p29.4": ", выбери силу, ",
   "guide.infinity_gauntlet.p29.5": "N",
-  "guide.infinity_gauntlet.p29.6": " применяет.\nРазряд, Бастион, Полёт (Пробел вверх), Шаг, Солнца, Эдикт. Шаг и Эдикт показывают цель; солнца ждут, по одному за нажатие."
+  "guide.infinity_gauntlet.p29.6": " применяет.\nРазряд, Бастион, Полёт (Пробел вверх), Шаг, Солнца, Эдикт. Шаг и Эдикт показывают цель; солнца ждут, по одному за нажатие.",
+  "msg.infinity_gauntlet.latveria.alarm": "§cТРЕВОГА!§r Прожектор нашёл чужака. С башен взлетают Перехватчики."
 }

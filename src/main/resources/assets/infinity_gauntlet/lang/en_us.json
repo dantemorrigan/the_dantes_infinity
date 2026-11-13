@@ -508,7 +508,7 @@
   "msg.infinity_gauntlet.latveria.gate.leaving": "The gate is taking you back. Step out to stay.",
   "msg.infinity_gauntlet.latveria.gate.open": "The gate squad is down. The portcullis of Castle Doom rises.",
   "msg.infinity_gauntlet.latveria.throne.open": "The yard is yours. The doors of the throne room open.",
-  "msg.infinity_gauntlet.latveria.generator.off": "The generator dies. Doom's armor and the Bastions' shields weaken; the side door to the throne room opens.",
+  "msg.infinity_gauntlet.latveria.generator.off": "The generator dies. The searchlights go dark, Doom's armor and the Bastions' shields weaken; the side door to the throne room opens.",
   "msg.infinity_gauntlet.latveria.fight.reset": "Doom returns to his throne. The fight will begin again.",
   "msg.infinity_gauntlet.latveria.conquered": "Castle Doom is yours. The Doombots await your orders.",
   "msg.infinity_gauntlet.latveria.key.denied": "The key stays cold: Doom's seal is not read yet.",
@@ -775,5 +775,6 @@
   "guide.infinity_gauntlet.p29.3": "M",
   "guide.infinity_gauntlet.p29.4": " to pick a power, ",
   "guide.infinity_gauntlet.p29.5": "N",
-  "guide.infinity_gauntlet.p29.6": " casts it.\nBolt, Bastion, Jets (Space climbs), Rift Step, Suns, Edict. Rift and Edict show where they land; the suns wait, one per press."
+  "guide.infinity_gauntlet.p29.6": " casts it.\nBolt, Bastion, Jets (Space climbs), Rift Step, Suns, Edict. Rift and Edict show where they land; the suns wait, one per press.",
+  "msg.infinity_gauntlet.latveria.alarm": "§cALARM!§r A searchlight has found an intruder. Interceptors launch from the towers."
 }

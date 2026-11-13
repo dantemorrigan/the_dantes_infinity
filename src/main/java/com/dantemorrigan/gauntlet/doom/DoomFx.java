@@ -17,6 +17,8 @@ public final class DoomFx {
 	public static final int LOGO = 1, CUTSCENE = 2, SHAKE = 3, FLASH = 4;
 	/** Debug: play a theme now. id: 0 stop, 1 Echoes of Latveria, 2 Sovereign Sanctum, 3 the boss theme. */
 	public static final int MUSIC = 5;
+	/** The castle searchlights: f 1 burning, 0 out. ALARM: they hold on entity {@code id} and burn red for {@code ticks}. */
+	public static final int LIGHTS = 6, ALARM = 7;
 
 	/**
 	 * An effect at a point. The pack's flat sprites hung in the air and lagged, so the bursts, rifts, waves and

@@ -62,6 +62,11 @@ def hexes(u, v):
     return 0.12 + 0.88 * math.exp(-(edge / 0.06) ** 2)
 
 
+def searchlight(u, v):
+    """A searchlight's beam: soft across, even along (the fade toward the spot is in the vertex colour)."""
+    return math.exp(-((u - 0.5) / 0.3) ** 2) * 0.85 + math.exp(-((u - 0.5) / 0.08) ** 2) * 0.15
+
+
 save("glow", 64, 64, glow)
 save("core", 64, 64, core)
 save("ring", 128, 128, ring)
@@ -69,4 +74,5 @@ save("streak", 64, 16, streak)
 save("flame", 32, 64, flame)
 save("column", 32, 64, column)
 save("hex", 128, 128, hexes)
+save("searchlight", 32, 8, searchlight)
 print("ok")

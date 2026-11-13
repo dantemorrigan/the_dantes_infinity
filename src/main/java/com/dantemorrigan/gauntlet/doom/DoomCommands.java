@@ -40,6 +40,7 @@ public final class DoomCommands {
 			"§a/gauntlet latveria skip <road|gate|yard|lab|assault|boss|all>§r — clear a part of the assault",
 			"§a/gauntlet latveria squads§r — bring up every squad now · §aclear <0-3|all>§r — destroy squads",
 			"§a/gauntlet latveria generator <on|off>§r · §agates§r — open the portcullis and the throne room",
+			"§a/gauntlet latveria alarm§r — the searchlights catch you now (horn, red beams, Interceptors)",
 			"§a/gauntlet latveria conquer [player]§r — win at once: spoils, castle, Doombots",
 			"§a/gauntlet latveria teaser <replay|skip>§r — forget or mark the Space Stone preview",
 			"§a/gauntlet latveria logo§r — the title card now · §alogo reset§r — again on the next arrival",
@@ -94,6 +95,12 @@ public final class DoomCommands {
 				.then(Commands.literal("generator")
 						.then(Commands.literal("off").executes(ctx -> { Latveria.setGenerator(level(ctx), true); return ok(ctx, "generator off"); }))
 						.then(Commands.literal("on").executes(ctx -> { Latveria.setGenerator(level(ctx), false); return ok(ctx, "generator on"); })))
+				.then(Commands.literal("alarm").executes(ctx -> {
+					ServerPlayer p = ctx.getSource().getPlayerOrException();
+					if (p.level() != level(ctx)) return fail(ctx, "go to Latveria first");
+					Searchlights.alarm(level(ctx), p);
+					return ok(ctx, "alarm raised" + (Searchlights.active(ctx.getSource().getServer()) ? "" : " (the lamps are out: gate open or generator off)"));
+				}))
 				.then(Commands.literal("gates").executes(ctx -> { Latveria.openGates(level(ctx)); return ok(ctx, "portcullis and throne room open"); }))
 				.then(Commands.literal("conquer")
 						.executes(ctx -> conquer(ctx, ctx.getSource().getPlayerOrException()))

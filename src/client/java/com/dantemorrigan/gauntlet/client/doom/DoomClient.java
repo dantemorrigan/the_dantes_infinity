@@ -102,6 +102,8 @@ public final class DoomClient {
 				case DoomFx.SHAKE -> Cutscene.shake(Math.min(1f, fx.f() * 0.5f), fx.ticks());
 				case DoomFx.FLASH -> { flashAge = 0; flashTicks = Math.max(4, fx.ticks()); flashStrength = fx.f(); }
 				case DoomFx.MUSIC -> force(Minecraft.getInstance(), fx.id());
+				case DoomFx.LIGHTS -> DoomVfxClient.lights(fx.f() > 0.5f);
+				case DoomFx.ALARM -> { DoomVfxClient.alarm(fx.id(), fx.ticks()); flashAge = 0; flashTicks = 8; flashStrength = 0.25f; }
 				default -> {}
 			}
 		});
