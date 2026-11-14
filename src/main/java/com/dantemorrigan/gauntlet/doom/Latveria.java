@@ -766,6 +766,9 @@ public final class Latveria {
 			guard.obey(first);
 			guard.setGuarding(true);
 		}
+		// The whole army falls in, in ranks in the throne room, and waits there.
+		LatveriaCourt.parade(level, level.getEntitiesOfClass(Doombot.class, new net.minecraft.world.phys.AABB(-400, 0, -500, 400, 320, 400),
+				b -> b.isAlive() && b.allied() && !b.decoy()));
 	}
 
 	/** The victor's spoils, once per player however many times the fight is won. */

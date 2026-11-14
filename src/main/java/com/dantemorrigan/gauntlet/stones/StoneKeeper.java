@@ -153,7 +153,9 @@ public final class StoneKeeper {
 	/** Called right before a dead player's inventory is dropped (see PlayerMixin). */
 	public static void beforeDrop(ServerPlayer player) {
 		ServerLevel level = (ServerLevel) player.level();
-		if (level.getGameRules().get(GameRules.KEEP_INVENTORY) || killedByPlayer(player)) return;
+		// In Latveria nothing is ever left lying: a stone dropped in that realm could not be fetched again without its gate.
+		boolean latveria = level.dimension() == com.dantemorrigan.gauntlet.doom.Latveria.LEVEL;
+		if (level.getGameRules().get(GameRules.KEEP_INVENTORY) || killedByPlayer(player) && !latveria) return;
 		Inventory inv = player.getInventory();
 		List<ItemStack> kept = new ArrayList<>();
 		// Never merge an older stash: a player can't die twice without respawning, so anything still attached here is a

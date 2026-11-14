@@ -70,6 +70,9 @@ public class Doombot extends PathfinderMob {
 	private int squad = -1;
 	private UUID commander, targetId, patient;
 	private boolean guarding;
+	/** On parade: the bot stands at its place in the ranks ({@link #home}) and faces this way; NaN when it is not in the ranks. */
+	private float parkYaw = Float.NaN;
+	private boolean saluted;
 	private Vec3 aim, home;
 
 	public Doombot(EntityType<? extends Doombot> type, Level level) {
@@ -190,6 +193,48 @@ public class Doombot extends PathfinderMob {
 	public void setGuarding(boolean guard) {
 		this.guarding = guard;
 		this.home = this.position();
+		this.parkYaw = Float.NaN;
+	}
+
+	public boolean parked() { return !Float.isNaN(parkYaw); }
+
+	/** Takes its place in the ranks: stands there, facing {@code yaw}, and waits (it still fights what attacks it, then returns). */
+	public void park(Vec3 slot, float yaw) {
+		this.guarding = true;
+		this.home = slot;
+		this.parkYaw = yaw;
+		this.saluted = false;
+		if (airborne()) land();
+		this.getNavigation().stop();
+		this.teleportTo(slot.x, slot.y, slot.z);
+		this.setYRot(yaw);
+		this.yBodyRot = yaw;
+		this.yHeadRot = yaw;
+	}
+
+	/** On parade: back to the place in the ranks if shoved off, then straight and still, facing the throne. */
+	private void paradeIdle(ServerLevel level) {
+		if (airborne()) land();
+		double dx = home.x - this.getX(), dz = home.z - this.getZ(), d2 = dx * dx + dz * dz;
+		if (d2 > 2500) {
+			this.teleportTo(home.x, home.y, home.z);
+			return;
+		}
+		if (d2 > 1.0) {
+			if (this.getNavigation().isDone()) this.getNavigation().moveTo(home.x, home.y, home.z, 1.0);
+			return;
+		}
+		this.getNavigation().stop();
+		// The last half block is a slide, so every rank is dead straight.
+		if (d2 > 0.0004) this.setPos(this.getX() + dx * 0.3, this.getY(), this.getZ() + dz * 0.3);
+		this.setDeltaMovement(0, this.getDeltaMovement().y, 0);
+		this.setYRot(parkYaw);
+		this.yBodyRot = parkYaw;
+		this.yHeadRot = parkYaw;
+		if (!saluted) {
+			saluted = true;
+			salute();
+		}
 	}
 
 	private void setAction(int a) {
@@ -403,6 +448,10 @@ public class Doombot extends PathfinderMob {
 	}
 
 	private void idle(ServerLevel level) {
+		if (allied() && guarding && parked() && home != null) {
+			paradeIdle(level);
+			return;
+		}
 		if (allied() && !guarding && commander != null && level.getEntity(commander) instanceof ServerPlayer owner) {
 			double d = this.distanceTo(owner);
 			if (d > 34) this.teleportTo(owner.getX() + (this.random.nextDouble() - 0.5) * 4, owner.getY(), owner.getZ() + (this.random.nextDouble() - 0.5) * 4);
@@ -675,6 +724,12 @@ public class Doombot extends PathfinderMob {
 		output.putInt("Squad", squad);
 		output.putBoolean("Allied", allied());
 		output.putBoolean("Guarding", guarding);
+		if (parked() && home != null) {
+			output.putFloat("ParkYaw", parkYaw);
+			output.putDouble("HomeX", home.x);
+			output.putDouble("HomeY", home.y);
+			output.putDouble("HomeZ", home.z);
+		}
 		output.putBoolean("Decoy", decoy());
 		output.putBoolean("Forged", forged);
 		if (commander != null) output.putString("Commander", commander.toString());
@@ -687,6 +742,12 @@ public class Doombot extends PathfinderMob {
 		squad = input.getIntOr("Squad", -1);
 		setFlag(FLAG_ALLIED, input.getBooleanOr("Allied", false));
 		guarding = input.getBooleanOr("Guarding", false);
+		float savedYaw = input.getFloatOr("ParkYaw", Float.NaN);
+		if (!Float.isNaN(savedYaw)) {
+			parkYaw = savedYaw;
+			home = new Vec3(input.getDoubleOr("HomeX", this.getX()), input.getDoubleOr("HomeY", this.getY()), input.getDoubleOr("HomeZ", this.getZ()));
+			saluted = true;
+		}
 		String id = input.getStringOr("Commander", "");
 		commander = id.isEmpty() ? null : UUID.fromString(id);
 		applyVariant();

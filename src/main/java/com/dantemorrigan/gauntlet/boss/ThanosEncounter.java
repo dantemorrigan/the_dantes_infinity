@@ -75,7 +75,7 @@ public final class ThanosEncounter {
 
 	/** Game time at which this player first carried enough stones (cleared when they no longer do): the breather timer. */
 	private static final AttachmentType<Long> ARMED_AT = AttachmentRegistry.<Long>builder()
-			.persistent(Codec.LONG).copyOnDeath().buildAndRegister(InfinityGauntlet.id("thanos_armed_at"));
+			.persistent(Codec.LONG).buildAndRegister(InfinityGauntlet.id("thanos_armed_at"));
 
 	private enum Mode { SKY, RIFT }
 
@@ -91,6 +91,8 @@ public final class ThanosEncounter {
 		Vec3 ship, shipDir, landing, rift;
 		float shipYaw, riftYaw;
 		boolean hasGauntlet;
+		/** Started by the command: no stones needed. */
+		boolean forced;
 		boolean dragon;
 		int beamAt, landAt, fightAt;
 		Thanos boss;
@@ -118,7 +120,14 @@ public final class ThanosEncounter {
 		ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> server.execute(() -> {
 			if (active != null && handler.player.getUUID().equals(active.playerId)) withdraw(false);
 		}));
+		// A death starts the breather over: whoever respawns with their stones back gets the same quiet time as anyone
+		// who has just gathered them, not a Titan on the doorstep (the old timer must not outlive its owner).
+		net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents.AFTER_RESPAWN.register((old, player, alive) -> {
+			old.removeAttached(ARMED_AT);
+			player.removeAttached(ARMED_AT);
+		});
 		ServerLivingEntityEvents.AFTER_DEATH.register((entity, source) -> {
+			if (entity instanceof ServerPlayer dead) dead.removeAttached(ARMED_AT);
 			if (active != null && entity instanceof ServerPlayer p && p.getUUID().equals(active.playerId)) {
 				send(p, FX_MUSIC_STOP, 0, Vec3.ZERO, Vec3.ZERO, 0, 60);
 				withdraw(true);
@@ -199,6 +208,7 @@ public final class ThanosEncounter {
 		e.playerId = player.getUUID();
 		e.level = (ServerLevel) player.level();
 		e.hasGauntlet = !ownsGauntlet(player);
+		e.forced = skipWarning;
 		active = e;
 		if (skipWarning) {
 			beginArrival(e, player);
@@ -293,6 +303,8 @@ public final class ThanosEncounter {
 				if (age % 40 == 0) e.level.playSound(null, p.blockPosition(), SoundEvents.WARDEN_HEARTBEAT, SoundSource.HOSTILE, 1.6f, 0.5f);
 				if (age >= GauntletConfig.get().thanosWarningSeconds * 20) {
 					if (!arena(p.level()) || MindArena.excludesThanos(p.level(), p.position())) { active = null; return; }
+					// He came for the stones: with none left on the player (lost, given away, dropped) there is nothing to come for.
+					if (!e.forced && carried(p).size() < GauntletConfig.get().thanosStoneThreshold) { withdraw(false); return; }
 					beginArrival(e, p);
 				}
 			}

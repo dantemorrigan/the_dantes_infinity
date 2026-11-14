@@ -1,6 +1,7 @@
 package com.dantemorrigan.gauntlet.doom;
 
 import com.dantemorrigan.gauntlet.ModAdvancements;
+import com.dantemorrigan.gauntlet.ModParticles;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -108,6 +109,39 @@ public final class LatveriaCourt {
 		for (ServerPlayer p : level.players()) DoomFx.tell(p, "throne.sit", player.getDisplayName());
 		ModAdvancements.award(player, "throne_of_latveria");
 		return true;
+	}
+
+	/** Columns of the ranks either side of the aisle, and the first and last rows (z), spaced evenly. */
+	private static final double[] COLUMNS = {4.5, 7.5, 10.5, 13.5};
+	private static final double FRONT_Z = -284.5, ROW_GAP = 3.0;
+
+	/**
+	 * After the castle falls the Doombots fall in: neat ranks in the throne room, either side of the red-carpet aisle,
+	 * facing the throne, the Royal Guard in front and the Bastions behind them, then everyone else. They stand there
+	 * and wait; the controller still sends any of them after its master.
+	 */
+	public static void parade(ServerLevel level, java.util.Collection<Doombot> bots) {
+		java.util.List<Doombot> order = new java.util.ArrayList<>(bots);
+		int[] rank = {Doombot.ROYAL_GUARD, Doombot.BASTION, Doombot.ARCANIST, Doombot.SOLDIER, Doombot.ENGINEER, Doombot.INTERCEPTOR};
+		order.sort(java.util.Comparator.comparingInt((Doombot b) -> {
+			for (int i = 0; i < rank.length; i++) if (rank[i] == b.variant()) return i;
+			return rank.length;
+		}).thenComparing(Doombot::getUUID));
+		java.util.List<double[]> slots = new java.util.ArrayList<>();
+		for (int row = 0; row < 9; row++) {
+			for (double c : COLUMNS) {
+				slots.add(new double[]{-c, FRONT_Z + row * ROW_GAP, row * 10 + c});
+				slots.add(new double[]{c, FRONT_Z + row * ROW_GAP, row * 10 + c});
+			}
+		}
+		// Front row first, and each row from the aisle outward.
+		slots.sort(java.util.Comparator.comparingDouble((double[] a) -> a[2]));
+		for (int i = 0; i < order.size() && i < slots.size(); i++) {
+			double[] slot = slots.get(i);
+			Doombot bot = order.get(i);
+			DoomFx.bill(level, ModParticles.DOOM_PHASE_SHIFT, bot.position().add(0, 1, 0), 1.2);
+			bot.park(new Vec3(slot[0] + 0.5, LatveriaPlan.FLOOR, slot[1]), 180f);
+		}
 	}
 
 	public static void clear() { nextStrike = 0; }
