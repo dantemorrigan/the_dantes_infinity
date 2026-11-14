@@ -18,7 +18,8 @@
 		"RealityBlockUpdateMixin",
 		"ClientAdvancementsMixin",
 		"BossChatMixin",
-		"SoundEngineMixin"
+		"SoundEngineMixin",
+		"GuiHealthMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1

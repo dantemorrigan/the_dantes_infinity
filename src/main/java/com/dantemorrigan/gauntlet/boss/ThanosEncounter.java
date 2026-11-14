@@ -254,6 +254,8 @@ public final class ThanosEncounter {
 				p.removeAttached(ARMED_AT);
 				continue;
 			}
+			// Where he cannot come (Latveria and the add-on's other realms) he is neither sensed nor counted down.
+			if (!arena(p.level())) continue;
 			// The breather: he comes only after the player has had the stones for a while (half a day by default).
 			Long armed = p.getAttached(ARMED_AT);
 			if (armed == null || armed > now) {
