@@ -220,8 +220,8 @@ public final class MindStone {
 			maxD = Math.max(maxD, Math.sqrt(off.distSqr(BlockPos.ZERO)));
 		}
 		hold.radius = maxD + 0.8;
-		// Tear it out (fluids that were inside, e.g. waterlogging, stay behind).
-		for (int i = 0; i < hold.states.size(); i++) {
+		// Tear it out (fluids that were inside, e.g. waterlogging, stay behind). In Latveria nothing is removed.
+		if (!copyOnly(level)) for (int i = 0; i < hold.states.size(); i++) {
 			BlockPos p = center.offset(hold.offsets.get(i));
 			level.setBlock(p, hold.states.get(i).getFluidState().createLegacyBlock(), Block.UPDATE_ALL);
 		}
@@ -234,8 +234,15 @@ public final class MindStone {
 		level.playSound(null, center, SoundEvents.STONE_BREAK, SoundSource.BLOCKS, 1.6F, 0.5F);
 	}
 
+	/** Latveria's land is never torn up: the chunk is a copy that flies and shatters, and the ground stays as it was. */
+	private static boolean copyOnly(ServerLevel level) {
+		return level.dimension() == com.dantemorrigan.gauntlet.doom.Latveria.LEVEL;
+	}
+
 	private static boolean grabbable(ServerLevel level, ServerPlayer player, BlockPos p) {
-		if (!CoopRules.canEdit(player, level, p)) return false;
+		if (copyOnly(level)) {
+			if (!level.hasChunkAt(p)) return false;
+		} else if (!CoopRules.canEdit(player, level, p)) return false;
 		BlockState s = level.getBlockState(p);
 		return !s.isAir() && !(s.getBlock() instanceof LiquidBlock) && !s.hasBlockEntity()
 				&& s.getDestroySpeed(level, p) >= 0;
@@ -518,6 +525,7 @@ public final class MindStone {
 	}
 
 	private static void scatter(ServerLevel level, Vec3 center, List<BlockState> states, List<BlockPos> offsets, Vec3 base, double spread) {
+		if (copyOnly(level)) return; // a copy of Latveria's ground: it crumbles into nothing and adds no blocks
 		var rnd = level.getRandom();
 		for (int i = 0; i < states.size(); i++) {
 			BlockPos off = offsets.get(i);

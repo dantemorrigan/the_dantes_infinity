@@ -1,0 +1,41 @@
+[09:10:14] [main/INFO]: [STDOUT]: plan: 3358 ops, 148 furniture, 74 kinds, 75 ms
+[09:10:15] [main/INFO]: [STDOUT]: FLOATING island 2 blocks, e.g. Lantern x[-59,-59] y[73,74] z[20,20]
+FLOATING island 2 blocks, e.g. Lantern x[-59,-59] y[72,73] z[40,40]
+FLOATING island 2 blocks, e.g. Lantern x[-43,-43] y[73,74] z[20,20]
+FLOATING island 2 blocks, e.g. Lantern x[-43,-43] y[72,73] z[40,40]
+FLOATING island 2 blocks, e.g. Lantern x[-27,-27] y[73,74] z[20,20]
+FLOATING island 2 blocks, e.g. Lantern x[-27,-27] y[72,73] z[40,40]
+FLOATING island 2 blocks, e.g. Lantern x[-11,-11] y[72,73] z[-38,-38]
+FLOATING island 2 blocks, e.g. Lantern x[-11,-11] y[72,73] z[10,10]
+FLOATING island 2 blocks, e.g. Lantern x[-11,-11] y[72,73] z[92,92]
+FLOATING island 2 blocks, e.g. Lantern x[-10,-10] y[72,73] z[-22,-22]
+FLOATING island 2 blocks, e.g. Lantern x[-10,-10] y[72,73] z[-6,-6]
+FLOATING island 2 blocks, e.g. Lantern x[-10,-10] y[72,73] z[58,58]
+FLOATING island 2 blocks, e.g. Lantern x[-10,-10] y[72,73] z[76,76]
+FLOATING island 2 blocks, e.g. Lantern x[-10,-10] y[72,73] z[108,108]
+FLOATING island 2 blocks, e.g. Lantern x[10,10] y[73,74] z[-38,-38]
+FLOATING island 2 blocks, e.g. Lantern x[10,10] y[73,74] z[10,10]
+FLOATING island 2 blocks, e.g. Lantern x[10,10] y[73,74] z[92,92]
+FLOATING island 2 blocks, e.g. Lantern x[11,11] y[73,74] z[-22,-22]
+FLOATING island 2 blocks, e.g. Lantern x[11,11] y[73,74] z[-6,-6]
+FLOATING island 2 blocks, e.g. Lantern x[11,11] y[73,74] z[58,58]
+FLOATING island 2 blocks, e.g. Lantern x[11,11] y[73,74] z[76,76]
+FLOATING island 2 blocks, e.g. Lantern x[11,11] y[73,74] z[108,108]
+FLOATING island 2 blocks, e.g. Lantern x[27,27] y[72,73] z[20,20]
+FLOATING island 2 blocks, e.g. Lantern x[27,27] y[73,74] z[40,40]
+FLOATING island 2 blocks, e.g. Lantern x[43,43] y[72,73] z[20,20]
+FLOATING island 2 blocks, e.g. Lantern x[43,43] y[73,74] z[40,40]
+FLOATING island 2 blocks, e.g. Lantern x[59,59] y[72,73] z[20,20]
+FLOATING island 2 blocks, e.g. Lantern x[59,59] y[73,74] z[40,40]
+WALK to [0, 105, -259] ok
+WALK to [0, 105, -273] ok
+WALK to [0, 107, -289] ok
+WALK to [30, 105, -270] ok
+WALK to [-30, 105, -270] ok
+WALK to [0, 69, 100] ok
+WALK to [0, 69, 0] ok
+WALK to [-60, 69, 30] ok
+WALK to [60, 69, 30] ok
+walkable cells from arrival: 147830
+
+[09:10:15] [main/INFO]: [STDOUT]: CHECK FAILED: 28 problems

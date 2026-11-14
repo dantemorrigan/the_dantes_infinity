@@ -202,6 +202,7 @@
   "msg.infinity_gauntlet.time.nothing_to_rewind": "§2Nothing to rewind",
   "msg.infinity_gauntlet.time.overworld_only": "§2Changing the time of day only works in the Overworld",
   "msg.infinity_gauntlet.time.no_sun": "§2The sun is gone — day will not come",
+  "msg.infinity_gauntlet.soul.none": "§7A machine has no soul to take.",
   "msg.infinity_gauntlet.soul.mass_cooldown": "§6Mass extraction: %s s",
   "msg.infinity_gauntlet.soul.hud": "§6Souls: %s · +%s ❤ · +%s ⚔ · %s s",
   "msg.infinity_gauntlet.power.mode.0": "Power Stone: §dpower strike",

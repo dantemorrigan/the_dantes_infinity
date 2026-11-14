@@ -780,8 +780,10 @@ public class DoctorDoom extends Monster {
 		boolean axe = source.is(Stormbreaker.DAMAGE);
 		float scaled = Math.min(amount, MAX_HIT);
 		if (flag(FLAG_SHIELD)) {
-			scaled *= 0.1f;
+			// The shield is whole: nothing gets through it, neither a fist, a beam nor the axe.
 			DoomFx.sound(level, this.position(), SoundEvents.SHIELD_BLOCK.value(), 1.2f, 0.6f);
+			DoomVfx.on(level, DoomVfx.SHIELD_HIT, this, 2.0f, 8, DoomVfx.GREEN);
+			return false;
 		} else if (phase() == 1) scaled *= Latveria.generatorOff(level.getServer()) ? 0.8f : 0.45f;
 		if (flag(FLAG_EXPOSED)) scaled *= 1.6f;
 		// One blow never skips a stage.

@@ -202,6 +202,7 @@
   "msg.infinity_gauntlet.time.nothing_to_rewind": "§2Нечего отматывать",
   "msg.infinity_gauntlet.time.overworld_only": "§2Смена времени суток работает только в обычном мире",
   "msg.infinity_gauntlet.time.no_sun": "§2Солнца больше нет — день не наступит",
+  "msg.infinity_gauntlet.soul.none": "§7У машины нет души, которую можно забрать.",
   "msg.infinity_gauntlet.soul.mass_cooldown": "§6Массовое извлечение: %s с",
   "msg.infinity_gauntlet.soul.hud": "§6Души: %s · +%s ❤ · +%s ⚔ · %s с",
   "msg.infinity_gauntlet.power.mode.0": "Камень Силы: §dсиловой удар",

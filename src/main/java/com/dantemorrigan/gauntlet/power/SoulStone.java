@@ -124,6 +124,7 @@ public final class SoulStone {
 			}
 			LivingEntity target = MindStone.lookTarget(player, com.dantemorrigan.gauntlet.cosmos.CosmosTravel.inCosmos(player)?CosmicGauntlet.reach(player,170):cfg.soulRange, cfg.soulPlayerDrain);
 			if (target == null || busy(target) || !player.hasLineOfSight(target)) return;
+			if (soulless(target)) { ModStatus.send(player, Component.translatable("msg.infinity_gauntlet.soul.none")); return; }
 			POINT_CD.put(player.getUUID(), now + cfg.soulPointCooldownTicks);
 			if (target instanceof ServerPlayer victim) {
 				if (victim.isShiftKeyDown() || !CoopRules.canControlWithGauntlet(player, victim)) return;
@@ -153,6 +154,7 @@ public final class SoulStone {
 		if (burnDoom(player, 10, 20f)) return true;
 		LivingEntity target = MindStone.lookTarget(player, 8);
 		if (target == null || busy(target) || !player.hasLineOfSight(target)) return false;
+		if (soulless(target)) { ModStatus.send(player, Component.translatable("msg.infinity_gauntlet.soul.none")); return false; }
 		start(player, target, 0, POINT_EXTRACT, POINT_FLIGHT);
 		player.level().playSound(null, target.blockPosition(), SoundEvents.SOUL_ESCAPE.value(), SoundSource.PLAYERS, 2.0F, 0.6F);
 		return true;
@@ -162,7 +164,7 @@ public final class SoulStone {
 		double r = com.dantemorrigan.gauntlet.cosmos.CosmosTravel.inCosmos(player)?155:cfg.soulMassRadius;
 		Vec3 c = player.position();
 		List<LivingEntity> targets = new ArrayList<>(level.getEntitiesOfClass(LivingEntity.class, new AABB(c, c).inflate(r, com.dantemorrigan.gauntlet.cosmos.CosmosTravel.inCosmos(player)?r:r*.5, r),
-				e -> e instanceof Enemy && e.isAlive() && !MindStone.isBoss(e) && !e.hasCustomName() && !busy(e) && e.position().distanceTo(c) <= r));
+				e -> e instanceof Enemy && e.isAlive() && !MindStone.isBoss(e) && !soulless(e) && !e.hasCustomName() && !busy(e) && e.position().distanceTo(c) <= r));
 		targets.sort(Comparator.comparingDouble(e -> e.position().distanceToSqr(c)));
 		if (targets.size() > cfg.soulMassMaxTargets) targets = targets.subList(0, cfg.soulMassMaxTargets);
 		ModNetwork.SoulFx wave = new ModNetwork.SoulFx(1, player.getId(), -1, c, (int) r, 0, 0);
@@ -170,6 +172,11 @@ public final class SoulStone {
 		for (LivingEntity t : targets) start(player, t, (int) (t.position().distanceTo(c) / WAVE_SPEED), MASS_EXTRACT, MASS_FLIGHT);
 		level.playSound(null, player.blockPosition(), SoundEvents.WARDEN_SONIC_BOOM, SoundSource.PLAYERS, 1.6F, 0.5F);
 		level.playSound(null, player.blockPosition(), SoundEvents.SOUL_ESCAPE.value(), SoundSource.PLAYERS, 3.0F, 0.5F);
+	}
+
+	/** Machines have no soul to take: the Doombots are cogs and circuits, whoever commands them. */
+	public static boolean soulless(LivingEntity e) {
+		return e instanceof com.dantemorrigan.gauntlet.doom.Doombot;
 	}
 
 	private static boolean busy(LivingEntity e) {
