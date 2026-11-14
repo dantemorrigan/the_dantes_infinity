@@ -868,5 +868,9 @@
   "tooltip.infinity_gauntlet.doom_leggings.3": "N - применить.",
   "tooltip.infinity_gauntlet.doom_boots.1": "Часть брони Дума.",
   "tooltip.infinity_gauntlet.doom_boots.2": "Полный набор: держи M - выбор силы,",
-  "tooltip.infinity_gauntlet.doom_boots.3": "N - применить."
+  "tooltip.infinity_gauntlet.doom_boots.3": "N - применить.",
+  "msg.infinity_gauntlet.latveria.armor.last_stand": "§aБроня Дума не даст вам пасть.",
+  "tooltip.infinity_gauntlet.doom_chestplate.4": "Полный набор: +15 сердец, сопротивление, регенерация, последний рубеж.",
+  "tooltip.infinity_gauntlet.doom_leggings.4": "Полный набор: +15 сердец, сопротивление, регенерация, последний рубеж.",
+  "tooltip.infinity_gauntlet.doom_boots.4": "Полный набор: +15 сердец, сопротивление, регенерация, последний рубеж."
 }

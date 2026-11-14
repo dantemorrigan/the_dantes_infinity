@@ -868,5 +868,9 @@
   "tooltip.infinity_gauntlet.doom_leggings.3": "N to cast it.",
   "tooltip.infinity_gauntlet.doom_boots.1": "Part of Doom's armor.",
   "tooltip.infinity_gauntlet.doom_boots.2": "Full set: hold M to pick a power,",
-  "tooltip.infinity_gauntlet.doom_boots.3": "N to cast it."
+  "tooltip.infinity_gauntlet.doom_boots.3": "N to cast it.",
+  "msg.infinity_gauntlet.latveria.armor.last_stand": "§aThe armor of Doom will not let you fall.",
+  "tooltip.infinity_gauntlet.doom_chestplate.4": "Full set: +15 hearts, Resistance, Regeneration, a last stand.",
+  "tooltip.infinity_gauntlet.doom_leggings.4": "Full set: +15 hearts, Resistance, Regeneration, a last stand.",
+  "tooltip.infinity_gauntlet.doom_boots.4": "Full set: +15 hearts, Resistance, Regeneration, a last stand."
 }

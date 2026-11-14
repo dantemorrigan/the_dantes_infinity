@@ -20,6 +20,13 @@ import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.ai.attributes.Attribute;
+import net.minecraft.world.entity.ai.attributes.AttributeInstance;
+import net.minecraft.world.entity.ai.attributes.AttributeModifier;
+import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.core.Holder;
+import net.minecraft.resources.Identifier;
+import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.world.entity.monster.Enemy;
 import net.minecraft.world.entity.npc.villager.AbstractVillager;
 import net.minecraft.world.entity.projectile.Projectile;
@@ -52,6 +59,10 @@ import java.util.UUID;
  *   <li>Latverian Edict — a seal falls where the wearer looks and a column of light crushes and throws up what is in it.</li>
  * </ul>
  * None of them touches the player's flight abilities, so the armor never fights the Infinity Gauntlet or Stormbreaker.
+ *
+ * <p>The full set is also a body of its own: {@link #SET_HEALTH} more health, Resistance, Regeneration, Fire Resistance,
+ * a stronger arm, a firmer stance, a longer safe fall, and a last stand: a blow that would kill the wearer leaves them
+ * on their feet instead, once in {@link #LAST_STAND_COOLDOWN} ticks.
  */
 public final class DoomArmor {
 	public static final ArmorMaterial MATERIAL = new ArmorMaterial(55,
@@ -64,10 +75,18 @@ public final class DoomArmor {
 	private static final int[] COOLDOWN = {10, 300, 20, 50, 400, 500};
 	public static final int BASTION_TICKS = 120, FUEL = 240, SUN_TICKS = 300, SUN_COUNT = 7, EDICT_DELAY = 20;
 	public static final double RIFT_RANGE = 24, EDICT_RANGE = 40, EDICT_RADIUS = 5;
+	/** What the whole armor gives its wearer: health (30 = fifteen hearts), a strong arm, a firm stance, a fast stride, a long fall. */
+	public static final double SET_HEALTH = 30, SET_DAMAGE = 3, SET_KNOCKBACK = 0.6, SET_SPEED = 0.1, SET_FALL = 6;
+	/** A blow that would kill the wearer is survived once in this many ticks (5 minutes); they get this share of health back. */
+	public static final int LAST_STAND_COOLDOWN = 6000;
+	public static final float LAST_STAND_HEALTH = 0.4f;
+	private static final Identifier HEALTH_ID = InfinityGauntlet.id("doom_armor_health"), DAMAGE_ID = InfinityGauntlet.id("doom_armor_damage"),
+			KNOCKBACK_ID = InfinityGauntlet.id("doom_armor_knockback"), SPEED_ID = InfinityGauntlet.id("doom_armor_speed"),
+			FALL_ID = InfinityGauntlet.id("doom_armor_fall");
 
 	private static final class Wearer {
 		final long[] ready = new long[6];
-		long bastionUntil, sunsUntil, nextSun;
+		long bastionUntil, sunsUntil, nextSun, lastStandReady;
 		int fuel = FUEL, suns;
 		boolean jet, hadSet;
 	}
@@ -124,6 +143,66 @@ public final class DoomArmor {
 			}
 			return false;
 		});
+		ServerLivingEntityEvents.ALLOW_DEATH.register((entity, source, amount) -> !(entity instanceof ServerPlayer p && lastStand(p, source)));
+	}
+
+	/** The last stand: the whole armor refuses a killing blow once in a while (never /kill, the void, or Doom's own victory). */
+	private static boolean lastStand(ServerPlayer p, net.minecraft.world.damagesource.DamageSource source) {
+		if (!fullSet(p) || source.is(DamageTypeTags.BYPASSES_INVULNERABILITY)) return false;
+		ServerLevel level = p.level();
+		long now = level.getGameTime();
+		Wearer w = WEARERS.computeIfAbsent(p.getUUID(), id -> new Wearer());
+		if (now < w.lastStandReady && !p.isCreative()) return false;
+		// Doom beating a bearer of the whole Infinity Gauntlet is the ascension (see Latveria), not a death to be refused.
+		var gauntlet = com.dantemorrigan.gauntlet.GauntletState.activeGauntlet(p);
+		if (level.dimension() == Latveria.LEVEL && !gauntlet.isEmpty() && com.dantemorrigan.gauntlet.GauntletState.inserted(gauntlet).size() >= 6
+				&& (source.getEntity() instanceof DoctorDoom || source.getEntity() instanceof Doombot b && !b.allied())) return false;
+		w.lastStandReady = now + LAST_STAND_COOLDOWN;
+		p.setHealth(Math.max(1f, p.getMaxHealth() * LAST_STAND_HEALTH));
+		p.removeAllEffects();
+		p.addEffect(new MobEffectInstance(MobEffects.RESISTANCE, 100, 3, false, true));
+		p.addEffect(new MobEffectInstance(MobEffects.ABSORPTION, 200, 4, false, true));
+		p.addEffect(new MobEffectInstance(MobEffects.REGENERATION, 100, 2, false, true));
+		p.invulnerableTime = 40;
+		DoomVfx.on(level, DoomVfx.SHIELD, p, 1.7f, 60, DoomVfx.GREEN);
+		DoomVfx.at(level, DoomVfx.SLAM, p.position(), 5f, 14, DoomVfx.GREEN);
+		DoomFx.sound(level, p.position(), SoundEvents.TOTEM_USE, 1f, 0.7f);
+		DoomFx.sound(level, p.position(), SoundEvents.IRON_GOLEM_REPAIR, 1.2f, 0.5f);
+		for (LivingEntity e : level.getEntitiesOfClass(LivingEntity.class, p.getBoundingBox().inflate(5, 2, 5), e -> canHit(p, e))) {
+			Vec3 d = e.position().subtract(p.position()).normalize();
+			e.knockback(1.6, -d.x, -d.z);
+		}
+		DoomFx.tell(p, "armor.last_stand");
+		sync(p, w);
+		return true;
+	}
+
+	/** The armor's body: attributes while the set is on, effects renewed every second; taken off, the attributes go. */
+	private static void body(ServerPlayer p, boolean set) {
+		boolean had = p.getAttribute(Attributes.MAX_HEALTH) != null && p.getAttribute(Attributes.MAX_HEALTH).getModifier(HEALTH_ID) != null;
+		modify(p, Attributes.MAX_HEALTH, HEALTH_ID, set ? SET_HEALTH : 0, AttributeModifier.Operation.ADD_VALUE);
+		modify(p, Attributes.ATTACK_DAMAGE, DAMAGE_ID, set ? SET_DAMAGE : 0, AttributeModifier.Operation.ADD_VALUE);
+		modify(p, Attributes.KNOCKBACK_RESISTANCE, KNOCKBACK_ID, set ? SET_KNOCKBACK : 0, AttributeModifier.Operation.ADD_VALUE);
+		modify(p, Attributes.MOVEMENT_SPEED, SPEED_ID, set ? SET_SPEED : 0, AttributeModifier.Operation.ADD_MULTIPLIED_BASE);
+		modify(p, Attributes.SAFE_FALL_DISTANCE, FALL_ID, set ? SET_FALL : 0, AttributeModifier.Operation.ADD_VALUE);
+		if (set && !had) p.heal((float) SET_HEALTH); // the new hearts arrive full
+		if (p.getHealth() > p.getMaxHealth()) p.setHealth(p.getMaxHealth());
+		if (set && p.tickCount % 20 == 0) {
+			p.addEffect(new MobEffectInstance(MobEffects.RESISTANCE, 60, 0, true, false, true));
+			p.addEffect(new MobEffectInstance(MobEffects.REGENERATION, 60, 0, true, false, true));
+			p.addEffect(new MobEffectInstance(MobEffects.FIRE_RESISTANCE, 60, 0, true, false, true));
+		}
+	}
+
+	private static void modify(ServerPlayer p, Holder<Attribute> attribute, Identifier id, double amount, AttributeModifier.Operation op) {
+		AttributeInstance inst = p.getAttribute(attribute);
+		if (inst == null) return;
+		AttributeModifier current = inst.getModifier(id);
+		if (amount == 0) {
+			if (current != null) inst.removeModifier(id);
+		} else if (current == null || current.amount() != amount) {
+			inst.addOrUpdateTransientModifier(new AttributeModifier(id, amount, op));
+		}
 	}
 
 	public static void clear() {
@@ -319,6 +398,7 @@ public final class DoomArmor {
 		}
 		for (ServerPlayer p : server.getPlayerList().getPlayers()) {
 			boolean set = fullSet(p);
+			if (p.isAlive()) body(p, set);
 			Wearer w = WEARERS.get(p.getUUID());
 			if (w == null) {
 				if (!set) continue;
