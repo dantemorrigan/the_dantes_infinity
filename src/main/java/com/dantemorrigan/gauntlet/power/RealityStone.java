@@ -52,7 +52,7 @@ import java.util.UUID;
  * Reality stone — Reality Inversion ("Изнанка реальности"). Can be performed while moving: the distortion vortex
  * follows the caster. Affected mobs and players turn into red butterflies, Thanos takes damage, and flying projectiles
  * become petals. When the caster finishes using the ability, all twisted ground, buildings and water remain
- * physically twisted in the world forever.
+ * physically twisted in the world forever. In Latveria nothing is twisted: the vortex only hurts the mobs inside it.
  */
 public final class RealityStone {
 	public static final String TAG = "infinity_gauntlet_reality";
@@ -60,6 +60,13 @@ public final class RealityStone {
 	public static final float INNER = 2.5f;
 
 	private static final float THANOS_BASE_DAMAGE = 4f;
+	/** In Latveria the vortex only hurts: each pass over a mob in it deals this much, and the land stays untouched. */
+	private static final float LATVERIA_VORTEX_DAMAGE = 10f;
+
+	/** The twisting of ground and buildings happens everywhere but in Latveria, whose land the vortex never breaks. */
+	public static boolean twistsBlocks(net.minecraft.world.level.Level level) {
+		return GauntletConfig.get().abilityBlockChanges && level.dimension() != com.dantemorrigan.gauntlet.doom.Latveria.LEVEL;
+	}
 
 	private static final int PLACE_FLAGS = Block.UPDATE_CLIENTS | Block.UPDATE_KNOWN_SHAPE | Block.UPDATE_SUPPRESS_DROPS | Block.UPDATE_SKIP_ON_PLACE;
 
@@ -137,7 +144,7 @@ public final class RealityStone {
 	public static void stop(ServerPlayer player) {
 		Session s = SESSIONS.remove(player.getUUID());
 		if (s == null) return;
-		if (s.tick >= T_FOLD && GauntletConfig.get().abilityBlockChanges) {
+		if (s.tick >= T_FOLD && twistsBlocks(s.level)) {
 			commitTwistedBlocks(player, s);
 		}
 		COOLDOWN.put(player.getUUID(), player.level().getGameTime() + GauntletConfig.get().realityCooldownTicks);
@@ -328,7 +335,7 @@ public final class RealityStone {
 				broadcast(s.level, player, true, s.center, s.tick);
 			}
 			if (s.tick < T_FOLD) continue; // charge + fractures first (ability_timeline.json)
-			if (cfg.abilityBlockChanges) {
+			if (twistsBlocks(s.level)) {
 				captureAround(player, s);
 			}
 			double r = cfg.realityRadius;
@@ -358,6 +365,9 @@ public final class RealityStone {
 						if (victim.isAlive() && !UruArmor.fullSet(victim)) {
 							victim.hurtServer(s.level, s.level.damageSources().genericKill(), Float.MAX_VALUE);
 						}
+					} else if (s.level.dimension() == com.dantemorrigan.gauntlet.doom.Latveria.LEVEL) {
+						// Latveria's folk and beasts are hurt in the vortex, not wiped out; nothing around it changes.
+						GauntletDamage.hurt(s.level, entity, player, player.damageSources().playerAttack(player), LATVERIA_VORTEX_DAMAGE);
 					} else {
 						entity.discard();
 					}

@@ -48,6 +48,8 @@ public final class GauntletEffects {
 	static final double INV_HEALTH = 4;           // +2 hearts
 	static final int INV_REGEN_INTERVAL = 100;    // 1 HP every 5 s
 	static final double POWER_DAMAGE = 12;        // attack damage
+	/** The six-stone gauntlet alone makes a bare fist hit like a netherite sword (1 + 7 = 8), whatever else is worn. */
+	static final double FULL_FIST_DAMAGE = 7;
 	static final double SPACE_SPEED = 0.6;        // +60% movement speed
 	static final double SOUL_HEALTH = 20;         // +10 hearts
 	static final double REALITY_ARMOR = 16;
@@ -187,6 +189,7 @@ public final class GauntletEffects {
 			if (s.worn.contains(Stone.SPACE)) speed += SPACE_SPEED;
 			if (s.worn.contains(Stone.REALITY)) { armor += REALITY_ARMOR; toughness += REALITY_TOUGHNESS; }
 			if (s.phase == Phase.AWAKENED) health = FULL_HEALTH;
+			if (s.worn.size() == Stone.values().length) damage = Math.max(damage, FULL_FIST_DAMAGE);
 		}
 		setModifier(player, Attributes.MAX_HEALTH, HEALTH_ID, health, AttributeModifier.Operation.ADD_VALUE);
 		setModifier(player, Attributes.ATTACK_DAMAGE, DAMAGE_ID, damage, AttributeModifier.Operation.ADD_VALUE);

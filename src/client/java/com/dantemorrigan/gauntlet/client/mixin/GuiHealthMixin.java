@@ -11,8 +11,8 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Redirect;
 
 /**
- * A huge health pool (the awakened Infinity Gauntlet gives 200) would stack ten rows of hearts up the screen. Above 40
- * the hearts show the share of health in at most two rows; the exact numbers stand beside them (see CompactHealth).
+ * The awakened Infinity Gauntlet gives 200 health: all hundred hearts are drawn. Only a pool beyond CompactHealth.ROWS_HP
+ * is scaled down to the share of health, with the exact numbers beside the hearts (see CompactHealth).
  */
 @Mixin(Gui.class)
 public abstract class GuiHealthMixin {

@@ -8,12 +8,13 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Player;
 
 /**
- * Big health pools in two rows of hearts: above {@link #ROWS_HP} the hearts are scaled to the share of health (see
- * GuiHealthMixin), and the real numbers, e.g. 186/200, stand to the left of them.
+ * Huge health pools stay honest: the awakened gauntlet's 100 hearts are all drawn, row upon row (vanilla packs the rows
+ * closer as they pile up). Only a pool beyond {@link #ROWS_HP} - far past anything the add-on grants - is scaled to the
+ * share of health, and then the real numbers, e.g. 186/800, stand to the left of the hearts.
  */
 public final class CompactHealth {
-	/** Two rows of hearts. */
-	public static final float ROWS_HP = 40;
+	/** Beyond this many health points the hearts are scaled; the full gauntlet (200) is shown in full. */
+	public static final float ROWS_HP = 400;
 
 	private CompactHealth() {}
 

@@ -334,6 +334,8 @@ public final class RealityClient {
 	private static void captureAround(Minecraft mc) {
 		ClientLevel lvl = mc.level;
 		if (lvl == null) return;
+		// Latveria's land is never twisted (the server captures nothing there either): the vortex is only light and damage.
+		if (lvl.dimension().equals(com.dantemorrigan.gauntlet.doom.Latveria.LEVEL)) return;
 		int r = com.dantemorrigan.gauntlet.ServerRules.realityRadius;
 		int maxBlocks = com.dantemorrigan.gauntlet.ServerRules.realityMaxBlocks * 3;
 		BlockPos c = BlockPos.containing(center);
