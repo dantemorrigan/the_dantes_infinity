@@ -289,15 +289,14 @@ public class DoctorDoom extends Monster {
 			return;
 		}
 		Vec3 g = glove(victim), h = hand();
+		// The tether starts a little ahead of the gauntlet, so it never sweeps across its bearer's own eyes.
+		Vec3 from = g.add(h.subtract(g).normalize().scale(Math.min(1.2, g.distanceTo(h) * 0.3)));
 		if (t % 2 == 0) {
-			DoomVfx.line(level, DoomVfx.TRAIL, g, h, 0.55f, 5, DoomVfx.SUN);
-			DoomVfx.line(level, DoomVfx.TRAIL, g, h, 0.28f, 5, DoomVfx.GREEN);
+			DoomVfx.line(level, DoomVfx.TRAIL, from, h, 0.45f, 5, DoomVfx.SUN);
+			DoomVfx.line(level, DoomVfx.TRAIL, from, h, 0.22f, 5, DoomVfx.GREEN);
 		}
-		// The stones' power flowing out of the gauntlet along the tether, toward his hand.
-		for (int k = 0; k < 3; k++) {
-			double along = ((t * 0.06) + k / 3.0) % 1.0;
-			DoomFx.bill(level, ModParticles.DOOM_RUNE_MOTE, g.lerp(h, along), 0.6);
-		}
+		// The stones' power flowing along the tether toward his hand: a mote every few ticks.
+		if (t % 3 == 0) DoomFx.bill(level, ModParticles.DOOM_RUNE_MOTE, from.lerp(h, (t * 0.05) % 1.0), 0.4);
 		if (t % 10 == 0) {
 			DoomFx.sound(level, g, SoundEvents.BEACON_AMBIENT, 1.4f, 0.6f + (t - SIPHON_START) / (float) (SIPHON_DONE - SIPHON_START));
 			com.dantemorrigan.gauntlet.net.ModStatus.send(victim, Component.translatable("msg.infinity_gauntlet.latveria.siphon.warn",

@@ -54,7 +54,7 @@ public final class GodDoomScene {
 				VanillaHudElements.MOUNT_HEALTH, VanillaHudElements.INFO_BAR, VanillaHudElements.EXPERIENCE_LEVEL, VanillaHudElements.HELD_ITEM_TOOLTIP,
 				VanillaHudElements.MOB_EFFECTS, VanillaHudElements.BOSS_BAR, VanillaHudElements.SCOREBOARD, VanillaHudElements.OVERLAY_MESSAGE,
 				VanillaHudElements.TITLE_AND_SUBTITLE, VanillaHudElements.CHAT, VanillaHudElements.SUBTITLES}) {
-			HudElementRegistry.replaceElement(id, old -> (g, delta) -> { if (!active) old.extractRenderState(g, delta); });
+			HudElementRegistry.replaceElement(id, old -> (g, delta) -> { if (!DoomClient.cinematic()) old.extractRenderState(g, delta); });
 		}
 	}
 
@@ -85,15 +85,15 @@ public final class GodDoomScene {
 		if (t < 170) {
 			// Close, circling in front of the throne while he rises and turns.
 			float k = (t - 24) / 146f;
-			radius = 6.5;
-			height = 1.4 + k * 1.2;
+			radius = 7.5;
+			height = 2.4 + k * 1.0;
 			angle = Math.sin(k * Math.PI * 0.9 - 0.9) * 1.1;
 		} else if (t < 300) {
 			// Pulling back and up: the whole hall, and the god above it.
 			float k = Mth.clamp((t - 170) / 130f, 0, 1);
 			k = k * k * (3 - 2 * k);
-			radius = 6.5 + k * 7;
-			height = 2.6 + k * 4.5;
+			radius = 7.5 + k * 6;
+			height = 3.4 + k * 3.7;
 			angle = 0.8 - k * 1.4;
 		} else {
 			// A low hero shot from in front, looking up as the sky breaks.
@@ -163,20 +163,25 @@ public final class GodDoomScene {
 			g.fill(0, 0, w, h, ARGB.color((int) (Mth.clamp(k, 0, 1) * 255), 252, 250, 244));
 			if (t > 405 && t < length - 12) {
 				float a = Mth.clamp(Math.min((t - 405) / 15f, (length - 12 - t) / 10f), 0, 1);
-				g.centeredText(mc.font, Component.translatable("msg.infinity_gauntlet.latveria.god.ended"), w / 2, h / 2 - 34, ARGB.color((int) (a * 255), 70, 66, 60));
+				flat(g, mc, Component.translatable("msg.infinity_gauntlet.latveria.god.ended"), w / 2, h / 2 - 34, ARGB.color((int) (a * 255), 70, 66, 60));
 				if (t > 425) {
 					float b = Mth.clamp(Math.min((t - 425) / 15f, (length - 12 - t) / 10f), 0, 1);
 					var pose = g.pose();
 					pose.pushMatrix();
 					pose.translate(w / 2f, h / 2f - 8);
 					pose.scale(3f, 3f);
-					g.centeredText(mc.font, Component.translatable("msg.infinity_gauntlet.latveria.god.battleworld").withStyle(ChatFormatting.BOLD), 0, 0,
+					flat(g, mc, Component.translatable("msg.infinity_gauntlet.latveria.god.battleworld").withStyle(ChatFormatting.BOLD), 0, 0,
 							ARGB.color((int) (b * 255), 196, 150, 50));
 					pose.popMatrix();
-					g.centeredText(mc.font, Component.translatable("msg.infinity_gauntlet.latveria.god.no_god"), w / 2, h / 2 + 26, ARGB.color((int) (b * 255), 120, 100, 70));
+					flat(g, mc, Component.translatable("msg.infinity_gauntlet.latveria.god.no_god"), w / 2, h / 2 + 26, ARGB.color((int) (b * 255), 120, 100, 70));
 				}
 			}
 		}
+	}
+
+	/** Centred text without a shadow: on the white, shadows only smear the letters. */
+	private static void flat(GuiGraphicsExtractor g, Minecraft mc, Component text, int x, int y, int color) {
+		g.text(mc.font, text, x - mc.font.width(text) / 2, y, color, false);
 	}
 
 	private static void image(GuiGraphicsExtractor g, Identifier texture, float x, float y, float w, float h, int tw, int th, int color) {

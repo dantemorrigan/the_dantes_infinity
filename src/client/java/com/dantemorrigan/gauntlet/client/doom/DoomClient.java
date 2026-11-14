@@ -54,6 +54,9 @@ public final class DoomClient {
 	private static int logoAge = -1, logoTicks, barsAge = -1, barsTicks, flashAge = -1, flashTicks;
 	/** Doom's last spoken line and its age in ticks: during the entrance it is shown as a subtitle inside the letterbox. */
 	private static Component subtitle;
+
+	/** A letterboxed scene is playing (Doom's entrance, the ascension): the rest of the HUD steps aside. */
+	public static boolean cinematic() { return barsAge >= 0 || GodDoomScene.active(); }
 	private static int subtitleAge;
 	private static float flashStrength;
 	// Music.
@@ -386,7 +389,7 @@ public final class DoomClient {
 			if (show > 0.01f) image(g, LOGO, (w - lw) / 2f, (h - lh) / 2f - 6, lw, lh, 1024, 512, ARGB.color((int) (show * 255), 255, 255, 255));
 			return;
 		}
-		if (!set || mc.options.hideGui || mc.screen instanceof DoomWheelScreen) return;
+		if (!set || mc.options.hideGui || mc.screen instanceof DoomWheelScreen || cinematic()) return;
 		// The armor's six powers down the right edge: the selected one framed in gold, lit when ready, dim with
 		// seconds left while cooling; the jets show their fuel, the suns how many still orbit.
 		int size = 18, x = w - size - 6, y0 = h / 2 - 3 * (size + 4);

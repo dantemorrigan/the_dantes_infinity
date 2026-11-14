@@ -26,10 +26,27 @@ public final class DoomWheelScreen extends Screen {
 	@Override
 	public boolean isPauseScreen() { return false; }
 
+	/** Lines of help at the bottom; the wheel sits centred in the space above them. */
+	private int helpLines() {
+		return font.split(Component.translatable("doom.infinity_gauntlet.wheel_help"), Math.max(120, width - 40)).size();
+	}
+
+	private double centerY() {
+		return (height - 18 - helpLines() * 10) / 2.0;
+	}
+
+	private double radius() {
+		return Math.min(width * 0.5, centerY() * 2) * 0.32;
+	}
+
+	private int iconSize() {
+		return (int) Math.max(24, Math.min(width, height) * 0.11);
+	}
+
 	private double[] point(int i) {
 		double a = Math.toRadians(-90 + i * 60);
-		double r = Math.min(width, height) * 0.27;
-		return new double[]{width / 2.0 + Math.cos(a) * r, height / 2.0 + Math.sin(a) * r};
+		double r = radius();
+		return new double[]{width / 2.0 + Math.cos(a) * r, centerY() + Math.sin(a) * r};
 	}
 
 	/** Screen position of a power's button; used by the visual tests. */
@@ -70,7 +87,7 @@ public final class DoomWheelScreen extends Screen {
 
 	private void pick(double mx, double my) {
 		hovered = -1;
-		double best = Math.min(width, height) * 0.13;
+		double best = iconSize();
 		for (int i = 0; i < 6; i++) {
 			double[] p = point(i);
 			double d = Math.hypot(mx - p[0], my - p[1]);
@@ -82,7 +99,7 @@ public final class DoomWheelScreen extends Screen {
 	public void extractRenderState(GuiGraphicsExtractor g, int mx, int my, float delta) {
 		pick(mx, my);
 		g.fill(0, 0, width, height, 0x9C06100A);
-		int size = (int) Math.max(28, Math.min(width, height) * 0.13);
+		int size = iconSize();
 		for (int i = 0; i < 6; i++) {
 			double[] p = point(i);
 			boolean ready = DoomClient.cooldown(i) <= 0;
@@ -92,10 +109,17 @@ public final class DoomWheelScreen extends Screen {
 			blit(g, "textures/gui/doctor_doom/" + frame + ".png", x - size / 4, y - size / 4, size + size / 2, -1);
 			blit(g, "textures/gui/doctor_doom/icons/" + DoomClient.ICONS[i] + ".png", x, y, size, ready ? -1 : ARGB.color(255, 96, 104, 100));
 			Component name = Component.translatable("doom.infinity_gauntlet.power." + DoomArmor.NAMES[i]);
-			g.centeredText(font, name, (int) p[0], y + size + 5, i == hovered ? 0xFF9CFFB4 : 0xFFE8E0C8);
+			// Names go outward from the wheel: above the top power, below the bottom one, beside the others.
+			int color = i == hovered ? 0xFF9CFFB4 : 0xFFE8E0C8, pad = size / 4 + 4;
+			switch (i) {
+				case 0 -> g.centeredText(font, name, (int) p[0], y - pad - 9, color);
+				case 3 -> g.centeredText(font, name, (int) p[0], y + size + pad, color);
+				case 1, 2 -> g.text(font, name, x + size + pad, (int) p[1] - 4, color, true);
+				default -> g.text(font, name, x - pad - font.width(name), (int) p[1] - 4, color, true);
+			}
 			if (!ready) g.centeredText(font, Component.literal(String.valueOf((DoomClient.cooldown(i) + 19) / 20)), (int) p[0], (int) p[1] - 4, 0xFFFFE08A);
 		}
-		blit(g, "textures/gui/doctor_doom/latveria_emblem.png", width / 2 - size / 2, height / 2 - size / 2, size, -1);
+		blit(g, "textures/gui/doctor_doom/latveria_emblem.png", width / 2 - size / 2, (int) centerY() - size / 2, size, -1);
 		var help = font.split(Component.translatable("doom.infinity_gauntlet.wheel_help"), Math.max(120, width - 40));
 		int y = height - 14 - help.size() * 10;
 		for (var line : help) {

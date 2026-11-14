@@ -51,7 +51,7 @@ public final class StatusHud {
         HudElementRegistry.addLast(InfinityGauntlet.id("status_panel"), (g, delta) -> render(g));
     }
     private static void render(GuiGraphicsExtractor g) {
-        if (com.dantemorrigan.gauntlet.client.doom.GodDoomScene.active()) return;
+        if (com.dantemorrigan.gauntlet.client.doom.DoomClient.cinematic()) return;
         Minecraft mc = Minecraft.getInstance();
         if (com.dantemorrigan.gauntlet.client.boss.TribunalClient.cinematic() || mc.player == null || mc.options.hideGui || mc.screen instanceof AbilityFavoritesScreen
                 || mc.screen instanceof AbilityWheelScreen) return;
