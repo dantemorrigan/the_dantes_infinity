@@ -229,6 +229,19 @@ public class DoctorDoom extends Monster {
 		}
 	}
 
+	/**
+	 * Co-op: three fifths more health for every challenger after the first, kept as a share of the bar so the stages turn
+	 * at the same points. It only ever grows, so a challenger who leaves does not make him weaker mid-fight.
+	 */
+	private void scaleForChallengers() {
+		double want = 480 * (1 + 0.6 * Math.max(0, challengers.size() - 1));
+		var attr = this.getAttribute(Attributes.MAX_HEALTH);
+		if (attr == null || want <= attr.getBaseValue()) return;
+		float share = this.getHealth() / this.getMaxHealth();
+		attr.setBaseValue(want);
+		this.setHealth((float) (want * share));
+	}
+
 	/** A challenger whose Infinity Gauntlet works and holds at least one stone. */
 	public static boolean siphonable(ServerPlayer p) {
 		var g = com.dantemorrigan.gauntlet.GauntletState.activeGauntlet(p);
@@ -347,7 +360,7 @@ public class DoctorDoom extends Monster {
 		sinceSiphon++;
 		sinceDecoy++;
 		ServerPlayer target = target(level);
-		for (ServerPlayer p : level.players()) if (valid(p)) challengers.add(p.getUUID());
+		for (ServerPlayer p : level.players()) if (valid(p) && challengers.add(p.getUUID())) scaleForChallengers();
 		if (action != A_IDLE) {
 			this.getNavigation().stop();
 			act(level, target, action, actionTicks);
