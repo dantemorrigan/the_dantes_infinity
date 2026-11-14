@@ -127,6 +127,8 @@ The jets never touch vanilla flight, so the armor does not clash with the Infini
 
 **The armor's body.** The full set also gives fifteen more hearts, Resistance, Regeneration and Fire Resistance, a stronger arm, a firm stance, a faster stride and a longer safe fall. Under the jets the whole body leans into the flight like a rocket's, the more the faster you go. And the armor refuses a killing blow once every five minutes: you stay on your feet with part of your health back (except when Doom beats a bearer of the whole Infinity Gauntlet). Doom's own shield now holds against everything while it is up, and the Soul Stone finds no soul in a Doombot.
 
+**The boss bar.** Doom's bar has five states: emerald sparks, the shield's runes (with the crest of Latveria), amber lightning while he casts, pulsing cracks under a fifth of his health, and ashes at his fall; every hit flashes it.
+
 **The flag.** The flag of Latveria (a green field, a black cross edged in red, the horned emblem in a ring) flies over the square, on the central tower and above the throne room doors; the Banner of Latveria shows it.
 
 **Admin tools** (operator level, `/gauntlet latveria help` prints them all):

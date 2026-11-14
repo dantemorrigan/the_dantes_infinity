@@ -1,0 +1,125 @@
+{
+  "canvas": [
+    512,
+    88
+  ],
+  "slot": {
+    "x": 63,
+    "y": 47,
+    "width": 386,
+    "height": 13
+  },
+  "frame": "textures/frame.png",
+  "portrait": {
+    "file": "textures/doom_mask.png",
+    "x": 29,
+    "y": 12
+  },
+  "shield_icon": {
+    "file": "textures/latveria_crest.png",
+    "x": 453,
+    "y": 15
+  },
+  "title": {
+    "center_x": 256,
+    "baseline_y": 30,
+    "text": "Doctor Doom"
+  },
+  "damage_trail": "textures/damage_trail.png",
+  "states": {
+    "sovereign": {
+      "fill": "textures/fill_sovereign.png",
+      "frames": [
+        "textures/effects/sovereign_00.png",
+        "textures/effects/sovereign_01.png",
+        "textures/effects/sovereign_02.png",
+        "textures/effects/sovereign_03.png",
+        "textures/effects/sovereign_04.png",
+        "textures/effects/sovereign_05.png",
+        "textures/effects/sovereign_06.png",
+        "textures/effects/sovereign_07.png"
+      ],
+      "frame_ms": 90,
+      "loop": true,
+      "preview_hp": 0.86
+    },
+    "warded": {
+      "fill": "textures/fill_warded.png",
+      "frames": [
+        "textures/effects/warded_00.png",
+        "textures/effects/warded_01.png",
+        "textures/effects/warded_02.png",
+        "textures/effects/warded_03.png",
+        "textures/effects/warded_04.png",
+        "textures/effects/warded_05.png",
+        "textures/effects/warded_06.png",
+        "textures/effects/warded_07.png"
+      ],
+      "frame_ms": 90,
+      "loop": true,
+      "preview_hp": 0.68
+    },
+    "overdrive": {
+      "fill": "textures/fill_overdrive.png",
+      "frames": [
+        "textures/effects/overdrive_00.png",
+        "textures/effects/overdrive_01.png",
+        "textures/effects/overdrive_02.png",
+        "textures/effects/overdrive_03.png",
+        "textures/effects/overdrive_04.png",
+        "textures/effects/overdrive_05.png",
+        "textures/effects/overdrive_06.png",
+        "textures/effects/overdrive_07.png"
+      ],
+      "frame_ms": 90,
+      "loop": true,
+      "preview_hp": 0.46
+    },
+    "critical": {
+      "fill": "textures/fill_critical.png",
+      "frames": [
+        "textures/effects/critical_00.png",
+        "textures/effects/critical_01.png",
+        "textures/effects/critical_02.png",
+        "textures/effects/critical_03.png",
+        "textures/effects/critical_04.png",
+        "textures/effects/critical_05.png",
+        "textures/effects/critical_06.png",
+        "textures/effects/critical_07.png"
+      ],
+      "frame_ms": 90,
+      "loop": true,
+      "preview_hp": 0.18
+    },
+    "defeated": {
+      "fill": "textures/fill_defeated.png",
+      "frames": [
+        "textures/effects/defeated_00.png",
+        "textures/effects/defeated_01.png",
+        "textures/effects/defeated_02.png",
+        "textures/effects/defeated_03.png",
+        "textures/effects/defeated_04.png",
+        "textures/effects/defeated_05.png",
+        "textures/effects/defeated_06.png",
+        "textures/effects/defeated_07.png"
+      ],
+      "frame_ms": 90,
+      "loop": false,
+      "preview_hp": 0,
+      "frame_override": "textures/frame_defeated.png",
+      "portrait_override": "textures/doom_mask_defeated.png"
+    }
+  },
+  "hit": {
+    "frames": [
+      "textures/effects/hit_00.png",
+      "textures/effects/hit_01.png",
+      "textures/effects/hit_02.png",
+      "textures/effects/hit_03.png",
+      "textures/effects/hit_04.png"
+    ],
+    "frame_ms": 45,
+    "loop": false,
+    "clip_to_current_hp": true
+  }
+}

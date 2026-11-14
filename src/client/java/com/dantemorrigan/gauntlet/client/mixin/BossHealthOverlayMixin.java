@@ -34,9 +34,8 @@ abstract class BossHealthOverlayMixin {
 		for (LerpingBossEvent event : events.values()) {
 			BossBarArt art = infinityGauntlet$art(event);
 			if (infinityGauntlet$doom(event)) {
-				graphics.centeredText(minecraft.font, com.dantemorrigan.gauntlet.text.BossText.name(event.getName()), center, y, 0xff9cffb4);
-				com.dantemorrigan.gauntlet.client.doom.DoomClient.bossBar(graphics, y + 9, event.getProgress());
-				y += 44;
+				com.dantemorrigan.gauntlet.client.doom.DoomBossBar.draw(graphics, y, event.getProgress(), com.dantemorrigan.gauntlet.text.BossText.name(event.getName()));
+				y += com.dantemorrigan.gauntlet.client.doom.DoomBossBar.HEIGHT + 4;
 			} else if (art == null) {
 				extractBar(graphics, center - 91, y + 9, event);
 				graphics.centeredText(minecraft.font, event.getName(), center, y, 0xffffffff);
