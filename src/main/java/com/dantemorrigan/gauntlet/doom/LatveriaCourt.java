@@ -21,12 +21,21 @@ import net.minecraft.world.phys.Vec3;
  * in the hall with it.
  */
 public final class LatveriaCourt {
-	/** The spires the storm strikes: the four corner towers and the keep's crown. */
-	private static final Vec3[] SPIRES = {
-			new Vec3(-44.5, LatveriaPlan.FLOOR + 27, -204.5), new Vec3(45.5, LatveriaPlan.FLOOR + 27, -204.5),
-			new Vec3(-44.5, LatveriaPlan.FLOOR + 27, -296.5), new Vec3(45.5, LatveriaPlan.FLOOR + 27, -296.5),
-			new Vec3(0.5, LatveriaPlan.FLOOR + 24, -272.5),
-	};
+	/** The spires the storm strikes: the points of the castle's towers, the central needle (the tallest) most often. */
+	private static Vec3[] spires;
+
+	private static Vec3[] spires() {
+		if (spires == null) {
+			LatveriaPlan.OPS.size(); // the plan is built on first use, and the spires with it
+			java.util.List<Vec3> all = new java.util.ArrayList<>();
+			for (int[] t : LatveriaCastle.SPIRE_TIPS) {
+				all.add(new Vec3(t[0] + 0.5, t[1], t[2] + 0.5));
+				if (t[1] > LatveriaPlan.FLOOR + 150) { all.add(new Vec3(t[0] + 0.5, t[1], t[2] + 0.5)); all.add(new Vec3(t[0] + 0.5, t[1], t[2] + 0.5)); }
+			}
+			spires = all.toArray(new Vec3[0]);
+		}
+		return spires;
+	}
 	/** Where the monarch sits: on the gold of the throne, facing the hall. */
 	public static final Vec3 SEAT = new Vec3(0.5, LatveriaPlan.FLOOR + 3.05, -290.9);
 	public static final String SEAT_TAG = "latveria_throne_seat";
@@ -39,7 +48,7 @@ public final class LatveriaCourt {
 		if (nextStrike == 0) nextStrike = now + 200;
 		if (now >= nextStrike) {
 			nextStrike = now + 240 + level.getRandom().nextInt(520);
-			strike(level, SPIRES[level.getRandom().nextInt(SPIRES.length)]);
+			strike(level, spires()[level.getRandom().nextInt(spires().length)]);
 		}
 		if (now % 10 == 0) {
 			for (ArmorStand seat : level.getEntitiesOfClass(ArmorStand.class, new AABB(BlockPos.containing(SEAT)).inflate(4), s -> s.entityTags().contains(SEAT_TAG))) {
@@ -60,7 +69,7 @@ public final class LatveriaCourt {
 
 	/** A bolt on a spire chosen at random. */
 	public static void strikeRandom(ServerLevel level) {
-		strike(level, SPIRES[level.getRandom().nextInt(SPIRES.length)]);
+		strike(level, spires()[level.getRandom().nextInt(spires().length)]);
 	}
 
 	/** A click on the throne's gold or cloth. */

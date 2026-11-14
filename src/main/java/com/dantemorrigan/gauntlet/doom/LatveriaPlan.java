@@ -192,7 +192,7 @@ public final class LatveriaPlan {
 		}
 	}
 
-	private static void tower(int cx, int cz, int r, int y0, int y1, int roof) {
+	static void tower(int cx, int cz, int r, int y0, int y1, int roof) {
 		for (int dz = -r; dz <= r; dz++) {
 			int half = (int) Math.round(Math.sqrt(r * r + r - dz * dz));
 			fill(cx - half, y0, cz + dz, cx + half, y1, cz + dz, WALL);
@@ -300,46 +300,7 @@ public final class LatveriaPlan {
 
 	private static void city() {
 		int y = VALLEY_Y;
-		// Streets: the main one runs north to the castle road, the cross street through the square.
-		fill(-2, y, -50, 2, y, 126, Blocks.COBBLESTONE);
-		fill(-1, y, -50, 1, y, 126, Blocks.STONE_BRICKS);
-		fill(-74, y, 28, 74, y, 32, Blocks.COBBLESTONE);
-		fill(-74, y, 29, 74, y, 31, Blocks.STONE_BRICKS);
-		// The square with Doom's statue over a fountain.
-		fill(-10, y, 20, 10, y, 40, Blocks.POLISHED_ANDESITE);
-		fill(-9, y, 21, 9, y, 39, Blocks.STONE_BRICKS);
-		fill(-4, y + 1, 26, 4, y + 1, 34, WALL_BASE);
-		fill(-3, y + 1, 27, 3, y + 1, 33, Blocks.WATER);
-		fill(-1, y + 1, 29, 1, y + 3, 31, WALL);
-		fill(-1, y + 4, 30, 1, y + 8, 30, GREEN);
-		fill(0, y + 4, 30, 0, y + 9, 30, WALL_BASE);
-		fill(-1, y + 7, 30, 1, y + 7, 30, Blocks.IRON_BLOCK);
-		set(0, y + 10, 30, Blocks.IRON_BLOCK);
-		set(0, y + 10, 29, Blocks.CARVED_PUMPKIN.defaultBlockState());
-		fill(-1, y + 11, 30, 1, y + 11, 30, GREEN);
-		set(0, y + 12, 30, GREEN);
-		for (int[] p : new int[][]{{-9, 21}, {9, 21}, {-9, 39}, {9, 39}}) lamp(p[0], y + 1, p[1]);
-		// Market stalls.
-		for (int i = 0; i < 3; i++) {
-			int x = -8 + i * 6, z = 36;
-			fill(x, y + 1, z, x, y + 3, z, Blocks.SPRUCE_FENCE); fill(x + 3, y + 1, z, x + 3, y + 3, z, Blocks.SPRUCE_FENCE);
-			fill(x, y + 1, z + 2, x, y + 3, z + 2, Blocks.SPRUCE_FENCE); fill(x + 3, y + 1, z + 2, x + 3, y + 3, z + 2, Blocks.SPRUCE_FENCE);
-			fill(x, y + 4, z, x + 3, y + 4, z + 2, i % 2 == 0 ? GREEN : Blocks.WHITE_WOOL.defaultBlockState());
-			fill(x + 1, y + 1, z + 1, x + 2, y + 1, z + 1, Blocks.BARREL);
-		}
-		int style = 0;
-		for (int z : new int[]{104, 88, 72, 54, 6, -10, -26, -42}) {
-			house(-14 - style % 3, z, 9 + style % 3, 9, 4 + style % 2, Direction.EAST, style++);
-			house(6, z, 9 + style % 3, 9, 4 + style % 2, Direction.WEST, style++);
-			lamp(-4, y + 1, z + 12); lamp(4, y + 1, z + 12);
-		}
-		for (int x : new int[]{22, 38, 54}) {
-			house(x, 16, 11, 9 + style % 2, 4, Direction.SOUTH, style++);
-			house(x, 36, 11, 9, 5, Direction.NORTH, style++);
-			house(-x - 10, 16, 11, 9 + style % 2, 5, Direction.SOUTH, style++);
-			house(-x - 10, 36, 11, 9, 4, Direction.NORTH, style++);
-			lamp(x - 2, y + 1, 27); lamp(-x + 2, y + 1, 33);
-		}
+		LatveriaCity.build();
 		// The watch tower at the head of the main street.
 		fill(7, y - 8, -63, 15, y, -57, WALL_BASE);
 		shell(8, y + 1, -62, 14, y + 16, -56, 1, WALL);
@@ -381,7 +342,6 @@ public final class LatveriaPlan {
 			fill(w[0], f + 2, w[1], w[2], f + 11, w[3], WALL);
 			crenels(w[0], f + 12, w[1], w[2], w[3], WALL);
 		}
-		for (int[] c : new int[][]{{-45, -205}, {45, -205}, {-45, -297}, {45, -297}}) tower(c[0], c[1], 6, f, f + 19, 7);
 		// The gatehouse: two square towers, the passage and the portcullis.
 		fill(-9, f, -209, -4, f + 16, -201, WALL); fill(4, f, -209, 9, f + 16, -201, WALL);
 		fill(-9, f + 8, -209, 9, f + 13, -201, WALL);
@@ -455,7 +415,6 @@ public final class LatveriaPlan {
 		// Roof, battlements and the keep's two towers.
 		fill(-43, f + 18, -296, 43, f + 18, -251, TILE);
 		crenels(-43, f + 19, -296, 43, -251, WALL);
-		tower(-38, -291, 5, f + 18, f + 30, 6); tower(38, -291, 5, f + 18, f + 30, 6);
 		// Throne room: doors, pillars, runner, dais, throne, windows, chandeliers.
 		fill(THRONE_DOOR[0], THRONE_DOOR[1], THRONE_DOOR[2], THRONE_DOOR[3], THRONE_DOOR[4], THRONE_DOOR[5], GLASS);
 		fill(-5, f, -251, -4, f + 9, -250, WALL); fill(4, f, -251, 5, f + 9, -250, WALL); fill(-5, f + 9, -251, 5, f + 10, -250, WALL);
@@ -571,6 +530,7 @@ public final class LatveriaPlan {
 		city();
 		road();
 		castle();
+		LatveriaCastle.build();
 	}
 
 	private LatveriaPlan() {}
