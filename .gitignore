@@ -39,3 +39,6 @@ replay_*.log
 *.hprof
 *.jfr
 __pycache__/
+
+# game logs written by local runs
+logs/
