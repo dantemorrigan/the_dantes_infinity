@@ -112,25 +112,11 @@ final class LatveriaHouses {
 		int cu = Math.max(1, w - 3), cv = d / 2;
 		f.fill(cu, top + 1, cv, cu, top + 1 + d / 2 + 2, cv, Blocks.BRICKS);
 		f.set(cu, top + 2 + d / 2 + 2, cv, Blocks.COBBLESTONE_WALL);
-		// Inside: lantern, bed, table, a rug, sometimes a chest.
+		// Inside: a lantern under each ceiling, and every storey furnished to its purpose.
 		f.set(wc, y0 + 2, d / 2, hanging());
-		if (floors > 1) f.set(wc, y0 + 4 + 2, d / 2, hanging());
-		if (inhabited) {
-			f.furn(w - 2, y0, d - 3, bed(f, Blocks.GREEN_BED, BedPart.FOOT));
-			f.furn(w - 2, y0, d - 2, bed(f, Blocks.GREEN_BED, BedPart.HEAD));
-			f.set(w - 2, y0, 1, Blocks.CRAFTING_TABLE);
-			f.set(wc, y0, d / 2 + 1, Blocks.GREEN_CARPET);
-			f.set(wc - 1, y0, d / 2 + 1, Blocks.GREEN_CARPET);
-			if (chance(0.5)) {
-				int cx = f.x(1, 2), cz = f.z(1, 2);
-				LatveriaPlan.FURNITURE.add(new LatveriaPlan.Op(cx, y0, cz, cx, y0, cz,
-						Blocks.CHEST.defaultBlockState().setValue(BlockStateProperties.HORIZONTAL_FACING, f.dir(1, 0))));
-				LatveriaPlan.CHESTS.add(new int[]{cx, y0, cz, 0});
-			}
-			LatveriaPlan.VILLAGERS.add(new BlockPos(f.x(wc, -2), G, f.z(wc, -2)));
-		} else {
-			f.set(w - 2, y0, 1, Blocks.BARREL);
-		}
+		for (int k = 1; k < floors; k++) f.set(wc, y0 + 4 * k + 2, d / 2, hanging());
+		LatveriaInteriors.furnish(f, w, d, floors, wc, inhabited);
+		if (inhabited) LatveriaPlan.VILLAGERS.add(new BlockPos(f.x(wc, -2), G, f.z(wc, -2)));
 		// What the house takes of the ground: its footprint and the eaves and hood around it, and the spot a villager steps out on.
 		f.reserve(abutLeft ? 0 : -1, -1, w - 1 + (abutRight ? 0 : 1), d);
 		f.reserve(wc, -2, wc, -2);
