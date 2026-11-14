@@ -138,6 +138,7 @@ public final class DoomClient {
 		HudElementRegistry.addFirst(InfinityGauntlet.id("latveria_filter"), (g, delta) -> filter(g));
 		HudElementRegistry.addLast(InfinityGauntlet.id("doom_hud"), (g, delta) -> hud(g));
 		GodDoomScene.init();
+		DoomTooltips.init();
 	}
 
 	private static void reset() {

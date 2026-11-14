@@ -75,7 +75,6 @@ public final class DoomItems {
 		}
 	}
 
-	/** Mechanical Heart: the castle's owner builds a new Soldier where the heart is set down. */
 	/**
 	 * A Mechanical Heart builds a Doombot for the castle's lord. What is held in the other hand decides its role and is
 	 * used up: an arc reactor makes a Bastion, a feather or rocket an Interceptor, a jade shard an Arcanist, a repair

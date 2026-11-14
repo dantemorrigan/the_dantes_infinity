@@ -32,6 +32,24 @@ public class DoomUxTest implements FabricClientGameTest {
 			sp.getClientLevel().waitForChunksRender();
 			TestServerContext server = sp.getServer();
 			ctx.runOnClient(mc -> ModLang.set("ru"));
+			// Every add-on item explains itself in its tooltip, in both languages.
+			for (String lang : new String[]{"en", "ru"}) {
+				ctx.runOnClient(mc -> ModLang.set(lang));
+				String tips = ctx.computeOnClient(mc -> {
+					StringBuilder out = new StringBuilder();
+					for (var item : new net.minecraft.world.item.Item[]{com.dantemorrigan.gauntlet.ModItems.MECHANICAL_HEART, com.dantemorrigan.gauntlet.ModItems.LATVERIA_KEY,
+							com.dantemorrigan.gauntlet.ModItems.DOOM_HELMET, com.dantemorrigan.gauntlet.ModItems.DOOMBOT_CONTROLLER}) {
+						var lines = new net.minecraft.world.item.ItemStack(item).getTooltipLines(net.minecraft.world.item.Item.TooltipContext.of(mc.level), mc.player,
+								net.minecraft.world.item.TooltipFlag.NORMAL);
+						if (lines.size() < 2) throw new AssertionError("No tooltip for " + item);
+						for (var l : lines) out.append(l.getString()).append(" | ");
+						out.append('\n');
+					}
+					return out.toString();
+				});
+				System.out.println("TOOLTIPS " + lang + "\n" + tips);
+			}
+			ctx.runOnClient(mc -> ModLang.set("ru"));
 			server.runCommand("gamerule show_advancement_messages false");
 			server.runCommand("gamemode creative @p");
 			server.runCommand("execute as @p run gauntlet latveria enter");
