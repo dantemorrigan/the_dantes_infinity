@@ -1000,7 +1000,7 @@
   "msg.infinity_gauntlet.latveria.doom.final_defeat_2": "§aПерчатка Бесконечности возвращается к вашей руке. Танос и Дум повержены!",
   "msg.infinity_gauntlet.latveria.doom.final_victory_alert": "Перчатка Бесконечности возвращена! Дум и Танос повержены",
   "boss.infinity_gauntlet.doom.gauntlet_name": "Виктор фон Дум — Повелитель Перчатки",
-  "hud.infinity_gauntlet.quest_compass.doom_arena": "Песчано-огненное поле Дума",
+  "hud.infinity_gauntlet.quest_compass.doom_arena": "Предположительное местонахождение Доктора Дума",
   "hud.infinity_gauntlet.dome.break_button": "[%s] Разбить купол Гром-Секирой",
   "hud.infinity_gauntlet.dome.break_tooltip": "Ударьте Гром-Секирой по куполу, чтобы ворваться в бой",
   "hud.infinity_gauntlet.dome.need_stormbreaker": "§cКупол непробиваем! Возьмите Гром-Секиру в руку, чтобы разбить барьер.",

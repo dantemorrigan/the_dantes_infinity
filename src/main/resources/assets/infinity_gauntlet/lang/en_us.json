@@ -1000,7 +1000,7 @@
   "msg.infinity_gauntlet.latveria.doom.final_defeat_2": "§aThe Infinity Gauntlet flies back to your hand. Thanos and Doom are vanquished!",
   "msg.infinity_gauntlet.latveria.doom.final_victory_alert": "Infinity Gauntlet Reclaimed! Doom & Thanos Vanquished",
   "boss.infinity_gauntlet.doom.gauntlet_name": "Victor von Doom — Master of the Gauntlet",
-  "hud.infinity_gauntlet.quest_compass.doom_arena": "Doom's Scorched Battlefield",
+  "hud.infinity_gauntlet.quest_compass.doom_arena": "Suspected location of Doctor Doom",
   "hud.infinity_gauntlet.dome.break_button": "[%s] Shatter Dome with Stormbreaker",
   "hud.infinity_gauntlet.dome.break_tooltip": "Strike the dome with Stormbreaker to join the fight",
   "hud.infinity_gauntlet.dome.need_stormbreaker": "§cThe dome is impenetrable! Hold Stormbreaker in your hand to shatter it.",
