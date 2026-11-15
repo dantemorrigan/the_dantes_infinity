@@ -4,9 +4,15 @@ import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.tags.BlockTags;
+import net.minecraft.tags.TagKey;
+import net.minecraft.world.item.HoeItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Rarity;
+import net.minecraft.world.item.ShovelItem;
+import net.minecraft.world.item.ToolMaterial;
 import net.minecraft.world.item.component.ItemContainerContents;
 
 import java.util.function.Function;
@@ -90,6 +96,15 @@ public final class ModItems {
 	/** Raw uru from the ore, smelted into uru ingots like iron. */
 	public static final Item RAW_URU = register("raw_uru", new Item.Properties().rarity(Rarity.UNCOMMON).fireResistant());
 	public static final Item URU_INGOT = register("uru_ingot", new Item.Properties().rarity(Rarity.RARE).fireResistant());
+
+	private static final ToolMaterial URU_TOOLS = new ToolMaterial(BlockTags.INCORRECT_FOR_NETHERITE_TOOL,
+			2560, 13, 5, 18, TagKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath("c", "ingots/uru")));
+
+	// Keep the vanilla attack speeds and the right-click behavior of shovels and hoes.
+	public static final Item URU_SWORD = register("uru_sword", epic().sword(URU_TOOLS, 3, -2.4f));
+	public static final Item URU_PICKAXE = register("uru_pickaxe", epic().pickaxe(URU_TOOLS, 1, -2.8f));
+	public static final Item URU_HOE = register("uru_hoe", p -> new HoeItem(URU_TOOLS, -4, 0, p), epic());
+	public static final Item URU_SHOVEL = register("uru_shovel", p -> new ShovelItem(URU_TOOLS, 1.5f, -3, p), epic());
 
 	// Armor of Uru: the only protection that holds against a full Infinity Gauntlet (see uru/UruArmor).
 	public static final Item URU_HELMET = register("uru_helmet", uru(net.minecraft.world.item.equipment.ArmorType.HELMET));

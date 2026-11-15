@@ -40,6 +40,10 @@ public final class ModCreativeTab {
 				output.accept(ModBlocks.DEEPSLATE_URU_ORE);
 				output.accept(ModItems.RAW_URU);
 				output.accept(ModItems.URU_INGOT);
+				output.accept(ModItems.URU_SWORD);
+				output.accept(ModItems.URU_PICKAXE);
+				output.accept(ModItems.URU_HOE);
+				output.accept(ModItems.URU_SHOVEL);
 				output.accept(ModItems.URU_HELMET);
 				output.accept(ModItems.URU_CHESTPLATE);
 				output.accept(ModItems.URU_LEGGINGS);

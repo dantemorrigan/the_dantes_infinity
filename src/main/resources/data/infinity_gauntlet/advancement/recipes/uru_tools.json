@@ -1,0 +1,23 @@
+{
+  "parent": "minecraft:recipes/root",
+  "criteria": {
+    "has_uru_ingot": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "#c:ingots/uru"
+          }
+        ]
+      }
+    }
+  },
+  "rewards": {
+    "recipes": [
+      "infinity_gauntlet:uru_sword",
+      "infinity_gauntlet:uru_pickaxe",
+      "infinity_gauntlet:uru_hoe",
+      "infinity_gauntlet:uru_shovel"
+    ]
+  }
+}

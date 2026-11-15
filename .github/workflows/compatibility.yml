@@ -12,7 +12,10 @@ on:
       - src/client/java/com/dantemorrigan/gauntlet/client/compat/**
       - src/client/java/com/dantemorrigan/gauntlet/client/mixin/**
       - src/gametest/java/com/dantemorrigan/gauntlet/gametest/ModpackCompatibilityTest.java
+      - src/main/java/com/dantemorrigan/gauntlet/ModItems.java
       - src/main/resources/data/c/tags/**
+      - src/main/resources/data/minecraft/tags/item/**
+      - src/main/resources/data/infinity_gauntlet/recipe/uru_*.json
       - src/main/resources/fabric.mod.json
 
 permissions:
