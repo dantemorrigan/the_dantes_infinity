@@ -40,6 +40,8 @@ public final class ModSounds {
 	public static final SoundEvent TRIBUNAL_MUSIC = register("tribunal.battle_music");
 	public static final SoundEvent DOOM_WARNING = register("doctor_doom.latveria_warning");
 	public static final SoundEvent DOOM_BOSS_THEME = register("doctor_doom.boss_theme");
+	/** The final fight on the battlefield, against Doom wearing the stolen Infinity Gauntlet. */
+	public static final SoundEvent DOOM_FINAL_BATTLE = register("doctor_doom.battle_with_infinity_doom");
 	public static final SoundEvent LATVERIA_ECHOES = register("doctor_doom.echoes_of_latveria");
 	public static final SoundEvent LATVERIA_SANCTUM = register("doctor_doom.sovereign_sanctum");
 

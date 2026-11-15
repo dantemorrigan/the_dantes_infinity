@@ -267,6 +267,13 @@ public final class DoomClient {
 	private static void music(Minecraft mc) {
 		boolean inLatveria = mc.level.dimension().equals(Latveria.LEVEL);
 		boolean fight = false;
+		// The Gauntlet fight is held on a field in the Overworld, with a soundtrack of its own.
+		boolean field = !inLatveria && DoomFinalClient.gauntletFight();
+		if (field) {
+			for (Entity e : mc.level.entitiesForRendering()) {
+				if (e instanceof DoctorDoom d && d.isAlive() && d.finalBoss() && d.action() != DoctorDoom.A_DEFEAT && d.distanceToSqr(mc.player) < 140 * 140) { fight = true; break; }
+			}
+		}
 		if (inLatveria) {
 			for (Entity e : mc.level.entitiesForRendering()) {
 				if (e instanceof DoctorDoom d && d.isAlive() && d.action() != DoctorDoom.A_DEFEAT && d.distanceToSqr(mc.player) < 80 * 80) { fight = true; break; }
@@ -278,8 +285,13 @@ public final class DoomClient {
 		}
 		if (track != null) {
 			if (track.pinned) return;
-			boolean wrong = !inLatveria || track.boss != fight || !mc.player.isAlive() && track.boss;
+			boolean wrong = !(inLatveria || field) || track.boss != fight || !mc.player.isAlive() && track.boss
+					|| fight && !track.name.equals(field ? "final_battle" : "boss");
 			if (wrong) track.fadeOut(track.boss ? 60 : 40);
+			return;
+		}
+		if (field) {
+			if (fight) play(mc, new Track(ModSounds.DOOM_FINAL_BATTLE, "final_battle", true, 0.55f, true));
 			return;
 		}
 		if (!inLatveria) return;

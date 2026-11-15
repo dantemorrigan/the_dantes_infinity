@@ -95,6 +95,9 @@ public final class DoomFinalClient {
 		return null;
 	}
 
+	/** The Gauntlet fight on the battlefield is on (after the cutscenes, until Doom falls): its own soundtrack plays. */
+	public static boolean gauntletFight() { return stage == DoomFinalEncounter.STAGE_FINAL_BOSS; }
+
 	public static boolean inCutscene() {
 		return stage == DoomFinalEncounter.STAGE_THEFT_CUTSCENE
 				|| stage == DoomFinalEncounter.STAGE_THANOS_ARRIVAL
