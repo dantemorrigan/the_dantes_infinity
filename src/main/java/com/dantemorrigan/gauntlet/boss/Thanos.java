@@ -449,6 +449,11 @@ public class Thanos extends Monster {
 		}
 		if (cooldown <= 0) {
 			int pause = enraged ? 14 : 22;
+			if (swordHome && d <= 48 && BossFlight.airborne(target) && this.hasLineOfSight(target)) {
+				setAction(A_THROW);
+				cooldown = pause + 20;
+				return;
+			}
 			if (d <= 3.6) {
 				if (swordHome && this.random.nextFloat() < 0.62f) { setAction(A_SWING); cooldown = pause; return; }
 				setAction(A_BACKHAND);
@@ -534,8 +539,9 @@ public class Thanos extends Monster {
 		for (LivingEntity victim : level.getEntitiesOfClass(LivingEntity.class,
 				new AABB(center, center).inflate(BARRAGE_RADIUS, 3, BARRAGE_RADIUS), e -> e != this && e.isAlive())) {
 			Vec3 offset = victim.position().subtract(center);
-			if (offset.lengthSqr() <= BARRAGE_RADIUS * BARRAGE_RADIUS) {
-				hit(level, victim, cfg.thanosSlamDamage * 1.35f, horizontal(offset).scale(1.3).add(0, .55, 0), false);
+			if (offset.lengthSqr() <= BARRAGE_RADIUS * BARRAGE_RADIUS && this.hasLineOfSight(victim)) {
+				if (hit(level, victim, cfg.thanosSlamDamage * 1.35f, horizontal(offset).scale(1.3).add(0, .55, 0), false)
+						&& victim instanceof ServerPlayer player) BossFlight.interrupt(player, .75);
 			}
 		}
 	}
@@ -607,7 +613,13 @@ public class Thanos extends Monster {
 			ThanosSword sword = new ThanosSword(ModEntities.THANOS_SWORD, level);
 			Vec3 hand = this.position().add(0, 2.4, 0).add(forward().scale(0.6));
 			Vec3 aim = target.position().add(0, target.getBbHeight() * 0.5, 0);
-			sword.launch(this, hand, aim);
+			boolean aerial = BossFlight.airborne(target);
+			if (aerial) {
+				double travel = Math.min(12, hand.distanceTo(aim) / ThanosSword.AERIAL_SPEED);
+				Vec3 lead = target.getDeltaMovement().scale(travel);
+				aim = aim.add(lead.lengthSqr() > 64 ? lead.normalize().scale(8) : lead);
+			}
+			sword.launch(this, hand, aim, aerial);
 			level.addFreshEntity(sword);
 			this.thrown = sword;
 			setFlag(FLAG_SWORD_OUT, true);

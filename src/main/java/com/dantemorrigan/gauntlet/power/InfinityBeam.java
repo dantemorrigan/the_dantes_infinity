@@ -102,7 +102,7 @@ public final class InfinityBeam {
             Vec3 direction = p.getLookAngle().normalize();
             Vec3 end = from;
             if (c.age >= c.charge) {
-                double range = Math.max(8, Math.min(128, GauntletConfig.get().beamRange));
+                double range = CosmicGauntlet.reach(p, Math.max(8, Math.min(128, GauntletConfig.get().beamRange)));
                 // Never force-load chunks or tunnel through unbreakable blocks.
                 double distance = 0;
                 for (double d = .5; d <= range; d += .5) {
@@ -115,7 +115,7 @@ public final class InfinityBeam {
                 if (GauntletConfig.get().beamBreakBlocks) drill(c, from, direction, distance);
                 // Surfaces remaining after this tick's excavation still occlude the beam and damage.
                 end = c.level.clip(new ClipContext(from, end, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, p)).getLocation();
-                damage(c, from, end);
+                if (from.distanceToSqr(end) > .01) damage(c, from, end);
                 if ((c.age - c.charge) % 10 == 0)
                     c.level.playSound(null, p.blockPosition(), SoundEvents.WARDEN_SONIC_BOOM, SoundSource.PLAYERS, 1.2f, .7f);
             }

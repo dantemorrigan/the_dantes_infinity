@@ -371,7 +371,9 @@ public final class TribunalEncounter {
     private static void shoot(Trial t, ServerPlayer p) {
         boolean left=(t.bolts.size()&1)==1;
         Vec3 from=t.boss.position().add(TribunalPose.palm(t.boss.getYRot(),t.boss.tickCount,t.boss.phase(),t.boss.attack(),t.boss.sceneAge(),left));
-        Vec3 aim=p.getEyePosition().add(p.getDeltaMovement().scale(10));
+        double travel = Math.min(22, from.distanceTo(p.getEyePosition()) / 3.6);
+        Vec3 lead = p.getDeltaMovement().scale(travel);
+        Vec3 aim = p.getEyePosition().add(lead.lengthSqr() > 3600 ? lead.normalize().scale(60) : lead);
         Bolt b=new Bolt(from,aim.subtract(from).normalize().scale(3.6));t.bolts.add(b);boltPacket(t,b,65);
     }
     private static void tickBolts(Trial t, ServerPlayer p) {
@@ -381,7 +383,12 @@ public final class TribunalEncounter {
             boolean impact=p.getBoundingBox().inflate(2.4).clip(b.position,next).isPresent() || p.getBoundingBox().inflate(2.4).contains(b.position);
             if(impact || ++b.age>65 || !TribunalSpace.clear(point(b.position),point(next),1)) {
                 boltPacket(t,b,0);it.remove();
-                if(impact) { hit(t,p,p.getMaxHealth()*.08f); if(t.verdictAge>0) return; }
+                if (impact) {
+                    float health = p.getHealth();
+                    hit(t, p, p.getMaxHealth() * .08f);
+                    if (t.verdictAge > 0) return;
+                    if (p.getHealth() < health) BossFlight.interrupt(p, 0);
+                }
             } else b.position=next;
         }
     }

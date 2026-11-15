@@ -161,14 +161,18 @@ public final class SoulStone {
 	}
 
 	private static void mass(ServerPlayer player, ServerLevel level, GauntletConfig cfg) {
-		double r = com.dantemorrigan.gauntlet.cosmos.CosmosTravel.inCosmos(player)?155:cfg.soulMassRadius;
+		boolean cosmos = com.dantemorrigan.gauntlet.cosmos.CosmosTravel.inCosmos(player);
+		double r = cosmos ? 155 : cfg.soulMassRadius;
 		Vec3 c = player.position();
-		List<LivingEntity> targets = new ArrayList<>(level.getEntitiesOfClass(LivingEntity.class, new AABB(c, c).inflate(r, com.dantemorrigan.gauntlet.cosmos.CosmosTravel.inCosmos(player)?r:r*.5, r),
-				e -> e instanceof Enemy && e.isAlive() && !MindStone.isBoss(e) && !soulless(e) && !e.hasCustomName() && !busy(e) && e.position().distanceTo(c) <= r));
+		List<LivingEntity> targets = new ArrayList<>(level.getEntitiesOfClass(LivingEntity.class, new AABB(c, c).inflate(r, cosmos ? r : r * .5, r),
+				e -> e instanceof Enemy && e.isAlive() && !MindStone.isBoss(e) && !soulless(e) && !e.hasCustomName() && !busy(e) && e.position().distanceTo(c) <= r
+						&& (!cosmos || CosmicGauntlet.visible(player, c, e.getBoundingBox().getCenter()))));
 		targets.sort(Comparator.comparingDouble(e -> e.position().distanceToSqr(c)));
 		if (targets.size() > cfg.soulMassMaxTargets) targets = targets.subList(0, cfg.soulMassMaxTargets);
-		ModNetwork.SoulFx wave = new ModNetwork.SoulFx(1, player.getId(), -1, c, (int) r, 0, 0);
-		for (ServerPlayer p : PlayerLookup.around(level, c, 160)) ServerPlayNetworking.send(p, wave);
+		if (!cosmos) {
+			ModNetwork.SoulFx wave = new ModNetwork.SoulFx(1, player.getId(), -1, c, (int) r, 0, 0);
+			for (ServerPlayer p : PlayerLookup.around(level, c, 160)) ServerPlayNetworking.send(p, wave);
+		}
 		for (LivingEntity t : targets) start(player, t, (int) (t.position().distanceTo(c) / WAVE_SPEED), MASS_EXTRACT, MASS_FLIGHT);
 		level.playSound(null, player.blockPosition(), SoundEvents.WARDEN_SONIC_BOOM, SoundSource.PLAYERS, 1.6F, 0.5F);
 		level.playSound(null, player.blockPosition(), SoundEvents.SOUL_ESCAPE.value(), SoundSource.PLAYERS, 3.0F, 0.5F);

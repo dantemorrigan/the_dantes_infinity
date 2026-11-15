@@ -3,8 +3,6 @@ package com.dantemorrigan.gauntlet.boss;
 import com.dantemorrigan.gauntlet.ModAdvancements;
 import com.dantemorrigan.gauntlet.ModEntities;
 import com.dantemorrigan.gauntlet.ModSounds;
-import com.dantemorrigan.gauntlet.cosmos.CosmosTravel;
-import com.dantemorrigan.gauntlet.stormbreaker.Stormbreaker;
 import com.dantemorrigan.gauntlet.stones.MindArena;
 import com.dantemorrigan.gauntlet.stones.MindQuest;
 import net.minecraft.core.BlockPos;
@@ -55,7 +53,7 @@ public final class Loki extends Monster {
 	public static final int REVERT_TICK = 24;
 	public static final int DISSOLVE_TICK = 52;
 	public enum Attack {
-		DAGGER(7, 5), BOLT(15, 8), GROUNDING(18, 8), BITE(10, 9), PAW(17, 12), ROAR(24, 13), BARRAGE(24, 12);
+		DAGGER(7, 5), BOLT(15, 8), GROUNDING(16, 8), BITE(10, 9), PAW(17, 12), ROAR(24, 13), BARRAGE(24, 12);
 
 		public final int windup, recovery;
 		Attack(int windup, int recovery) {
@@ -238,6 +236,17 @@ public final class Loki extends Monster {
 		if (strikeTicks() > 0) {
 			int time = strikeTicks() - 1;
 			entityData.set(STRIKE, time);
+			if (attack() == Attack.GROUNDING && time == attack().recovery + 8) {
+				if (level.getPlayerByUUID(attackTarget) instanceof ServerPlayer flyer && eligible(flyer)
+						&& BossFlight.airborne(flyer) && hasLineOfSight(flyer)) {
+					Vec3 lead = flyer.getDeltaMovement().scale(3);
+					aim = flyer.position().add(lead.lengthSqr() > 16 ? lead.normalize().scale(4) : lead);
+					attackYaw = yawTo(position(), aim);
+					setYRot(attackYaw);
+					setYBodyRot(attackYaw);
+					LokiFx.send(level, LokiFx.Effect.BIND_MARK, aim.add(0, .5, 0), attackYaw);
+				}
+			}
 			if (time == attack().recovery) finishAttack(level);
 			return;
 		}
@@ -262,9 +271,9 @@ public final class Loki extends Monster {
 			summonIllusions(level, target);
 			cloneCooldown = isEnraged() ? 165 : 125;
 		}
-		if (sight && !isIllusion() && spellCooldown == 0 && distance < 36 * 36 && flying(target)) {
+		if (sight && !isIllusion() && spellCooldown == 0 && distance <= 48 * 48 && BossFlight.airborne(target)) {
 			startAttack(level, target, Attack.GROUNDING);
-			spellCooldown = 46;
+			spellCooldown = 58;
 			return;
 		}
 		if (!isIllusion() && !isEnraged() && arena != null && tickPerch(level, target, sight)) return;
@@ -377,11 +386,6 @@ public final class Loki extends Monster {
 		level.playSound(null, blockPosition(), SoundEvents.ENDERMAN_TELEPORT, SoundSource.HOSTILE, 1, 1.35f);
 	}
 
-	private static boolean flying(ServerPlayer player) {
-		return !player.onGround() && player.getAbilities().flying
-				&& (player.hasAttached(CosmosTravel.FLIGHT) || Stormbreaker.isFlying(player));
-	}
-
 	private void startAttack(ServerLevel level, ServerPlayer target, Attack next) {
 		getNavigation().stop();
 		attackTarget = target.getUUID();
@@ -434,14 +438,10 @@ public final class Loki extends Monster {
 			boolean grounding = attack() == Attack.GROUNDING;
 			Vec3 end = aim.add(0, .75, 0);
 			LokiFx.beam(level, getEyePosition(), end);
-			if (eligible(target) && target.distanceToSqr(aim) < (grounding ? 25 : 6.25) && hasLineOfSight(target)
-					&& (!grounding || flying(target))) {
-				target.hurtServer(level, level.damageSources().indirectMagic(this, this), grounding ? 8 : 11);
-				if (grounding) {
-					if (Stormbreaker.isFlying(target)) Stormbreaker.releaseFlight(target);
-					if (target.hasAttached(CosmosTravel.FLIGHT)) CosmosTravel.stop(target, false);
-					target.setDeltaMovement(target.getDeltaMovement().multiply(.4, 0, .4).add(0, -.85, 0));
-					target.hurtMarked = true;
+			if (eligible(target) && target.distanceToSqr(aim) < (grounding ? 36 : 6.25) && hasLineOfSight(target)
+					&& (!grounding || BossFlight.airborne(target) && distanceToSqr(target) <= 52 * 52)) {
+				if (target.hurtServer(level, level.damageSources().indirectMagic(this, this), grounding ? 10 : 11) && grounding) {
+					BossFlight.interrupt(target, .9);
 				}
 			}
 			return;
@@ -495,7 +495,7 @@ public final class Loki extends Monster {
 
 	private ServerPlayer selectTarget(ServerLevel level) {
 		ServerPlayer closest = null;
-		double best = 44 * 44;
+		double best = 48 * 48;
 		for (ServerPlayer player : level.players()) {
 			if (!eligible(player)) continue;
 			double distance = distanceToSqr(player);

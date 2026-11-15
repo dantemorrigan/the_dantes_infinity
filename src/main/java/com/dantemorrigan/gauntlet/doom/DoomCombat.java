@@ -5,6 +5,8 @@ import com.dantemorrigan.gauntlet.boss.LivingTribunal;
 import com.dantemorrigan.gauntlet.boss.Loki;
 import com.dantemorrigan.gauntlet.boss.Thanos;
 import com.dantemorrigan.gauntlet.power.CombatTargets;
+import com.dantemorrigan.gauntlet.power.CosmicGauntlet;
+import com.dantemorrigan.gauntlet.cosmos.CosmosTravel;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
@@ -94,6 +96,14 @@ public final class DoomCombat {
 				b.vel = b.vel.lerp(want, b.turn);
 			}
 			Vec3 next = b.pos.add(b.vel);
+			ServerPlayer pilot = b.owner instanceof ServerPlayer p && CosmosTravel.inCosmos(p) ? p : null;
+			boolean cosmicWall = pilot != null && !CosmicGauntlet.clearPath(b.pos, next, 0);
+			if (cosmicWall) {
+				it.remove();
+				DoomVfx.boltEnd(b.level, b.id, b.pos, (float) Math.max(1.2, b.blast), b.style);
+				CosmicGauntlet.fx(pilot, 0, b.pos, b.pos, (float) (1.5 + b.blast), 0xffffb752, 14);
+				continue;
+			}
 			BlockHitResult wall = b.level.clip(new ClipContext(b.pos, next, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, b.owner));
 			boolean stopped = wall.getType() != HitResult.Type.MISS;
 			if (stopped) next = wall.getLocation();
@@ -114,16 +124,32 @@ public final class DoomCombat {
 					struck = target;
 				}
 			}
-			b.pos = next;
+			b.pos = pilot != null && struck != null
+					? b.pos.add(b.vel.normalize().scale(Math.sqrt(closest))) : next;
 			if (struck == null && !stopped) continue;
 			it.remove();
 			DoomVfx.boltEnd(b.level, b.id, b.pos, (float) Math.max(1.2, b.blast + 0.6), b.style);
+			if (pilot != null) CosmicGauntlet.fx(pilot, 0, b.pos, b.pos, (float) (1.5 + b.blast), 0xffffb752, 14);
 			DoomFx.sound(b.level, b.pos, b.blast > 1 ? SoundEvents.GENERIC_EXPLODE.value() : SoundEvents.FIREWORK_ROCKET_BLAST, b.blast > 1 ? 0.7f : 0.9f, b.blast > 1 ? 1.5f : 0.8f);
 			if (struck != null && hurt(b.level, struck, b.owner, b.damage)) {
 				Vec3 push = b.vel.normalize();
-				struck.knockback(0.35 + b.blast * 0.15, -push.x, -push.z);
+				double strength = .35 + b.blast * .15;
+				if (pilot == null) struck.knockback(strength, -push.x, -push.z);
+				else if (struck.isPushable()) {
+					struck.push(push.scale(strength));
+					struck.hurtMarked = true;
+				}
 			}
-			if (b.blast > 0) {
+			if (b.blast > 0 && pilot != null) {
+				for (LivingEntity target : CombatTargets.inArea(pilot, new AABB(b.pos, b.pos).inflate(b.blast))) {
+					if (target == struck || !b.hits.test(target) || !CombatTargets.near(target, b.pos, b.blast)) continue;
+					Vec3 center = target.getBoundingBox().getCenter();
+					Vec3 contact = CombatTargets.impact(target, b.pos, center, 0);
+					if (CosmicGauntlet.visible(pilot, b.pos, contact == null ? center : contact)) {
+						hurt(b.level, target, b.owner, b.damage * .7f);
+					}
+				}
+			} else if (b.blast > 0) {
 				for (LivingEntity e : b.level.getEntitiesOfClass(LivingEntity.class, new AABB(b.pos, b.pos).inflate(b.blast),
 						e -> e != b.owner && e != null && e.isAlive() && b.hits.test(e))) {
 					if (e != struck && e.position().add(0, e.getBbHeight() * 0.5, 0).distanceTo(b.pos) <= b.blast + 0.6) hurt(b.level, e, b.owner, b.damage * 0.7f);

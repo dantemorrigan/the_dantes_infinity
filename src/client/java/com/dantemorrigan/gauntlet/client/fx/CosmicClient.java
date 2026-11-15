@@ -2,6 +2,7 @@ package com.dantemorrigan.gauntlet.client.fx;
 
 import com.dantemorrigan.gauntlet.client.boss.TribunalRenderer;
 import com.dantemorrigan.gauntlet.net.ModNetwork;
+import com.dantemorrigan.gauntlet.power.CosmicGauntlet;
 import com.mojang.math.Axis;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.networking.v1.*;
@@ -38,6 +39,10 @@ public final class CosmicClient {
                     int alpha=(int)(220*(1-t));int color=(alpha<<24)|(c.fx.color()&0xffffff);
                     TribunalRenderer.sphere(pose,ctx.submitNodeCollector(),at,c.fx.size()*t,color);
                     TribunalRenderer.blast(pose,ctx.submitNodeCollector(),at,c.fx.size()*t,color);
+                } else if (c.fx.kind() == CosmicGauntlet.WARNING_SPHERE) {
+                    int color = ((int) (108 + 66 * Math.sin(t * Math.PI)) << 24) | (c.fx.color() & 0xffffff);
+                    TribunalRenderer.sphere(pose, ctx.submitNodeCollector(), at, c.fx.size(), color);
+                    TribunalRenderer.sphere(pose, ctx.submitNodeCollector(), at, c.fx.size() * (1 - .76f * t), color);
                 } else if(c.fx.kind()==2) {
                     var from=c.fx.from().subtract(camera);var end=c.fx.from().lerp(c.fx.to(),Math.min(1,t*5)).subtract(camera);
                     int tint=(((int)(255*(1-t)))<<24)|(c.fx.color()&0xffffff);

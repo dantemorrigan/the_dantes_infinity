@@ -440,7 +440,8 @@ public final class SpaceStone {
 			com.dantemorrigan.gauntlet.net.ModStatus.send(player, Component.translatable("msg.infinity_gauntlet.blink.too_far", String.valueOf(range)));
 			return false;
 		}
-		Vec3 target = com.dantemorrigan.gauntlet.cosmos.CosmosTravel.inCosmos(player) ? player.position().add(player.getLookAngle().scale(CosmicGauntlet.reach(player,range))) : standingSpot(player.level(), hit);
+		boolean cosmos = com.dantemorrigan.gauntlet.cosmos.CosmosTravel.inCosmos(player);
+		Vec3 target = cosmos ? CosmicGauntlet.blinkDestination(player, range) : standingSpot(player.level(), hit);
 		if (target == null) {
 			com.dantemorrigan.gauntlet.net.ModStatus.send(player, Component.translatable("msg.infinity_gauntlet.blink.no_space"));
 			return false;
@@ -451,7 +452,11 @@ public final class SpaceStone {
 		player.fallDistance = 0;
 		player.level().playSound(null, BlockPos.containing(from), SoundEvents.PLAYER_TELEPORT, SoundSource.PLAYERS, 0.8f, 1.4f);
 		player.level().playSound(null, BlockPos.containing(target), SoundEvents.PLAYER_TELEPORT, SoundSource.PLAYERS, 1f, 1.2f);
-		sendFx(player.level(), from, target);
+		if (cosmos) {
+			Vec3 arrival = target.add(0, 1, 0);
+			CosmicGauntlet.fx(player, 2, from.add(0, 1, 0), arrival, 2, 0xff559cff, 17);
+			CosmicGauntlet.fx(player, 0, arrival, arrival, 3, 0xff65cdff, 16);
+		} else sendFx(player.level(), from, target);
 		com.dantemorrigan.gauntlet.doom.DoomCombat.dodge(player);
 		if (!g.isEmpty()) {
 			GauntletState.setInUse(g, EnumSet.of(Stone.SPACE));

@@ -10,6 +10,8 @@ import com.dantemorrigan.gauntlet.ModItems;
 import com.dantemorrigan.gauntlet.boss.Thanos;
 import com.dantemorrigan.gauntlet.cosmos.CosmosTravel;
 import com.dantemorrigan.gauntlet.net.ModStatus;
+import com.dantemorrigan.gauntlet.power.CombatTargets;
+import com.dantemorrigan.gauntlet.power.CosmicGauntlet;
 import com.dantemorrigan.gauntlet.power.PowerAbility;
 import com.dantemorrigan.gauntlet.snap.InfinitySnap;
 import com.dantemorrigan.gauntlet.stones.RealityWisp;
@@ -126,13 +128,14 @@ public final class Stormbreaker {
         int fallStart;
         int combo, lastSwing = -100, nextSwing, lightningReady, waveReady, throwReady, wrathReady, plantUntil;
         boolean flying, descending, flightUsed;
-        int flightEnd;
+        int flightEnd, spaceBoostReady;
         ServerLevel flightLevel;
     }
 
     private static final class Flight {
         final boolean recall, crossDimensionRecall;
         final Set<UUID> hit = new HashSet<>();
+        Vec3 spaceDirection;
         float yaw;
         int age;
         Flight(float yaw, boolean recall, boolean crossDimensionRecall) {
@@ -146,7 +149,7 @@ public final class Stormbreaker {
 
     private record Pull(UUID player, int finish) {}
 
-    private record Release(ServerLevel level, int tick, float yaw) {}
+    private record Release(ServerLevel level, int tick, Vec3 direction, float yaw) {}
     private record GroundCharge(ServerLevel level, Vec3 ground, int started) {}
 
     private static final class Wave {
@@ -301,7 +304,7 @@ public final class Stormbreaker {
             case StormNetwork.WRATH -> beginCast(p, true);
             case StormNetwork.FLIGHT -> startFlight(p);
             case StormNetwork.AIR_SWING -> {
-                if (PowerAbility.pick(p, 4.5).getType() == HitResult.Type.MISS) swing(p, null);
+                if (!CosmosTravel.inCosmos(p) && PowerAbility.pick(p, 4.5).getType() == HitResult.Type.MISS) swing(p, null);
             }
             case StormNetwork.PRIMARY_START -> {
                 if (!com.dantemorrigan.gauntlet.doom.DoomFinalEncounter.tryBreakDome(p)) primary(p);
@@ -315,6 +318,10 @@ public final class Stormbreaker {
         HitResult hit = PowerAbility.pick(p, 5, entity -> entity instanceof RealityWisp);
         if (hit instanceof EntityHitResult entity) {
             swing(p, entity.getEntity());
+        } else if (CosmosTravel.inCosmos(p)) {
+            Session s = session(p);
+            if (server(p).getTickCount() >= s.waveReady) startGroundCharge(p, p.position());
+            else swing(p, null);
         } else if (hit instanceof BlockHitResult block && block.getType() == HitResult.Type.BLOCK
                 && block.getDirection() == Direction.UP) {
             startGroundCharge(p, block.getLocation());
@@ -414,7 +421,7 @@ public final class Stormbreaker {
         GroundCharge charge = s.groundCharge;
         if (charge == null) return;
         cancelGroundCharge(p, s);
-        if (charge.level != p.level() || !ready(p) || p.distanceToSqr(charge.ground) > 49) return;
+        if (charge.level != p.level() || !ready(p) || (!CosmosTravel.inCosmos(p) && p.distanceToSqr(charge.ground) > 49)) return;
         int now = server(p).getTickCount();
         int held = now - charge.started;
         if (held < GROUND_MIN_CHARGE) {
@@ -424,6 +431,15 @@ public final class Stormbreaker {
         float power = Math.min(1, (held - GROUND_MIN_CHARGE) / (float) (GROUND_MAX_CHARGE - GROUND_MIN_CHARGE));
         s.waveReady = now + 65;
         s.nextSwing = Math.max(s.nextSwing, now + 20);
+        if (CosmosTravel.inCosmos(p)) {
+            Vec3 from = p.getEyePosition(), end = PowerAbility.pick(p, CosmicGauntlet.reach(p, 18 + power * 16)).getLocation();
+            CosmicGauntlet.fx(p, 2, from, end, 4 + power * 2, 0xff72dfff, 18);
+            CosmicGauntlet.fx(p, 0, end, end, 4 + power * 3, 0xff72dfff, 24);
+            spaceDamage(p, end, 4 + power * 3, 15 + 9 * power, .9, false);
+            StormNetwork.visual(p, "ground_slam", 0, end);
+            sound(p.level(), end, SoundEvents.TRIDENT_THUNDER.value(), 1, .8f);
+            return;
+        }
         Vec3 direction = Vec3.directionFromRotation(0, p.getYRot());
         s.wave = new Wave(p.level(), charge.ground, direction, now, power);
         StormNetwork.visual(p, "ground_slam", 0, charge.ground);
@@ -431,11 +447,19 @@ public final class Stormbreaker {
 
     private static void tickGroundCharge(ServerPlayer p, Session s, int now) {
         GroundCharge charge = s.groundCharge;
-        if (charge.level != p.level() || !mainHand(p) || !guarded(p) || p.distanceToSqr(charge.ground) > 49) {
+        if (charge.level != p.level() || !mainHand(p) || !guarded(p) || (!CosmosTravel.inCosmos(p) && p.distanceToSqr(charge.ground) > 49)) {
             cancelGroundCharge(p, s);
             return;
         }
         int age = now - charge.started;
+        if (CosmosTravel.inCosmos(p)) {
+            if (age % 7 == 0) {
+                Vec3 hand = p.getEyePosition().add(p.getLookAngle().scale(1.2));
+                CosmicGauntlet.fx(p, 0, hand, hand, 1.2f + Math.min(age, GROUND_MAX_CHARGE) / 12f, 0xff72dfff, 10);
+            }
+            if (age >= GROUND_MAX_CHARGE) releaseGroundCharge(p);
+            return;
+        }
         if (age % 7 == 0) StormFx.TAKEOFF.play(p.level(), charge.ground.add(0, .06, 0),
                 1.2 + Math.min(age, GROUND_MAX_CHARGE) / 12.0);
     }
@@ -531,12 +555,14 @@ public final class Stormbreaker {
         Session s = session(p);
         int now = server(p).getTickCount();
         if (s.cast != null || s.release != null || s.groundCharge != null || now < (wrath ? s.wrathReady : s.lightningReady)) return;
-        HitResult picked = PowerAbility.pick(p, wrath ? 52 : 36);
+        boolean cosmos = CosmosTravel.inCosmos(p);
+        double range = CosmicGauntlet.reach(p, wrath ? 52 : 36);
+        HitResult picked = PowerAbility.pick(p, range);
         Entity target = picked instanceof EntityHitResult hit && CoopRules.canAffect(p, hit.getEntity()) ? hit.getEntity() : null;
-        Vec3 point = target == null ? picked.getLocation() : target.position();
+        Vec3 point = target == null || cosmos ? picked.getLocation() : target.position();
         if (wrath) s.wrathReady = now + 440;
         else s.lightningReady = now + 42;
-        s.cast = new Cast(p.level(), now, point, target == null ? null : target.getUUID(), wrath);
+        s.cast = new Cast(p.level(), now, point, target == null || cosmos ? null : target.getUUID(), wrath);
         StormNetwork.visual(p, wrath ? "heavens_wrath" : "lightning_cast", 0, point);
         sound(p.level(), p.position(), SoundEvents.TRIDENT_RIPTIDE_3.value(), 1, wrath ? .63f : 1.1f);
     }
@@ -553,6 +579,17 @@ public final class Stormbreaker {
         Entity target = cast.target == null ? null : cast.level.getEntity(cast.target);
         Vec3 point = target != null && target.isAlive() && CoopRules.canAffect(p, target)
                 && target.position().distanceToSqr(cast.point) <= 48 * 48 ? target.position() : cast.point;
+        if (CosmosTravel.inCosmos(p)) {
+            double radius = cast.wrath ? WRATH_RADIUS : LIGHTNING_RADIUS;
+            if (age == 1) CosmicGauntlet.fx(p, CosmicGauntlet.WARNING_SPHERE, point, point, (float) radius, 0xff72dfff, cast.wrath ? 84 : 10);
+            if (!cast.wrath && age == 10) spaceBolt(p, point, -1);
+            if (cast.wrath) {
+                for (int stage = 0; stage < STRIKES.length; stage++) {
+                    if (age == STRIKES[stage]) spaceBolt(p, point, stage);
+                }
+            }
+            return;
+        }
         Vec3 ground = surface(cast.level, point, 3, 80);
         if (ground == null) ground = point;
         if (cast.wrath ? age >= 12 && age <= 82 && (age - 12) % 10 == 0 : age == 7) {
@@ -564,6 +601,35 @@ public final class Stormbreaker {
         if (!cast.wrath) return;
         for (int i = 0; i < STRIKES.length; i++) {
             if (age == STRIKES[i]) bolt(p, ground, i);
+        }
+    }
+
+    private static void spaceBolt(ServerPlayer p, Vec3 center, int stage) {
+        boolean wrath = stage >= 0;
+        float radius = (float) (wrath ? WRATH_RADIUS : LIGHTNING_RADIUS);
+        if (!CosmicGauntlet.visible(p, p.getEyePosition(), center)) return;
+        CosmicGauntlet.fx(p, 0, center, center, radius, 0xff72dfff, 22);
+        for (int i = 0; i < (wrath ? 5 : 3); i++) {
+            double angle = stage * .8 + i * 2.4;
+            Vec3 branch = center.add(Math.cos(angle) * radius, Math.sin(i * 1.9 + stage) * radius * .75,
+                    Math.sin(angle) * radius);
+            if (CosmicGauntlet.visible(p, center, branch)) {
+                CosmicGauntlet.fx(p, 2, branch, center, 2, i % 2 == 0 ? 0xffa6ebff : 0xff7485ff, 12);
+            }
+        }
+        sound(p.level(), center, SoundEvents.LIGHTNING_BOLT_THUNDER, wrath ? 2.4f : 1.5f, .9f);
+        spaceDamage(p, center, radius, wrath ? 11 + stage * 4 : 16, .66, wrath);
+    }
+
+    private static void spaceDamage(ServerPlayer p, Vec3 center, double radius, float damage, double push, boolean wrath) {
+        for (LivingEntity target : CombatTargets.inArea(p, new AABB(center, center).inflate(radius))) {
+            if (!CombatTargets.near(target, center, radius)) continue;
+            Vec3 targetCenter = target.getBoundingBox().getCenter();
+            Vec3 contact = CombatTargets.impact(target, center, targetCenter, 0);
+            if (!CosmicGauntlet.visible(p, center, contact == null ? targetCenter : contact)) continue;
+            if (strike(p, target, damage, targetCenter.subtract(center), push) && wrath && target instanceof Thanos) {
+                ModAdvancements.award(p, "stormbreaker_titan");
+            }
         }
     }
 
@@ -603,11 +669,10 @@ public final class Stormbreaker {
 
     private static void startThrow(ServerPlayer p) {
         if (!ready(p)) return;
-        if (CosmosTravel.inCosmos(p)) { status(p, "space_locked"); return; }
         Session s = session(p);
         int now = server(p).getTickCount();
         if (s.release != null || s.groundCharge != null || now < s.throwReady) return;
-        s.release = new Release(p.level(), now + 8, p.getYRot());
+        s.release = new Release(p.level(), now + 8, p.getLookAngle(), p.getYRot());
         s.nextSwing = Math.max(s.nextSwing, now + 12);
         StormNetwork.visual(p, "throw_release", 0, p.position());
     }
@@ -615,13 +680,15 @@ public final class Stormbreaker {
     private static void launch(ServerPlayer p, Session s, Release release) {
         if (release.level != p.level() || !mainHand(p) || !guarded(p)
                 || !matches(p.getMainHandItem(), record(p))) return;
-        Vec3 direction = Vec3.directionFromRotation(0, release.yaw);
+        boolean cosmos = CosmosTravel.inCosmos(p);
+        Vec3 direction = cosmos ? release.direction : Vec3.directionFromRotation(0, release.yaw);
         Vec3 origin = p.getEyePosition().add(direction.scale(.75)).add(0, -.24, 0);
         if (!p.level().hasChunkAt(BlockPos.containing(origin))) return;
         StormbreakerEntity model = spawn(p.level(), origin, StormbreakerEntity.OUTBOUND);
         if (model == null) return;
         s.display = model;
         s.flight = new Flight(release.yaw, false, false);
+        if (cosmos) s.flight.spaceDirection = direction;
         model.setYRot(release.yaw);
         s.throwReady = server(p).getTickCount() + 42;
         server(p).overworld().setAttached(RELIC, Relic.at(p, IN_FLIGHT));
@@ -639,6 +706,10 @@ public final class Stormbreaker {
         }
         Vec3 pos = axe.position();
         Vec3 hand = p.getEyePosition().add(0, -.4, 0);
+        if (CosmosTravel.inCosmos(p)) {
+            tickSpaceThrow(p, s, axe, flight, pos, hand);
+            return;
+        }
         // A thrown axe does not come back by itself: at the end of its reach it sticks where it is (like Kratos's), and stays
         // until its owner calls it with the recall key.
         if (flight.age >= 24 && axe.phase() == StormbreakerEntity.OUTBOUND && !flight.recall) {
@@ -684,6 +755,35 @@ public final class Stormbreaker {
             if (strike(p, target, returning ? 13 : 19, direction, .65)) {
                 flight.hit.add(target.getUUID());
                 StormFx.IMPACT.play(p.level(), target.getBoundingBox().getCenter(), 1.25);
+            }
+        }
+    }
+
+    private static void tickSpaceThrow(ServerPlayer p, Session s, StormbreakerEntity axe, Flight flight, Vec3 pos, Vec3 hand) {
+        boolean returning = axe.phase() == StormbreakerEntity.RETURNING;
+        Vec3 toHand = hand.subtract(pos);
+        if (returning && toHand.lengthSqr() < 4) { returnToOwner(p, s, true); return; }
+        if (!returning && flight.age >= 18) { turn(axe, flight); return; }
+        Vec3 direction = returning ? toHand.normalize() : flight.spaceDirection;
+        Vec3 next = pos.add(direction.scale(returning ? Math.min(3.2, toHand.length()) : 2.6));
+        if (!p.level().hasChunkAt(BlockPos.containing(next)) || !CosmicGauntlet.visible(p, pos, next)) {
+            if (returning) returnToOwner(p, s, false);
+            else turn(axe, flight);
+            return;
+        }
+        axe.setYRot((float) Math.toDegrees(Math.atan2(-direction.x, direction.z)));
+        axe.setDeltaMovement(next.subtract(pos));
+        axe.setPos(next.x, next.y, next.z);
+        if (flight.age % 3 == 1) {
+            (returning ? StormFx.THROW_RETURN : StormFx.THROW_OUT).play(p.level(), next, 2.65, direction);
+        }
+        if (flight.crossDimensionRecall) return;
+        for (LivingEntity target : CombatTargets.inArea(p, new AABB(pos, next).inflate(.85))) {
+            if (flight.hit.contains(target.getUUID())) continue;
+            var impact = CombatTargets.impact(target, pos, next, .85);
+            if (impact != null && strike(p, target, returning ? 13 : 19, direction, .65)) {
+                flight.hit.add(target.getUUID());
+                StormFx.IMPACT.play(p.level(), impact, 1.25);
             }
         }
     }
@@ -815,9 +915,14 @@ public final class Stormbreaker {
 
     private static void recall(ServerPlayer p) {
         Relic relic = record(p);
-        if (!p.isAlive() || p.isSpectator() || InfinitySnap.inVoid(p) || relic == null
-                || (relic.phase != IN_GROUND && relic.phase != CREATIVE_MISSING) || !relic.belongsTo(p)) return;
+        if (!p.isAlive() || p.isSpectator() || InfinitySnap.inVoid(p) || relic == null || !relic.belongsTo(p)) return;
         Session s = session(p);
+        if (relic.phase == IN_FLIGHT && CosmosTravel.inCosmos(p) && s.flight != null && s.display != null
+                && !s.display.isRemoved() && s.display.phase() == StormbreakerEntity.OUTBOUND) {
+            turn(s.display, s.flight);
+            return;
+        }
+        if (relic.phase != IN_GROUND && relic.phase != CREATIVE_MISSING) return;
         if (s.pull != null) return;
         if (p.getInventory().getFreeSlot() < 0) { status(p, "inventory_full"); return; }
         Vec3 hand = p.getEyePosition();
@@ -999,10 +1104,23 @@ public final class Stormbreaker {
 
     private static void startFlight(ServerPlayer p) {
         if (!p.isAlive() || p.isSpectator() || p.isPassenger() || p.isInWater()
-                || p.hasAttached(CosmosTravel.FLIGHT) || InfinitySnap.inVoid(p)
+                || InfinitySnap.inVoid(p)
                 || !ready(p)) return;
         Session s = session(p);
-        if (s.flying || s.descending || s.flightUsed) return;
+        if (CosmosTravel.inCosmos(p)) {
+            int now = server(p).getTickCount();
+            if (now < s.spaceBoostReady || !p.getAbilities().flying || !CosmicGauntlet.visible(p, p.getEyePosition(),
+                    p.getEyePosition().add(p.getLookAngle().scale(3)))) return;
+            s.spaceBoostReady = now + 50;
+            Vec3 from = p.getEyePosition(), direction = p.getLookAngle();
+            p.setDeltaMovement(direction.scale(1.45));
+            p.hurtMarked = true;
+            CosmicGauntlet.fx(p, 2, from.subtract(direction.scale(7)), from, 2.4f, 0xff72dfff, 14);
+            StormNetwork.visual(p, "takeoff", 0, p.position());
+            sound(p.level(), p.position(), SoundEvents.TRIDENT_RIPTIDE_3.value(), .85f, 1.2f);
+            return;
+        }
+        if (p.hasAttached(CosmosTravel.FLIGHT) || s.flying || s.descending || s.flightUsed) return;
         if (com.dantemorrigan.gauntlet.stones.MindArena.inFight(p)) { ModStatus.send(p, Component.translatable("msg.infinity_gauntlet.loki.no_flight")); return; }
         s.flying = true;
         s.flightUsed = true;
@@ -1266,8 +1384,13 @@ public final class Stormbreaker {
                 ? dragon.hurt(p.level(), dragon.head, source, damage)
                 : target.hurtServer(p.level(), source, damage);
         if (!landed) return false;
-        Vec3 kick = direction.multiply(1, 0, 1).normalize().scale(push);
-        target.push(kick.x, .18, kick.z);
+        if (CosmosTravel.inCosmos(p)) {
+            if (!target.isPushable()) return true;
+            target.push(direction.normalize().scale(push));
+        } else {
+            Vec3 kick = direction.multiply(1, 0, 1).normalize().scale(push);
+            target.push(kick.x, .18, kick.z);
+        }
         target.hurtMarked = true;
         return true;
     }

@@ -8,12 +8,15 @@ import com.dantemorrigan.gauntlet.net.ModNetwork;
 import com.dantemorrigan.gauntlet.uru.GauntletDamage;
 import net.fabricmc.fabric.api.event.lifecycle.v1.*;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
+import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.phys.*;
 import java.util.*;
 
 /** Zero-gravity variants: aim in 3D, affect bounding volumes, never edit empty space as terrain. */
 public final class CosmicGauntlet {
+    public static final int WARNING_SPHERE = 5;
     private record Hold(ServerPlayer owner, net.minecraft.world.item.ItemStack gauntlet, int started) {}
     private record Rock(ServerPlayer owner, net.minecraft.server.level.ServerLevel level, Vec3 from, Vec3 to, int impact) {}
     private static final Map<UUID,EnumMap<Ability,Long>> COOLDOWNS=new HashMap<>();
@@ -25,21 +28,53 @@ public final class CosmicGauntlet {
     public static boolean active(ServerPlayer p) {return HOLDS.containsKey(p.getUUID());}
     public static void stop(ServerPlayer p) {if(HOLDS.remove(p.getUUID())!=null) fx(p,4,p.position(),new Vec3(p.getId(),0,0),0,0,1);}
     private static TribunalSpace.Point point(Vec3 p) {return new TribunalSpace.Point(p.x,p.y,p.z);}
+    public static boolean clearPath(Vec3 from, Vec3 to, double margin) {
+        return TribunalSpace.clear(point(from), point(to), margin);
+    }
     public static double reach(ServerPlayer p,double wanted) {
-        if(!CosmosTravel.inCosmos(p)) return wanted;
-        Vec3 eye=p.getEyePosition();double result=0;
-        for(double d=1;d<=wanted;d++) {if(!TribunalSpace.clear(point(eye),point(eye.add(p.getLookAngle().scale(d))),1)) break;result=d;}
-        return result;
+        if (!CosmosTravel.inCosmos(p)) return wanted;
+        Vec3 eye = p.getEyePosition(), look = p.getLookAngle();
+        if (clearPath(eye, eye.add(look.scale(wanted)), 1)) return wanted;
+        double low = 0, high = wanted;
+        for (int i = 0; i < 10; i++) {
+            double distance = (low + high) * .5;
+            if (clearPath(eye, eye.add(look.scale(distance)), 1)) low = distance;
+            else high = distance;
+        }
+        return low;
+    }
+    public static boolean visible(ServerPlayer p, Vec3 from, Vec3 to) {
+        if (!clearPath(from, to, 0)) return false;
+        var hit = p.level().clip(new ClipContext(
+                from, to, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, p));
+        return hit.getType() == HitResult.Type.MISS || hit.getLocation().distanceToSqr(to) < .0025;
+    }
+    public static Vec3 blinkDestination(ServerPlayer p, double range) {
+        Vec3 eye = p.getEyePosition(), look = p.getLookAngle();
+        double distance = reach(p, range);
+        var hit = p.level().clip(new ClipContext(eye, eye.add(look.scale(distance)),
+                ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, p));
+        if (hit.getType() == HitResult.Type.BLOCK) distance = eye.distanceTo(hit.getLocation()) - 1;
+        for (double d = distance; d >= 1; d -= .5) {
+            Vec3 move = look.scale(d);
+            Vec3 destination = p.position().add(move);
+            if (clearPath(p.position(), destination, 1)
+                    && p.level().hasChunkAt(BlockPos.containing(destination))
+                    && p.level().noCollision(p, p.getBoundingBox().move(move))) return destination;
+        }
+        return null;
     }
     public static void fx(ServerPlayer p,int kind,Vec3 from,Vec3 to,float size,int color,int ticks) {
         var packet=new ModNetwork.CosmicFx(kind,from,to,size,color,ticks);
-        for(var witness:p.level().players()) if(witness.position().distanceToSqr(from)<400*400) ServerPlayNetworking.send(witness,packet);
+        for(var witness:p.level().players()) if(witness.position().distanceToSqr(from)<400*400 && ServerPlayNetworking.canSend(witness, ModNetwork.CosmicFx.TYPE)) ServerPlayNetworking.send(witness,packet);
     }
     private static void pulse(ServerPlayer p,Vec3 center,double radius,float damage,int color) {pulse(p,center,radius,damage,color,false);}
     private static void pulse(ServerPlayer p,Vec3 center,double radius,float damage,int color,boolean bossesOnly) {
         for(var e:CombatTargets.inArea(p,new AABB(center,center).inflate(radius))) {
             if(bossesOnly && !MindStone.isBoss(e)) continue;
-            if(!CombatTargets.near(e,center,radius)) continue;
+            if (!CombatTargets.near(e, center, radius)) continue;
+            Vec3 contact = CombatTargets.impact(e, center, e.getBoundingBox().getCenter(), 0);
+            if (!visible(p, center, contact == null ? e.getBoundingBox().getCenter() : contact)) continue;
             if(GauntletDamage.hurt(p.level(),e,p,p.damageSources().playerAttack(p),damage,center) && !MindStone.isBoss(e)) {
                 Vec3 direction=e.getBoundingBox().getCenter().subtract(center).normalize();e.push(direction.scale(.8));e.hurtMarked=true;
             }
@@ -66,7 +101,10 @@ public final class CosmicGauntlet {
             case SOUL -> {
                 var hit=PowerAbility.pick(p,reach(p,170));
                 if(hit instanceof EntityHitResult e && MindStone.isBoss(e.getEntity())) pulse(p,target,8,38,0xffffa151);
-                else SoulStone.action(p,0);
+                else {
+                    SoulStone.action(p,0);
+                    fx(p,2,p.getEyePosition(),target,2,0xffffa151,16);
+                }
                 cool(p,ability,100);
             }
             case SOUL_MASS -> {pulse(p,p.position(),155,22,0xffffa151,true);SoulStone.action(p,1);cool(p,ability,240);}
@@ -74,13 +112,16 @@ public final class CosmicGauntlet {
                 // The cosmic judge cannot be lifted; a mind assault still damages his exposed consciousness.
                 var hit=PowerAbility.pick(p,reach(p,170));
                 if(hit instanceof EntityHitResult entity && MindStone.isBoss(entity.getEntity())) {pulse(p,hit.getLocation(),6,22,0xffffdf61);cool(p,ability,65);}
-                else MindStone.action(p,0);
+                else {
+                    MindStone.action(p,0);
+                    fx(p,2,p.getEyePosition(),target,2,0xffffdf61,14);
+                }
             }
             case METEOR_STREAM -> {
                 Vec3 forward=p.getLookAngle();Vec3 side=forward.cross(new Vec3(0,1,0));if(side.lengthSqr()<.01) side=new Vec3(1,0,0);side=side.normalize();
                 for(int i=0;i<Math.min(8,3+charge/15);i++) {
                     Vec3 from=p.getEyePosition().add(side.scale((i%2==0?1:-1)*(7+i))).add(forward.scale(5));
-                    if(!TribunalSpace.clear(point(from),point(target),2)) continue;
+                    if(!visible(p,from,target) || !clearPath(from,target,2)) continue;
                     int flight=25+i*4;ROCKS.add(new Rock(p,p.level(),from,target,p.tickCount+flight));fx(p,1,from,target,2.4f,0xffff8045,flight);
                 }
                 cool(p,ability,220);

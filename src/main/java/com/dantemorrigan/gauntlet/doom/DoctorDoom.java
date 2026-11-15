@@ -2,6 +2,7 @@ package com.dantemorrigan.gauntlet.doom;
 
 import com.dantemorrigan.gauntlet.ModEntities;
 import com.dantemorrigan.gauntlet.ModParticles;
+import com.dantemorrigan.gauntlet.boss.BossFlight;
 import com.dantemorrigan.gauntlet.stormbreaker.Stormbreaker;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -78,6 +79,7 @@ public class DoctorDoom extends Monster {
 	private final ServerBossEvent bar = new ServerBossEvent(UUID.randomUUID(), Component.translatable("entity.infinity_gauntlet.doctor_doom"),
 			BossEvent.BossBarColor.GREEN, BossEvent.BossBarOverlay.PROGRESS);
 	private boolean passive;
+	private UUID pullTarget;
 	private int actionTicks, cooldown = 30, exposed, blowsTaken, sinceSuns = 200, sinceEdict = 400, sinceDrop = 100;
 	/** Time since each Infinity Gauntlet power was last used, and since any of them was (the final fight paces them). */
 	private int sinceMeteors = 300, sinceTime = 200, sinceReality = 150, sinceMind = 100, sinceSoul = 60, sinceGauntlet = 120, meteorWave;
@@ -148,6 +150,7 @@ public class DoctorDoom extends Monster {
 				&& fighting() && duelOpponent == null && a != A_ASCEND && a != A_STEAL_FLEE && a != A_INTRO) {
 			setInvulnerable(false);
 		}
+		if (a != A_PULL) pullTarget = null;
 		this.entityData.set(ACTION_STARTED, (int) level().getGameTime());
 		this.entityData.set(ACTION, a, true);
 		this.actionTicks = 0;
@@ -562,14 +565,16 @@ public class DoctorDoom extends Monster {
 		for (ServerPlayer p : level.players()) if (valid(p) && challengers.add(p.getUUID())) scaleForChallengers();
 		// Nobody fights him from the sky: out of reach for too long and he pulls them down to him, whatever the stage.
 		if (target != null && !passive && action != A_ASCEND && action != A_STEAL_FLEE) {
-			boolean up = !target.onGround() && !target.isInWater() && (target.getAbilities().flying || target.isFallFlying()
-					|| target.hasAttached(com.dantemorrigan.gauntlet.cosmos.CosmosTravel.FLIGHT) || target.getY() - this.getY() > 2.5);
+			boolean airborne = BossFlight.airborne(target);
 			double dist = this.distanceTo(target);
-			unreachable = (up && dist > 5) || dist > 26 ? unreachable + 1 : Math.max(0, unreachable - 2);
-			if (unreachable >= 45 && sincePull >= 120 && (action == A_IDLE || action == A_SORCERY || action == A_HEX || action == A_BOLT)) {
+			boolean canPull = dist <= 60 && this.hasLineOfSight(target);
+			unreachable = canPull && (airborne && dist > 5 || dist > 26) ? unreachable + 1 : Math.max(0, unreachable - 2);
+			if (canPull && unreachable >= (airborne ? 25 : 45) && sincePull >= 120
+					&& (action == A_IDLE || action == A_SORCERY || action == A_HEX || action == A_BOLT)) {
 				unreachable = 0;
 				sincePull = 0;
 				face(target.position());
+				pullTarget = target.getUUID();
 				setAction(A_PULL);
 				return;
 			}
@@ -945,7 +950,7 @@ public class DoctorDoom extends Monster {
 				}
 				if (t == 92) expose(46);
 			}
-			case A_PULL -> pull(level, target, t);
+			case A_PULL -> pull(level, t);
 			case A_METEORS -> meteors(level, target, t);
 			case A_TIME -> timeWind(level, t);
 			case A_REALITY -> realityWarp(level, target, t);
@@ -1011,14 +1016,23 @@ public class DoctorDoom extends Monster {
 	 * for a second, the gauntlet's flight (and creative flight) is cut, and the gauntlet stays silent for a few seconds so
 	 * the same trick cannot be repeated at once. No damage: it only brings the fight back to him.
 	 */
-	private void pull(ServerLevel level, ServerPlayer target, int t) {
+	private void pull(ServerLevel level, int t) {
+		ServerPlayer target = pullTarget != null && level.getPlayerByUUID(pullTarget) instanceof ServerPlayer player ? player : null;
+		if (target == null || !valid(target) || distanceToSqr(target) > 64 * 64 || !hasLineOfSight(target)
+				|| DoomCombat.dodging(target)) {
+			setAction(A_STAGGER);
+			expose(25);
+			return;
+		}
 		Vec3 at = this.position();
 		if (t == 4) {
 			DoomVfx.on(level, DoomVfx.CHARGE, this, 1.1f, 14, DoomVfx.GREEN);
 			DoomFx.sound(level, at, SoundEvents.RESPAWN_ANCHOR_CHARGE, 2f, 0.6f);
 			DoomFx.line(level, at, 80, "doom.pull");
+			DoomVfx.line(level, DoomVfx.TRAIL, hand(), target.getEyePosition(), .35f, 10, DoomVfx.GREEN);
 		}
-		if (target == null || !valid(target) || t < 14 || t > 44) return;
+		if (t < 14 || t > 44) return;
+		BossFlight.interrupt(target, .75);
 		Vec3 spot = at.add(Vec3.directionFromRotation(0, this.getYRot()).scale(3.0));
 		Vec3 to = spot.subtract(target.position());
 		double len = to.length();
@@ -1028,8 +1042,6 @@ public class DoctorDoom extends Monster {
 			target.hurtMarked = true;
 		}
 		target.fallDistance = 0;
-		if (target.getAbilities().flying) { target.getAbilities().flying = false; target.onUpdateAbilities(); }
-		if (target.hasAttached(com.dantemorrigan.gauntlet.cosmos.CosmosTravel.FLIGHT)) com.dantemorrigan.gauntlet.cosmos.CosmosTravel.action(target, 0);
 		if (t % 3 == 0) DoomVfx.line(level, DoomVfx.TRAIL, hand(), target.position().add(0, 1.2, 0), 0.5f, 4, DoomVfx.GREEN);
 		if (t == 44) {
 			GauntletSilence.silence(target, 140);

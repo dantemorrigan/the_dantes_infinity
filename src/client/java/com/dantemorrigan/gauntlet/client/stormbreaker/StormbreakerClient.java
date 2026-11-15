@@ -238,7 +238,9 @@ public final class StormbreakerClient {
         JsonObject clip = clip(packet.clip());
         if (clip == null) return;
         if ("heavens_wrath".equals(packet.clip())) {
-            storm = new Storm(packet.entity(), packet.origin(), start);
+            if (!level.dimension().equals(com.dantemorrigan.gauntlet.cosmos.CosmosTravel.DIMENSION)) {
+                storm = new Storm(packet.entity(), packet.origin(), start);
+            }
             if (packet.elapsed() != 0) return;
         }
         if (clip.has("keyframes")) ANIMATIONS.put(packet.entity(), new Animation(packet.clip(), start, clip.get("duration_ticks").getAsInt()));

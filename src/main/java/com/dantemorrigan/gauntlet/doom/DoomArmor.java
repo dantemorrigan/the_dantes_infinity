@@ -35,6 +35,9 @@ import net.minecraft.world.item.equipment.ArmorMaterial;
 import net.minecraft.world.item.equipment.ArmorType;
 import net.minecraft.world.item.equipment.EquipmentAssets;
 import net.minecraft.world.level.ClipContext;
+import com.dantemorrigan.gauntlet.cosmos.CosmosTravel;
+import com.dantemorrigan.gauntlet.power.CombatTargets;
+import com.dantemorrigan.gauntlet.power.CosmicGauntlet;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
@@ -240,9 +243,22 @@ public final class DoomArmor {
 
 	/** What the wearer aims at: the first living thing along the look within reach, or the block, or the far point. */
 	private static Vec3 aim(ServerPlayer p, double reach) {
-		Vec3 eye = p.getEyePosition(), end = eye.add(p.getLookAngle().scale(reach));
+		Vec3 eye = p.getEyePosition(), end = eye.add(p.getLookAngle().scale(CosmicGauntlet.reach(p, reach)));
 		BlockHitResult block = p.level().clip(new ClipContext(eye, end, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, p));
 		Vec3 stop = block.getType() == HitResult.Type.MISS ? end : block.getLocation();
+		if (CosmosTravel.inCosmos(p)) {
+			Vec3 closest = stop;
+			double best = eye.distanceToSqr(stop) + .01;
+			for (LivingEntity target : CombatTargets.inArea(p, new AABB(eye, stop).inflate(1.5))) {
+				if (!canHit(p, target)) continue;
+				var contact = CombatTargets.clip(target, eye, stop, .6);
+				if (contact.isPresent() && contact.get().distanceToSqr(eye) < best) {
+					closest = contact.get();
+					best = closest.distanceToSqr(eye);
+				}
+			}
+			return closest;
+		}
 		LivingEntity best = null;
 		double bestD = Double.MAX_VALUE;
 		for (LivingEntity e : p.level().getEntitiesOfClass(LivingEntity.class, new AABB(eye, stop).inflate(1.5), e -> canHit(p, e))) {
@@ -262,6 +278,7 @@ public final class DoomArmor {
 		if (ability == SUNS && w.suns > 0) { launchOne(p, w); return; }
 		if (now < w.ready[ability] && !p.isCreative()) return;
 		Vec3 eye = p.getEyePosition(), look = p.getLookAngle();
+		boolean cosmos = CosmosTravel.inCosmos(p);
 		switch (ability) {
 			case BOLT -> {
 				Vec3 from = hand(p), dir = aim(p, 64).subtract(from).normalize();
@@ -274,16 +291,32 @@ public final class DoomArmor {
 			case BASTION -> {
 				w.bastionUntil = now + BASTION_TICKS;
 				DoomVfx.on(level, DoomVfx.SHIELD, p, 1.7f, BASTION_TICKS, DoomVfx.GREEN);
-				DoomVfx.at(level, DoomVfx.SLAM, p.position(), 4.5f, 12, DoomVfx.GREEN);
+				if (cosmos) {
+					CosmicGauntlet.fx(p, 0, eye, eye, 4.5f, 0xff51f796, 18);
+					spacePulse(p, eye, 4.5, 4, 1.3);
+				} else {
+					DoomVfx.at(level, DoomVfx.SLAM, p.position(), 4.5f, 12, DoomVfx.GREEN);
+					for (LivingEntity e : level.getEntitiesOfClass(LivingEntity.class, p.getBoundingBox().inflate(4.5, 2, 4.5), e -> canHit(p, e))) {
+						Vec3 d = e.position().subtract(p.position()).normalize();
+						DoomCombat.hurt(level, e, p, 4);
+						e.knockback(1.3, -d.x, -d.z);
+					}
+				}
 				DoomFx.sound(level, eye, SoundEvents.IRON_GOLEM_REPAIR, 1f, 0.6f);
 				DoomFx.sound(level, eye, SoundEvents.BEACON_ACTIVATE, 0.8f, 1.6f);
-				for (LivingEntity e : level.getEntitiesOfClass(LivingEntity.class, p.getBoundingBox().inflate(4.5, 2, 4.5), e -> canHit(p, e))) {
-					Vec3 d = e.position().subtract(p.position()).normalize();
-					DoomCombat.hurt(level, e, p, 4);
-					e.knockback(1.3, -d.x, -d.z);
-				}
 			}
 			case JET -> {
+				if (cosmos) {
+					if (w.fuel < 20) { DoomFx.tell(p, "armor.no_fuel"); return; }
+					if (!CosmicGauntlet.visible(p, eye, eye.add(look.scale(3)))) return;
+					w.fuel -= 20;
+					p.setDeltaMovement(look.scale(1.3));
+					p.hurtMarked = true;
+					DoomVfx.on(level, DoomVfx.JET, p, 1, 12, DoomVfx.GOLD);
+					CosmicGauntlet.fx(p, 2, eye.subtract(look.scale(6)), eye, 1.6f, 0xffffaa46, 12);
+					DoomFx.sound(level, p.position(), SoundEvents.FIRECHARGE_USE, 1f, 0.6f);
+					break;
+				}
 				if (p.getAbilities().flying || p.isFallFlying()) { DoomFx.tell(p, "armor.already_flying"); return; }
 				if (w.fuel < 20) { DoomFx.tell(p, "armor.no_fuel"); return; }
 				w.jet = true;
@@ -292,15 +325,21 @@ public final class DoomArmor {
 				DoomFx.sound(level, p.position(), SoundEvents.FIRECHARGE_USE, 1f, 0.6f);
 			}
 			case RIFT -> {
-				Vec3 to = aim(p, RIFT_RANGE);
-				BlockHitResult hit = level.clip(new ClipContext(eye, eye.add(look.scale(RIFT_RANGE)), ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, p));
-				Vec3 target = hit.getType() == HitResult.Type.MISS ? eye.add(look.scale(RIFT_RANGE)) : hit.getLocation().subtract(look.scale(0.8));
-				if (to.distanceToSqr(eye) < target.distanceToSqr(eye)) target = to.subtract(look.scale(1.6));
-				BlockPos feet = BlockPos.containing(target.x, target.y - 0.9, target.z);
-				for (int i = 0; i < 4 && !(free(level, feet) && free(level, feet.above())); i++) feet = feet.above();
-				if (!free(level, feet) || !free(level, feet.above())) { DoomFx.tell(p, "armor.no_room"); return; }
+				Vec3 dest;
+				if (cosmos) {
+					dest = CosmicGauntlet.blinkDestination(p, RIFT_RANGE);
+					if (dest == null) { DoomFx.tell(p, "armor.no_room"); return; }
+				} else {
+					Vec3 to = aim(p, RIFT_RANGE);
+					BlockHitResult hit = level.clip(new ClipContext(eye, eye.add(look.scale(RIFT_RANGE)), ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, p));
+					Vec3 target = hit.getType() == HitResult.Type.MISS ? eye.add(look.scale(RIFT_RANGE)) : hit.getLocation().subtract(look.scale(0.8));
+					if (to.distanceToSqr(eye) < target.distanceToSqr(eye)) target = to.subtract(look.scale(1.6));
+					BlockPos feet = BlockPos.containing(target.x, target.y - 0.9, target.z);
+					for (int i = 0; i < 4 && !(free(level, feet) && free(level, feet.above())); i++) feet = feet.above();
+					if (!free(level, feet) || !free(level, feet.above())) { DoomFx.tell(p, "armor.no_room"); return; }
+					dest = new Vec3(feet.getX() + 0.5, feet.getY(), feet.getZ() + 0.5);
+				}
 				Vec3 from = p.position();
-				Vec3 dest = new Vec3(feet.getX() + 0.5, feet.getY(), feet.getZ() + 0.5);
 				p.teleportTo(level, dest.x, dest.y, dest.z, java.util.Set.of(), p.getYRot(), p.getXRot(), false);
 				p.fallDistance = 0;
 				DoomVfx.at(level, DoomVfx.RIFT, from.add(0, 1, 0), 1.1f, 14, DoomVfx.GREEN);
@@ -320,6 +359,17 @@ public final class DoomArmor {
 			}
 			default -> {
 				Vec3 at = aim(p, EDICT_RANGE);
+				if (cosmos) {
+					p.swing(InteractionHand.MAIN_HAND, true);
+					CosmicGauntlet.fx(p, CosmicGauntlet.WARNING_SPHERE, at, at, (float) EDICT_RADIUS, 0xff48fa7c, EDICT_DELAY);
+					DoomFx.sound(level, at, SoundEvents.EVOKER_PREPARE_SUMMON, 1.2f, 0.8f);
+					later(p, EDICT_DELAY, () -> {
+						CosmicGauntlet.fx(p, 0, at, at, (float) EDICT_RADIUS, 0xff48fa7c, 24);
+						DoomFx.sound(level, at, SoundEvents.WARDEN_SONIC_BOOM, 1.6f, .7f);
+						spacePulse(p, at, EDICT_RADIUS, 34, .9);
+					});
+					break;
+				}
 				BlockHitResult down = level.clip(new ClipContext(at.add(0, 0.5, 0), at.add(0, -24, 0), ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, p));
 				if (down.getType() == HitResult.Type.MISS) { DoomFx.tell(p, "armor.no_target"); return; }
 				Vec3 ground = down.getLocation();
@@ -347,13 +397,36 @@ public final class DoomArmor {
 		sync(p, w);
 	}
 
+	private static void spacePulse(ServerPlayer p, Vec3 center, double radius, float damage, double push) {
+		for (LivingEntity target : CombatTargets.inArea(p, new AABB(center, center).inflate(radius))) {
+			if (!canHit(p, target) || !CombatTargets.near(target, center, radius)) continue;
+			Vec3 targetCenter = target.getBoundingBox().getCenter();
+			Vec3 contact = CombatTargets.impact(target, center, targetCenter, 0);
+			if (!CosmicGauntlet.visible(p, center, contact == null ? targetCenter : contact)) continue;
+			if (DoomCombat.hurt(p.level(), target, p, damage) && target.isPushable()) {
+				target.push(targetCenter.subtract(center).normalize().scale(push));
+				target.hurtMarked = true;
+			}
+		}
+	}
+
 	/** One sun leaves the orbit and flies where the wearer looks; the last one starts the cooldown. */
 	private static void launchOne(ServerPlayer p, Wearer w) {
 		long now = p.level().getGameTime();
 		if (now < w.nextSun) return;
 		Vec3 target = aim(p, 64);
 		LivingEntity lock = null;
-		for (LivingEntity e : p.level().getEntitiesOfClass(LivingEntity.class, new AABB(target, target).inflate(1.4), e -> canHit(p, e))) lock = e;
+		if (CosmosTravel.inCosmos(p)) {
+			for (LivingEntity candidate : CombatTargets.inArea(p, new AABB(target, target).inflate(1.4))) {
+				if (canHit(p, candidate) && !(candidate instanceof com.dantemorrigan.gauntlet.boss.LivingTribunal)
+						&& CombatTargets.near(candidate, target, 1.4)) {
+					lock = candidate;
+					break;
+				}
+			}
+		} else {
+			for (LivingEntity e : p.level().getEntitiesOfClass(LivingEntity.class, new AABB(target, target).inflate(1.4), e -> canHit(p, e))) lock = e;
+		}
 		w.suns--;
 		w.nextSun = now + 5;
 		launch(p, w.suns, target, lock);
@@ -376,6 +449,16 @@ public final class DoomArmor {
 
 	private static boolean free(ServerLevel level, BlockPos pos) {
 		return level.getBlockState(pos).getCollisionShape(level, pos).isEmpty();
+	}
+
+	public static boolean jetsActive(ServerPlayer p) {
+		Wearer wearer = WEARERS.get(p.getUUID());
+		return wearer != null && wearer.jet;
+	}
+
+	public static void releaseJets(ServerPlayer p) {
+		Wearer wearer = WEARERS.get(p.getUUID());
+		if (wearer != null) stopJet(p, wearer);
 	}
 
 	private static void stopJet(ServerPlayer p, Wearer w) {
