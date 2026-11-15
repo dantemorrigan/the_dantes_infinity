@@ -84,6 +84,8 @@ public class DoctorDoom extends Monster {
 	private record Incoming(int tick, Vec3 at, int id, boolean solar) {}
 	private final List<Incoming> incoming = new ArrayList<>();
 	private int timeShifted;
+	/** The stolen gauntlet while it is still flying to his hand in the theft cutscene. */
+	private net.minecraft.world.item.ItemStack stolenInHand = net.minecraft.world.item.ItemStack.EMPTY;
 	/** How long the challenger has been out of his reach (in the air, or far off), and the pause before he pulls again. */
 	private int unreachable, sincePull = 200;
 	private float castDamage, siphonDamage;
@@ -291,7 +293,9 @@ public class DoctorDoom extends Monster {
 			com.dantemorrigan.gauntlet.ability.AbilityController.cancel(victim);
 			ascendVictim = victim.getUUID();
 		}
-		this.setItemSlot(net.minecraft.world.entity.EquipmentSlot.OFFHAND, stolen.copy());
+		// The gauntlet flies to his hand first (the cutscene's first second); only then is it on his arm.
+		this.setItemSlot(net.minecraft.world.entity.EquipmentSlot.OFFHAND, net.minecraft.world.item.ItemStack.EMPTY);
+		this.stolenInHand = stolen.copy();
 		DoomFinalEncounter.onGauntletStolen(level.getServer(), victim, stolen);
 		this.setInvulnerable(true);
 		setAction(A_STEAL_FLEE);
@@ -316,6 +320,7 @@ public class DoctorDoom extends Monster {
 			DoomVfx.on(level, DoomVfx.CHARGE, this, 1.4f, 25, DoomVfx.SUN);
 		}
 		if (t == 24) {
+			if (!stolenInHand.isEmpty()) this.setItemSlot(net.minecraft.world.entity.EquipmentSlot.OFFHAND, stolenInHand.copy());
 			DoomFx.near(level, at, 120, DoomFx.FLASH, 0, 1.1f, 16);
 			DoomFx.near(level, at, 120, DoomFx.SHAKE, 0, 1.0f, 16);
 			DoomVfx.at(level, DoomVfx.IMPACT, at.add(0, 1.7, 0), 2.5f, 18, DoomVfx.SUN);
