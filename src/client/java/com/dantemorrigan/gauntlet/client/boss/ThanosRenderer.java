@@ -59,7 +59,7 @@ public final class ThanosRenderer extends EntityRenderer<Thanos, ThanosRenderer.
 		super.extractRenderState(e, s, partial);
 		s.bodyYaw = Mth.rotLerp(partial, e.yBodyRotO, e.yBodyRot);
 		s.action = e.action();
-		s.actionTime = (e.tickCount - e.actionStartTick + partial) / 20f;
+		s.actionTime = e.actionTime(partial);
 		s.walkPos = e.walkAnimation.position(partial);
 		s.walkSpeed = Math.min(1f, e.walkAnimation.speed(partial));
 		s.gauntlet = e.hasGauntlet();

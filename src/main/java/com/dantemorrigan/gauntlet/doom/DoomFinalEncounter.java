@@ -24,6 +24,8 @@ import net.fabricmc.fabric.api.event.player.UseItemCallback;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Registry;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
@@ -32,6 +34,7 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.level.TicketType;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
@@ -41,6 +44,7 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LightningBolt;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
@@ -83,6 +87,9 @@ public final class DoomFinalEncounter {
 
 	public static final double ARENA_RADIUS = 36.0;
 	public static final double DOME_RADIUS = 20.0;
+	private static final TicketType CUTSCENE_TICKET = Registry.register(BuiltInRegistries.TICKET_TYPE,
+			InfinityGauntlet.id("doom_final_cutscene"),
+			new TicketType(40, TicketType.FLAG_LOADING | TicketType.FLAG_SIMULATION));
 
 	private record SavedState(int stage, BlockPos arenaPos, int stoneMask, boolean arenaBuilt, String ownerUuid,
 			ItemStack gauntlet, String returnId, List<String> victors) {
@@ -347,8 +354,13 @@ public final class DoomFinalEncounter {
 			if (server.getTickCount() % 20 == 0) returnGauntlet(server);
 			return;
 		}
-		stageTicks++;
 		ServerLevel overworld = server.overworld();
+		if (stage == STAGE_THANOS_ARRIVAL || stage == STAGE_KILL_THANOS_CUTSCENE) {
+			var chunk = new ChunkPos(arenaPos.getX() >> 4, arenaPos.getZ() >> 4);
+			overworld.getChunkSource().addTicketWithRadius(CUTSCENE_TICKET, chunk, 2);
+			if (!overworld.isPositionEntityTicking(arenaPos)) return;
+		}
+		stageTicks++;
 
 		if (stageTicks % 15 == 0 && (stage != STAGE_VICTORY_CUTSCENE || stageTicks < 210)) syncAll(server);
 		if (stage == STAGE_THEFT_CUTSCENE) {
@@ -399,7 +411,7 @@ public final class DoomFinalEncounter {
 				if (doom != null && stageTicks % 8 == 0) {
 					overworld.sendParticles(ModParticles.DOOM_RUNE_MOTE, doom.getX(), doom.getY() + 1.5, doom.getZ(), 2, 0.4, 0.4, 0.4, 0.02);
 				}
-				if (nearest != null && nearest.position().distanceTo(center) <= 16.5) {
+				if (doom != null && nearest != null && nearest.position().distanceTo(center) <= 16.5) {
 					// Push player back and start Cutscene 2 (Thanos Arrival & Dome Duel)!
 					Vec3 dir = nearest.position().subtract(center);
 					Vec3 flat = new Vec3(dir.x, 0, dir.z);
@@ -427,15 +439,24 @@ public final class DoomFinalEncounter {
 		// A Doom left sunk into the floor (an older save placed him inside the ground block) is lifted onto it.
 		if (doom != null && !doom.isRemoved() && doom.isAlive() && doom.getY() < center.y - 0.4
 				&& Math.hypot(doom.getX() - center.x, doom.getZ() - center.z) < ARENA_RADIUS) {
-			doom.teleportTo(doom.getX(), center.y, doom.getZ());
+			Vec3 landing = DoctorDoom.findFooting(overworld, doom, new Vec3(doom.getX(), center.y, doom.getZ()));
+			if (landing != null) {
+				doom.teleportTo(landing.x, landing.y, landing.z);
+				doom.setDeltaMovement(Vec3.ZERO);
+			}
 		}
 		if (doom == null || doom.isRemoved() || !doom.isAlive()) {
 			doom = ModEntities.DOCTOR_DOOM.create(overworld, EntitySpawnReason.EVENT);
 			if (doom == null) return;
 			if (stolenGauntlet.isEmpty()) stolenGauntlet = buildGauntletFromMask(stoneMask);
 			doom.setupArenaWait(center, stolenGauntlet);
-			doom.snapTo(center.x, center.y, center.z, 0f, 0f);
-			overworld.addFreshEntity(doom);
+			Vec3 landing = DoctorDoom.findFooting(overworld, doom, center);
+			if (landing == null) {
+				doom = null;
+				return;
+			}
+			doom.snapTo(landing.x, landing.y, landing.z, 0f, 0f);
+			if (!overworld.addFreshEntity(doom)) doom = null;
 		}
 	}
 
@@ -445,8 +466,7 @@ public final class DoomFinalEncounter {
 		save(overworld.getServer());
 		ensureDoomPresent(overworld, center);
 		if (doom != null) {
-			Vec3 doomSpot = center.add(-5.5, 0, 0);
-			doom.teleportTo(doomSpot.x, center.y, doomSpot.z);
+			placeActor(overworld, doom, center.add(-5.5, 0, 0));
 			doom.face(center.add(5.5, 0, 0));
 		}
 		shipHover = center.add(28, 76, 0);
@@ -518,35 +538,52 @@ public final class DoomFinalEncounter {
 
 	private static void tickDomeDuel(ServerLevel overworld, Vec3 center) {
 		keepPlayersOutsideDome(overworld, center);
-		if (!overworld.isLoaded(arenaPos)) return;
+		if (!overworld.isPositionEntityTicking(arenaPos)) return;
+		DoctorDoom previousDoom = doom;
+		Thanos previousThanos = thanos;
 		ensureDoomPresent(overworld, center);
 		if (thanos == null || thanos.isRemoved() || !thanos.isAlive()) {
 			Vec3 landing = center.add(5.5, 0, 0);
 			thanos = ModEntities.THANOS.create(overworld, EntitySpawnReason.EVENT);
 			if (thanos != null) {
 				thanos.setHasGauntlet(false);
-				thanos.snapTo(landing.x, landing.y, landing.z, 90f, 0f);
-				overworld.addFreshEntity(thanos);
+				landing = DoctorDoom.findFooting(overworld, thanos, landing);
+				if (landing == null) thanos = null;
+				else {
+					thanos.snapTo(landing.x, landing.y, landing.z, 90f, 0f);
+					if (!overworld.addFreshEntity(thanos)) thanos = null;
+				}
 			}
 		}
 		if (doom != null && thanos != null) {
-			if (!doom.fighting()) doom.beginDuelWithThanos(thanos, center);
-			if (!thanos.fighting()) thanos.beginDuelWithMob(doom);
-			// Keep both combatants inside the dome radius (16.5 blocks) and healthy
-			clampInsideDome(doom, center, 16.0);
-			clampInsideDome(thanos, center, 16.0);
+			if (doom != previousDoom || thanos != previousThanos || !doom.fighting() || !thanos.fighting()) {
+				doom.beginDuelWithThanos(thanos, center);
+				thanos.beginDuelWithMob(doom);
+			}
+			clampInsideDome(overworld, doom, center, 16.0);
+			clampInsideDome(overworld, thanos, center, 16.0);
 			doom.setHealth(doom.getMaxHealth());
 			thanos.setHealth(thanos.getMaxHealth());
 		}
 	}
 
-	private static void clampInsideDome(net.minecraft.world.entity.LivingEntity entity, Vec3 center, double maxR) {
+	private static void clampInsideDome(ServerLevel level, net.minecraft.world.entity.LivingEntity entity, Vec3 center, double maxR) {
 		Vec3 off = entity.position().subtract(center);
-		double d = Math.hypot(off.x, off.z);
-		if (d > maxR) {
-			Vec3 clamped = center.add(off.x * (maxR / d), 0, off.z * (maxR / d));
-			entity.teleportTo(clamped.x, center.y, clamped.z);
+		double distance = off.horizontalDistance();
+		if (distance > maxR) {
+			double scale = (maxR - 2) / distance;
+			placeActor(level, entity, center.add(off.x * scale, 0, off.z * scale));
+		} else if (off.y < -3 || entity.isInWall()) {
+			placeActor(level, entity, center.add(off.x, 0, off.z));
 		}
+	}
+
+	private static void placeActor(ServerLevel level, net.minecraft.world.entity.LivingEntity entity, Vec3 position) {
+		Vec3 landing = DoctorDoom.findFooting(level, entity, position);
+		if (landing == null) return;
+		entity.teleportTo(landing.x, landing.y, landing.z);
+		entity.setDeltaMovement(Vec3.ZERO);
+		entity.fallDistance = 0;
 	}
 
 	private static void keepPlayersOutsideDome(ServerLevel overworld, Vec3 center) {
@@ -581,16 +618,18 @@ public final class DoomFinalEncounter {
 				overworld.sendParticles(ModParticles.DOOM_RUNE_MOTE, x, y, z, 1, 0.2, 0.2, 0.2, 0.05);
 			}
 			if (doom != null) {
-				doom.teleportTo(center.x - 3.5, center.y, center.z);
+				doom.finalCutscenePose(DoctorDoom.A_IDLE);
+				placeActor(overworld, doom, center.add(-3.5, 0, 0));
 				if (thanos != null) doom.face(thanos.position());
 			}
 			if (thanos != null) {
-				thanos.teleportTo(center.x + 3.5, center.y, center.z);
+				placeActor(overworld, thanos, center.add(3.5, 0, 0));
 				thanos.faceTowards(center.add(-3.5, 0, 0));
 				thanos.pose(Thanos.A_STAGGER);
 			}
 		}
 		if (t == 30 && doom != null && thanos != null) {
+			doom.finalCutscenePose(DoctorDoom.A_SORCERY);
 			// Doom channels all stones + magic into Thanos!
 			DoomVfx.on(overworld, DoomVfx.CHARGE, doom, 1.6f, 35, DoomVfx.SUN);
 			DoomFx.sound(overworld, center, SoundEvents.BEACON_POWER_SELECT, 2.5f, 0.55f);
@@ -602,6 +641,7 @@ public final class DoomFinalEncounter {
 			DoomVfx.line(overworld, DoomVfx.TRAIL, from, to, 0.65f, 4, DoomVfx.SUN);
 			DoomVfx.line(overworld, DoomVfx.TRAIL, from, to, 0.38f, 4, DoomVfx.GREEN);
 		}
+		if (t == 86 && doom != null) doom.finalCutscenePose(DoctorDoom.A_IDLE);
 		if (t == 86 && thanos != null) {
 			Vec3 tPos = thanos.position();
 			DoomVfx.at(overworld, DoomVfx.COLUMN, tPos.add(0, 0.1, 0), 3.2f, 20, DoomVfx.EDICT_GREEN);
@@ -612,6 +652,7 @@ public final class DoomFinalEncounter {
 			DoomFx.near(overworld, center, 100, DoomFx.FLASH, 0, 0.9f, 14);
 			thanos.killInCutscene(overworld);
 		}
+		if (t == 87 && doom != null) doom.finalCutscenePose(DoctorDoom.A_BOLT);
 		if (t == 105 && doom != null) {
 			// Doom fires a colossal beam into the sky at Sanctuary II!
 			DoomFx.line(overworld, center, 100, "doom.kill_thanos_2");
@@ -629,6 +670,7 @@ public final class DoomFinalEncounter {
 			// Sanctuary II explodes and crashes down!
 			startShipCrash(overworld, center);
 		}
+		if (t == 125 && doom != null) doom.finalCutscenePose(DoctorDoom.A_IDLE);
 		if (t == 185 && doom != null) {
 			DoomFx.line(overworld, center, 100, "doom.final_challenge");
 		}

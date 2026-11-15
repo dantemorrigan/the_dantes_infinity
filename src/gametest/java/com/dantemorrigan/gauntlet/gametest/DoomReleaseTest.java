@@ -67,11 +67,26 @@ public final class DoomReleaseTest implements FabricClientGameTest {
 			check(!ctx.computeOnClient(mc -> com.dantemorrigan.gauntlet.client.boss.ThanosClient.hasBossBar()),
 					"Thanos displayed a health bar during Doom's duel");
 			server.runOnServer(s -> check(DoomFinalEncounter.debugForceBreakDome(player(s)), "Doom's dome did not start"));
-			ctx.waitTicks(260);
+			ctx.waitTicks(140);
+			server.runOnServer(s -> {
+				ServerPlayer p = player(s);
+				var actors = s.overworld().getEntitiesOfClass(DoctorDoom.class, p.getBoundingBox().inflate(80), DoctorDoom::isAlive);
+				check(actors.size() == 1 && !actors.getFirst().fighting(), "Doom attacked players before the execution scene ended");
+			});
+			ctx.waitTicks(120);
+			server.runOnServer(s -> {
+				var center = Vec3.atBottomCenterOf(DoomFinalEncounter.arenaPosition(s)).add(0, 1, 0);
+				var actors = s.overworld().getEntitiesOfClass(DoctorDoom.class, player(s).getBoundingBox().inflate(80), DoctorDoom::finalBoss);
+				check(actors.size() == 1, "No unique final Doom to test");
+				actors.getFirst().teleportTo(center.x, center.y - 6, center.z);
+			});
+			ctx.waitTicks(20);
 			server.runOnServer(s -> {
 				ServerPlayer p = player(s);
 				var bosses = s.overworld().getEntitiesOfClass(DoctorDoom.class, p.getBoundingBox().inflate(80), DoctorDoom::finalBoss);
 				check(bosses.size() == 1, "No unique final Doom to defeat");
+				check(bosses.getFirst().getY() > DoomFinalEncounter.arenaPosition(s).getY() - 2
+						&& !bosses.getFirst().isInWall(), "Doom stayed trapped under the arena floor");
 				p.setItemInHand(InteractionHand.OFF_HAND, new ItemStack(ModItems.GAUNTLET));
 				bosses.getFirst().die(p.damageSources().playerAttack(p));
 				check(DoomFinalEncounter.currentStage(s) == DoomFinalEncounter.STAGE_VICTORY_CUTSCENE, "Victory did not start");

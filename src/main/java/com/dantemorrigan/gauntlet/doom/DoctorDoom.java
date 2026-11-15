@@ -4,6 +4,7 @@ import com.dantemorrigan.gauntlet.ModEntities;
 import com.dantemorrigan.gauntlet.ModParticles;
 import com.dantemorrigan.gauntlet.stormbreaker.Stormbreaker;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
@@ -22,6 +23,7 @@ import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LightningBolt;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.MoverType;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.monster.Monster;
@@ -69,13 +71,12 @@ public class DoctorDoom extends Monster {
 	private static final float MAX_HIT = 45;
 
 	private static final EntityDataAccessor<Integer> ACTION = SynchedEntityData.defineId(DoctorDoom.class, EntityDataSerializers.INT);
+	private static final EntityDataAccessor<Integer> ACTION_STARTED = SynchedEntityData.defineId(DoctorDoom.class, EntityDataSerializers.INT);
 	private static final EntityDataAccessor<Integer> FLAGS = SynchedEntityData.defineId(DoctorDoom.class, EntityDataSerializers.INT);
 	private static final EntityDataAccessor<Integer> PHASE = SynchedEntityData.defineId(DoctorDoom.class, EntityDataSerializers.INT);
 
 	private final ServerBossEvent bar = new ServerBossEvent(UUID.randomUUID(), Component.translatable("entity.infinity_gauntlet.doctor_doom"),
 			BossEvent.BossBarColor.GREEN, BossEvent.BossBarOverlay.PROGRESS);
-	/** Client: tickCount when the current action began. */
-	public int actionStartTick;
 	private boolean passive;
 	private int actionTicks, cooldown = 30, exposed, blowsTaken, sinceSuns = 200, sinceEdict = 400, sinceDrop = 100;
 	/** Time since each Infinity Gauntlet power was last used, and since any of them was (the final fight paces them). */
@@ -116,14 +117,14 @@ public class DoctorDoom extends Monster {
 	protected void defineSynchedData(SynchedEntityData.Builder builder) {
 		super.defineSynchedData(builder);
 		builder.define(ACTION, A_IDLE);
+		builder.define(ACTION_STARTED, 0);
 		builder.define(FLAGS, 0);
 		builder.define(PHASE, 1);
 	}
 
-	@Override
-	public void onSyncedDataUpdated(EntityDataAccessor<?> accessor) {
-		super.onSyncedDataUpdated(accessor);
-		if (ACTION.equals(accessor)) this.actionStartTick = this.tickCount;
+	public float actionTime(float partial) {
+		int elapsed = (int) level().getGameTime() - this.entityData.get(ACTION_STARTED);
+		return (Math.max(0, elapsed) + partial) / 20f;
 	}
 
 	public int action() { return this.entityData.get(ACTION); }
@@ -142,6 +143,12 @@ public class DoctorDoom extends Monster {
 	}
 
 	private void setAction(int a) {
+		int previous = action();
+		if (a != previous && (previous == A_DECOY || previous == A_SHIFT || previous == A_NOVA)
+				&& fighting() && duelOpponent == null && a != A_ASCEND && a != A_STEAL_FLEE && a != A_INTRO) {
+			setInvulnerable(false);
+		}
+		this.entityData.set(ACTION_STARTED, (int) level().getGameTime());
 		this.entityData.set(ACTION, a, true);
 		this.actionTicks = 0;
 		this.aim = null;
@@ -222,6 +229,15 @@ public class DoctorDoom extends Monster {
 		this.entityData.set(PHASE, 3);
 		setAction(A_IDLE);
 		this.cooldown = 10;
+	}
+
+	void finalCutscenePose(int action) {
+		this.duelOpponent = null;
+		this.getNavigation().stop();
+		this.setDeltaMovement(Vec3.ZERO);
+		this.setInvulnerable(true);
+		setFlag(FLAG_FIGHT, false);
+		setAction(action);
 	}
 
 	public void beginFinalPlayerFight(Vec3 center) {
@@ -539,6 +555,7 @@ public class DoctorDoom extends Monster {
 			return;
 		}
 		if (!fighting()) return;
+		if (action != A_ASCEND && tickCount % 10 == 0 && recoverFooting(level)) return;
 		if (exposed > 0 && --exposed == 0) setFlag(FLAG_EXPOSED, false);
 		sinceSuns++;
 		sinceEdict++;
@@ -569,6 +586,7 @@ public class DoctorDoom extends Monster {
 				sincePull = 0;
 				face(target.position());
 				setAction(A_PULL);
+				return;
 			}
 		}
 		if (action != A_IDLE) {
@@ -672,8 +690,11 @@ public class DoctorDoom extends Monster {
 						double a = this.random.nextDouble() * Math.TAU;
 						Vec3 center = arenaCenter != null ? arenaCenter : at;
 						Vec3 to = center.add(Math.cos(a) * 8, 0, Math.sin(a) * 8);
-						this.teleportTo(to.x, center.y, to.z);
-						DoomFx.bill(level, ModParticles.DOOM_RIFT_STEP, to.add(0, 1.4, 0), 0);
+						Vec3 landing = findFooting(level, this, to);
+						if (landing != null) {
+							this.teleportTo(landing.x, landing.y, landing.z);
+							DoomFx.bill(level, ModParticles.DOOM_RIFT_STEP, landing.add(0, 1.4, 0), 0);
+						}
 						face(rival.position());
 					}
 				}
@@ -757,10 +778,12 @@ public class DoctorDoom extends Monster {
 					List<Vec3> spots = new ArrayList<>();
 					for (int i = 0; i < 3; i++) {
 						double a = this.random.nextDouble() * Math.TAU;
-						spots.add(clampToArena(LatveriaPlan.ARENA.add(Math.cos(a) * (5 + i * 2.5), 0, Math.sin(a) * (5 + i * 2.5))));
+						Vec3 preferred = clampToArena(LatveriaPlan.ARENA.add(Math.cos(a) * (5 + i * 2.5), 0, Math.sin(a) * (5 + i * 2.5)));
+						Vec3 landing = findFooting(level, this, preferred);
+						if (landing != null && !spots.contains(landing)) spots.add(landing);
 					}
 					java.util.Collections.shuffle(spots, new java.util.Random(this.random.nextLong()));
-					for (int i = 0; i < 3; i++) {
+					for (int i = 0; i < spots.size(); i++) {
 						Vec3 s = spots.get(i);
 						DoomFx.bill(level, ModParticles.DOOM_PHASE_SHIFT, s.add(0, 1.4, 0), 2);
 						DoomFx.flat(level, ModParticles.DOOM_SLAM_WAVE, s, 3);
@@ -829,13 +852,21 @@ public class DoctorDoom extends Monster {
 			}
 			case A_SLAM -> {
 				if (t == 7) { DoomVfx.on(level, DoomVfx.JET, this, 1, 22, DoomVfx.GOLD); DoomFx.sound(level, at, SoundEvents.FIRECHARGE_USE, 1.4f, 0.6f); }
-				if (t == 8) { from = at; aim = target == null ? at : clampToArena(target.position()); DoomFx.flat(level, ModParticles.DOOM_DROP_MARKER, aim, 2.4); }
+				if (t == 8) {
+					from = at;
+					aim = target == null ? null : findFooting(level, this, clampToArena(target.position()));
+					if (aim == null) {
+						setAction(A_IDLE);
+						return;
+					}
+					DoomFx.flat(level, ModParticles.DOOM_DROP_MARKER, aim, 2.4);
+				}
 				if (t > 8 && t <= 28 && aim != null && from != null) {
 					float k = (t - 8) / 20f;
 					Vec3 p = from.lerp(aim, k).add(0, Math.sin(k * Math.PI) * 5, 0);
 					this.setDeltaMovement(Vec3.ZERO);
-					this.setPos(p.x, p.y, p.z);
-					face(aim);
+					this.move(MoverType.SELF, p.subtract(this.position()));
+					if (t < 28) face(aim);
 				}
 				if (t == 28) {
 					DoomFx.flat(level, ModParticles.DOOM_SLAM_WAVE, this.position(), 0);
@@ -867,8 +898,11 @@ public class DoctorDoom extends Monster {
 				if (t == 14) {
 					Vec3 to = target == null ? (arenaCenter != null ? arenaCenter : LatveriaPlan.ARENA)
 							: clampToArena(target.position().add(Vec3.directionFromRotation(0, target.getYRot()).scale(-6)));
-					this.teleportTo(to.x, to.y, to.z);
-					DoomFx.bill(level, ModParticles.DOOM_RIFT_STEP, to.add(0, 1.4, 0), 0);
+					Vec3 landing = findFooting(level, this, to);
+					if (landing != null) {
+						this.teleportTo(landing.x, landing.y, landing.z);
+						DoomFx.bill(level, ModParticles.DOOM_RIFT_STEP, landing.add(0, 1.4, 0), 0);
+					}
 					if (target != null) face(target.position());
 				}
 				if (t == 21) DoomFx.bill(level, ModParticles.DOOM_DOOM_SMOKE, at.add(0, 1, 0), 2);
@@ -1181,6 +1215,44 @@ public class DoctorDoom extends Monster {
 				DoomFx.sound(level, target.position(), SoundEvents.SOUL_ESCAPE.value(), 1.6f, 0.9f);
 			}
 		}
+	}
+
+	static Vec3 findFooting(ServerLevel level, LivingEntity boss, Vec3 preferred) {
+		int[] heightOffsets = {0, 1, -1, 2, -2, 3, -3};
+		for (int radius = 0; radius <= 4; radius++) {
+			for (int x = -radius; x <= radius; x++) {
+				for (int z = -radius; z <= radius; z++) {
+					if (Math.max(Math.abs(x), Math.abs(z)) != radius) continue;
+					for (int y : heightOffsets) {
+						Vec3 at = preferred.add(x, y, z);
+						BlockPos feet = BlockPos.containing(at);
+						if (!level.isLoaded(feet) || !level.getWorldBorder().isWithinBounds(feet)) continue;
+						BlockPos floor = feet.below();
+						var box = boss.getBoundingBox().move(at.subtract(boss.position()));
+						if (level.getBlockState(floor).isFaceSturdy(level, floor, Direction.UP)
+								&& level.noCollision(boss, box) && !level.containsAnyLiquid(box)) return at;
+					}
+				}
+			}
+		}
+		return null;
+	}
+
+	private boolean recoverFooting(ServerLevel level) {
+		if (arenaCenter == null && level.dimension() != Latveria.LEVEL) return false;
+		Vec3 center = arenaCenter == null ? LatveriaPlan.ARENA : arenaCenter;
+		if (!isInWall() && getY() >= center.y - 4 && (arenaCenter == null
+				|| position().subtract(center).horizontalDistance() <= DoomFinalEncounter.ARENA_RADIUS + 5)) return false;
+		Vec3 safe = findFooting(level, this, clampToArena(position()));
+		if (safe == null) safe = findFooting(level, this, center);
+		if (safe == null) return false;
+		if (nodesUp) placeNodes(level, false);
+		getNavigation().stop();
+		teleportTo(safe.x, safe.y, safe.z);
+		setDeltaMovement(Vec3.ZERO);
+		fallDistance = 0;
+		setAction(A_IDLE);
+		return true;
 	}
 
 	private Vec3 clampToArena(Vec3 p) {

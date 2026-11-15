@@ -75,10 +75,10 @@ public class Thanos extends Monster {
 	private static final DustParticleOptions RAGE_DUST = new DustParticleOptions(0xFF7837, 1.8f);
 
 	private static final EntityDataAccessor<Integer> ACTION = SynchedEntityData.defineId(Thanos.class, EntityDataSerializers.INT);
+	private static final EntityDataAccessor<Integer> ACTION_STARTED = SynchedEntityData.defineId(Thanos.class, EntityDataSerializers.INT);
 	private static final EntityDataAccessor<Integer> FLAGS = SynchedEntityData.defineId(Thanos.class, EntityDataSerializers.INT);
 
 	/** Client: tickCount when the current action began. */
-	public int actionStartTick;
 	private int actionTicks;
 	private int cooldown = 30;
 	private UUID targetId;
@@ -123,13 +123,13 @@ public class Thanos extends Monster {
 	protected void defineSynchedData(SynchedEntityData.Builder builder) {
 		super.defineSynchedData(builder);
 		builder.define(ACTION, A_IDLE);
+		builder.define(ACTION_STARTED, 0);
 		builder.define(FLAGS, 0);
 	}
 
-	@Override
-	public void onSyncedDataUpdated(EntityDataAccessor<?> accessor) {
-		super.onSyncedDataUpdated(accessor);
-		if (ACTION.equals(accessor)) this.actionStartTick = this.tickCount;
+	public float actionTime(float partial) {
+		int elapsed = (int) level().getGameTime() - this.entityData.get(ACTION_STARTED);
+		return (Math.max(0, elapsed) + partial) / 20f;
 	}
 
 	@Override
@@ -157,6 +157,7 @@ public class Thanos extends Monster {
 	public void setHasGauntlet(boolean v) { setFlag(FLAG_GAUNTLET, v); }
 
 	private void setAction(int a) {
+		this.entityData.set(ACTION_STARTED, (int) level().getGameTime());
 		this.entityData.set(ACTION, a, true);
 		this.actionTicks = 0;
 		this.hitThisAction.clear();

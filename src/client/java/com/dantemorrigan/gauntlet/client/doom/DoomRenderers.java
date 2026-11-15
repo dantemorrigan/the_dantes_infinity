@@ -95,7 +95,7 @@ public final class DoomRenderers {
 			s.bodyYaw = Mth.rotLerp(partial, e.yBodyRotO, e.yBodyRot);
 			s.action = e.action();
 			s.phase = e.phase();
-			s.actionTime = (e.tickCount - e.actionStartTick + partial) / 20f;
+			s.actionTime = e.actionTime(partial);
 			s.walkPos = e.walkAnimation.position(partial);
 			s.walkSpeed = Math.min(1f, e.walkAnimation.speed(partial));
 			s.hurt = e.hurtTime > 0 && !e.isDeadOrDying();
@@ -120,6 +120,10 @@ public final class DoomRenderers {
 				GeoModel.BonePose head = bones.computeIfAbsent("head", k -> new GeoModel.BonePose());
 				head.ry += Mth.clamp(s.headYaw, -60, 60);
 				head.rx += Mth.clamp(s.headPitch, -30, 30);
+			} else if (s.action == DoctorDoom.A_STEAL_FLEE) {
+				if (s.actionTime < 2.4f) play(DoomAssets.CLIPS, bones, "taunt", s.actionTime, 1);
+				else if (s.actionTime < 4.6f) play(DoomAssets.CLIPS, bones, "idle_menace", s.actionTime - 2.4f, 1);
+				else play(DoomAssets.CLIPS, bones, "rift_step", s.actionTime - 4.6f, 1);
 			} else {
 				play(DoomAssets.CLIPS, bones, DoctorDoom.CLIPS[Math.min(s.action, DoctorDoom.CLIPS.length - 1)], s.actionTime, 1);
 			}
