@@ -39,7 +39,7 @@ public final class ModpackCompatibilityTest implements FabricClientGameTest {
 			ctx.waitTicks(5);
 			ctx.runOnClient(mc -> mc.setScreen(readModMenuSettings(loader, mc.screen)));
 			ctx.waitTicks(5);
-			ctx.takeScreenshot("modpack_settings");
+			check(ctx.computeOnClient(mc -> mc.screen instanceof ModSettingsScreen), "Infinity settings did not stay open");
 			ctx.runOnClient(mc -> mc.screen.onClose());
 		}
 	}

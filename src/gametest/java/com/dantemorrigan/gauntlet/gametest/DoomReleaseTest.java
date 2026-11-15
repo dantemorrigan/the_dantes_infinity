@@ -194,7 +194,8 @@ public final class DoomReleaseTest implements FabricClientGameTest {
 			return dummy;
 		});
 		ctx.waitTicks(7);
-		ctx.takeScreenshot("cosmic_doom_edict");
+		// The test harness forces an extra render without giving Sodium a terrain extraction pass.
+		if (System.getenv("INFINITY_COMPAT_MODS") == null) ctx.takeScreenshot("cosmic_doom_edict");
 		ctx.waitTicks(20);
 		server.runOnServer(s -> check(target.getHealth() < target.getMaxHealth(),
 				"Doom's Latverian Edict missed a target suspended in empty space"));
