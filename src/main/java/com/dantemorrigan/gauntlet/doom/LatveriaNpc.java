@@ -101,15 +101,22 @@ public class LatveriaNpc extends PathfinderMob {
 		refreshNameAndGear();
 	}
 
+	/** A quest giver's name: bold, coloured and set between two stars. */
+	public static Component fancy(String key, net.minecraft.ChatFormatting color) {
+		return Component.literal("✦ ").withStyle(color)
+				.append(Component.translatable(key).withStyle(net.minecraft.ChatFormatting.BOLD, color))
+				.append(Component.literal(" ✦").withStyle(color));
+	}
+
 	private void refreshNameAndGear() {
 		int r = role();
 		if (r == ROLE_MECHANIC) {
-			setCustomName(Component.translatable("entity.infinity_gauntlet.latveria_npc.mechanic"));
+			setCustomName(fancy("entity.infinity_gauntlet.latveria_npc.mechanic", net.minecraft.ChatFormatting.GOLD));
 			setCustomNameVisible(true);
 			setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(ModItems.REPAIR_TOOL));
 			setDropChance(EquipmentSlot.MAINHAND, 0.0F);
 		} else if (r == ROLE_TAVERN_KEEPER) {
-			setCustomName(Component.translatable("entity.infinity_gauntlet.latveria_npc.tavern_keeper"));
+			setCustomName(fancy("entity.infinity_gauntlet.latveria_npc.tavern_keeper", net.minecraft.ChatFormatting.GREEN));
 			setCustomNameVisible(true);
 			setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(Items.HONEY_BOTTLE));
 			setDropChance(EquipmentSlot.MAINHAND, 0.0F);

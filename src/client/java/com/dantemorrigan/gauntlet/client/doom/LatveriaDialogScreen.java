@@ -66,8 +66,8 @@ public final class LatveriaDialogScreen extends Screen {
 
 	private static Component speakerName(int role) {
 		return switch (role) {
-			case LatveriaNpc.ROLE_MECHANIC -> Component.translatable("dialog.infinity_gauntlet.npc.mechanic.name");
-			case LatveriaNpc.ROLE_TAVERN_KEEPER -> Component.translatable("dialog.infinity_gauntlet.npc.tavern.name");
+			case LatveriaNpc.ROLE_MECHANIC -> LatveriaNpc.fancy("dialog.infinity_gauntlet.npc.mechanic.name", net.minecraft.ChatFormatting.GOLD);
+			case LatveriaNpc.ROLE_TAVERN_KEEPER -> LatveriaNpc.fancy("dialog.infinity_gauntlet.npc.tavern.name", net.minecraft.ChatFormatting.GREEN);
 			default -> Component.translatable("dialog.infinity_gauntlet.npc.citizen.name");
 		};
 	}
