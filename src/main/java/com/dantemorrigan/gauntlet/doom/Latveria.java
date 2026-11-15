@@ -475,7 +475,7 @@ public final class Latveria {
 		for (net.minecraft.world.item.Item item : List.of(ModItems.DOOM_HELMET, ModItems.DOOM_CHESTPLATE, ModItems.DOOM_LEGGINGS, ModItems.DOOM_BOOTS,
 				ModItems.DOOM_GAUNTLET, ModItems.DOOM_GRIMOIRE, ModItems.LATVERIA_KEY, ModItems.CASTLE_SEAL, ModItems.DOOMBOT_CONTROLLER,
 				ModItems.MECHANICAL_HEART, ModItems.TIME_PLATFORM, ModItems.ARC_REACTOR, ModItems.DOOM_CIRCUIT, ModItems.JADE_SHARD,
-				ModItems.REPAIR_TOOL, ModItems.LATVERIA_BANNER)) {
+				ModItems.REPAIR_TOOL, ModItems.LATVERIA_BANNER, ModItems.GENERATOR_DISRUPTOR, ModItems.LATVERIA_CLOAK)) {
 			ItemStack stack = new ItemStack(item, item == ModItems.CASTLE_SEAL || item == ModItems.MECHANICAL_HEART ? 4 : 1);
 			if (!p.getInventory().add(stack)) p.drop(stack, false);
 		}

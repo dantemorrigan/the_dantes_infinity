@@ -164,6 +164,32 @@ public final class DoomCommands {
 					d.ascend(level(ctx), ctx.getSource().getPlayer());
 					return ok(ctx, "God Emperor Doom rises");
 				}))
+				.then(Commands.literal("steal").executes(ctx -> {
+					ServerPlayer p = ctx.getSource().getPlayerOrException();
+					DoctorDoom d = Latveria.boss();
+					if (d == null) {
+						Latveria.tp(p, "hall");
+						d = Latveria.summon(level(ctx));
+					}
+					if (d == null) return fail(ctx, "Doctor Doom could not be summoned");
+					d.stealGauntletAndFlee(level(ctx), p);
+					return ok(ctx, "Doom steals the Infinity Gauntlet (<=5 stones) and flees to the Overworld");
+				}))
+				.then(Commands.literal("arena").executes(ctx -> {
+					ServerPlayer p = ctx.getSource().getPlayerOrException();
+					DoomFinalEncounter.debugTpArena(p);
+					return ok(ctx, "teleported to Doom's sandy-fiery battlefield in Overworld");
+				}))
+				.then(Commands.literal("break_dome").executes(ctx -> {
+					ServerPlayer p = ctx.getSource().getPlayerOrException();
+					return DoomFinalEncounter.debugForceBreakDome(p)
+							? ok(ctx, "shattered the energy dome")
+							: fail(ctx, "dome duel is not currently active");
+				}))
+				.then(Commands.literal("reset_final").executes(ctx -> {
+					DoomFinalEncounter.debugReset(ctx.getSource().getServer());
+					return ok(ctx, "reset Doom vs Thanos final encounter");
+				}))
 				.then(Commands.literal("armor")
 						.executes(ctx -> armor(ctx, ctx.getSource().getPlayerOrException()))
 						.then(Commands.argument("player", net.minecraft.commands.arguments.EntityArgument.player())

@@ -356,7 +356,7 @@ public final class DoomFinalEncounter {
 				if (doom != null && stageTicks % 8 == 0) {
 					overworld.sendParticles(ModParticles.DOOM_RUNE_MOTE, doom.getX(), doom.getY() + 1.5, doom.getZ(), 2, 0.4, 0.4, 0.4, 0.02);
 				}
-				if (nearest != null && !nearest.isCreative() && nearest.position().distanceTo(center) <= 16.5) {
+				if (nearest != null && nearest.position().distanceTo(center) <= 16.5) {
 					// Push player back and start Cutscene 2 (Thanos Arrival & Dome Duel)!
 					Vec3 dir = nearest.position().subtract(center);
 					Vec3 flat = new Vec3(dir.x, 0, dir.z);
@@ -777,6 +777,48 @@ public final class DoomFinalEncounter {
 		for (ServerPlayer p : server.getPlayerList().getPlayers()) {
 			ServerPlayNetworking.send(p, pkt);
 		}
+	}
+
+	public static void debugTpArena(ServerPlayer player) {
+		MinecraftServer server = player.level().getServer();
+		load(server);
+		if (stage == STAGE_NONE || stage == STAGE_DONE || arenaPos.equals(BlockPos.ZERO)) {
+			ItemStack g = buildGauntletFromMask(0x1F);
+			onGauntletStolen(server, player, g);
+			stage = STAGE_WAITING_OVERWORLD;
+			save(server);
+		}
+		ServerLevel overworld = server.overworld();
+		if (!arenaBuilt) {
+			buildSandyFieryArena(overworld);
+			arenaBuilt = true;
+			save(server);
+		}
+		ensureDoomPresent(overworld, Vec3.atBottomCenterOf(arenaPos));
+		Vec3 target = new Vec3(arenaPos.getX() + 0.5, arenaPos.getY() + 1.0, arenaPos.getZ() + DOME_RADIUS + 4.0);
+		player.teleport(new net.minecraft.world.level.portal.TeleportTransition(
+				overworld, target, Vec3.ZERO, 180f, 0f, net.minecraft.world.level.portal.TeleportTransition.DO_NOTHING));
+		syncAll(server);
+	}
+
+	public static boolean debugForceBreakDome(ServerPlayer player) {
+		MinecraftServer server = player.level().getServer();
+		load(server);
+		if (stage != STAGE_DOME_DUEL) return false;
+		stage = STAGE_KILL_THANOS_CUTSCENE;
+		stageTicks = 0;
+		save(server);
+		syncAll(server);
+		return true;
+	}
+
+	public static void debugReset(MinecraftServer server) {
+		if (doom != null && !doom.isRemoved()) doom.discard();
+		if (thanos != null && !thanos.isRemoved()) thanos.discard();
+		resetRuntime();
+		loaded = true;
+		save(server);
+		syncAll(server);
 	}
 
 	private DoomFinalEncounter() {}
