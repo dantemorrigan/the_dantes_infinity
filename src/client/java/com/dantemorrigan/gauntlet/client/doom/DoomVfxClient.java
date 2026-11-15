@@ -564,7 +564,7 @@ public final class DoomVfxClient {
 		void cone(Identifier texture, Vec3 a, Vec3 b, float w0, float w1, int rgb, float alphaA, float alphaB) {
 			Vec3 dir = b.subtract(a);
 			if (dir.lengthSqr() < 1e-4) return;
-			int segs = 6;
+			int segs = 3;
 			quads(texture, e -> {
 				for (int i = 0; i < segs; i++) {
 					float k0 = i / (float) segs, k1 = (i + 1) / (float) segs;

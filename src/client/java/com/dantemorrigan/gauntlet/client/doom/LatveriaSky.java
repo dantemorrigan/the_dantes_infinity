@@ -101,17 +101,14 @@ public final class LatveriaSky {
 		int white = 0xFFFFFFFF;
 
 		// The dome from just under the horizon to the zenith (v: 1 at the bottom, 0 at the zenith), so no gap shows
-		// above the mountains, then the cone down to the nadir.
+		// above the mountains. Built allocation-free from shared sin/cos columns (this runs every frame).
 		double eMin = Math.toRadians(-12);
 		CelestialSky.draw(pose, DOME, buf -> {
-			int rings = 16;
-			for (int k = 0; k < rings; k++) {
-				double e0 = eMin + (Math.PI / 2 - eMin) * k / rings, e1 = eMin + (Math.PI / 2 - eMin) * (k + 1) / rings;
-				float v0 = 1 - (float) k / rings, v1 = 1 - (float) (k + 1) / rings;
-				for (int i = 0; i < SEG; i++) {
-					double a0 = Math.PI * 2 * i / SEG, a1 = Math.PI * 2 * (i + 1) / SEG;
-					quad(buf, sph(R, a0, e0), sph(R, a1, e0), sph(R, a1, e1), sph(R, a0, e1), (float) i / SEG, v0, (float) (i + 1) / SEG, v1, white);
-				}
+			columns(DOME_SEG, 0);
+			for (int k = 0; k < DOME_RINGS; k++) {
+				double e0 = eMin + (Math.PI / 2 - eMin) * k / DOME_RINGS, e1 = eMin + (Math.PI / 2 - eMin) * (k + 1) / DOME_RINGS;
+				ring(buf, DOME_SEG, R * (float) Math.cos(e0), R * (float) Math.sin(e0), R * (float) Math.cos(e1), R * (float) Math.sin(e1),
+						1 - (float) k / DOME_RINGS, 1 - (float) (k + 1) / DOME_RINGS, white);
 			}
 		});
 		// Green curtains of light in the north (azimuth 180 degrees), a little alive.
@@ -142,26 +139,19 @@ public final class LatveriaSky {
 		// The Carpathians, last: they cut the sky and melt into the fog below the horizon.
 		band(RIDGES, r, yBottom, yTop, white);
 		CelestialSky.draw(pose, RIDGES, buf -> {
-			for (int i = 0; i < SEG; i++) {
-				double a0 = Math.PI * 2 * i / SEG, a1 = Math.PI * 2 * (i + 1) / SEG;
-				float[] b0 = {(float) Math.sin(a0) * r, yBottom, (float) Math.cos(a0) * r}, b1 = {(float) Math.sin(a1) * r, yBottom, (float) Math.cos(a1) * r};
-				float[] down = {0, -R, 0};
-				quad(buf, b0, b1, down, down, 0, 0.99f, 1, 0.99f, white);
-			}
+			columns(CONE_SEG, 0);
+			ring(buf, CONE_SEG, r, yBottom, 0, -R, 0.99f, 0.99f, white);
 		});
 	}
 
 	/** A seamless 360-degree band of the sphere between two elevations (degrees), turned by {@code spin} radians. */
 	private static void arc(Identifier texture, float radius, float elev0, float elev1, float spin, int color) {
 		CelestialSky.draw(new PoseStack(), texture, buf -> {
-			int seg = SEG * 2, rings = 6;
-			for (int k = 0; k < rings; k++) {
-				double e0 = Math.toRadians(elev0 + (elev1 - elev0) * k / rings), e1 = Math.toRadians(elev0 + (elev1 - elev0) * (k + 1) / rings);
-				float v0 = 1 - (float) k / rings, v1 = 1 - (float) (k + 1) / rings;
-				for (int i = 0; i < seg; i++) {
-					double a0 = Math.PI * 2 * i / seg + spin, a1 = Math.PI * 2 * (i + 1) / seg + spin;
-					quad(buf, sph(radius, a0, e0), sph(radius, a1, e0), sph(radius, a1, e1), sph(radius, a0, e1), (float) i / seg, v0, (float) (i + 1) / seg, v1, color);
-				}
+			columns(ARC_SEG, spin);
+			for (int k = 0; k < ARC_RINGS; k++) {
+				double e0 = Math.toRadians(elev0 + (elev1 - elev0) * k / ARC_RINGS), e1 = Math.toRadians(elev0 + (elev1 - elev0) * (k + 1) / ARC_RINGS);
+				ring(buf, ARC_SEG, radius * (float) Math.cos(e0), radius * (float) Math.sin(e0), radius * (float) Math.cos(e1), radius * (float) Math.sin(e1),
+						1 - (float) k / ARC_RINGS, 1 - (float) (k + 1) / ARC_RINGS, color);
 			}
 		});
 	}
@@ -169,15 +159,38 @@ public final class LatveriaSky {
 	/** A seamless 360-degree cylinder between two heights (the mountains). */
 	private static void band(Identifier texture, float r, float yBottom, float yTop, int color) {
 		CelestialSky.draw(new PoseStack(), texture, buf -> {
-			int seg = SEG * 2;
-			for (int i = 0; i < seg; i++) {
-				double a0 = Math.PI * 2 * i / seg, a1 = Math.PI * 2 * (i + 1) / seg;
-				float u0 = (float) i / seg, u1 = (float) (i + 1) / seg;
-				float[] b0 = {(float) Math.sin(a0) * r, yBottom, (float) Math.cos(a0) * r}, b1 = {(float) Math.sin(a1) * r, yBottom, (float) Math.cos(a1) * r};
-				float[] t1 = {b1[0], yTop, b1[2]}, t0 = {b0[0], yTop, b0[2]};
-				quad(buf, b0, b1, t1, t0, u0, 1, u1, 0, color);
-			}
+			columns(ARC_SEG, 0);
+			ring(buf, ARC_SEG, r, yBottom, r, yTop, 1, 0, color);
 		});
+	}
+
+	// Shared sin/cos columns for the rings below: one set per band, not one per quad.
+	private static final int DOME_SEG = 24, DOME_RINGS = 10, ARC_SEG = 48, ARC_RINGS = 4, CONE_SEG = 12;
+	private static final float[] SIN = new float[ARC_SEG + 1], COS = new float[ARC_SEG + 1];
+
+	private static void columns(int seg, double spin) {
+		for (int i = 0; i <= seg; i++) {
+			double a = Math.PI * 2 * i / seg + spin;
+			SIN[i] = (float) Math.sin(a);
+			COS[i] = (float) Math.cos(a);
+		}
+	}
+
+	/** One ring of {@code seg} quads between two circles (radius, height), both faces, with no temporary objects. */
+	private static void ring(BufferBuilder buf, int seg, float r0, float y0, float r1, float y1, float v0, float v1, int color) {
+		for (int i = 0; i < seg; i++) {
+			float u0 = (float) i / seg, u1 = (float) (i + 1) / seg;
+			float x00 = SIN[i] * r0, z00 = COS[i] * r0, x10 = SIN[i + 1] * r0, z10 = COS[i + 1] * r0;
+			float x11 = SIN[i + 1] * r1, z11 = COS[i + 1] * r1, x01 = SIN[i] * r1, z01 = COS[i] * r1;
+			buf.addVertex(x00, y0, z00).setUv(u0, v0).setColor(color);
+			buf.addVertex(x10, y0, z10).setUv(u1, v0).setColor(color);
+			buf.addVertex(x11, y1, z11).setUv(u1, v1).setColor(color);
+			buf.addVertex(x01, y1, z01).setUv(u0, v1).setColor(color);
+			buf.addVertex(x01, y1, z01).setUv(u0, v1).setColor(color);
+			buf.addVertex(x11, y1, z11).setUv(u1, v1).setColor(color);
+			buf.addVertex(x10, y0, z10).setUv(u1, v0).setColor(color);
+			buf.addVertex(x00, y0, z00).setUv(u0, v0).setColor(color);
+		}
 	}
 
 	private static float[] sph(float R, double a, double e) {

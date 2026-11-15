@@ -544,7 +544,7 @@ public final class Latveria {
 		if (time % 100 == 0) flushPlaced(server);
 		if (time % 20 == 0) {
 			for (ServerPlayer p : server.getPlayerList().getPlayers()) {
-				if (Boolean.TRUE.equals(p.getAttached(ACCESS)) || !SpaceStone.latveriaSealed(p) || !ModAdvancements.completed(p, "defeat_loki") || !hasMind(p)) continue;
+				if (Boolean.TRUE.equals(p.getAttached(ACCESS)) || !ModAdvancements.completed(p, "defeat_loki") || !hasMind(p)) continue;
 				grantAccess(p);
 				DoomFx.tell(p, "deciphered");
 				p.level().playSound(null, p.blockPosition(), SoundEvents.BEACON_ACTIVATE, SoundSource.PLAYERS, 1f, 1.5f);
