@@ -30,6 +30,7 @@ public final class CoopRules {
         return GauntletConfig.get().abilityBlockChanges && actor != null && actor.isAlive()
             && !actor.isSpectator() && actor.level() == level && level.hasChunkAt(pos)
             && !com.dantemorrigan.gauntlet.stones.MindArena.protects(level, pos)
+            && !com.dantemorrigan.gauntlet.stones.TimeTemple.protects(level, pos)
             && !com.dantemorrigan.gauntlet.doom.Latveria.protects(level, pos, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState())
             && level.getWorldBorder().isWithinBounds(pos) && level.mayInteract(actor, pos);
     }

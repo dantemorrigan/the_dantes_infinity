@@ -80,6 +80,19 @@ public final class TimeTemple {
 		return Boolean.TRUE.equals(server.overworld().getAttached(BUILT));
 	}
 
+	/**
+	 * The built temple (its terrace, tower and clock) cannot be changed by any ability: the quest's clock must outlive
+	 * beams, waves, vortices and meteors. Only the temple's own work and a player's hand change it.
+	 */
+	public static boolean protects(ServerLevel level, BlockPos pos) {
+		MinecraftServer server = level.getServer();
+		if (level != server.overworld() || !built(server)) return false;
+		BlockPos site = level.getAttached(SITE);
+		if (site == null) return false;
+		int dx = pos.getX() - site.getX(), dz = pos.getZ() - site.getZ();
+		return dx * dx + dz * dz <= (R_FLAT + 2) * (R_FLAT + 2) && pos.getY() >= site.getY() - 10 && pos.getY() <= site.getY() + TOWER_H + 14;
+	}
+
 	/** Position of the clock mechanism block inside the temple sanctum. */
 	public static BlockPos clockPos(BlockPos site) {
 		return new BlockPos(site.getX(), site.getY() + 3, site.getZ() - 4);

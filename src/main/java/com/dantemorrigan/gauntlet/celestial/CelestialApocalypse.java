@@ -343,6 +343,12 @@ public final class CelestialApocalypse {
 		float power = Mth.lerp((m.size() + rnd.nextFloat()) / 3f, cfg.craterPowerMin, cfg.craterPowerMax);
         var guard = new net.minecraft.world.level.ExplosionDamageCalculator() {
             @Override
+            public boolean shouldBlockExplode(net.minecraft.world.level.Explosion explosion, net.minecraft.world.level.BlockGetter getter, BlockPos pos,
+                    BlockState state, float power) {
+                // The Temple of Time stands through the meteor rain.
+                return !com.dantemorrigan.gauntlet.stones.TimeTemple.protects(level, pos);
+            }
+            @Override
             public float getEntityDamageAmount(net.minecraft.world.level.Explosion explosion, net.minecraft.world.entity.Entity entity, float exposure) {
                 float damage = super.getEntityDamageAmount(explosion, entity, exposure);
                 if (damage > 0 && entity instanceof ServerPlayer player
