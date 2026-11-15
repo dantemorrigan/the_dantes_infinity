@@ -175,6 +175,12 @@ public class Doombot extends PathfinderMob {
 
 	public boolean dormant() { return flag(FLAG_DORMANT); }
 
+	/** Moves a powered-down statue to a new standing place (and makes it its home). */
+	public void statueTo(double x, double z) {
+		this.teleportTo(x, this.getY(), z);
+		this.home = this.position();
+	}
+
 	public boolean isForged() { return forged; }
 
 	/**

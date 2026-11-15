@@ -362,6 +362,35 @@ public final class LatveriaQuests {
 		return false;
 	}
 
+	/** The powered-down robots were standing shoulder through shoulder: slide them apart until each has its own spot. */
+	private static void spreadStatues(ServerLevel level, List<Doombot> bots) {
+		final double gap = 2.0;
+		for (int pass = 0; pass < 8; pass++) {
+			boolean moved = false;
+			for (int i = 0; i < bots.size(); i++) {
+				for (int j = i + 1; j < bots.size(); j++) {
+					Doombot a = bots.get(i), b = bots.get(j);
+					if (Math.abs(a.getY() - b.getY()) > 2.5) continue;
+					double dx = b.getX() - a.getX(), dz = b.getZ() - a.getZ(), d = Math.sqrt(dx * dx + dz * dz);
+					if (d >= gap) continue;
+					if (d < 0.01) { dx = 1; dz = 0; d = 1; }
+					double push = (gap - d) / 2 + 0.05, ux = dx / d, uz = dz / d;
+					moved |= slide(level, b, ux * push, uz * push);
+					moved |= slide(level, a, -ux * push, -uz * push);
+				}
+			}
+			if (!moved) break;
+		}
+	}
+
+	/** A statue steps aside only where there is room (no walls in the way). */
+	private static boolean slide(ServerLevel level, Doombot bot, double dx, double dz) {
+		AABB to = bot.getBoundingBox().move(dx, 0, dz);
+		if (!level.noBlockCollision(bot, to)) return false;
+		bot.statueTo(bot.getX() + dx, bot.getZ() + dz);
+		return true;
+	}
+
 	// ------------------------------------------------------------------ Under-Castle Generator Sabotage
 
 	public static boolean isGeneratorBlock(BlockPos pos) {
@@ -394,10 +423,12 @@ public final class LatveriaQuests {
 
 		// Power down all guarding Doombots across the castle and road into dormant grey statues!
 		AABB castleAndRoad = new AABB(-200, 0, -400, 200, 260, 200);
-		for (Doombot bot : level.getEntitiesOfClass(Doombot.class, castleAndRoad, b -> b.isAlive() && !b.allied())) {
+		List<Doombot> statues = level.getEntitiesOfClass(Doombot.class, castleAndRoad, b -> b.isAlive() && !b.allied());
+		for (Doombot bot : statues) {
 			bot.becomeStatue(null);
 			level.sendParticles(ParticleTypes.ELECTRIC_SPARK, bot.getX(), bot.getY() + 1.2, bot.getZ(), 18, 0.35, 0.5, 0.35, 0.08);
 		}
+		spreadStatues(level, statues);
 
 		// Visual & audio overload cascade in the generator chamber
 		level.sendParticles(ParticleTypes.ELECTRIC_SPARK, pos.getX() + 0.5, pos.getY() + 1.0, pos.getZ() + 0.5, 65, 1.8, 1.5, 1.8, 0.15);
