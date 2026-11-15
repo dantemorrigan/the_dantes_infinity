@@ -27,6 +27,7 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.phys.Vec3;
 
@@ -46,12 +47,15 @@ import java.util.UUID;
 public class DoctorDoom extends Monster {
 	public static final int A_IDLE = 0, A_INTRO = 1, A_COMBO = 2, A_BOLT = 3, A_BASTION = 4, A_DROP = 5, A_SLAM = 6, A_SHIFT = 7,
 			A_RIFT = 8, A_SORCERY = 9, A_HEX = 10, A_SUNS = 11, A_NOVA = 12, A_EDICT = 13, A_LIGHTNING = 14, A_CLEAVE = 15,
-			A_SMASH = 16, A_STAGGER = 17, A_DEFEAT = 18, A_TAUNT = 19, A_SIPHON = 20, A_DECOY = 21, A_ASCEND = 22, A_STEAL_FLEE = 23;
+			A_SMASH = 16, A_STAGGER = 17, A_DEFEAT = 18, A_TAUNT = 19, A_SIPHON = 20, A_DECOY = 21, A_ASCEND = 22, A_STEAL_FLEE = 23,
+			// The powers of the stolen Infinity Gauntlet, used only in the final fight.
+			A_METEORS = 24, A_TIME = 25, A_REALITY = 26, A_MIND = 27, A_SOUL = 28;
 	/** Clip of each action, in action order. */
 	public static final String[] CLIPS = {"idle", "intro", "armored_combo", "gauntlet_bolt", "iron_bastion", "doombot_drop", "jet_slam",
 			"phase_shift", "rift_step", "sorcery_bolt", "hex_barrage", "seven_suns", "arcane_nova", "latverian_edict", "lightning_call",
-			"cleave", "overhead_smash", "stagger_heavy", "defeat", "taunt", "infinity_siphon", "decoy_gambit", "ascension", "taunt"};
-	private static final int[] TICKS = {0, 100, 39, 38, 87, 53, 59, 42, 38, 55, 48, 119, 60, 126, 52, 30, 32, 32, 72, 48, 100, 42, 480, 140};
+			"cleave", "overhead_smash", "stagger_heavy", "defeat", "taunt", "infinity_siphon", "decoy_gambit", "ascension", "taunt",
+			"seven_suns", "arcane_nova", "hex_barrage", "infinity_siphon", "infinity_siphon"};
+	private static final int[] TICKS = {0, 100, 39, 38, 87, 53, 59, 42, 38, 55, 48, 119, 60, 126, 52, 30, 32, 32, 72, 48, 100, 42, 480, 140, 130, 76, 96, 84, 80};
 	/** The siphon: wind-up, then the pull until it completes; blows that break it, and how long a drained gauntlet stays silent. */
 	public static final int SIPHON_START = 14, SIPHON_DONE = 92, SIPHON_SILENCE = 300;
 	public static final float SIPHON_BREAK = 30;
@@ -72,6 +76,12 @@ public class DoctorDoom extends Monster {
 	public int actionStartTick;
 	private boolean passive;
 	private int actionTicks, cooldown = 30, exposed, blowsTaken, sinceSuns = 200, sinceEdict = 400, sinceDrop = 100;
+	/** Time since each Infinity Gauntlet power was last used, and since any of them was (the final fight paces them). */
+	private int sinceMeteors = 300, sinceTime = 200, sinceReality = 150, sinceMind = 100, sinceSoul = 60, sinceGauntlet = 120, meteorWave;
+	/** Meteors called down and not yet landed: the tick they land on, where, and their effect id. */
+	private record Incoming(int tick, Vec3 at, int id, boolean solar) {}
+	private final List<Incoming> incoming = new ArrayList<>();
+	private int timeShifted;
 	private float castDamage, siphonDamage;
 	private int sinceSiphon = 200, sinceDecoy = 300;
 	private UUID siphonId, ascendVictim;
@@ -521,6 +531,12 @@ public class DoctorDoom extends Monster {
 		if (exposed > 0 && --exposed == 0) setFlag(FLAG_EXPOSED, false);
 		sinceSuns++;
 		sinceEdict++;
+		sinceMeteors++;
+		sinceTime++;
+		sinceReality++;
+		sinceMind++;
+		sinceSoul++;
+		sinceGauntlet++;
 		sinceDrop++;
 		sinceSiphon++;
 		sinceDecoy++;
@@ -553,6 +569,32 @@ public class DoctorDoom extends Monster {
 		else this.getNavigation().stop();
 		if (cooldown > 0) { cooldown--; return; }
 		choose(level, target, d);
+	}
+
+	/**
+	 * The Infinity Gauntlet in his hand: now and then he reaches for the powers of its stones, the same ones the
+	 * player has. Each has its own pause and none follows another at once, so the fight keeps its rhythm; every one
+	 * is announced (a marker, a line, a wind-up) and can be dodged or broken.
+	 */
+	private boolean gauntletPower(ServerLevel level, ServerPlayer target, double d) {
+		if (sinceGauntlet < 150 || this.random.nextFloat() > 0.55f) return false;
+		int pick = -1;
+		if (sinceMeteors > 600) pick = A_METEORS;
+		else if (sinceReality > 420) pick = A_REALITY;
+		else if (sinceSoul > 320 && d <= 16 && this.hasLineOfSight(target)) pick = A_SOUL;
+		else if (sinceMind > 360 && d <= 14 && this.hasLineOfSight(target)) pick = A_MIND;
+		else if (sinceTime > 900) pick = A_TIME;
+		if (pick < 0) return false;
+		sinceGauntlet = 0;
+		switch (pick) {
+			case A_METEORS -> sinceMeteors = 0;
+			case A_REALITY -> sinceReality = 0;
+			case A_SOUL -> sinceSoul = 0;
+			case A_MIND -> sinceMind = 0;
+			default -> sinceTime = 0;
+		}
+		setAction(pick);
+		return true;
 	}
 
 	private void tickDuelWithMob(ServerLevel level, LivingEntity rival) {
@@ -636,6 +678,7 @@ public class DoctorDoom extends Monster {
 			cooldown = 12;
 			face(target.position());
 			if (sinceSuns > 320 && r < 0.45f) { sinceSuns = 0; setAction(A_SUNS); return; }
+			if (gauntletPower(level, target, d)) return;
 			if (d <= 4.6) {
 				setAction(r < 0.45f ? A_COMBO : r < 0.75f ? A_SMASH : A_CLEAVE);
 				return;
@@ -858,6 +901,11 @@ public class DoctorDoom extends Monster {
 				}
 				if (t == 92) expose(46);
 			}
+			case A_METEORS -> meteors(level, target, t);
+			case A_TIME -> timeWind(level, t);
+			case A_REALITY -> realityWarp(level, target, t);
+			case A_MIND -> mindGrip(level, target, t);
+			case A_SOUL -> soulDrain(level, target, t);
 			case A_EDICT -> edict(level, t);
 			case A_LIGHTNING -> {
 				if (t == 12 && target != null) {
@@ -910,6 +958,170 @@ public class DoctorDoom extends Monster {
 			if (!DoomCombat.hurt(level, e, this, finalDamage)) continue;
 			Vec3 dir = e.position().subtract(this.position()).normalize();
 			e.knockback(push, -dir.x, -dir.z);
+		}
+	}
+
+	// ------------------------------------------------------------------ the powers of the Infinity Gauntlet
+
+	/**
+	 * The Power Stone and the sky: he tears pieces off the sun (or, at night, the moon) and sends them down round the
+	 * challenger. Every impact is marked on the ground a second before it lands; they come in waves of a few, never on
+	 * the challenger's own feet, and none of it touches the land (the sky is not broken for good, as it is when a
+	 * player does it).
+	 */
+	private void meteors(ServerLevel level, ServerPlayer target, int t) {
+		Vec3 at = this.position();
+		if (t == 8) {
+			meteorWave++;
+			DoomVfx.on(level, DoomVfx.CHARGE, this, 1.4f, 30, DoomVfx.SUN);
+			DoomFx.sound(level, at, SoundEvents.BEACON_ACTIVATE, 2f, 0.5f);
+			DoomFx.line(level, at, 80, meteorWave % 2 == 1 ? "doom.gauntlet_sun" : "doom.gauntlet_moon");
+		}
+		// Eight meteors, one every ten ticks from tick 36, each marked as it is called.
+		if (t >= 36 && t < 36 + 8 * 10 && (t - 36) % 10 == 0 && target != null) {
+			Vec3 centre = clampToArena(target.position());
+			double a = this.random.nextDouble() * Math.TAU, r = 3.0 + this.random.nextDouble() * 9.0;
+			Vec3 hit = clampToArena(centre.add(Math.cos(a) * r, 0, Math.sin(a) * r));
+			hit = new Vec3(hit.x, centre.y, hit.z);
+			boolean solar = meteorWave % 2 == 1;
+			int flight = 26, id = 2_000_000 + this.random.nextInt(900_000);
+			Vec3 from = hit.add(this.random.nextGaussian() * 6, 70 + this.random.nextDouble() * 20, this.random.nextGaussian() * 6);
+			incoming.add(new Incoming(t + flight, hit, id, solar));
+			DoomFx.flat(level, ModParticles.DOOM_DROP_MARKER, hit, 3.0);
+			var packet = new com.dantemorrigan.gauntlet.net.ModNetwork.MeteorSpawn(id, from, hit, flight, 1, solar);
+			for (ServerPlayer p : level.players()) if (p.position().distanceToSqr(hit) < 300 * 300) net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking.send(p, packet);
+		}
+		for (int i = incoming.size() - 1; i >= 0; i--) {
+			Incoming m = incoming.get(i);
+			if (m.tick() != t) continue;
+			incoming.remove(i);
+			DoomVfx.at(level, DoomVfx.IMPACT, m.at().add(0, 0.6, 0), 3.0f, 12, DoomVfx.SUN);
+			DoomFx.sound(level, m.at(), SoundEvents.GENERIC_EXPLODE.value(), 1.4f, 0.8f);
+			var packet = new com.dantemorrigan.gauntlet.net.ModNetwork.MeteorImpact(m.id(), m.at(), 1, Block.getId(level.getBlockState(BlockPos.containing(m.at()).below())));
+			for (ServerPlayer p : level.players()) if (p.position().distanceToSqr(m.at()) < 200 * 200) net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking.send(p, packet);
+			strike(level, m.at(), 3.4, 9, 0.9);
+		}
+		if (t == TICKS[A_METEORS] - 2) { incoming.clear(); expose(50); }
+	}
+
+	/** The Time Stone: he spins the sky half a day round and drags the challenger's limbs through it. Rare, and it only slows. */
+	private void timeWind(ServerLevel level, int t) {
+		Vec3 at = this.position();
+		if (t == 6) {
+			DoomVfx.on(level, DoomVfx.CHARGE, this, 1.2f, 20, DoomVfx.GREEN);
+			DoomFx.sound(level, at, SoundEvents.BEACON_POWER_SELECT, 2f, 0.6f);
+			DoomFx.line(level, at, 80, "doom.gauntlet_time");
+			timeShifted = 0;
+			boolean toNight = isDayNow(level);
+			var fx = new com.dantemorrigan.gauntlet.net.ModNetwork.TimeShiftFx(44, toNight);
+			for (ServerPlayer p : level.players()) if (p.position().distanceToSqr(at) < 120 * 120) net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking.send(p, fx);
+		}
+		if (t >= 14 && t < 58) {
+			// A smooth half turn of the sun: 12000 ticks over 44 ticks.
+			var clock = level.getServer().registryAccess().get(net.minecraft.world.clock.WorldClocks.OVERWORLD);
+			if (clock.isPresent()) level.getServer().clockManager().addTicks(clock.get(), 12000 / 44);
+		}
+		if (t == 30) {
+			// Everyone near him wades through slow time for a few seconds (no damage).
+			for (ServerPlayer p : level.players()) {
+				if (!valid(p) || p.distanceToSqr(this) > 36 * 36) continue;
+				p.addEffect(new MobEffectInstance(net.minecraft.world.effect.MobEffects.SLOWNESS, 80, 1));
+				p.addEffect(new MobEffectInstance(net.minecraft.world.effect.MobEffects.MINING_FATIGUE, 80, 1));
+				DoomFx.near(level, p.position(), 8, DoomFx.FLASH, 0, 0.5f, 10);
+			}
+			expose(60);
+		}
+	}
+
+	private boolean isDayNow(ServerLevel level) {
+		var clock = level.getServer().registryAccess().get(net.minecraft.world.clock.WorldClocks.OVERWORLD);
+		if (clock.isEmpty()) return true;
+		long tod = Math.floorMod(level.getServer().clockManager().getTotalTicks(clock.get()), 24000L);
+		return tod < 12500 || tod >= 23000;
+	}
+
+	/**
+	 * The Reality Stone: the ground under the challenger is marked, and twice it folds over itself, hurling up and
+	 * hurting whoever still stands in the ring. Walking out of it is enough. (The land itself is not rewritten.)
+	 */
+	private void realityWarp(ServerLevel level, ServerPlayer target, int t) {
+		Vec3 at = this.position();
+		if (t == 10 && target != null) {
+			aim = clampToArena(target.position());
+			DoomVfx.on(level, DoomVfx.CHARGE, this, 1.0f, 14, DoomVfx.EDICT_GREEN);
+			DoomFx.sound(level, at, SoundEvents.AMETHYST_BLOCK_RESONATE, 2f, 0.5f);
+			DoomFx.line(level, at, 80, "doom.gauntlet_reality");
+		}
+		if (aim == null) return;
+		if (t >= 12 && t < 52 && t % 10 == 2) DoomFx.flat(level, ModParticles.DOOM_DROP_MARKER, aim, 5.2);
+		if (t == 52 || t == 72) {
+			boolean second = t == 72;
+			double reach = second ? 6.4 : 5.2;
+			DoomVfx.at(level, DoomVfx.SLAM, aim.add(0, 0.05, 0), (float) reach * 1.1f, 14, DoomVfx.EDICT_GREEN);
+			DoomFx.sound(level, aim, SoundEvents.AMETHYST_BLOCK_BREAK, 2f, 0.5f);
+			for (LivingEntity e : level.getEntitiesOfClass(LivingEntity.class, new net.minecraft.world.phys.AABB(aim, aim).inflate(reach, 3, reach), this::foe)) {
+				if (e.position().subtract(aim).horizontalDistance() > reach) continue;
+				if (!DoomCombat.hurt(level, e, this, second ? 9 : 7)) continue;
+				e.push(0, 0.9, 0);
+				e.hurtMarked = true;
+				e.addEffect(new MobEffectInstance(net.minecraft.world.effect.MobEffects.NAUSEA, 100, 0));
+				var fx = new com.dantemorrigan.gauntlet.net.ModNetwork.RealityFx(3, e.position().add(0, 1, 0), new Vec3(1, 1, 0));
+				for (ServerPlayer p : level.players()) if (p.distanceToSqr(e) < 64 * 64) net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking.send(p, fx);
+			}
+			if (second) expose(36);
+		}
+	}
+
+	/** The Mind Stone: an invisible grip lifts the challenger off the floor, holds them, and drives them down. Broken by distance. */
+	private void mindGrip(ServerLevel level, ServerPlayer target, int t) {
+		Vec3 at = this.position();
+		if (t == 8) {
+			DoomVfx.on(level, DoomVfx.CHARGE, this, 1.0f, 24, DoomVfx.SUN);
+			DoomFx.sound(level, at, SoundEvents.ENDERMAN_STARE, 1.5f, 0.6f);
+			DoomFx.line(level, at, 80, "doom.gauntlet_mind");
+		}
+		if (target == null || target.distanceToSqr(this) > 18 * 18) return;
+		if (t >= 20 && t < 44) {
+			// Held: lifted a few blocks and kept there.
+			Vec3 v = target.getDeltaMovement();
+			target.setDeltaMovement(v.x * 0.3, target.getY() - (arenaCenter != null ? arenaCenter.y : LatveriaPlan.FLOOR) < 3.4 ? 0.28 : 0.0, v.z * 0.3);
+			target.hurtMarked = true;
+			target.fallDistance = 0;
+			if (t % 4 == 0) DoomVfx.line(level, DoomVfx.TRAIL, hand(), target.position().add(0, 1.2, 0), 0.4f, 4, DoomVfx.SUN);
+		}
+		if (t == 44) {
+			target.setDeltaMovement(0, -2.2, 0);
+			target.hurtMarked = true;
+			DoomFx.sound(level, target.position(), SoundEvents.ANVIL_LAND, 1.5f, 0.6f);
+		}
+		if (t == 50) {
+			Vec3 hit = target.position();
+			DoomVfx.at(level, DoomVfx.SLAM, hit.add(0, 0.05, 0), 3.4f, 12, DoomVfx.SUN);
+			strike(level, hit, 2.6, 10, 0.6);
+			target.fallDistance = 0;
+			expose(36);
+		}
+	}
+
+	/** The Soul Stone: a thread of green light to the challenger drinks their life for his own, unless it is broken first. */
+	private void soulDrain(ServerLevel level, ServerPlayer target, int t) {
+		Vec3 at = this.position();
+		if (t == 8) {
+			DoomFx.sound(level, at, SoundEvents.SOUL_ESCAPE.value(), 2f, 0.6f);
+			DoomFx.line(level, at, 80, "doom.gauntlet_soul");
+		}
+		if (target == null) return;
+		boolean linked = target.distanceToSqr(this) <= 20 * 20 && this.hasLineOfSight(target);
+		if (t >= 14 && t < 62 && t % 3 == 0 && linked) {
+			DoomVfx.line(level, DoomVfx.TRAIL, hand(), target.position().add(0, 1.2, 0), 0.55f, 5, DoomVfx.GREEN);
+		}
+		if (t == 62) {
+			if (!linked) { DoomFx.sound(level, at, SoundEvents.FIRE_EXTINGUISH, 1.4f, 0.8f); return; }
+			if (DoomCombat.hurt(level, target, this, 6)) {
+				this.heal(Math.min(18f, this.getMaxHealth() * 0.03f));
+				DoomVfx.at(level, DoomVfx.IMPACT, target.position().add(0, 1.3, 0), 2.0f, 10, DoomVfx.GREEN);
+				DoomFx.sound(level, target.position(), SoundEvents.SOUL_ESCAPE.value(), 1.6f, 0.9f);
+			}
 		}
 	}
 
