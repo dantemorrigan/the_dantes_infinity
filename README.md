@@ -173,6 +173,8 @@ The jets never touch vanilla flight, so the armor does not clash with the Infini
 
 Defeat Loki and Thanos, wear the awakened gauntlet with all six stones and fly into space: **the Tribunal arrives by itself after about 3 seconds**. Dodge its seven attacks and strike back with the gauntlet when it is exposed. At one heart the gauntlet is confiscated and destroyed and you die; you respawn in space with everything restored. The Tribunal returns 30 seconds later if you stay in space, and you can flee to Earth in that window. During the trial you cannot return to Earth. `/tribunal challenge` (operator) bypasses all conditions but needs space flight and a difficulty above Peaceful; damage is disabled only in creative. In co-op the conditions are personal: each player needs their own Loki and Thanos victories.
 
+**The Keeper of the Soul Stone.** On the summit of the Temple of Soul the **Red Skull** levitates over the ruins: he is scenery with a voice, untouchable, and he talks to whoever right-clicks him. While the Soul Stone still waits in the temple, the land around the mountain turns to **Vormir**: the nearer you come, the greyer, dimmer and more ash-orange the world gets, with a short haze and falling ash. Once the stone has been taken, the colour returns and the Red Skull departs.
+
 ## Ability wheel controls
 
 - Equip the gauntlet in your offhand. Hold **V** to open the wheel; point at a stone, then at an ability, and release **V** to select.

@@ -356,6 +356,14 @@ public final class ModNetwork {
 		@Override public Type<SoulRitualFx> type() { return TYPE; }
 	}
 
+	/** S2C: the Temple of Soul's site, and whether its Vormir light still holds (the Soul Stone has not been taken yet). */
+	public record SoulVormir(net.minecraft.core.BlockPos site, boolean active) implements CustomPacketPayload {
+		public static final Type<SoulVormir> TYPE = newType("soul_vormir");
+		public static final StreamCodec<ByteBuf, SoulVormir> CODEC = StreamCodec.composite(net.minecraft.core.BlockPos.STREAM_CODEC, SoulVormir::site,
+				ByteBufCodecs.BOOL, SoulVormir::active, SoulVormir::new);
+		@Override public Type<SoulVormir> type() { return TYPE; }
+	}
+
 	/** S2C: a framed quest notice in the middle of the screen (Space Stone quest). */
 	public record QuestAlert(net.minecraft.network.chat.Component text, int style) implements CustomPacketPayload {
 		/** style: 0 = Space (blue frame), 1 = Soul (amber frame). */
@@ -601,6 +609,7 @@ public final class ModNetwork {
 		PayloadTypeRegistry.clientboundPlay().register(Status.TYPE, Status.CODEC);
 		PayloadTypeRegistry.clientboundPlay().register(QuestAlert.TYPE, QuestAlert.CODEC);
 		PayloadTypeRegistry.clientboundPlay().register(SoulRitualFx.TYPE, SoulRitualFx.CODEC);
+		PayloadTypeRegistry.clientboundPlay().register(SoulVormir.TYPE, SoulVormir.CODEC);
 		PayloadTypeRegistry.clientboundPlay().register(ThanosFx.TYPE, ThanosFx.CODEC);
 		PayloadTypeRegistry.clientboundPlay().register(RealityFogFx.TYPE, RealityFogFx.CODEC);
 		PayloadTypeRegistry.serverboundPlay().register(BeamAction.TYPE, BeamAction.CODEC);

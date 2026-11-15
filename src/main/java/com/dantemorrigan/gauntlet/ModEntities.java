@@ -77,12 +77,19 @@ public final class ModEntities {
 			EntityType.Builder.<com.dantemorrigan.gauntlet.doom.LatveriaNpc>of(com.dantemorrigan.gauntlet.doom.LatveriaNpc::new, MobCategory.MISC)
 					.sized(0.6f, 1.8f).eyeHeight(1.62f).fireImmune().clientTrackingRange(10).updateInterval(2).noLootTable().build(LATVERIA_NPC_KEY));
 
+	private static final ResourceKey<EntityType<?>> RED_SKULL_KEY = ResourceKey.create(Registries.ENTITY_TYPE, InfinityGauntlet.id("red_skull"));
+	/** The Red Skull, keeper of the Soul Stone, levitating on the Temple of Soul's summit. */
+	public static final EntityType<com.dantemorrigan.gauntlet.stones.RedSkull> RED_SKULL = Registry.register(BuiltInRegistries.ENTITY_TYPE, RED_SKULL_KEY,
+			EntityType.Builder.<com.dantemorrigan.gauntlet.stones.RedSkull>of(com.dantemorrigan.gauntlet.stones.RedSkull::new, MobCategory.MISC)
+					.sized(0.8f, 2.7f).eyeHeight(2.3f).fireImmune().clientTrackingRange(10).updateInterval(2).noLootTable().build(RED_SKULL_KEY));
+
 	public static void init() {
 		FabricDefaultAttributeRegistry.register(TRIBUNAL, com.dantemorrigan.gauntlet.boss.LivingTribunal.attributes());
 		FabricDefaultAttributeRegistry.register(LOKI, Loki.createAttributes());
 		FabricDefaultAttributeRegistry.register(DOCTOR_DOOM, com.dantemorrigan.gauntlet.doom.DoctorDoom.createAttributes());
 		FabricDefaultAttributeRegistry.register(DOOMBOT, com.dantemorrigan.gauntlet.doom.Doombot.createAttributes());
 		FabricDefaultAttributeRegistry.register(LATVERIA_NPC, com.dantemorrigan.gauntlet.doom.LatveriaNpc.createAttributes());
+		FabricDefaultAttributeRegistry.register(RED_SKULL, com.dantemorrigan.gauntlet.stones.RedSkull.createAttributes());
 		FabricDefaultAttributeRegistry.register(THANOS, com.dantemorrigan.gauntlet.boss.Thanos.createAttributes());
 		FabricDefaultAttributeRegistry.register(GAUNTLET_DOLL, GauntletDoll.createAttributes());
 		FabricDefaultAttributeRegistry.register(MIND_ZOMBIE, com.dantemorrigan.gauntlet.stones.MindZombie.createAttributes());

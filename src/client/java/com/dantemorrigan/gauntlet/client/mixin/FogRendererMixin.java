@@ -63,6 +63,18 @@ public abstract class FogRendererMixin {
 			fog.color.set(fog.color.x + (1f - fog.color.x) * lokiGold, fog.color.y + (.84f - fog.color.y) * lokiGold,
 					fog.color.z + (.41f - fog.color.z) * lokiGold, fog.color.w);
 		}
+		float vormir = com.dantemorrigan.gauntlet.client.quest.VormirClient.factor();
+		if (vormir > 0) {
+			// Vormir: a short, ash-orange grey haze.
+			FogData fog = cir.getReturnValue();
+			fog.color.set(fog.color.x + (0.52f - fog.color.x) * vormir * 0.85f, fog.color.y + (0.40f - fog.color.y) * vormir * 0.85f,
+					fog.color.z + (0.31f - fog.color.z) * vormir * 0.85f, fog.color.w);
+			fog.environmentalStart += (8f - fog.environmentalStart) * vormir;
+			fog.environmentalEnd += (130f - fog.environmentalEnd) * vormir * 0.8f;
+			fog.renderDistanceEnd = Math.min(fog.renderDistanceEnd, fog.renderDistanceEnd + (150f - fog.renderDistanceEnd) * vormir);
+			fog.skyEnd += (210f - fog.skyEnd) * vormir * 0.6f;
+			fog.cloudEnd += (190f - fog.cloudEnd) * vormir * 0.6f;
+		}
 		float mist = com.dantemorrigan.gauntlet.client.quest.RealityFogClient.factor();
 		if (mist > 0) {
 			FogData fog = cir.getReturnValue();

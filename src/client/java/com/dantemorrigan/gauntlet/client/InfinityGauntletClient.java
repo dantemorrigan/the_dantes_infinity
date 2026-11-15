@@ -41,6 +41,8 @@ public class InfinityGauntletClient implements ClientModInitializer {
 		com.dantemorrigan.gauntlet.client.celestial.CelestialClient.init();
 		com.dantemorrigan.gauntlet.client.fx.InfinityBeamClient.init();
 		StatusHud.init();
+		com.dantemorrigan.gauntlet.client.quest.VormirClient.init();
+		net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry.register(com.dantemorrigan.gauntlet.ModEntities.RED_SKULL, com.dantemorrigan.gauntlet.client.quest.RedSkullRenderer::new);
 		com.dantemorrigan.gauntlet.client.ability.AbilityScroll.init();
 		CompactHealth.init();
 		QuestCompassHud.init();
