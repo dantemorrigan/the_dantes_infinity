@@ -8,7 +8,7 @@
 
 Includes the add-on **[The Fury of Doom](#the-fury-of-doom--latveria-and-doctor-doom)**: Latveria, Castle Doom, the Doombots and Doctor Doom himself.
 
-Requirements: **Java 25**. Build: `./gradlew build` → `build/libs/infinity_gauntlet-1.0.7.jar` (+ Fabric API 0.155.3+26.1.2).
+Requirements: **Java 25**. Build: `./gradlew build` → `build/libs/infinity_gauntlet-1.1.0-pre.1.jar` (+ Fabric API 0.155.3+26.1.2).
 
 ```
 ./gradlew runClient          # test client; stable offline profile Player433
@@ -21,6 +21,7 @@ Requirements: **Java 25**. Build: `./gradlew build` → `build/libs/infinity_gau
 - **Uru ore** generates in new Overworld chunks from the bottom of the world up to Y=0. Look around Y=−32 and use a diamond or netherite pickaxe. Smelt raw Uru in a furnace or blast furnace. Fortune increases the drop, and Silk Touch preserves the ore block. One ore block can also appear in mineshaft, dungeon, village weaponsmith, pyramid, ancient city, bastion and End city chests.
 - **The recipe is shown in game:** the first time you hold an Uru ingot it unlocks in the recipe book and is written out in chat; it is also in the field guide (page 17) and on every Gauntlet Schematic; `/gauntlet_recipe` prints it again (no operator rights needed).
 - **Gauntlet crafting** uses a 3×3 grid. From top to bottom: Uru / gold / diamond, gold / redstone / gold, diamond / gold / Uru. Use ingots for both metals. **Infinity Gauntlet Schematics** with the forging pattern can be found in world chests (villages, smiths, strongholds, dungeons, mineshafts, temples, pyramids, shipwrecks, underwater ruins, mansions, ancient cities, bastions, fortresses, End cities) and bought from cartographers, smiths, librarians, and wandering traders; right-clicking the schematic unlocks the Gauntlet, Uru armor and Uru smelting recipes. Right-click with the gauntlet in your main hand to open the stone slots, then press F to move it to your offhand.
+- **Uru tools** use the standard crafting shapes. The sword takes 2 Uru ingots and 1 stick, the pickaxe 3 ingots and 2 sticks, the hoe 2 ingots and 2 sticks, and the shovel 1 ingot and 2 sticks. The sword deals 9 base damage per charged hit, compared to 8 for netherite (+12.5%). All four have 2560 durability. Repair them with Uru ingots.
 - **Uru armor** follows iron armor recipes and is repaired with Uru ingots. A complete set reduces damage from a full gauntlet and loses durability when absorbing a hit.
 - All six Infinity Stones have survival sources below. The in-game field guide updates when opened. Use `/gauntlet_guide` to get a copy.
 
@@ -28,7 +29,7 @@ Requirements: **Java 25**. Build: `./gradlew build` → `build/libs/infinity_gau
 - Craft the axe from five Uru ingots, a Nether Star and a jungle log. The rows are **Uru / Uru / Nether Star**, **Uru / Uru / Uru**, **empty / jungle log / empty**. The first successful craft binds it to the smith.
 - During a thunderstorm, an unclaimed Stormbreaker can fall near a player in the Overworld. Players within 110 blocks see a blue compass and the distance to the crash site until someone claims the axe. Right-click the embedded axe to pull it free and become its owner. A world has one Stormbreaker, so either the first craft or the first skyfall closes the other route. The recipe requires a player at a crafting table.
 - Hold it in your main hand. **Left click** chains three overhead chops. Hold **left click** while aiming at the ground and release to send a wall of lightning and debris forward, broadside to your aim. The wave smashes through breakable blocks and leaves connected craters where ability block changes are enabled. **Right click** calls lightning in a 7-block radius. **Z** throws the axe horizontally, **X** calls Heaven’s Wrath, and **C** recalls the axe, including across dimensions. Double-tap **Space** to fly for up to 15 seconds, with a countdown and automatic slow descent.
-- The flying axe cuts through breakable blocks where block changes are permitted. It returns to its owner when the path is blocked or they change dimensions. If the inventory is full, it returns as soon as a slot is available. Lightning strikes the planted axe periodically, reaching down from the clouds in the Overworld. After death, reclaim it with right-click or summon it with C.
+- On a planet, a thrown axe embeds in the ground beneath the end of its path. Recall it with **C** or pick it up with right click. A throw without a surface to land on returns to its owner. If the inventory is full, the return waits for a free slot. Lightning periodically strikes the planted axe.
 - Carrying the bound axe anywhere in the inventory grants a higher jump and +5 hearts. Holding it gives strength and reduces direct Gauntlet damage, including meteor blasts. It wards off Mind and Soul control and hostile Snap or Planet Destruction transfers. Reality Strike and Inversion can still kill its wielder.
 
 ## Finding the Power Stone
@@ -166,8 +167,8 @@ The jets never touch vanilla flight, so the armor does not clash with the Infini
   - **Language switcher**: cards for Auto / English / Русский; applies instantly to the whole mod (menus, HUD messages, tooltips, advancements, the book) and is saved as `language` in `config/infinity_gauntlet.json`. Auto follows Minecraft's language.
   - **Boss typography**: names, actions and dialogue use bundled Open Sans Bold, with Cyrillic support and individual colour accents. Ordinary player chat keeps its font. Font licenses are bundled under `assets/infinity_gauntlet/font/`.
   - **Client options**: show or hide the top-left **Ability HUD** card (`showStatusHud`) and cycle **Camera Shake** (`100% / 50% / Off`) and **Screen Flash** (`100% / 50% / Off`).
-- **Advancements & Recipe Unlocks**: a dedicated **The Dante’s Infinity** advancement tab tracks Uru mining, Uru armor, crafting the Gauntlet, finding each of the six Infinity Stones, flying into the Solar System, stealing a stone with the Extractor, shattering a Loki illusion, defeating Loki and Thanos, awakening the full Gauntlet, shattering a planet, executing the Infinity Snap, and undoing the Snap with the Time Stone. Raw Uru or Uru ore unlocks smelting. A Uru ingot or the schematic unlocks the Gauntlet and armor recipes.
-- **Field guide book**: every player gets a written book (22 pages, available in both languages) the first time they join a world — powers, controls, Loki, Thanos, Uru, the Extractor, settings, and Stormbreaker. Lost it? Type `/gauntlet_guide` (no operator rights needed). Disable with `giveGuideBook: false`.
+- **Advancements & Recipe Unlocks**: a dedicated **The Dante’s Infinity** advancement tab tracks Uru mining, Uru armor, crafting the Gauntlet, finding each of the six Infinity Stones, flying into the Solar System, stealing a stone with the Extractor, shattering a Loki illusion, defeating Loki and Thanos, awakening the full Gauntlet, shattering a planet, executing the Infinity Snap, and undoing the Snap with the Time Stone. Raw Uru or Uru ore unlocks smelting. A Uru ingot unlocks the tools. An ingot or the schematic unlocks the Gauntlet and armor recipes.
+- **Field guide book**: every player gets a written book (available in both languages) the first time they join a world — powers, controls, Loki, Thanos, Uru, the Extractor, settings, and Stormbreaker. Lost it? Type `/gauntlet_guide` (no operator rights needed). Disable with `giveGuideBook: false`.
 - Texts live in `lang/en_us.json` / `ru_ru.json`; the book pages are generated by `python3 scripts/gen_guide.py`. Check: `xvfb-run -a ./gradlew runClientGameTest -PonlyTest=GuideLangTest`.
 
 ### The Living Tribunal
@@ -287,7 +288,13 @@ Ideas: [IDEAS.md](IDEAS.md) · API notes: [docs/DEV_NOTES.md](docs/DEV_NOTES.md)
 
 Fly beyond the sky with the Space Stone. **Ctrl** boosts flight; the wheel's **Destinations** menu selects a route and **R** performs the warp. Ten unique icons identify the Sun, Mercury, Venus, Earth, Moon, Mars, Jupiter, Saturn, Uranus and Neptune. Approach Earth's atmosphere after a warp to return to the Overworld. Planets rotate slowly on the saved world clock with their sidereal period ratios and axial tilts; Venus and Uranus have retrograde axes. The Sun has an unlit bright surface and a broad white-gold corona.
 
-Gauntlet powers work in three dimensions: Power and Reality strikes produce visible rays and impact flashes, Reality Inversion bends the surrounding starfield and damages once per activation, Beam and Time Flow hit along their paths, Soul powers reach distant targets, and blink and aimed meteor fragments work during flight. Warp selection is separate from casting, so browsing routes never triggers a jump.
+Gauntlet powers work in three dimensions: Power and Reality strikes produce visible rays and impact flashes, Reality Inversion bends the surrounding starfield and damages once per activation, Beam and Time Flow hit along their paths, Soul powers reach distant targets, and blink and aimed meteor fragments work during flight. Blink and the Infinity Beam stop at obstacles. Select a destination in the wheel, then cast to warp.
+
+Stormbreaker throws follow your aim and return automatically in space. Charged attacks and lightning strike in three dimensions. Double-tap Space while flying for a short burst. Doom’s jets give a directional burst, Rift Step teleports through open space, and the Latverian Edict marks a sphere before it hits. The Tribunal’s bolts slow your flight on impact.
+
+## Fabric mod compatibility
+
+The [compatibility run](https://github.com/dantemorrigan/the_dantes_infinity/actions/runs/43757718047) passed with Sodium, Iris (shader pack off), Lithium, FerriteCore, ImmediatelyFast, EntityCulling, JEI, Jade, Xaero’s Minimap and Mod Menu. Mod Menu opens the mod’s settings. Xaero’s default **B** and **Z** overlap with Favorites and Stormbreaker throw. Change the corresponding keys in Controls if you use both.
 
 ## Saves and development launches
 

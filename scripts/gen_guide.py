@@ -64,8 +64,8 @@ add('thanos',
  f"{H}Thanos{R}\nGather {B}five stones{R}: after half a day of calm the Mad Titan comes for them.\n{B}Uru armor{R} is a must. The worn gauntlet hurts him most, then bare stones and explosions. Swords barely scratch him.\nBeaten once, he never returns.",
  f"{H}Танос{R}\nСобери {B}пять камней{R}: через полсуток придёт Безумный Титан.\n{B}Броня Уру{R} обязательна. Сильнее всего бьёт перчатка, затем камни в руке и взрывы. Мечи почти не ранят.\nПобеждённый, он не вернётся.")
 add('uru',
- f"{H}Uru{R}\nFind ore near Y=−32. Mine with diamond or netherite and smelt it.\n\n{B}Uru armor{R} uses iron recipes. A full set reduces full-gauntlet damage. Find a {B}Gauntlet Schematic{R} in chests or shops. Use it to learn recipes.",
- f"{H}Уру{R}\nРуда около Y=−32. Добудь алмазной или незеритовой киркой, переплавь.\n\n{B}Броня из Уру{R} снижает урон Перчатки. {B}Схема перчатки{R} открывает рецепты по ПКМ. Ищи в сундуках и у торговцев.")
+ f"{H}Uru{R}\nOre: near Y=−32 or in chests. Mine with diamond or better, then smelt.\n\n{B}Uru armor{R} uses iron recipes and guards against a full gauntlet. Find a {B}Gauntlet Schematic{R} in chests or shops.",
+ f"{H}Уру{R}\nРуда около Y=−32 и в сундуках. Добудь алмазной киркой или лучше и переплавь.\n\n{B}Броня из Уру{R} снижает урон Перчатки. {B}Схема перчатки{R} открывает рецепты по ПКМ. Ищи в сундуках и у торговцев.")
 add('extractor',
  f"{H}Infinity Extractor{R}\nPulls a stone out of someone's gauntlet: hold right-click on them, three cycles. Shift + right-click picks which stone.\n\nYour stones stay with you when you die, unless another player kills you.",
  f"{H}Извлекатель{R}\nВытягивает камень из чужой перчатки: держи ПКМ на цели, три цикла. Shift + ПКМ выбирает камень.\n\nПосле смерти камни остаются у тебя, если не убил другой игрок.")
@@ -76,8 +76,8 @@ add('storm_find',
  f"{H}Stormbreaker{R}\nOne axe per world. Forge it with {B}5 Uru ingots{R}, a Nether Star and a jungle log. Or find it after a thunderstorm skyfall. A compass appears within 110 blocks. Right-click to claim it.",
  f"{H}Гром-Секира{R}\nОдна на сервер. Для ковки нужны {B}5 слитков Уру{R}, звезда Незера и тропическое бревно. В грозу ищи её по компасу в радиусе 110 блоков. Подними секиру ПКМ.")
 add('storm_combat',
- f"{H}Stormbreaker combat{R}\n{B}Left click{R}: three-hit combo. Hold at the ground and release for a lightning wall.\n{B}Right click{R}: lightning, radius 7.\n{B}X{R}: storm, radius 20.\n{B}Z{R}: throw. C recalls the axe. {B}Double-tap Space{R}: 15 s of flight, then slow descent.",
- f"{H}Бой с Гром-Секирой{R}\n{B}ЛКМ{R}: тройное комбо. Зажми на земле и отпусти для стены молний.\n{B}ПКМ{R}: молнии, радиус 7.\n{B}X{R}: гроза, радиус 20.\n{B}Z{R}: бросок. C возвращает секиру. {B}Двойной пробел{R}: 15 с полёта, затем плавное снижение.")
+ f"{H}Stormbreaker combat{R}\n{B}Left click{R}: combo. Hold at the ground for a lightning wall.\n{B}Right click{R}: lightning, radius 7.\n{B}X{R}: storm, radius 20.\n{B}Z{R}: throw. C recalls it. {B}Double-tap Space{R}: 15 s of flight, then slow descent.",
+ f"{H}Бой с Гром-Секирой{R}\n{B}ЛКМ{R}: комбо. Зажми на земле для стены молний.\n{B}ПКМ{R}: молнии, радиус 7.\n{B}X{R}: гроза, радиус 20.\n{B}Z{R}: бросок. C — вернуть. {B}Двойной пробел{R}: 15 с полёта, затем плавное снижение.")
 add('storm_owner',
  f"{H}The chosen wielder{R}\n{B}Q{R} or death plants the axe. Only the owner can recover it. {B}C{R} recalls it from any dimension or the void.\nIn hand, it gives strength and softens gauntlet hits.",
  f"{H}Владелец секиры{R}\n{B}Q{R} или смерть оставляют секиру в земле. Забрать её может владелец. {B}C{R} призывает её из других измерений и бездны.\nВ руке даёт силу и снижает урон Перчатки.")
@@ -112,6 +112,12 @@ add('doomcourt',
 add('doomarmor',
  f"{H}Doom's armor{R}\nFull set: hold {B}M{R} to pick a power, {B}N{R} casts it.\nBolt, Bastion, Jets (Space climbs), Rift Step, Suns, Edict. Rift and Edict show where they land; the suns wait, one per press.",
  f"{H}Броня Дума{R}\nПолный набор: держи {B}M{R}, выбери силу, {B}N{R} применяет.\nРазряд, Бастион, Полёт (Пробел вверх), Шаг, Солнца, Эдикт. Шаг и Эдикт показывают цель; солнца ждут, по одному за нажатие.")
+add('uru_tools',
+ f"{H}Uru tools{R}\nUse ordinary shapes on a crafting table. {B}Sword{R}: 2 ingots, 1 stick. Pickaxe: 3 ingots, 2 sticks. Hoe: 2 ingots, 2 sticks. Shovel: 1 ingot, 2 sticks.\nSword: 9 damage. Repair with Uru.",
+ f"{H}Инструменты Уру{R}\nОбычные схемы на верстаке. {B}Меч{R}: 2 слитка, 1 палка. Кирка: 3 слитка, 2 палки. Мотыга: 2 слитка, 2 палки. Лопата: 1 слиток, 2 палки.\nМеч: 9 урона. Ремонт слитками Уру.")
+add('space_combat',
+ f"{H}Space combat{R}\nStormbreaker follows your aim and returns. {B}Double-tap Space{R} while flying to boost.\nDoom's jets burst forward. Rift Step lands in open space. Edict marks a sphere.",
+ f"{H}Бой в космосе{R}\nСекира летит по прицелу и сама возвращается. {B}Двойной пробел{R} в полёте даёт рывок.\nБроня Дума даёт импульс, разлом переносит в пустоте, Эдикт метит сферу.")
 # --- contents: built from the page order ---
 order = list(PAGES)
 def pn(k): return str(order.index(k) + 1)
@@ -188,11 +194,12 @@ if problems: raise SystemExit('fix the problems above first')
 for lang, idx in (('en_us',0),('ru_ru',1)):
     path = ROOT / f'{lang}.json'
     d = json.load(open(path), object_pairs_hook=collections.OrderedDict)
-    for k in [k for k in d if k.startswith('guide.infinity_gauntlet.')]: del d[k]
-    d['guide.infinity_gauntlet.title'] = ('Infinity Gauntlet: Field Guide','Перчатка Бесконечности: путеводитель')[idx]
+    guide = {'guide.infinity_gauntlet.title': ('Infinity Gauntlet: Field Guide','Перчатка Бесконечности: путеводитель')[idx]}
     for i,k in enumerate(PAGES):
-        for j,(st,txt) in enumerate(SEGS[k][idx]):
-            d[f'guide.infinity_gauntlet.p{i+1}.{j+1}'] = txt
+        for j,(_,txt) in enumerate(SEGS[k][idx]):
+            guide[f'guide.infinity_gauntlet.p{i+1}.{j+1}'] = txt
+    for k in [k for k in d if k.startswith('guide.infinity_gauntlet.') and k not in guide]: del d[k]
+    d.update(guide)
     with open(path,'w') as f: json.dump(d,f,ensure_ascii=False,indent=2); f.write('\n')
 
 rows = ',\n'.join('\t\t"' + ''.join(st for st,_ in SEGS[k][0]) + '"' for k in PAGES)

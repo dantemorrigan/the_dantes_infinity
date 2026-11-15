@@ -3,8 +3,8 @@
 ## 1. Требования
 - **Java 25**, Minecraft **26.1.2**, Fabric Loader **≥ 0.20.1**
 - **Fabric API 0.155.3+26.1.2**
-- Мод: `build/libs/infinity_gauntlet-1.0.7.jar` (`./gradlew build`)
-- **Один и тот же jar** и у сервера, и у всех игроков (есть свои блоки и сущности).
+- Мод: `build/libs/infinity_gauntlet-1.1.0-pre.1.jar` (`./gradlew build`)
+- Установи **один и тот же jar** на сервер и клиент каждого игрока. Перед обновлением сохрани резервную копию мира.
 
 ## 2. Установка
 1. Скачать Fabric-сервер для 26.1.2 (fabricmc.net/use/server).
@@ -15,6 +15,12 @@
    java -Xms4G -Xmx6G -jar fabric-server-launch.jar nogui
    ```
 5. Первый запуск создаст `config/infinity_gauntlet.json`.
+
+Запустить появление Таноса с предупреждением для конкретного игрока можно из консоли. Подставь его ник вместо `PlayerName`.
+
+```mcfunction
+execute as PlayerName at @s run gauntlet thanos start
+```
 
 ## 3. server.properties
 | Параметр | Значение | Зачем |

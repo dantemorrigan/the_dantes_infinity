@@ -3,7 +3,7 @@
 	"id": "infinity_gauntlet",
 	"version": "${version}",
 	"name": "The Dante’s Infinity",
-	"description": "Wield the Infinity Gauntlet, find all six stones in survival, claim Stormbreaker, explore the Solar System, and battle Loki and Thanos.",
+	"description": "Find the six Infinity Stones, forge Uru tools, claim Stormbreaker, and explore the Solar System. Fight Loki, Thanos, the Living Tribunal, and Doctor Doom in The Fury of Doom.",
 	"authors": ["dantemorrigan"],
 	"license": "CC0-1.0",
 	"icon": "assets/infinity_gauntlet/icon.png",

@@ -35,7 +35,9 @@ final class GuidePages {
 		"HTBT",
 		"HTBTBTBT",
 		"HTBTBTBT",
-		"HTBTBT"
+		"HTBTBT",
+		"HTBT",
+		"HTBT"
 	};
 
 	private GuidePages() {}
