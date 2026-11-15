@@ -4,11 +4,10 @@ plugins {
 }
 
 repositories {
-	// Add repositories to retrieve artifacts from in here.
-	// You should only use this when depending on other mods because
-	// Loom adds the essential maven repositories to download Minecraft and libraries from automatically.
-	// See https://docs.gradle.org/current/userguide/declaring_repositories.html
-	// for more information about repositories.
+	maven {
+		url = 'https://maven.terraformersmc.com/releases/'
+		content { includeModule('com.terraformersmc', 'modmenu') }
+	}
 }
 
 loom {
@@ -29,6 +28,9 @@ dependencies {
 
 	// Fabric API. This is technically optional, but you probably want it anyway.
 	implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
+
+	// Optional client entrypoint. Mod Menu is neither bundled nor required at runtime.
+	clientCompileOnly('com.terraformersmc:modmenu:18.0.2') { transitive = false }
 }
 
 processResources {
@@ -95,7 +97,7 @@ fabricApi {
 // A focused real-client regression run, without replaying every unrelated cinematic suite.
 // ./gradlew runClientGameTest -PcosmosTest (Linux headless: prefix with xvfb-run -a).
 def onlyCosmosTests = providers.gradleProperty('cosmosTest').isPresent()
-// ./gradlew runClientGameTest -PonlyTest=MindSoulTest — run a single client game test class.
+// -PonlyTest=MindSoulTest — one client game test class, or a comma-separated list.
 def onlyTest = providers.gradleProperty('onlyTest').getOrNull()
 tasks.named('processGametestResources') {
     inputs.property('cosmosTest', onlyCosmosTests)
@@ -110,7 +112,7 @@ tasks.named('processGametestResources') {
         if (onlyTest != null) {
             def metadata = new File(destinationDir, 'fabric.mod.json')
             def data = new groovy.json.JsonSlurper().parse(metadata)
-            data.entrypoints['fabric-client-gametest'] = ['com.dantemorrigan.gauntlet.gametest.' + onlyTest]
+            data.entrypoints['fabric-client-gametest'] = onlyTest.split(',').collect { 'com.dantemorrigan.gauntlet.gametest.' + it.trim() }
             metadata.text = groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(data))
         }
     }
@@ -134,4 +136,6 @@ loom.runs.named('clientGameTest') {
     programArguments.set(cleaned)
     // The welcome to Latveria pauses a single-player game; tests other than its own skip it.
     vmArg('-Dinfinity_gauntlet.noWelcome=true')
+    def extraMods = providers.gradleProperty('compatibilityMods').getOrNull()
+    if (extraMods != null) vmArg("-Dfabric.addMods=${extraMods}")
 }

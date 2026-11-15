@@ -1,0 +1,66 @@
+name: Fabric modpack compatibility
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/compatibility.yml
+      - scripts/compatibility-mods.txt
+      - build.gradle
+      - gradle.properties
+      - src/client/java/com/dantemorrigan/gauntlet/client/compat/**
+      - src/client/java/com/dantemorrigan/gauntlet/client/mixin/**
+      - src/gametest/java/com/dantemorrigan/gauntlet/gametest/ModpackCompatibilityTest.java
+      - src/main/resources/data/c/tags/**
+      - src/main/resources/fabric.mod.json
+
+permissions:
+  contents: read
+
+concurrency:
+  group: modpack-compatibility-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  fabric-client:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@v5
+        with:
+          java-version: '25'
+          distribution: 'microsoft'
+      - name: Download pinned Fabric mods
+        run: |
+          mods="$RUNNER_TEMP/infinity-compat-mods"
+          mkdir -p "$mods"
+          ids=()
+          while read -r id sha url; do
+            [[ -z "$id" || "$id" == \#* ]] && continue
+            curl --fail --silent --show-error --location --retry 3 --max-time 60 "$url" -o "$mods/$id.jar"
+            printf '%s  %s\n' "$sha" "$mods/$id.jar" | sha512sum --check -
+            ids+=("$id")
+          done < scripts/compatibility-mods.txt
+          echo "INFINITY_COMPAT_MODS=${ids[*]}" >> "$GITHUB_ENV"
+      - name: Run client and Doom regression with the modpack
+        env:
+          LIBGL_ALWAYS_SOFTWARE: 'true'
+          ALSOFT_DRIVERS: 'null'
+        run: |
+          chmod +x gradlew
+          xvfb-run -a ./gradlew runClientGameTest \
+            "-PcompatibilityMods=$RUNNER_TEMP/infinity-compat-mods" \
+            -PonlyTest=ModpackCompatibilityTest,DoomReleaseTest
+      - name: Save client logs and screenshots
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: modpack-compatibility
+          path: |
+            build/run/clientGameTest/logs/
+            build/run/clientGameTest/screenshots/
+            build/run/clientGameTest/crash-reports/
