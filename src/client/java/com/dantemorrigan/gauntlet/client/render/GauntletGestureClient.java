@@ -3,6 +3,7 @@ package com.dantemorrigan.gauntlet.client.render;
 import com.dantemorrigan.gauntlet.GauntletGesture;
 import com.dantemorrigan.gauntlet.GauntletState;
 import com.dantemorrigan.gauntlet.client.fx.ClientPower;
+import com.dantemorrigan.gauntlet.client.ability.AbilityInput;
 import com.dantemorrigan.gauntlet.net.ModNetwork;
 import com.mojang.blaze3d.platform.InputConstants;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
@@ -25,7 +26,7 @@ import java.util.Map;
  */
 public final class GauntletGestureClient {
 	public static final KeyMapping KEY = KeyMappingHelper.registerKeyMapping(
-			new KeyMapping("key.infinity_gauntlet.gesture", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_G, ClientPower.CATEGORY));
+			new KeyMapping("key.infinity_gauntlet.gesture", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_I, ClientPower.CATEGORY));
 
 	/** Animation state at one moment: lift 0..1 (small raise), roll = forearm twist in degrees, tilt = extra raise in degrees. */
 	public record Pose(float lift, float roll, float tilt) {}
@@ -53,6 +54,7 @@ public final class GauntletGestureClient {
 	private record Run(long start, int kind) {}
 
 	private static final Map<Integer, Run> RUNS = new HashMap<>();
+	private static boolean checkedBindings;
 
 	public static void init() {
 		ClientPlayNetworking.registerGlobalReceiver(ModNetwork.GestureFx.TYPE, (fx, ctx) -> {
@@ -69,9 +71,20 @@ public final class GauntletGestureClient {
 	private static void tick(Minecraft mc) {
 		long now = Util.getMillis();
 		RUNS.values().removeIf(run -> now - run.start() > durationMs(run.kind()));
+		var favoriteKey = KeyMappingHelper.getBoundKeyOf(AbilityInput.NEXT_FAVORITE);
+		var gestureKey = KeyMappingHelper.getBoundKeyOf(KEY);
+		if (!checkedBindings) {
+			checkedBindings = true;
+			var oldDefault = InputConstants.Type.KEYSYM.getOrCreate(GLFW.GLFW_KEY_G);
+			if (oldDefault.equals(gestureKey) && oldDefault.equals(favoriteKey)) {
+				KEY.setKey(InputConstants.Type.KEYSYM.getOrCreate(GLFW.GLFW_KEY_I));
+				KeyMapping.resetMapping();
+				mc.options.save();
+			}
+		}
 		boolean pressed = false;
 		while (KEY.consumeClick()) pressed = true;
-		if (pressed && mc.player != null && mc.screen == null) play();
+		if (pressed && !gestureKey.equals(favoriteKey) && mc.player != null && mc.screen == null) play();
 	}
 
 	/** Starts the admire gesture for the local player (if a working gauntlet is worn) and tells the server so others see it. */

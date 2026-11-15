@@ -86,6 +86,7 @@ public final class DoomReleaseTest implements FabricClientGameTest {
 						"A second Thanos encounter could start during Doom's storyline");
 				DoomFinalEncounter.debugTpArena(p);
 			});
+			ctx.waitFor(mc -> theftTitleShown(mc.gui), 55);
 			ctx.waitTicks(145);
 			server.runOnServer(s -> {
 				check(Latveria.gateOpen(s) && player(s).getInventory().countItem(ModItems.LATVERIA_KEY) == 1,
@@ -139,6 +140,18 @@ public final class DoomReleaseTest implements FabricClientGameTest {
 				if (attempt == 1) cosmicEquipment(ctx, world.getServer());
 				save = world.getWorldSave();
 			}
+		}
+	}
+
+	private static boolean theftTitleShown(net.minecraft.client.gui.Gui gui) {
+		try {
+			var field = net.minecraft.client.gui.Gui.class.getDeclaredField("title");
+			field.setAccessible(true);
+			return field.get(gui) instanceof Component title
+					&& title.getContents() instanceof net.minecraft.network.chat.contents.TranslatableContents text
+					&& text.getKey().equals("hud.infinity_gauntlet.doom.theft_title");
+		} catch (ReflectiveOperationException exception) {
+			throw new AssertionError("Could not read the vanilla title for the theft alert", exception);
 		}
 	}
 

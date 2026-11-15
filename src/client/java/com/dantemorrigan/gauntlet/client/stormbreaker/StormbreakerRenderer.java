@@ -21,7 +21,7 @@ final class StormbreakerRenderer extends EntityRenderer<StormbreakerEntity, Stor
     static final class State extends EntityRenderState {
         final ItemStackRenderState item = new ItemStackRenderState();
         int phase;
-        float phaseAge, heading;
+        float phaseAge, heading, pitch;
     }
 
     private final ItemModelResolver models;
@@ -40,6 +40,7 @@ final class StormbreakerRenderer extends EntityRenderer<StormbreakerEntity, Stor
         state.phase = entity.phase();
         state.phaseAge = entity.phaseAge(partial);
         state.heading = entity.getYRot();
+        state.pitch = entity.getXRot();
         if (stack == null) {
             // Renderer providers run during the initial reload, before item components are bound.
             stack = new ItemStack(ModItems.STORMBREAKER);
@@ -52,7 +53,15 @@ final class StormbreakerRenderer extends EntityRenderer<StormbreakerEntity, Stor
     public void submit(State state, PoseStack pose, SubmitNodeCollector collector, CameraRenderState camera) {
         pose.pushPose();
         pose.scale(.84f, .84f, .84f);
-        if (state.phase == StormbreakerEntity.EMBEDDED || state.phase == StormbreakerEntity.PLANTING
+        if (state.phase == StormbreakerEntity.EMBEDDED_BLADE || state.phase == StormbreakerEntity.PULLING_BLADE) {
+            float pull = state.phase == StormbreakerEntity.PULLING_BLADE ? Math.min(1, state.phaseAge / 12) : 0;
+            pose.mulPose(Axis.YP.rotationDegrees(-state.heading));
+            pose.mulPose(Axis.XP.rotationDegrees(state.pitch));
+            pose.translate(0, 0, .08 - .85 * pull * pull);
+            pose.mulPose(Axis.YP.rotationDegrees(90));
+            // The thin cutting edge is at model x=-11, y=23, z=8, relative to the item origin (8,8,8).
+            pose.translate(19f / 16, -15f / 16, 0);
+        } else if (state.phase == StormbreakerEntity.EMBEDDED || state.phase == StormbreakerEntity.PLANTING
                 || state.phase == StormbreakerEntity.PULLING) {
             float settling = state.phase == StormbreakerEntity.PLANTING ? Math.max(0, 1 - state.phaseAge / 10) : 0;
             float pull = state.phase == StormbreakerEntity.PULLING ? Math.min(1, state.phaseAge / 12) : 0;
@@ -66,7 +75,7 @@ final class StormbreakerRenderer extends EntityRenderer<StormbreakerEntity, Stor
             pose.mulPose(Axis.ZP.rotationDegrees(state.ageInTicks * -30));
         } else {
             pose.mulPose(Axis.YP.rotationDegrees(-state.heading));
-            pose.mulPose(Axis.XP.rotationDegrees(84));
+            pose.mulPose(Axis.XP.rotationDegrees(84 + state.pitch));
             pose.mulPose(Axis.ZP.rotationDegrees(state.ageInTicks * -33));
         }
         state.item.submit(pose, collector, state.lightCoords, OverlayTexture.NO_OVERLAY, 0);

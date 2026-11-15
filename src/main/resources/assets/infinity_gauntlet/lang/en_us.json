@@ -1004,6 +1004,8 @@
   "msg.infinity_gauntlet.latveria.cloak.exposed_combat": "§cYou disturbed the peace in front of a patrol—your cloak no longer hides you!",
   "msg.infinity_gauntlet.latveria.generator.need_disruptor": "§eUse Old Mechanic Radovan's device to completely shut down the main generator and all castle Doombots.",
   "msg.infinity_gauntlet.latveria.generator.sabotaged_full": "§aDisruptor attached! The main generator beneath the castle is offline—all defense systems, gates, and castle Doombots are shut down. The path to Doom is clear!",
+  "hud.infinity_gauntlet.doom.theft_title": "Doom takes your Gauntlet",
+  "hud.infinity_gauntlet.doom.theft_detail": "Recover it in the final battle",
   "msg.infinity_gauntlet.latveria.doom.steal_1": "§2[Doctor Doom]§r Pathetic fool... The Infinity Gauntlet belongs to Doom alone!",
   "msg.infinity_gauntlet.latveria.doom.steal_2": "§2[Doctor Doom]§r One stone short... Doom himself shall finish what you lacked the will to complete!",
   "msg.infinity_gauntlet.latveria.doom.stolen_fled_hint": "§6Doom seized the Infinity Gauntlet and vanished through a spatial rift! Return to the Overworld and follow the compass.",

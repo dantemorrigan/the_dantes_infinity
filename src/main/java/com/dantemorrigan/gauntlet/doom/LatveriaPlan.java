@@ -34,6 +34,8 @@ public final class LatveriaPlan {
 	public static final Vec3 CASTLE_HALL = new Vec3(0.5, FLOOR, -258.5);
 	public static final Vec3 ARENA = new Vec3(0.5, FLOOR, -272.5);
 	public static final Vec3 THRONE = new Vec3(0.5, FLOOR + 2, -290.5);
+	/** The intro model animates back to the seat while the collision box stays on the clear dais. */
+	static final Vec3 THRONE_STAND = new Vec3(0.5, FLOOR + 2, -289.2);
 	/** The throne room's inside, where the fight is held. */
 	public static final AABB ARENA_BOX = new AABB(-21, FLOOR - 1, -294, 22, FLOOR + 17, -253);
 	/** The massive generator core in the basement directly beneath Castle Doom. */

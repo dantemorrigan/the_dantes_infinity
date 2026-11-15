@@ -11,6 +11,8 @@ on:
       - src/main/java/com/dantemorrigan/gauntlet/doom/**
       - src/main/java/com/dantemorrigan/gauntlet/boss/ThanosEncounter.java
       - src/gametest/java/com/dantemorrigan/gauntlet/gametest/DoomReleaseTest.java
+      - src/gametest/java/com/dantemorrigan/gauntlet/gametest/AbilityWheelTest.java
+      - src/gametest/java/com/dantemorrigan/gauntlet/gametest/AxeAndLatveriaHotfixTest.java
 
 concurrency:
   group: regression
@@ -29,13 +31,6 @@ jobs:
           distribution: 'microsoft'
       - name: make gradle wrapper executable
         run: chmod +x ./gradlew
-      - name: ability wheel client regression
-        if: github.event_name == 'workflow_dispatch'
-        timeout-minutes: 12
-        env:
-          LIBGL_ALWAYS_SOFTWARE: 'true'
-          ALSOFT_DRIVERS: 'null'
-        run: xvfb-run -a ./gradlew runClientGameTest -PonlyTest=AbilityWheelTest
       - name: Infinity Snap client regression
         if: github.event_name == 'workflow_dispatch'
         timeout-minutes: 8
@@ -61,7 +56,7 @@ jobs:
         env:
           LIBGL_ALWAYS_SOFTWARE: 'true'
           ALSOFT_DRIVERS: 'null'
-        run: xvfb-run -a ./gradlew runClientGameTest -PonlyTest=DoomReleaseTest
+        run: xvfb-run -a ./gradlew runClientGameTest -PonlyTest=AxeAndLatveriaHotfixTest,AbilityWheelTest,DoomReleaseTest
       - name: cosmos screenshots and logs
         if: always()
         uses: actions/upload-artifact@v7

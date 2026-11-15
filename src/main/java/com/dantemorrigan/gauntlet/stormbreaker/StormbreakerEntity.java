@@ -19,7 +19,8 @@ public final class StormbreakerEntity extends Entity {
     private static final EntityDataAccessor<Integer> PHASE =
             SynchedEntityData.defineId(StormbreakerEntity.class, EntityDataSerializers.INT);
     private int phaseStarted;
-    public static final int OUTBOUND = 0, RETURNING = 1, EMBEDDED = 2, PLANTING = 3, SKYFALL = 4, PULLING = 5;
+    public static final int OUTBOUND = 0, RETURNING = 1, EMBEDDED = 2, PLANTING = 3, SKYFALL = 4, PULLING = 5,
+            EMBEDDED_BLADE = 6, PULLING_BLADE = 7;
 
     public StormbreakerEntity(EntityType<? extends StormbreakerEntity> type, Level level) {
         super(type, level);
@@ -50,14 +51,18 @@ public final class StormbreakerEntity extends Entity {
         builder.define(PHASE, OUTBOUND);
     }
 
+    public boolean embedded() {
+        return phase() == EMBEDDED || phase() == EMBEDDED_BLADE;
+    }
+
     @Override
     public boolean isPickable() {
-        return phase() == EMBEDDED;
+        return embedded();
     }
 
     @Override
     public InteractionResult interact(Player player, InteractionHand hand, net.minecraft.world.phys.Vec3 hit) {
-        if (phase() != EMBEDDED) return InteractionResult.PASS;
+        if (!embedded()) return InteractionResult.PASS;
         if (player instanceof ServerPlayer serverPlayer) Stormbreaker.reclaim(serverPlayer, this);
         return InteractionResult.SUCCESS;
     }

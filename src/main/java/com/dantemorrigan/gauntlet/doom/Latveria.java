@@ -780,7 +780,8 @@ public final class Latveria {
 		if (boss != null && !boss.isRemoved()) return boss;
 		DoctorDoom doom = ModEntities.DOCTOR_DOOM.create(level, EntitySpawnReason.EVENT);
 		if (doom == null) return null;
-		doom.snapTo(LatveriaPlan.THRONE.x, LatveriaPlan.THRONE.y, LatveriaPlan.THRONE.z, 0f, 0);
+		Vec3 stand = LatveriaPlan.THRONE_STAND;
+		doom.snapTo(stand.x, stand.y, stand.z, 0f, 0);
 		doom.yBodyRot = doom.yHeadRot = 0f;
 		if (!level.addFreshEntity(doom)) return null;
 		doom.intro();

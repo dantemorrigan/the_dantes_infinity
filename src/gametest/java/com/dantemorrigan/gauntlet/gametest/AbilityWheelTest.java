@@ -3,6 +3,9 @@ package com.dantemorrigan.gauntlet.gametest;
 import com.dantemorrigan.gauntlet.*;
 import com.dantemorrigan.gauntlet.ability.*;
 import com.dantemorrigan.gauntlet.client.ability.*;
+import com.dantemorrigan.gauntlet.client.render.GauntletGestureClient;
+import com.mojang.blaze3d.platform.InputConstants;
+import net.minecraft.client.KeyMapping;
 import com.dantemorrigan.gauntlet.cosmos.CosmosTravel;
 import com.dantemorrigan.gauntlet.power.*;
 import net.fabricmc.fabric.api.client.gametest.v1.FabricClientGameTest;
@@ -45,8 +48,23 @@ public class AbilityWheelTest implements FabricClientGameTest {
             ctx.getInput().pressKey(GLFW.GLFW_KEY_1);
             ctx.getInput().pressKey(GLFW.GLFW_KEY_ESCAPE);
             close(ctx);
+            // Even an upgrade with the previous duplicate binding must reserve G for favorites.
+            ctx.runOnClient(mc -> {
+                GauntletGestureClient.KEY.setKey(InputConstants.Type.KEYSYM.getOrCreate(GLFW.GLFW_KEY_G));
+                KeyMapping.resetMapping();
+            });
             ctx.getInput().pressKey(GLFW.GLFW_KEY_G);
             ctx.waitFor(mc -> AbilityInput.selected() == Ability.STRIKE, 100);
+            ctx.waitTicks(2);
+            if (!ctx.computeOnClient(mc -> GauntletGestureClient.pose(mc.player.getId()) == null)) {
+                throw new AssertionError("G played the gauntlet inspection while switching favorites");
+            }
+            ctx.runOnClient(mc -> {
+                GauntletGestureClient.KEY.setKey(InputConstants.Type.KEYSYM.getOrCreate(GLFW.GLFW_KEY_I));
+                KeyMapping.resetMapping();
+            });
+            ctx.getInput().pressKey(GLFW.GLFW_KEY_I);
+            ctx.waitFor(mc -> GauntletGestureClient.pose(mc.player.getId()) != null, 50);
             ctx.waitTicks(5);
             if (!server.computeOnServer(s -> AbilityController.selected(s.getPlayerList().getPlayers().getFirst()) == Ability.STRIKE)) {
                 throw new AssertionError("Cycling favorites did not switch the server selection");

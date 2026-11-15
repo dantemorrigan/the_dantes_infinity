@@ -4,9 +4,13 @@ import com.dantemorrigan.gauntlet.ModEntities;
 import com.dantemorrigan.gauntlet.ModParticles;
 import com.dantemorrigan.gauntlet.boss.BossFlight;
 import com.dantemorrigan.gauntlet.stormbreaker.Stormbreaker;
+import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.protocol.game.ClientboundSetSubtitleTextPacket;
+import net.minecraft.network.protocol.game.ClientboundSetTitleTextPacket;
+import net.minecraft.network.protocol.game.ClientboundSetTitlesAnimationPacket;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
@@ -311,6 +315,11 @@ public class DoctorDoom extends Monster {
 		this.setItemSlot(net.minecraft.world.entity.EquipmentSlot.OFFHAND, net.minecraft.world.item.ItemStack.EMPTY);
 		this.stolenInHand = stolen.copy();
 		DoomFinalEncounter.onGauntletStolen(level.getServer(), victim, stolen);
+		victim.connection.send(new ClientboundSetTitlesAnimationPacket(4, 68, 12));
+		victim.connection.send(new ClientboundSetSubtitleTextPacket(
+				Component.translatable("hud.infinity_gauntlet.doom.theft_detail").withStyle(ChatFormatting.GOLD)));
+		victim.connection.send(new ClientboundSetTitleTextPacket(
+				Component.translatable("hud.infinity_gauntlet.doom.theft_title").withStyle(ChatFormatting.GREEN, ChatFormatting.BOLD)));
 		this.setInvulnerable(true);
 		setAction(A_STEAL_FLEE);
 		return true;

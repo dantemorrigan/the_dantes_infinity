@@ -91,19 +91,24 @@ public final class Stormbreaker {
     private static final int[] SWING_CONTACT = {6, 7, 10};
     private static final double WAVE_STEP = .92;
 
-    private record Relic(String owner, String seal, int phase, ResourceKey<Level> dimension, Vec3 position) {
+    private record Relic(String owner, String seal, int phase, ResourceKey<Level> dimension, Vec3 position, Vec3 bladeDirection) {
+        Relic(String owner, String seal, int phase, ResourceKey<Level> dimension, Vec3 position) {
+            this(owner, seal, phase, dimension, position, Vec3.ZERO);
+        }
+
         static final Codec<Relic> CODEC = RecordCodecBuilder.create(i -> i.group(
                 Codec.STRING.fieldOf("owner").forGetter(Relic::owner),
                 Codec.STRING.fieldOf("seal").forGetter(Relic::seal),
                 Codec.INT.fieldOf("phase").forGetter(Relic::phase),
                 ResourceKey.codec(Registries.DIMENSION).fieldOf("dimension").forGetter(Relic::dimension),
-                Vec3.CODEC.fieldOf("position").forGetter(Relic::position)).apply(i, Relic::new));
+                Vec3.CODEC.fieldOf("position").forGetter(Relic::position),
+                Vec3.CODEC.optionalFieldOf("blade_direction", Vec3.ZERO).forGetter(Relic::bladeDirection)).apply(i, Relic::new));
 
         boolean belongsTo(ServerPlayer p) { return owner.equals(p.getStringUUID()); }
 
         boolean acceptsStack() { return phase == HELD || phase == CREATIVE_MISSING; }
 
-        Relic withPhase(int phase) { return new Relic(owner, seal, phase, dimension, position); }
+        Relic withPhase(int phase) { return new Relic(owner, seal, phase, dimension, position, bladeDirection); }
 
         static Relic at(ServerPlayer p, int phase) {
             return new Relic(p.getStringUUID(), UUID.randomUUID().toString(), phase, p.level().dimension(), p.position());
@@ -135,7 +140,7 @@ public final class Stormbreaker {
     private static final class Flight {
         final boolean recall, crossDimensionRecall;
         final Set<UUID> hit = new HashSet<>();
-        Vec3 spaceDirection;
+        Vec3 outboundDirection;
         float yaw;
         int age;
         Flight(float yaw, boolean recall, boolean crossDimensionRecall) {
@@ -680,16 +685,17 @@ public final class Stormbreaker {
     private static void launch(ServerPlayer p, Session s, Release release) {
         if (release.level != p.level() || !mainHand(p) || !guarded(p)
                 || !matches(p.getMainHandItem(), record(p))) return;
-        boolean cosmos = CosmosTravel.inCosmos(p);
-        Vec3 direction = cosmos ? release.direction : Vec3.directionFromRotation(0, release.yaw);
-        Vec3 origin = p.getEyePosition().add(direction.scale(.75)).add(0, -.24, 0);
+        Vec3 direction = release.direction;
+        Vec3 origin = p.getEyePosition().add(0, -.24, 0);
+        Vec3 inFront = origin.add(direction.scale(.75));
+        if (blockHit(p.level(), origin, inFront).getType() == HitResult.Type.MISS) origin = inFront;
         if (!p.level().hasChunkAt(BlockPos.containing(origin))) return;
         StormbreakerEntity model = spawn(p.level(), origin, StormbreakerEntity.OUTBOUND);
         if (model == null) return;
         s.display = model;
         s.flight = new Flight(release.yaw, false, false);
-        if (cosmos) s.flight.spaceDirection = direction;
-        model.setYRot(release.yaw);
+        s.flight.outboundDirection = direction;
+        faceBlade(model, direction);
         s.throwReady = server(p).getTickCount() + 42;
         server(p).overworld().setAttached(RELIC, Relic.at(p, IN_FLIGHT));
         p.getMainHandItem().setCount(0);
@@ -713,7 +719,7 @@ public final class Stormbreaker {
         // A thrown axe does not come back by itself: at the end of its reach it sticks where it is (like Kratos's), and stays
         // until its owner calls it with the recall key.
         if (flight.age >= 24 && axe.phase() == StormbreakerEntity.OUTBOUND && !flight.recall) {
-            embedThrown(p, s, pos);
+            settleThrow(p, s, pos, flight.outboundDirection);
             return;
         }
         boolean returning = axe.phase() == StormbreakerEntity.RETURNING;
@@ -726,7 +732,7 @@ public final class Stormbreaker {
             flight.yaw = horizontal < 5 ? desired
                     : flight.yaw + Mth.clamp(Mth.wrapDegrees(desired - flight.yaw), -24f, 24f);
         }
-        Vec3 direction = Vec3.directionFromRotation(0, flight.yaw);
+        Vec3 direction = returning ? Vec3.directionFromRotation(0, flight.yaw) : flight.outboundDirection;
         double rise = returning && (flight.recall || horizontal < 6)
                 ? Mth.clamp(toHand.y * .32, -.95, .95) : 0;
         double speed = returning ? Math.min(2.45, horizontal) : 1.65;
@@ -734,15 +740,17 @@ public final class Stormbreaker {
                 : pos.add(direction.scale(speed)).add(0, rise, 0);
         if (!p.level().hasChunkAt(BlockPos.containing(next))) {
             if (returning) returnToOwner(p, s, false);
-            else embedThrown(p, s, pos);
+            else settleThrow(p, s, pos, direction);
             return;
         }
-        if (!flight.recall && p.level().clip(new ClipContext(pos, next, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, p)).getType() != HitResult.Type.MISS) {
-            // Hit a wall or the ground: it bites into it and stays.
-            embedThrown(p, s, pos);
-            return;
+        if (!returning) {
+            BlockHitResult hit = blockHit(p.level(), pos, next);
+            if (hit.getType() == HitResult.Type.BLOCK) {
+                embedThrown(p, s, hit, direction);
+                return;
+            }
         }
-        axe.setYRot(flight.yaw);
+        faceBlade(axe, direction);
         axe.setDeltaMovement(next.subtract(pos));
         axe.setPos(next.x, next.y, next.z);
         if (flight.age % 3 == 1) {
@@ -764,7 +772,7 @@ public final class Stormbreaker {
         Vec3 toHand = hand.subtract(pos);
         if (returning && toHand.lengthSqr() < 4) { returnToOwner(p, s, true); return; }
         if (!returning && flight.age >= 18) { turn(axe, flight); return; }
-        Vec3 direction = returning ? toHand.normalize() : flight.spaceDirection;
+        Vec3 direction = returning ? toHand.normalize() : flight.outboundDirection;
         Vec3 next = pos.add(direction.scale(returning ? Math.min(3.2, toHand.length()) : 2.6));
         if (!p.level().hasChunkAt(BlockPos.containing(next)) || !CosmicGauntlet.visible(p, pos, next)) {
             if (returning) returnToOwner(p, s, false);
@@ -803,14 +811,23 @@ public final class Stormbreaker {
         return false;
     }
 
-    /** The thrown axe stays where it stopped: planted in the ground below that spot, ready to be called back. */
-    private static void embedThrown(ServerPlayer p, Session s, Vec3 at) {
+    private static void settleThrow(ServerPlayer p, Session s, Vec3 at, Vec3 direction) {
+        BlockHitResult hit = blockHit(p.level(), at, at.add(0, -64, 0));
+        if (hit.getType() == HitResult.Type.BLOCK) embedThrown(p, s, hit, direction);
+        else returnToOwner(p, s, false);
+    }
+
+    private static void embedThrown(ServerPlayer p, Session s, BlockHitResult hit, Vec3 direction) {
         Relic relic = record(p);
-        Vec3 site = surface((ServerLevel) p.level(), at, 1, 64);
-        if (relic == null || site == null) { returnToOwner(p, s, false); return; }
+        if (relic == null) { returnToOwner(p, s, false); return; }
+        Vec3 normal = Vec3.atLowerCornerOf(hit.getDirection().getUnitVec3i());
+        Vec3 site = hit.getLocation().add(normal.scale(.01));
+        // Glancing hits keep their tangent, with enough inward tilt to seat the edge in the struck face.
+        Vec3 tangent = direction.subtract(normal.scale(direction.dot(normal)));
+        Vec3 bladeDirection = tangent.subtract(normal.scale(Math.max(.7, -direction.dot(normal)))).normalize();
         removeDisplay(s);
         s.flight = null;
-        plant(p, relic, s, site);
+        plant(p, relic, s, site, bladeDirection);
         StormFx.IMPACT.play(p.level(), site.add(0, .4, 0), 1.6);
         sound(p.level(), site, SoundEvents.TRIDENT_HIT_GROUND, 1.3f, .7f);
         ModStatus.send(p, Component.translatable("stormbreaker.infinity_gauntlet.planted",
@@ -874,7 +891,8 @@ public final class Stormbreaker {
         if (sealed(p.containerMenu.getCarried())) p.containerMenu.setCarried(ItemStack.EMPTY);
         Vec3 site = surface(p.level(), p.position(), 1, 12);
         if (site == null) site = p.position();
-        plant(p, relic, s, site);
+        Vec3 lean = Vec3.directionFromRotation(0, p.getYRot()).add(0, -1.6, 0).normalize();
+        plant(p, relic, s, site, lean);
     }
 
     public static boolean drop(ServerPlayer p, ItemStack stack) {
@@ -891,13 +909,13 @@ public final class Stormbreaker {
         Vec3 front = p.position().add(Vec3.directionFromRotation(0, p.getYRot()).scale(2.3));
         Vec3 site = surface(p.level(), front, 1, 64);
         if (site == null) site = surface(p.level(), p.position(), 1, 64);
-        plant(p, relic, session(p), site == null ? p.position() : site);
+        plant(p, relic, session(p), site == null ? p.position() : site, Vec3.ZERO);
         ModStatus.send(p, Component.translatable("stormbreaker.infinity_gauntlet.planted",
                 Component.keybind("key.infinity_gauntlet.stormbreaker_recall")));
         return true;
     }
 
-    private static void plant(ServerPlayer p, Relic relic, Session s, Vec3 site) {
+    private static void plant(ServerPlayer p, Relic relic, Session s, Vec3 site, Vec3 bladeDirection) {
         stopFlight(p, s);
         if (s.cast != null || s.groundCharge != null) StormNetwork.visual(p, "stop", 0, p.position());
         s.cast = null;
@@ -905,11 +923,15 @@ public final class Stormbreaker {
         s.groundCharge = null;
         s.release = null;
         s.swing = null;
-        server(p).overworld().setAttached(RELIC, new Relic(relic.owner, UUID.randomUUID().toString(),
-                IN_GROUND, p.level().dimension(), site));
+        Relic planted = new Relic(relic.owner, UUID.randomUUID().toString(), IN_GROUND,
+                p.level().dimension(), site, bladeDirection);
+        storeRelic(server(p), planted);
         if (!p.level().isOutsideBuildHeight(BlockPos.containing(site)) && p.level().hasChunkAt(BlockPos.containing(site))) {
-            s.display = spawn(p.level(), site, StormbreakerEntity.PLANTING);
-            s.plantUntil = server(p).getTickCount() + 10;
+            if (bladeDirection.lengthSqr() > 0) s.display = spawnEmbedded(p.level(), planted);
+            else {
+                s.display = spawn(p.level(), site, StormbreakerEntity.PLANTING);
+                s.plantUntil = server(p).getTickCount() + 10;
+            }
         }
     }
 
@@ -928,8 +950,10 @@ public final class Stormbreaker {
         Vec3 hand = p.getEyePosition();
         boolean local = relic.phase == IN_GROUND && relic.dimension == p.level().dimension() && !p.level().isOutsideBuildHeight(BlockPos.containing(relic.position))
                 && hand.distanceToSqr(relic.position) <= 80 * 80
-                && surface(p.level(), relic.position, 1, 2) != null;
-        Vec3 from = local ? relic.position.add(0, 1, 0)
+                && p.level().hasChunkAt(BlockPos.containing(relic.position))
+                && (relic.bladeDirection.lengthSqr() > 0 || surface(p.level(), relic.position, 1, 2) != null);
+        Vec3 from = local ? (relic.bladeDirection.lengthSqr() > 0
+                ? relic.position.subtract(relic.bladeDirection.scale(.8)) : relic.position.add(0, 1, 0))
                 : hand.add(Vec3.directionFromRotation(0, p.getYRot()).scale(18)).add(0, 5, 0);
         if (!p.level().hasChunkAt(BlockPos.containing(from))) from = hand.add(0, 6, 0);
         StormbreakerEntity axe = spawn(p.level(), from, StormbreakerEntity.RETURNING);
@@ -959,10 +983,11 @@ public final class Stormbreaker {
             status(p, "already_bound");
             return;
         }
-        if (s.pull != null || entity.phase() != StormbreakerEntity.EMBEDDED) return;
+        if (s.pull != null || !entity.embedded()) return;
         if (p.getInventory().getFreeSlot() < 0) { status(p, "inventory_full"); return; }
         s.pull = new Pull(p.getUUID(), server(p).getTickCount() + PULL_TICKS);
-        entity.phase(StormbreakerEntity.PULLING);
+        entity.phase(entity.phase() == StormbreakerEntity.EMBEDDED_BLADE
+                ? StormbreakerEntity.PULLING_BLADE : StormbreakerEntity.PULLING);
         p.swing(InteractionHand.MAIN_HAND, true);
         StormNetwork.visual(p, "reclaim_hand", 0, entity.position());
         StormFx.RECLAIM.play(p.level(), entity.position().add(0, .55, 0), 1.4);
@@ -987,7 +1012,8 @@ public final class Stormbreaker {
             status(p, "bound");
             removeDisplay(s);
         } else if (s.display != null) {
-            s.display.phase(StormbreakerEntity.EMBEDDED);
+            s.display.phase(s.display.phase() == StormbreakerEntity.PULLING_BLADE
+                    ? StormbreakerEntity.EMBEDDED_BLADE : StormbreakerEntity.EMBEDDED);
         }
     }
 
@@ -1095,6 +1121,22 @@ public final class Stormbreaker {
         model.phase(phase);
         model.setPos(at.x, at.y, at.z);
         return level.addFreshEntity(model) ? model : null;
+    }
+
+    private static StormbreakerEntity spawnEmbedded(ServerLevel level, Relic relic) {
+        if (relic.bladeDirection.lengthSqr() == 0) return spawn(level, relic.position, StormbreakerEntity.EMBEDDED);
+        StormbreakerEntity axe = new StormbreakerEntity(ModEntities.STORMBREAKER, level);
+        Vec3 at = relic.position;
+        axe.setPos(at.x, at.y, at.z);
+        axe.phase(StormbreakerEntity.EMBEDDED_BLADE);
+        faceBlade(axe, relic.bladeDirection);
+        return level.addFreshEntity(axe) ? axe : null;
+    }
+
+    private static void faceBlade(StormbreakerEntity axe, Vec3 direction) {
+        double horizontal = direction.horizontalDistance();
+        if (horizontal > .0001) axe.setYRot((float) Math.toDegrees(Math.atan2(-direction.x, direction.z)));
+        axe.setXRot((float) Math.toDegrees(Math.atan2(-direction.y, horizontal)));
     }
 
     private static void removeDisplay(Session s) {
@@ -1231,7 +1273,7 @@ public final class Stormbreaker {
             if (level != null && !level.isOutsideBuildHeight(BlockPos.containing(relic.position))
                     && level.hasChunkAt(BlockPos.containing(relic.position))) {
                 if (s.display == null || s.display.isRemoved()) {
-                    s.display = spawn(level, relic.position, StormbreakerEntity.EMBEDDED);
+                    s.display = spawnEmbedded(level, relic);
                 }
                 if (s.display != null && s.display.phase() == StormbreakerEntity.PLANTING && now >= s.plantUntil) {
                     s.display.phase(StormbreakerEntity.EMBEDDED);
@@ -1240,7 +1282,7 @@ public final class Stormbreaker {
                 }
                 if (s.pull != null) { tickPull(server, s, level, now); return; }
                 if (now % 14 == 0) StormFx.EMBEDDED_IDLE.play(level, relic.position.add(.18, .65, 0), 2.5);
-                if (s.display != null && s.display.phase() == StormbreakerEntity.EMBEDDED && now % 50 == 0) {
+                if (s.display != null && s.display.embedded() && now % 50 == 0) {
                     Vec3 socket = relic.position.add(0, .35, 0);
                     StormFx.WRATH_BOLT.play(level, socket, 20);
                     StormFx.RECLAIM.play(level, socket, 2.8);
@@ -1366,9 +1408,13 @@ public final class Stormbreaker {
 
     private static Vec3 surface(ServerLevel level, Vec3 at, int above, int below) {
         if (!level.hasChunkAt(BlockPos.containing(at))) return null;
-        BlockHitResult hit = level.clip(new ClipContext(at.add(0, above, 0), at.add(0, -below, 0),
-                ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, net.minecraft.world.phys.shapes.CollisionContext.empty()));
+        BlockHitResult hit = blockHit(level, at.add(0, above, 0), at.add(0, -below, 0));
         return hit.getType() == HitResult.Type.BLOCK ? hit.getLocation() : null;
+    }
+
+    private static BlockHitResult blockHit(ServerLevel level, Vec3 start, Vec3 end) {
+        return level.clip(new ClipContext(start, end, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE,
+                net.minecraft.world.phys.shapes.CollisionContext.empty()));
     }
 
     private static Iterable<LivingEntity> targets(ServerLevel level, Vec3 center, double radius, double height) {

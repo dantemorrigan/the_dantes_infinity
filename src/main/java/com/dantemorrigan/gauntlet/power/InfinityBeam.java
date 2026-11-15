@@ -26,6 +26,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.block.BaseFireBlock;
+import com.dantemorrigan.gauntlet.doom.Latveria;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.phys.AABB;
@@ -127,6 +128,7 @@ public final class InfinityBeam {
         int budget = Math.max(512, Math.min(4096, GauntletConfig.get().beamBlocksPerTick));
         double radius = Math.max(1, Math.min(8, GauntletConfig.get().beamDrillRadius));
         Set<Long> visited = new HashSet<>();
+        boolean scorch = !c.level.dimension().equals(Latveria.LEVEL);
         List<BlockPos> scorchCandidates = new ArrayList<>();
         var rnd = c.level.getRandom();
         for (double d = 1.5; d <= distance; d += 1.0) {
@@ -141,7 +143,7 @@ public final class InfinityBeam {
                 double distSq = pos.getCenter().distanceToSqr(center);
                 if (distSq > rimSq || pos.getCenter().distanceToSqr(c.owner.position()) < 6) continue;
                 if (distSq > rSq) {
-                    if (y <= 0 && rnd.nextFloat() < 0.14f) scorchCandidates.add(pos.immutable());
+                    if (scorch && y <= 0 && rnd.nextFloat() < 0.14f) scorchCandidates.add(pos.immutable());
                     continue;
                 }
                 if (!visited.add(pos.asLong()) || !CoopRules.canEdit(c.owner, c.level, pos)) continue;
@@ -150,7 +152,7 @@ public final class InfinityBeam {
                 // No drops, falling-block entities or hundreds of separate explosions per tick.
                 if (c.level.setBlock(pos, Blocks.AIR.defaultBlockState(), Block.UPDATE_ALL) && --budget <= 0) return;
             }
-            if ((int) d % 4 == 0) {
+            if (scorch && (int) d % 4 == 0) {
                 c.level.sendParticles(ParticleTypes.FLAME, center.x, center.y, center.z, 4, r * 0.4, r * 0.4, r * 0.4, 0.04);
             }
         }
@@ -167,6 +169,7 @@ public final class InfinityBeam {
         return box.contains(from) || box.clip(from, to).isPresent();
     }
     private static void damage(Cast c, Vec3 from, Vec3 to) {
+        boolean scorch = !c.level.dimension().equals(Latveria.LEVEL);
         double radius = Math.max(2.5, Math.min(6.0, Math.max(GauntletConfig.get().beamHitRadius, GauntletConfig.get().beamDrillRadius * 0.75)));
         AABB area = new AABB(from, to).inflate(radius + 16);
         for (LivingEntity target : CombatTargets.inArea(c.owner,area)) {
@@ -221,10 +224,12 @@ public final class InfinityBeam {
             } else if (!(target instanceof Player) && !UruArmor.fullSet(target)) {
                 // Every non-boss mob caught in the all-stones beam is incinerated and killed on the very first hit.
                 target.invulnerableTime = 0;
-                target.igniteForSeconds(10);
-                Vec3 body = target.position().add(0, target.getBbHeight() * 0.5, 0);
-                c.level.sendParticles(ParticleTypes.FLAME, body.x, body.y, body.z, 18, 0.35, 0.45, 0.35, 0.08);
-                c.level.sendParticles(ParticleTypes.LAVA, body.x, body.y, body.z, 6, 0.25, 0.3, 0.25, 0.02);
+                if (scorch) {
+                    target.igniteForSeconds(10);
+                    Vec3 body = target.position().add(0, target.getBbHeight() * 0.5, 0);
+                    c.level.sendParticles(ParticleTypes.FLAME, body.x, body.y, body.z, 18, 0.35, 0.45, 0.35, 0.08);
+                    c.level.sendParticles(ParticleTypes.LAVA, body.x, body.y, body.z, 6, 0.25, 0.3, 0.25, 0.02);
+                }
                 var src = c.owner.damageSources().playerAttack(c.owner);
                 GauntletDamage.hurt(c.level, target, c.owner, src, Float.MAX_VALUE);
                 if (target.isAlive() && !(target instanceof com.dantemorrigan.gauntlet.stones.MindZombie)) {
@@ -234,7 +239,7 @@ public final class InfinityBeam {
                 }
             } else if (!UruArmor.fullSet(target) || (c.age - c.charge) % 4 == 0) {
                 target.invulnerableTime = 0;
-                target.igniteForSeconds(10);
+                if (scorch) target.igniteForSeconds(10);
                 GauntletDamage.hurt(c.level, target, c.owner, c.owner.damageSources().playerAttack(c.owner), Float.MAX_VALUE);
             }
         }

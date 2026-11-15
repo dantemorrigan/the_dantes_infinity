@@ -1004,6 +1004,8 @@
   "msg.infinity_gauntlet.latveria.cloak.exposed_combat": "§cВы нарушили порядок на глазах у патруля — мантия больше не скрывает вас!",
   "msg.infinity_gauntlet.latveria.generator.need_disruptor": "§eИспользуйте устройство старого механика Радована, чтобы полностью отключить главный генератор и всех Думботов замка.",
   "msg.infinity_gauntlet.latveria.generator.sabotaged_full": "§aПодавитель установлен! Главный генератор под замком остановлен — все системы защиты, ворота и Думботы замка отключены. Путь к Думу свободен!",
+  "hud.infinity_gauntlet.doom.theft_title": "Дум забирает Перчатку",
+  "hud.infinity_gauntlet.doom.theft_detail": "Верни её в финальном бою",
   "msg.infinity_gauntlet.latveria.doom.steal_1": "§2[Доктор Дум]§r Бессильный глупец... Перчатка Бесконечности принадлежит лишь Думу!",
   "msg.infinity_gauntlet.latveria.doom.steal_2": "§2[Доктор Дум]§r Не хватает последнего камня... Я сам завершу то, на что у тебя не хватило воли!",
   "msg.infinity_gauntlet.latveria.doom.stolen_fled_hint": "§6Дум забрал Перчатку Бесконечности и скрылся через пространственный разлом! Вернитесь в Обычный мир и следуйте по компасу.",
