@@ -86,7 +86,6 @@ public final class AbilityWheelScreen extends Screen {
     }
     @Override public void tick() {
         if(!AbilityInput.equipped() || Minecraft.getInstance().player==null || !Minecraft.getInstance().player.isAlive()) {onClose();return;}
-        if(pending!=null && pending!=stone && System.nanoTime()-hoverSince>=140_000_000L) {stone=pending;hovered=null;}
     }
     private void finish() {
         if(finished) return;
@@ -186,6 +185,8 @@ public final class AbilityWheelScreen extends Screen {
     @Override public void extractRenderState(GuiGraphicsExtractor g,int mx,int my,float delta) {
         pointer(mx,my);
         long now=System.nanoTime();dt=Smooth.dt(lastFrame,now);lastFrame=now;
+        // Hovering a stone switches to it after a blink (checked every frame, not every tick, so it never waits for the next 50 ms).
+        if(submenu==0 && pending!=null && pending!=stone && now-hoverSince>=35_000_000L) {stone=pending;hovered=null;}
         open=Smooth.approach(open,1f,16f,dt);
         if(shown!=stone) {if(shown!=null) switchIn=0;shown=stone;}
         switchIn=Smooth.approach(switchIn,1f,13f,dt);
