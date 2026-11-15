@@ -256,7 +256,7 @@ public final class DoomFinalEncounter {
 
 	public static boolean canBreakDome(ServerPlayer p) {
 		if (stage != STAGE_DOME_DUEL || p.level().dimension() != Level.OVERWORLD) return false;
-		Vec3 c = Vec3.atBottomCenterOf(arenaPos);
+		Vec3 c = centre();
 		double dist = p.position().distanceTo(c);
 		return dist <= DOME_RADIUS + 8.5;
 	}
@@ -267,7 +267,7 @@ public final class DoomFinalEncounter {
 		stage = STAGE_KILL_THANOS_CUTSCENE;
 		stageTicks = 0;
 		save(level.getServer());
-		Vec3 c = Vec3.atBottomCenterOf(arenaPos);
+		Vec3 c = centre();
 		// Lightning bolt from Stormbreaker onto the dome!
 		LightningBolt bolt = EntityType.LIGHTNING_BOLT.create(level, EntitySpawnReason.EVENT);
 		if (bolt != null) {
@@ -354,7 +354,7 @@ public final class DoomFinalEncounter {
 			firesCleared = true;
 			clearFires(overworld);
 		}
-		Vec3 center = Vec3.atBottomCenterOf(arenaPos);
+		Vec3 center = centre();
 
 		switch (stage) {
 			case STAGE_WAITING_OVERWORLD -> {
@@ -388,6 +388,11 @@ public final class DoomFinalEncounter {
 
 	private static void ensureDoomPresent(ServerLevel overworld, Vec3 center) {
 		if (!overworld.isLoaded(arenaPos)) return;
+		// A Doom left sunk into the floor (an older save placed him inside the ground block) is lifted onto it.
+		if (doom != null && !doom.isRemoved() && doom.isAlive() && doom.getY() < center.y - 0.4
+				&& Math.hypot(doom.getX() - center.x, doom.getZ() - center.z) < ARENA_RADIUS) {
+			doom.teleportTo(doom.getX(), center.y, doom.getZ());
+		}
 		if (doom == null || doom.isRemoved() || !doom.isAlive()) {
 			doom = ModEntities.DOCTOR_DOOM.create(overworld, EntitySpawnReason.EVENT);
 			if (doom == null) return;
@@ -423,7 +428,7 @@ public final class DoomFinalEncounter {
 
 	private static void tickThanosArrival(ServerLevel overworld, Vec3 center, int t) {
 		keepPlayersOutsideDome(overworld, center);
-		Vec3 landing = center.add(5.5, 1.0, 0); // the floor block is at the centre's height: stand on it, not in it
+		Vec3 landing = center.add(5.5, 0, 0);
 		if (t == 55) {
 			for (ServerPlayer p : overworld.players()) {
 				if (p.position().distanceTo(center) < 180) {
@@ -481,7 +486,7 @@ public final class DoomFinalEncounter {
 		if (!overworld.isLoaded(arenaPos)) return;
 		ensureDoomPresent(overworld, center);
 		if (thanos == null || thanos.isRemoved() || !thanos.isAlive()) {
-			Vec3 landing = center.add(5.5, 1.0, 0);
+			Vec3 landing = center.add(5.5, 0, 0);
 			thanos = ModEntities.THANOS.create(overworld, EntitySpawnReason.EVENT);
 			if (thanos != null) {
 				thanos.setHasGauntlet(false);
@@ -545,7 +550,7 @@ public final class DoomFinalEncounter {
 				if (thanos != null) doom.face(thanos.position());
 			}
 			if (thanos != null) {
-				thanos.teleportTo(center.x + 3.5, center.y + 1.0, center.z);
+				thanos.teleportTo(center.x + 3.5, center.y, center.z);
 				thanos.faceTowards(center.add(-3.5, 0, 0));
 				thanos.pose(Thanos.A_STAGGER);
 			}
@@ -706,6 +711,9 @@ public final class DoomFinalEncounter {
 		}
 	}
 
+	/** The middle of the battlefield, standing height: one above the floor block at {@link #arenaPos}, so nobody is placed inside the ground. */
+	private static Vec3 centre() { return Vec3.atBottomCenterOf(arenaPos).add(0, 1, 0); }
+
 	private static boolean firesCleared;
 
 	/** Puts out the flames an older version of the battlefield set burning: they blocked the view and dragged the game down. */
@@ -788,7 +796,7 @@ public final class DoomFinalEncounter {
 	}
 
 	public static void syncAll(MinecraftServer server) {
-		Vec3 c = Vec3.atBottomCenterOf(arenaPos);
+		Vec3 c = centre();
 		int dId = doom != null && !doom.isRemoved() ? doom.getId() : -1;
 		int tId = thanos != null && !thanos.isRemoved() ? thanos.getId() : -1;
 		ModNetwork.DoomFinalSync pkt = new ModNetwork.DoomFinalSync(stage, stageTicks, c, dId, tId, stoneMask);
@@ -812,7 +820,7 @@ public final class DoomFinalEncounter {
 			arenaBuilt = true;
 			save(server);
 		}
-		ensureDoomPresent(overworld, Vec3.atBottomCenterOf(arenaPos));
+		ensureDoomPresent(overworld, centre());
 		Vec3 target = new Vec3(arenaPos.getX() + 0.5, arenaPos.getY() + 1.0, arenaPos.getZ() + DOME_RADIUS + 4.0);
 		player.teleport(new net.minecraft.world.level.portal.TeleportTransition(
 				overworld, target, Vec3.ZERO, 180f, 0f, net.minecraft.world.level.portal.TeleportTransition.DO_NOTHING));
