@@ -838,6 +838,7 @@ public final class Latveria {
 			if (villager == null) continue;
 			villager.snapTo(p.getX() + 0.5, p.getY() + 1, p.getZ() + 0.5, 0f, 0);
 			villager.setPersistenceRequired();
+			LatveriaFolk.dress(villager);
 			level.addFreshEntity(villager);
 		}
 	}

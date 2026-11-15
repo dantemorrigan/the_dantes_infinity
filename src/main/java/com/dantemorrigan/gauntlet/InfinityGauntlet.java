@@ -81,6 +81,7 @@ public class InfinityGauntlet implements ModInitializer {
 		com.dantemorrigan.gauntlet.meteor.MeteorStream.init();
 		ServerPlayNetworking.registerGlobalReceiver(ModNetwork.GestureStart.TYPE, (payload, context) -> GauntletGesture.start(context.player()));
 		com.dantemorrigan.gauntlet.stormbreaker.Stormbreaker.init();
+		com.dantemorrigan.gauntlet.doom.LatveriaFolk.register();
 		net.minecraft.core.Registry.register(net.minecraft.core.registries.BuiltInRegistries.CHUNK_GENERATOR, id("latveria"),
 				com.dantemorrigan.gauntlet.doom.LatveriaGenerator.CODEC);
 		com.dantemorrigan.gauntlet.doom.Latveria.init();
