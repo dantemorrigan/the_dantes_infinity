@@ -49,13 +49,15 @@ public class DoctorDoom extends Monster {
 			A_RIFT = 8, A_SORCERY = 9, A_HEX = 10, A_SUNS = 11, A_NOVA = 12, A_EDICT = 13, A_LIGHTNING = 14, A_CLEAVE = 15,
 			A_SMASH = 16, A_STAGGER = 17, A_DEFEAT = 18, A_TAUNT = 19, A_SIPHON = 20, A_DECOY = 21, A_ASCEND = 22, A_STEAL_FLEE = 23,
 			// The powers of the stolen Infinity Gauntlet, used only in the final fight.
-			A_METEORS = 24, A_TIME = 25, A_REALITY = 26, A_MIND = 27, A_SOUL = 28;
+			A_METEORS = 24, A_TIME = 25, A_REALITY = 26, A_MIND = 27, A_SOUL = 28,
+			/** The gravity pull: whoever keeps out of his reach (flying, hovering, running off) is dragged back to him, in any fight. */
+			A_PULL = 29;
 	/** Clip of each action, in action order. */
 	public static final String[] CLIPS = {"idle", "intro", "armored_combo", "gauntlet_bolt", "iron_bastion", "doombot_drop", "jet_slam",
 			"phase_shift", "rift_step", "sorcery_bolt", "hex_barrage", "seven_suns", "arcane_nova", "latverian_edict", "lightning_call",
 			"cleave", "overhead_smash", "stagger_heavy", "defeat", "taunt", "infinity_siphon", "decoy_gambit", "ascension", "taunt",
-			"seven_suns", "arcane_nova", "hex_barrage", "infinity_siphon", "infinity_siphon"};
-	private static final int[] TICKS = {0, 100, 39, 38, 87, 53, 59, 42, 38, 55, 48, 119, 60, 126, 52, 30, 32, 32, 72, 48, 100, 42, 480, 140, 130, 76, 96, 84, 80};
+			"seven_suns", "arcane_nova", "hex_barrage", "infinity_siphon", "infinity_siphon", "latverian_edict"};
+	private static final int[] TICKS = {0, 100, 39, 38, 87, 53, 59, 42, 38, 55, 48, 119, 60, 126, 52, 30, 32, 32, 72, 48, 100, 42, 480, 140, 130, 76, 96, 84, 80, 52};
 	/** The siphon: wind-up, then the pull until it completes; blows that break it, and how long a drained gauntlet stays silent. */
 	public static final int SIPHON_START = 14, SIPHON_DONE = 92, SIPHON_SILENCE = 300;
 	public static final float SIPHON_BREAK = 30;
@@ -82,6 +84,8 @@ public class DoctorDoom extends Monster {
 	private record Incoming(int tick, Vec3 at, int id, boolean solar) {}
 	private final List<Incoming> incoming = new ArrayList<>();
 	private int timeShifted;
+	/** How long the challenger has been out of his reach (in the air, or far off), and the pause before he pulls again. */
+	private int unreachable, sincePull = 200;
 	private float castDamage, siphonDamage;
 	private int sinceSiphon = 200, sinceDecoy = 300;
 	private UUID siphonId, ascendVictim;
@@ -537,6 +541,7 @@ public class DoctorDoom extends Monster {
 		sinceMind++;
 		sinceSoul++;
 		sinceGauntlet++;
+		sincePull++;
 		sinceDrop++;
 		sinceSiphon++;
 		sinceDecoy++;
@@ -546,6 +551,19 @@ public class DoctorDoom extends Monster {
 		}
 		ServerPlayer target = target(level);
 		for (ServerPlayer p : level.players()) if (valid(p) && challengers.add(p.getUUID())) scaleForChallengers();
+		// Nobody fights him from the sky: out of reach for too long and he pulls them down to him, whatever the stage.
+		if (target != null && !passive && action != A_ASCEND && action != A_STEAL_FLEE) {
+			boolean up = !target.onGround() && !target.isInWater() && (target.getAbilities().flying || target.isFallFlying()
+					|| target.hasAttached(com.dantemorrigan.gauntlet.cosmos.CosmosTravel.FLIGHT) || target.getY() - this.getY() > 2.5);
+			double dist = this.distanceTo(target);
+			unreachable = (up && dist > 5) || dist > 26 ? unreachable + 1 : Math.max(0, unreachable - 2);
+			if (unreachable >= 45 && sincePull >= 120 && (action == A_IDLE || action == A_SORCERY || action == A_HEX || action == A_BOLT)) {
+				unreachable = 0;
+				sincePull = 0;
+				face(target.position());
+				setAction(A_PULL);
+			}
+		}
 		if (action != A_IDLE) {
 			this.getNavigation().stop();
 			act(level, target, action, actionTicks);
@@ -901,6 +919,7 @@ public class DoctorDoom extends Monster {
 				}
 				if (t == 92) expose(46);
 			}
+			case A_PULL -> pull(level, target, t);
 			case A_METEORS -> meteors(level, target, t);
 			case A_TIME -> timeWind(level, t);
 			case A_REALITY -> realityWarp(level, target, t);
@@ -958,6 +977,38 @@ public class DoctorDoom extends Monster {
 			if (!DoomCombat.hurt(level, e, this, finalDamage)) continue;
 			Vec3 dir = e.position().subtract(this.position()).normalize();
 			e.knockback(push, -dir.x, -dir.z);
+		}
+	}
+
+	/**
+	 * The gravity pull: a wind-up he announces, then the challenger is dragged through the air to the spot in front of him
+	 * for a second, the gauntlet's flight (and creative flight) is cut, and the gauntlet stays silent for a few seconds so
+	 * the same trick cannot be repeated at once. No damage: it only brings the fight back to him.
+	 */
+	private void pull(ServerLevel level, ServerPlayer target, int t) {
+		Vec3 at = this.position();
+		if (t == 4) {
+			DoomVfx.on(level, DoomVfx.CHARGE, this, 1.1f, 14, DoomVfx.GREEN);
+			DoomFx.sound(level, at, SoundEvents.RESPAWN_ANCHOR_CHARGE, 2f, 0.6f);
+			DoomFx.line(level, at, 80, "doom.pull");
+		}
+		if (target == null || !valid(target) || t < 14 || t > 44) return;
+		Vec3 spot = at.add(Vec3.directionFromRotation(0, this.getYRot()).scale(3.0));
+		Vec3 to = spot.subtract(target.position());
+		double len = to.length();
+		if (len > 2.0) {
+			Vec3 v = to.scale(Math.min(1.35, 0.4 + len * 0.08) / len);
+			target.setDeltaMovement(v);
+			target.hurtMarked = true;
+		}
+		target.fallDistance = 0;
+		if (target.getAbilities().flying) { target.getAbilities().flying = false; target.onUpdateAbilities(); }
+		if (target.hasAttached(com.dantemorrigan.gauntlet.cosmos.CosmosTravel.FLIGHT)) com.dantemorrigan.gauntlet.cosmos.CosmosTravel.action(target, 0);
+		if (t % 3 == 0) DoomVfx.line(level, DoomVfx.TRAIL, hand(), target.position().add(0, 1.2, 0), 0.5f, 4, DoomVfx.GREEN);
+		if (t == 44) {
+			GauntletSilence.silence(target, 140);
+			DoomFx.sound(level, target.position(), SoundEvents.ANVIL_LAND, 1.2f, 0.7f);
+			expose(30);
 		}
 	}
 
