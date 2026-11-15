@@ -3,12 +3,19 @@ package com.dantemorrigan.gauntlet.gametest;
 import com.dantemorrigan.gauntlet.ModComponents;
 import com.dantemorrigan.gauntlet.ModEntities;
 import com.dantemorrigan.gauntlet.ModItems;
+import com.dantemorrigan.gauntlet.boss.BossFlight;
 import com.dantemorrigan.gauntlet.boss.ThanosEncounter;
+import com.dantemorrigan.gauntlet.cosmos.CosmosTravel;
 import com.dantemorrigan.gauntlet.doom.DoctorDoom;
+import com.dantemorrigan.gauntlet.doom.DoomArmor;
 import com.dantemorrigan.gauntlet.doom.DoomFinalEncounter;
 import com.dantemorrigan.gauntlet.doom.Latveria;
 import com.dantemorrigan.gauntlet.doom.LatveriaQuests;
+import com.dantemorrigan.gauntlet.power.SpaceStone;
+import com.dantemorrigan.gauntlet.stormbreaker.StormNetwork;
+import com.dantemorrigan.gauntlet.stormbreaker.Stormbreaker;
 import net.fabricmc.fabric.api.client.gametest.v1.FabricClientGameTest;
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.client.gametest.v1.context.ClientGameTestContext;
 import net.fabricmc.fabric.api.client.gametest.v1.world.TestWorldSave;
 import net.minecraft.core.component.DataComponents;
@@ -17,7 +24,11 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.EntitySpawnReason;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.portal.TeleportTransition;
 import net.minecraft.world.phys.Vec3;
 
 public final class DoomReleaseTest implements FabricClientGameTest {
@@ -123,8 +134,68 @@ public final class DoomReleaseTest implements FabricClientGameTest {
 					check(p.getOffhandItem().is(ModItems.GAUNTLET)
 							&& DoomFinalEncounter.packStoneMask(p.getOffhandItem()) == 0, "The existing offhand gauntlet was overwritten");
 				});
+				if (attempt == 1) cosmicEquipment(ctx, world.getServer());
 				save = world.getWorldSave();
 			}
 		}
+	}
+
+	private static void cosmicEquipment(ClientGameTestContext ctx, TestServerContext server) {
+		server.runCommand("difficulty normal");
+		server.runOnServer(s -> {
+			ServerPlayer p = player(s);
+			p.setItemInHand(InteractionHand.OFF_HAND, DoomFinalEncounter.buildGauntletFromMask(0x3F));
+			CosmosTravel.action(p, 0);
+			p.teleport(new TeleportTransition(s.getLevel(CosmosTravel.DIMENSION), new Vec3(30000, 256, 500),
+					Vec3.ZERO, 0, 0, TeleportTransition.DO_NOTHING));
+			p.setItemSlot(EquipmentSlot.HEAD, new ItemStack(ModItems.DOOM_HELMET));
+			p.setItemSlot(EquipmentSlot.CHEST, new ItemStack(ModItems.DOOM_CHESTPLATE));
+			p.setItemSlot(EquipmentSlot.LEGS, new ItemStack(ModItems.DOOM_LEGGINGS));
+			p.setItemSlot(EquipmentSlot.FEET, new ItemStack(ModItems.DOOM_BOOTS));
+			ItemStack axe = new ItemStack(ModItems.STORMBREAKER);
+			Stormbreaker.finishCraft(p, axe);
+			p.setItemInHand(InteractionHand.MAIN_HAND, axe);
+		});
+		ctx.waitTicks(25);
+		server.runOnServer(s -> {
+			ServerPlayer p = player(s);
+			check(BossFlight.airborne(p), "The player was not in flight in the cosmos");
+			p.setDeltaMovement(new Vec3(1, 0, 0));
+			BossFlight.interrupt(p, 1);
+			check(p.getDeltaMovement().length() < .3 && p.getAbilities().flying && p.hasAttached(CosmosTravel.FLIGHT),
+					"An aerial hit disabled space flight instead of slowing the player");
+			SpaceStone.action(p, 2);
+			check(p.getZ() > 520, "The Space Stone blink required a floor");
+			double previous = p.getZ();
+			DoomArmor.cast(p, DoomArmor.RIFT);
+			check(p.getZ() > previous + 15, "Doom's Rift Step required a floor");
+			DoomArmor.cast(p, DoomArmor.JET);
+			check(p.getDeltaMovement().length() > .5 && p.getAbilities().flying && !DoomArmor.jetsActive(p),
+					"Doom's space jet did not provide a burst alongside gauntlet flight");
+			p.setDeltaMovement(Vec3.ZERO);
+		});
+		ctx.waitTicks(10);
+		ctx.runOnClient(mc -> ClientPlayNetworking.send(new StormNetwork.Action(StormNetwork.THROW)));
+		ctx.waitTicks(14);
+		server.runOnServer(s -> check(player(s).getInventory().countItem(ModItems.STORMBREAKER) == 0,
+				"The axe did not leave the inventory when thrown in space"));
+		ctx.waitTicks(55);
+		LivingEntity target = server.computeOnServer(s -> {
+			ServerPlayer p = player(s);
+			check(p.getInventory().countItem(ModItems.STORMBREAKER) == 1, "The axe failed to return exactly once in space");
+			var dummy = EntityType.ZOMBIE.create(p.level(), EntitySpawnReason.EVENT);
+			Vec3 at = p.getEyePosition().add(p.getLookAngle().scale(14)).add(0, -.8, 0);
+			dummy.setPos(at.x, at.y, at.z);
+			dummy.setNoAi(true);
+			dummy.setNoGravity(true);
+			check(p.level().addFreshEntity(dummy), "Could not spawn an Edict target");
+			DoomArmor.cast(p, DoomArmor.EDICT);
+			return dummy;
+		});
+		ctx.waitTicks(7);
+		ctx.takeScreenshot("cosmic_doom_edict");
+		ctx.waitTicks(20);
+		server.runOnServer(s -> check(target.getHealth() < target.getMaxHealth(),
+				"Doom's Latverian Edict missed a target suspended in empty space"));
 	}
 }
