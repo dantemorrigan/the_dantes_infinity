@@ -146,16 +146,27 @@ final class LatveriaStatue {
 	}
 
 	private static void head() {
-		box(-3, 40, -3, 3, 49, 3, IRON);                  // the iron mask, a square helm
-		box(-3, 40, 4, 3, 49, 4, IRON);                   // its face
-		box(-2, 41, 4, 2, 42, 5, IRON);                   // the jaw
-		box(-1, 43, 5, 1, 45, 5, IRON);                   // the nose ridge
-		box(-3, 45, 4, -1, 45, 4, EYE);                   // the eyes, burning
-		box(1, 45, 4, 3, 45, 4, EYE);
-		box(-2, 46, 5, -1, 46, 5, DARK);                  // the brow, a dark band over the eyes
-		box(1, 46, 5, 2, 46, 5, DARK);
-		box(-1, 42, 5, 1, 42, 5, SLIT);                   // the mouth slit
-		for (int x : new int[]{-3, 3}) block(x, 43, 4, GOLD);  // rivets
+		// The iron mask: a flat, cold plate, smooth and blank but for its slits; no expression but menace.
+		BlockState mask = Blocks.LIGHT_GRAY_CONCRETE.defaultBlockState(), shade = Blocks.GRAY_CONCRETE.defaultBlockState();
+		box(-3, 40, -3, 3, 49, 3, mask);                  // the helm
+		box(-3, 40, 4, 3, 49, 4, mask);                   // the face plate
+		box(-3, 40, 4, -3, 46, 4, shade);                 // the cheek plates, darker at the edges
+		box(3, 40, 4, 3, 46, 4, shade);
+		// The brow: a heavy ridge standing out over the eyes and sloping down to the middle, a frown cut in steel.
+		box(-3, 47, 5, -2, 47, 5, mask);
+		box(2, 47, 5, 3, 47, 5, mask);
+		box(-1, 46, 5, 1, 46, 5, mask);
+		// The eyes: narrow slits in shadow, burning green deep inside.
+		box(-3, 45, 4, -1, 45, 4, SLIT);
+		box(1, 45, 4, 3, 45, 4, SLIT);
+		box(-2, 45, 4, -1, 45, 4, EYE);
+		box(1, 45, 4, 2, 45, 4, EYE);
+		// The bridge of the nose, standing out from between the eyes and down the plate.
+		box(0, 43, 5, 0, 45, 5, mask);
+		// The mouth: one straight dark slit, no lips, no smile.
+		box(-2, 42, 4, 2, 42, 4, SLIT);
+		// Rivets at the cheeks.
+		for (int x : new int[]{-3, 3}) block(x, 43, 5, shade);
 		// The hood: drapes at the sides, a cowl above, a point at the top.
 		box(-5, 38, -4, -4, 52, 4, CLOTH);
 		box(4, 38, -4, 5, 52, 4, CLOTH);
@@ -169,6 +180,9 @@ final class LatveriaStatue {
 		box(-4, 50, 5, 4, 50, 5, DEEP);                    // the hood's front edge, over the brow
 		box(-4, 51, 5, 4, 51, 5, DEEP);
 		box(-5, 38, 4, 5, 39, 5, CLOTH);                   // the cowl's collar in front
+		box(-5, 40, 5, -4, 51, 6, CLOTH);                  // the hood comes forward round the face, so the mask sits in its shadow
+		box(4, 40, 5, 5, 51, 6, CLOTH);
+		box(-4, 50, 6, 4, 51, 6, DEEP);
 	}
 
 	private static void cloak() {
