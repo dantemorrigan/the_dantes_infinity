@@ -43,6 +43,7 @@ public final class AxeAndLatveriaHotfixTest implements FabricClientGameTest {
 			ctx.waitTicks(12);
 			server.runCommand("fill -6 99 -10 9 99 10 minecraft:stone");
 			server.runCommand("fill -3 100 10 7 103 10 minecraft:stone");
+			server.runCommand("tp @p .5 100 .5 -18 5");
 			server.runOnServer(s -> player(s).setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(ModItems.STORMBREAKER)));
 			ctx.waitTicks(10);
 			action(ctx, StormNetwork.THROW);
@@ -63,6 +64,17 @@ public final class AxeAndLatveriaHotfixTest implements FabricClientGameTest {
 			check(server.computeOnServer(s -> s.overworld().getEntitiesOfClass(StormbreakerEntity.class,
 					new AABB(AXE_ORIGIN, AXE_ORIGIN).inflate(5), a -> a.phase() == StormbreakerEntity.EMBEDDED).size() == 1),
 					"Q drop did not keep its original ground pose");
+			action(ctx, StormNetwork.RECALL);
+			ctx.waitTicks(48);
+			server.runCommand("tp @p .5 100 .5 90 50");
+			ctx.waitTicks(8);
+			action(ctx, StormNetwork.THROW);
+			ctx.waitTicks(22);
+			check(server.computeOnServer(s -> s.overworld().getEntitiesOfClass(StormbreakerEntity.class,
+					new AABB(AXE_ORIGIN, AXE_ORIGIN).inflate(5),
+					a -> a.phase() == StormbreakerEntity.EMBEDDED_BLADE && Math.abs(a.getY() - 100.01) < .02
+							&& Math.abs(a.getXRot() - 50) < 1).size() == 1),
+					"Throwing downward did not plant the blade at its ground contact");
 
 			server.runCommand("execute as @p run gauntlet latveria enter");
 			ctx.waitFor(mc -> mc.level != null && mc.level.dimension().equals(Latveria.LEVEL), 200);
@@ -123,6 +135,7 @@ public final class AxeAndLatveriaHotfixTest implements FabricClientGameTest {
 			p.setItemInHand(InteractionHand.OFF_HAND, DoomFinalEncounter.buildGauntletFromMask(0x3f));
 			return mob;
 		});
+		server.runCommand("execute as @p in infinity_gauntlet:latveria run tp @s 0.5 144 -266.5 0 0");
 		ctx.waitTicks(100);
 		server.runOnServer(s -> {
 			var p = player(s);
