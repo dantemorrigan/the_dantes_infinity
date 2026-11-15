@@ -342,7 +342,7 @@ public final class LatveriaHunt {
 		if (!BROKEN.isEmpty() && now % 10 == 0) restoreWalls(level, hunt == null || hunt.phase == Phase.OUTBOUND, false);
 		ServerPlayer quarry = hunt == null ? null : level.getServer().getPlayerList().getPlayer(hunt.quarry);
 		if (hunt != null) {
-			boolean gone = quarry == null || !quarry.isAlive() || quarry.level() != level || quarry.isCreative() || quarry.isSpectator();
+			boolean gone = quarry == null || !quarry.isAlive() || quarry.level() != level || quarry.isSpectator();
 			if (gone && hunt.phase != Phase.OUTBOUND) setPhase(level, Phase.OUTBOUND);
 			if (!gone && now % 2 == 0) senses(level, quarry, now);
 			if (!gone && now % 10 == 0) watch(level, quarry, now);

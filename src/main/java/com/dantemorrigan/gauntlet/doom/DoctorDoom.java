@@ -156,14 +156,14 @@ public class DoctorDoom extends Monster {
 	}
 
 	private boolean valid(ServerPlayer p) {
-		if (!p.isAlive() || p.isSpectator() || p.isCreative() || p.level() != this.level()) return false;
+		if (!p.isAlive() || p.isSpectator() || p.level() != this.level()) return false;
 		if (arenaCenter != null) return p.position().distanceToSqr(arenaCenter) <= 72 * 72;
 		return LatveriaPlan.ARENA_BOX.inflate(3).contains(p.position());
 	}
 
 	private boolean foe(LivingEntity e) {
 		if (duelOpponent != null && e == duelOpponent) return true;
-		return e instanceof Player p && !p.isSpectator() && !p.isCreative() || e instanceof Doombot b && b.allied();
+		return e instanceof Player p && !p.isSpectator() || e instanceof Doombot b && b.allied();
 	}
 
 	public void face(Vec3 p) {

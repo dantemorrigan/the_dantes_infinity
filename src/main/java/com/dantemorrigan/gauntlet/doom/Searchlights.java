@@ -177,7 +177,7 @@ public final class Searchlights {
 			Vec3 spot = null;
 			double reach = 0;
 			for (ServerPlayer p : level.players()) {
-				if (!p.isAlive() || p.isSpectator() || p.isCreative()) continue;
+				if (!p.isAlive() || p.isSpectator()) continue;
 				Vec3 body = p.position().add(0, p.getBbHeight() * 0.5, 0);
 				Vec3 v = body.subtract(LAMPS[i]);
 				double along = v.dot(dir);

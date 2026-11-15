@@ -377,7 +377,7 @@ public class Doombot extends PathfinderMob {
 	private boolean foe(LivingEntity e) {
 		if (e == this || !e.isAlive()) return false;
 		if (allied()) return e instanceof Enemy || e instanceof Doombot b && !b.allied() || e instanceof DoctorDoom;
-		return e instanceof Player p && !p.isCreative() && !p.isSpectator() || e instanceof Doombot b && b.allied();
+		return e instanceof Player p && !p.isSpectator() || e instanceof Doombot b && b.allied();
 	}
 
 	private LivingEntity target() {
