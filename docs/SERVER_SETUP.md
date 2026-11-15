@@ -3,7 +3,7 @@
 ## 1. Требования
 - **Java 25**, Minecraft **26.1.2**, Fabric Loader **≥ 0.20.1**
 - **Fabric API 0.155.3+26.1.2**
-- Мод: `build/libs/infinity_gauntlet-1.1.0-pre.1.jar` (`./gradlew build`)
+- Мод: `build/libs/infinity_gauntlet-1.1.0-pre.2.jar` (`./gradlew build`)
 - Установи **один и тот же jar** на сервер и клиент каждого игрока. Перед обновлением сохрани резервную копию мира.
 
 ## 2. Установка

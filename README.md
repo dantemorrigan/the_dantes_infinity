@@ -8,7 +8,9 @@
 
 Includes the add-on **[The Fury of Doom](#the-fury-of-doom--latveria-and-doctor-doom)**: Latveria, Castle Doom, the Doombots and Doctor Doom himself.
 
-Requirements: **Java 25**. Build: `./gradlew build` → `build/libs/infinity_gauntlet-1.1.0-pre.1.jar` (+ Fabric API 0.155.3+26.1.2).
+Release: [v1.1.0-pre.2](https://github.com/dantemorrigan/the_dantes_infinity/releases/tag/v1.1.0-pre.2).
+
+Requirements: **Java 25**. Build: `./gradlew build` → `build/libs/infinity_gauntlet-1.1.0-pre.2.jar` (+ Fabric API 0.155.3+26.1.2).
 
 ```
 ./gradlew runClient          # test client; stable offline profile Player433

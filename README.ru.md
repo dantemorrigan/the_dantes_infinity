@@ -8,7 +8,9 @@
 
 В сборку входит аддон **[The Fury of Doom](#the-fury-of-doom--латверия-и-доктор-дум)**: Латверия, замок Дума, Думботы и сам Доктор Дум.
 
-Требования: **Java 25**. Сборка: `./gradlew build` → `build/libs/infinity_gauntlet-1.1.0-pre.1.jar` (+ Fabric API 0.155.3+26.1.2).
+Пре-релиз: [v1.1.0-pre.2](https://github.com/dantemorrigan/the_dantes_infinity/releases/tag/v1.1.0-pre.2).
+
+Требования: **Java 25**. Сборка: `./gradlew build` → `build/libs/infinity_gauntlet-1.1.0-pre.2.jar` (+ Fabric API 0.155.3+26.1.2).
 
 ```
 ./gradlew runClient          # тестовый клиент
