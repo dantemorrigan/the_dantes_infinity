@@ -76,7 +76,7 @@ public final class AbilityWheelScreen extends Screen {
         Stone under=null;
         for(int i=0;i<6;i++) {double a=Math.toRadians(-90+i*60);if(hit(mx,my,Math.cos(a)*88,Math.sin(a)*88,27)) under=ORDER[i];}
         if(under!=null) {
-            if(pending!=under) {pending=under;hoverSince=System.nanoTime();}
+            if(pending!=under) {pending=under;hoverSince=System.nanoTime();if(submenu==0 && under!=stone) {stone=under;hovered=null;}}
         } else pending=null;
         for(Ability a:Ability.of(stone,CosmosClient.inCosmos())) {
             double[] p=abilityPoint(a);if(Math.hypot(mx-p[0],my-p[1])<=24*scale()) hovered=a;
@@ -189,7 +189,7 @@ public final class AbilityWheelScreen extends Screen {
         if(submenu==0 && pending!=null && pending!=stone && now-hoverSince>=35_000_000L) {stone=pending;hovered=null;}
         open=Smooth.approach(open,1f,16f,dt);
         if(shown!=stone) {if(shown!=null) switchIn=0;shown=stone;}
-        switchIn=Smooth.approach(switchIn,1f,13f,dt);
+        switchIn=Smooth.approach(switchIn,1f,34f,dt);
         g.fill(0,0,width,height,ARGB.color((int)(0x9C*open),0x09,0x08,0x11));
         tooltipLine(g,Component.translatable("ability.infinity_gauntlet.wheel").withStyle(net.minecraft.ChatFormatting.BOLD),8,0xFFF4D68D);
         if(submenu==2) { drawDestinations(g); return; }
@@ -312,17 +312,17 @@ public final class AbilityWheelScreen extends Screen {
     private int fadeColor() {return ARGB.color((int)(255*Smooth.smoothstep(open)),255,255,255);}
     private float glow(String key,boolean on) {
         if(key==null) return on?1f:0f;
-        float v=Smooth.approach(glow.getOrDefault(key,on?1f:0f),on?1f:0f,22f,dt);glow.put(key,v);return v;
+        float v=Smooth.approach(glow.getOrDefault(key,on?1f:0f),on?1f:0f,40f,dt);glow.put(key,v);return v;
     }
     /** {@code key} names the button for hover easing (null = no easing): the disc swells and its halo fades in and out instead of snapping. */
     private void button(GuiGraphicsExtractor g,String key,double x,double y,ItemStack stack,Ability ability,boolean selected,boolean enabled,Stone stone,int size) {
         float gl=glow(key,selected);
         boolean fresh=ability!=null && submenu==0 && ability!=Ability.BEAM && ability!=Ability.SNAP;
-        float appear=fresh?.62f+.38f*Smooth.outBack(switchIn):1f;
+        float appear=fresh?.8f+.2f*Smooth.outBack(switchIn):1f;
         float s=size*scale()*(1f+.12f*gl)*appear*(.85f+.15f*Smooth.smoothstep(open));
         float cxp=(float)(cx()+x*scale()),cyp=(float)(cy()+y*scale());
         float px=cxp-s/2,py=cyp-s/2;
-        float a=Smooth.smoothstep(open)*(fresh?Math.min(1f,switchIn*1.6f):1f);
+        float a=Smooth.smoothstep(open)*(fresh?Math.min(1f,.35f+switchIn*2f):1f);
         int color=ARGB.color((int)(255*a),255,255,255);
         blit(g,"button_disc",px,py,s,s,64,64,color);
         if(gl>0.01f) {float h=s*.07f;blit(g,"selection_halo",px-h,py-h,s+2*h,s+2*h,64,64,ARGB.color((int)(255*a*gl),255,255,255));}

@@ -83,8 +83,14 @@ public final class SpaceStone {
 		}
 
 		ModNetwork.PortalOpen packet() {
-			return new ModNetwork.PortalOpen(id, center, yaw, dest >= 0 ? DESTINATIONS[dest] : dest == LATVERIA_PORTAL ? LATVERIA : "exit", age, life - age);
+			return new ModNetwork.PortalOpen(id, center, yaw, dest >= 0 ? destName(this) : dest == LATVERIA_PORTAL ? LATVERIA : "exit", age, life - age);
 		}
+	}
+
+	/** The window a portal shows: Latveria's gate shows Latveria, and the way back from it shows the world we left. */
+	private static String destName(Portal p) {
+		if (p.dest < DESTINATIONS.length) return DESTINATIONS[p.dest];
+		return p.level.dimension().equals(com.dantemorrigan.gauntlet.doom.Latveria.LEVEL) ? "overworld" : LATVERIA;
 	}
 
 	private static final List<Portal> PORTALS = new ArrayList<>();
@@ -150,6 +156,7 @@ public final class SpaceStone {
 	}
 
 	private static String name(int dest) {
+		if (dest >= DESTINATIONS.length) return LATVERIA;
 		return switch (DESTINATIONS[dest]) {
 			case "nether" -> "nether";
 			case "end" -> "end";
@@ -159,7 +166,16 @@ public final class SpaceStone {
 
 	// ------------------------------------------------------------------ portals
 
-	private static void togglePortal(ServerPlayer player, ItemStack g) {
+	/** Latveria's gate: an ordinary portal (green-rimmed) that leads into Latveria, or back out when opened inside it. */
+	public static void openLatveriaGate(ServerPlayer player) {
+		ItemStack g = gauntletWithSpace(player);
+		if (g.isEmpty() || SpaceManager.inSpace(player) || com.dantemorrigan.gauntlet.cosmos.CosmosTravel.inCosmos(player)) return;
+		togglePortal(player, g, LATVERIA_OPTION);
+	}
+
+	private static void togglePortal(ServerPlayer player, ItemStack g) { togglePortal(player, g, -1); }
+
+	private static void togglePortal(ServerPlayer player, ItemStack g, int forced) {
 		if (latveriaActive(player)) return;
 		for (Portal p : PORTALS) {
 			if (player.getUUID().equals(p.owner) && p.dest >= 0 && p.level == player.level()) {
@@ -170,7 +186,7 @@ public final class SpaceStone {
 		long now = player.level().getGameTime();
 		if (now < COOLDOWN.getOrDefault(player.getUUID(), 0L) && !player.isCreative()) return;
 		COOLDOWN.put(player.getUUID(), now + GauntletConfig.get().portalCooldownTicks);
-		int dest = destination(g, player.level());
+		int dest = forced >= 0 ? forced : destination(g, player.level());
 		float yaw = player.getYRot();
 		Vec3 forward = Vec3.directionFromRotation(0, yaw);
 		Vec3 center = player.position().add(forward.scale(2.5)).add(0, PORTAL_SIZE / 2 - 0.1, 0);
@@ -265,7 +281,7 @@ public final class SpaceStone {
 	/** Cancel portals anchored to the destroyed world's geometry. */
 	public static void cancelLevel(ServerLevel level) {
 		for (Portal portal : new ArrayList<>(PORTALS)) if (portal.level == level
-				|| portal.dest >= 0 && DIMS.get(portal.dest).equals(level.dimension())) {
+				|| portal.dest >= 0 && portal.dest < DIMS.size() && DIMS.get(portal.dest).equals(level.dimension())) {
 			PORTALS.remove(portal);
 			for (ServerPlayer p : portal.level.players()) ServerPlayNetworking.send(p, new ModNetwork.PortalClose(portal.id));
 			if (portal.owner != null) {
@@ -315,6 +331,14 @@ public final class SpaceStone {
 
 	private static void travel(ServerPlayer player, Portal p) {
 		MinecraftServer server = player.level().getServer();
+		if (p.dest == LATVERIA_OPTION) {
+			TRAVEL_GRACE.put(player.getUUID(), 60);
+			sendFx(player.level(), player.position(), player.position());
+			if (player.level().dimension().equals(com.dantemorrigan.gauntlet.doom.Latveria.LEVEL)) com.dantemorrigan.gauntlet.doom.Latveria.leave(player);
+			else com.dantemorrigan.gauntlet.doom.Latveria.enter(player, false);
+			sendFx(player.level(), player.position(), player.position());
+			return;
+		}
 		ServerLevel target = server.getLevel(DIMS.get(p.dest));
 		if (target == null) return;
 		Vec3 from = player.position();

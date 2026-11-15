@@ -94,7 +94,12 @@ public final class SpaceStoneClient {
 		RandomSource rnd = mc.level.getRandom();
 		for (ClientPortal p : PORTALS.values()) {
 			if (SpaceStone.LATVERIA.equals(p.dest)) {
-				if (mc.player != null && mc.player.position().distanceToSqr(p.center) < 32 * 32) latveriaParticles(mc.level, p, rnd);
+				if (p.age % 3 == 0 && mc.player != null && mc.player.position().distanceToSqr(p.center) < 32 * 32) {
+					float reveal = latveriaReveal(p.age, p.life - p.age);
+					double angle = rnd.nextDouble() * Math.TAU;
+					Vec3 at = p.center.add(right(p.yaw).scale(Math.cos(angle) * 1.56 * reveal)).add(0, Math.sin(angle) * 1.96 * reveal, 0);
+					mc.level.addParticle(EMERALD, at.x, at.y, at.z, 0, 0.025, 0);
+				}
 				continue;
 			}
 			// Loose blue wisps around the rim (fresh particles, never one looping forever).
@@ -226,9 +231,6 @@ public final class SpaceStoneClient {
 					latveriaWindow(ctx, pose, age, reveal, visibleSide);
 					pose.popPose();
 				}
-				var owner = mc.level.getEntity(p.lookTarget);
-				Vec3 eyes = owner == null ? null : owner.getEyePosition(partial).subtract(p.center).yRot(yawRadians);
-				DoomTeaserRenderer.render(ctx, pose, age, eyes);
 				pose.popPose();
 				continue;
 			}

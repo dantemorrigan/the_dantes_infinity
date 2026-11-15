@@ -117,8 +117,7 @@ public final class AbilityController {
             if (reasonIgnoringCooldown(p, a)) {
                 cancel(p);
                 MindStone.drop(p);
-                if (p.level().dimension() == com.dantemorrigan.gauntlet.doom.Latveria.LEVEL) com.dantemorrigan.gauntlet.doom.Latveria.leave(p);
-                else com.dantemorrigan.gauntlet.doom.Latveria.enter(p, false);
+                SpaceStone.openLatveriaGate(p);
             }
             sync(p);
             return;

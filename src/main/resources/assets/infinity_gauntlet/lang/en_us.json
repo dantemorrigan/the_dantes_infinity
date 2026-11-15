@@ -194,6 +194,7 @@
   "msg.infinity_gauntlet.portal.selected.nether": "§9Portal: NETHER",
   "msg.infinity_gauntlet.portal.selected.end": "§9Portal: END",
   "msg.infinity_gauntlet.portal.selected.overworld": "§9Portal: OVERWORLD",
+  "msg.infinity_gauntlet.portal.open.latveria": "§aPortal opened: LATVERIA",
   "msg.infinity_gauntlet.portal.open.nether": "§9Portal opened: NETHER",
   "msg.infinity_gauntlet.portal.open.end": "§9Portal opened: END",
   "msg.infinity_gauntlet.portal.open.overworld": "§9Portal opened: OVERWORLD",
