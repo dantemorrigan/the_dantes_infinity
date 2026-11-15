@@ -152,6 +152,7 @@ public final class DoomFinalEncounter {
 		arenaBuilt = false;
 		ownerId = null;
 		stolenGauntlet = ItemStack.EMPTY;
+		firesCleared = false;
 		doom = null;
 		thanos = null;
 		crashSite = null;
@@ -349,6 +350,10 @@ public final class DoomFinalEncounter {
 		}
 
 		if (!arenaBuilt) return;
+		if (!firesCleared && nearest != null && bestDist <= 110) {
+			firesCleared = true;
+			clearFires(overworld);
+		}
 		Vec3 center = Vec3.atBottomCenterOf(arenaPos);
 
 		switch (stage) {
@@ -418,7 +423,7 @@ public final class DoomFinalEncounter {
 
 	private static void tickThanosArrival(ServerLevel overworld, Vec3 center, int t) {
 		keepPlayersOutsideDome(overworld, center);
-		Vec3 landing = center.add(5.5, 0, 0);
+		Vec3 landing = center.add(5.5, 1.0, 0); // the floor block is at the centre's height: stand on it, not in it
 		if (t == 55) {
 			for (ServerPlayer p : overworld.players()) {
 				if (p.position().distanceTo(center) < 180) {
@@ -449,17 +454,17 @@ public final class DoomFinalEncounter {
 			thanos.pose(Thanos.A_INTRO);
 			ThanosEncounter.line(thanos, ThanosEncounter.LINE_GIVE_STONES);
 		}
-		if (t == 136) {
+		if (t == 160) {
 			DoomFx.line(overworld, center, 90, "doom.thanos_reply");
 			if (doom != null) doom.face(landing);
 		}
-		if (t == 156) {
+		if (t == 205) {
 			// Dome rises around Doom and Thanos!
 			overworld.playSound(null, arenaPos, SoundEvents.RESPAWN_ANCHOR_SET_SPAWN, SoundSource.HOSTILE, 3.0f, 0.6f);
 			overworld.playSound(null, arenaPos, SoundEvents.BEACON_ACTIVATE, SoundSource.HOSTILE, 3.0f, 0.8f);
 			DoomFx.flat(overworld, ModParticles.DOOM_SLAM_WAVE, center, 16);
 		}
-		if (t >= 168) {
+		if (t >= 225) {
 			stage = STAGE_DOME_DUEL;
 			stageTicks = 0;
 			save(overworld.getServer());
@@ -476,7 +481,7 @@ public final class DoomFinalEncounter {
 		if (!overworld.isLoaded(arenaPos)) return;
 		ensureDoomPresent(overworld, center);
 		if (thanos == null || thanos.isRemoved() || !thanos.isAlive()) {
-			Vec3 landing = center.add(5.5, 0, 0);
+			Vec3 landing = center.add(5.5, 1.0, 0);
 			thanos = ModEntities.THANOS.create(overworld, EntitySpawnReason.EVENT);
 			if (thanos != null) {
 				thanos.setHasGauntlet(false);
@@ -540,7 +545,7 @@ public final class DoomFinalEncounter {
 				if (thanos != null) doom.face(thanos.position());
 			}
 			if (thanos != null) {
-				thanos.teleportTo(center.x + 3.5, center.y, center.z);
+				thanos.teleportTo(center.x + 3.5, center.y + 1.0, center.z);
 				thanos.faceTowards(center.add(-3.5, 0, 0));
 				thanos.pose(Thanos.A_STAGGER);
 			}
@@ -584,10 +589,10 @@ public final class DoomFinalEncounter {
 			// Sanctuary II explodes and crashes down!
 			startShipCrash(overworld, center);
 		}
-		if (t == 155 && doom != null) {
+		if (t == 185 && doom != null) {
 			DoomFx.line(overworld, center, 100, "doom.final_challenge");
 		}
-		if (t >= 180) {
+		if (t >= 250) {
 			stage = STAGE_FINAL_BOSS;
 			stageTicks = 0;
 			save(overworld.getServer());
@@ -679,7 +684,7 @@ public final class DoomFinalEncounter {
 			overworld.playSound(null, winner.blockPosition(), SoundEvents.ARMOR_EQUIP_NETHERITE.value(), SoundSource.PLAYERS, 1.8f, 0.85f);
 			overworld.playSound(null, winner.blockPosition(), SoundEvents.UI_TOAST_CHALLENGE_COMPLETE, SoundSource.PLAYERS, 1.5f, 1.0f);
 		}
-		if (t >= 128) {
+		if (t >= 210) {
 			MinecraftServer server = overworld.getServer();
 			ThanosEncounter.markDefeated(server);
 			ServerLevel latveria = server.getLevel(Latveria.LEVEL);
@@ -698,6 +703,23 @@ public final class DoomFinalEncounter {
 			stageTicks = 0;
 			save(server);
 			syncAll(server);
+		}
+	}
+
+	private static boolean firesCleared;
+
+	/** Puts out the flames an older version of the battlefield set burning: they blocked the view and dragged the game down. */
+	private static void clearFires(ServerLevel overworld) {
+		int r = (int) ARENA_RADIUS + 3;
+		BlockPos.MutableBlockPos at = new BlockPos.MutableBlockPos();
+		for (int dx = -r; dx <= r; dx++) {
+			for (int dz = -r; dz <= r; dz++) {
+				if (!overworld.isLoaded(at.set(arenaPos.getX() + dx, arenaPos.getY(), arenaPos.getZ() + dz))) continue;
+				for (int y = arenaPos.getY() + 1; y <= arenaPos.getY() + 8; y++) {
+					at.set(arenaPos.getX() + dx, y, arenaPos.getZ() + dz);
+					if (overworld.getBlockState(at).is(Blocks.FIRE)) overworld.setBlock(at, Blocks.AIR.defaultBlockState(), 2);
+				}
+			}
 		}
 	}
 
@@ -749,10 +771,6 @@ public final class DoomFinalEncounter {
 				}
 				overworld.setBlock(floor, surface, 3);
 
-				// Scattered eternal flames on netherrack/magma outside the immediate center
-				if (dist > 6.5 && dist < r - 2 && (surface.is(Blocks.NETHERRACK) || surface.is(Blocks.MAGMA_BLOCK)) && rng.nextInt(5) == 0) {
-					overworld.setBlock(floor.above(), Blocks.FIRE.defaultBlockState(), 3);
-				}
 			}
 		}
 
@@ -766,7 +784,6 @@ public final class DoomFinalEncounter {
 				BlockPos spire = new BlockPos(px, baseY + dy, pz);
 				overworld.setBlock(spire, dy == h ? Blocks.MAGMA_BLOCK.defaultBlockState() : Blocks.BLACKSTONE.defaultBlockState(), 3);
 			}
-			overworld.setBlock(new BlockPos(px, baseY + h + 1, pz), Blocks.FIRE.defaultBlockState(), 3);
 		}
 	}
 

@@ -50,7 +50,7 @@ abstract class BossHealthOverlayMixin {
 	}
 
 	private static boolean infinityGauntlet$doom(BossEvent event) {
-		return event.getName().getContents() instanceof TranslatableContents title && title.getKey().equals("entity.infinity_gauntlet.doctor_doom");
+		return event.getName().getContents() instanceof TranslatableContents title && (title.getKey().equals("entity.infinity_gauntlet.doctor_doom") || title.getKey().equals("boss.infinity_gauntlet.doom.gauntlet_name"));
 	}
 
 	private static BossBarArt infinityGauntlet$art(BossEvent event) {

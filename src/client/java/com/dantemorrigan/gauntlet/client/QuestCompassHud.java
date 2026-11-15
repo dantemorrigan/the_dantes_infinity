@@ -22,8 +22,7 @@ import net.minecraft.world.phys.Vec3;
 
 /** Reads the same world coordinates that vanilla uses to draw the red X on a quest map. */
 final class QuestCompassHud {
-    /** The player has reached Doom's battlefield: its compass pointer stays hidden until the storyline resets. */
-    private static boolean doomFound;
+    private static final double FIELD_RADIUS = 60.0;
     private static final int ACCENT = 0xFFE8B75F;
     private static final int STORM_ACCENT = 0xFF65CAFF;
     private static Skyfall skyfall;
@@ -62,12 +61,10 @@ final class QuestCompassHud {
         }
 
         Vec3 doomArena = com.dantemorrigan.gauntlet.client.doom.DoomFinalClient.compassSite();
-        if (doomArena == null) doomFound = false;
         if (doomArena != null && !player.isSpectator()) {
             Target doomTarget = new Target("hud.infinity_gauntlet.quest_compass.doom_arena", doomArena.x, doomArena.z);
-            // Once the place has been found (come within the battlefield's reach) the pointer is not needed any more.
-            if (doomTarget.distanceFrom(player) < 70.0) doomFound = true;
-            if (!doomFound) {
+            // On the battlefield the pointer is not needed; die or walk away from it and it comes back to lead you again.
+            if (doomTarget.distanceFrom(player) > FIELD_RADIUS) {
                 renderTarget(graphics, mc, player, doomTarget, y, 0xFF3CE88A);
                 y += 24;
             }
