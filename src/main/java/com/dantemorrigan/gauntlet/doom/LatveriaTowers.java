@@ -42,6 +42,16 @@ final class LatveriaTowers {
 		// Corner piers and belt courses.
 		for (int[] c : new int[][]{{x0, z0}, {x1, z0}, {x0, z1}, {x1, z1}}) fill(c[0], y0, c[1], c[0], top, c[1], WALL2);
 		for (int y = y0 + 9; y < top - 3; y += 10) fill(x0, y, z0, x1, y, z1, WALL2);
+		// Floors between the belt courses: a room on each, reached by a ladder.
+		if (size >= 6) {
+			int floor = y0 - 1;
+			for (int y = y0 + 9; ; y += 10) {
+				int ceiling = y < top - 3 ? y : top;
+				LatveriaInteriors.shaftFloor(x0, z0, size, floor, ceiling, RND.nextInt(8));
+				if (ceiling >= top) break;
+				floor = ceiling;
+			}
+		}
 		// Tall arched slits on each face.
 		int mx = (x0 + x1) / 2, mz = (z0 + z1) / 2;
 		for (int y = y0 + 4; y < top - 6; y += 10) {

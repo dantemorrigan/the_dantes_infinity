@@ -129,6 +129,8 @@ The jets never touch vanilla flight, so the armor does not clash with the Infini
 
 **The boss bar.** Doom's bar has five states: emerald sparks, the shield's runes (with the crest of Latveria), amber lightning while he casts, pulsing cracks under a fifth of his health, and ashes at his fall; every hit flashes it.
 
+**The hunt.** At night the great lamps on the central tower comb the city too. A beam on you, a Doombot that sees you or hears you running, jumping or fighting fills your detection (the eye at the top of the screen). When it is full a squad of Interceptors launches: they search where you were last seen, land and stomp through the lanes, stop the townsfolk to ask where you went, and shine their eyes through the doors of houses. A yellow "?" over a robot means it senses something, a red "!" that it has you; markers round the crosshair show where they are. Crouch in the dark, break their line of sight, and after two minutes without a trace they fly home.
+
 **The flag.** The flag of Latveria (a green field, a black cross edged in red, the horned emblem in a ring) flies over the square, on the central tower and above the throne room doors; the Banner of Latveria shows it.
 
 **Admin tools** (operator level, `/gauntlet latveria help` prints them all):

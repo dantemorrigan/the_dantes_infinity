@@ -20,7 +20,7 @@ import static com.dantemorrigan.gauntlet.doom.LatveriaKit.*;
 final class LatveriaInteriors {
 	private LatveriaInteriors() {}
 
-	private static final class Room {
+	static final class Room {
 		final Frame f;
 		final int w, d, y;
 		final boolean[][] used;
@@ -211,5 +211,121 @@ final class LatveriaInteriors {
 		r.block(3, 1, Blocks.CARTOGRAPHY_TABLE);
 		r.block(w - 2, 1, Blocks.ENCHANTING_TABLE);
 		r.chest(1, 1, r.f.dir(1, 0), 0);
+	}
+
+	// ------------------------------------------------------------------ rooms in the towers and the castle
+
+	/** Kinds of tower room. */
+	static final int GUARD = 0, ARMORY = 1, STORE = 2, LAB = 3, LIBRARY = 4, WAR = 5, SHRINE = 6, BAY = 7;
+
+	/**
+	 * Furnishes one floor of a tower or a hall: {@code f} is the room's frame (u east, v south), {@code w} by {@code d} cells
+	 * with walls on the border, people standing at {@code y}. The ladder's corner (1, 1) and its landing stay clear.
+	 */
+	static void towerRoom(Frame f, int w, int d, int y, int kind) {
+		Room r = new Room(f, w, d, y);
+		r.keep(1, 1);
+		r.keep(1, 2);
+		r.keep(2, 1);
+		int mu = w / 2, mv = d / 2;
+		switch (kind) {
+			case GUARD -> {
+				r.bed(w - 2, 1, Blocks.GREEN_BED);
+				if (w >= 7) r.bed(w - 3, 1, Blocks.GREEN_BED);
+				r.chest(1, d - 2, f.dir(1, 0), 1);
+				r.block(2, d - 2, Blocks.BARREL);
+				r.block(w - 2, d - 2, Blocks.GRINDSTONE);
+				r.table(mu, mv);
+				r.block(w - 2, mv, Blocks.CRAFTING_TABLE);
+			}
+			case ARMORY -> {
+				for (int u = 2; u <= w - 2; u++) r.tall(u, d - 2, Blocks.IRON_BLOCK.defaultBlockState(), Blocks.LIGHTNING_ROD.defaultBlockState());
+				r.block(w - 2, 2, Blocks.ANVIL);
+				r.block(w - 2, 3, Blocks.SMITHING_TABLE);
+				r.chest(1, mv, f.dir(1, 0), 1);
+				r.chest(1, mv + 1, f.dir(1, 0), 1);
+				r.block(mu, mv, Blocks.GRINDSTONE);
+			}
+			case STORE -> {
+				for (int u = 2; u <= w - 2; u++) { r.block(u, d - 2, Blocks.BARREL); r.atop(u, d - 2, Blocks.BARREL.defaultBlockState()); }
+				for (int v = 2; v <= d - 3; v++) if (chance(0.7)) r.block(w - 2, v, chance(0.5) ? hay() : barrel());
+				r.chest(1, d - 3, f.dir(1, 0), 0);
+				r.block(mu, mv, Blocks.HAY_BLOCK);
+			}
+			case LAB -> {
+				r.furn(w - 2, 2, Blocks.BREWING_STAND.defaultBlockState());
+				r.block(w - 2, 3, Blocks.CAULDRON);
+				for (int u = 2; u <= w - 2; u++) {
+					if (!r.ok(u, d - 2)) continue;
+					r.block(u, d - 2, ((u & 1) == 0) ? Blocks.WAXED_COPPER_BLOCK : Blocks.REDSTONE_LAMP);
+					r.atop(u, d - 2, Blocks.GLASS.defaultBlockState());
+				}
+				r.block(mu, mv, Blocks.WAXED_CUT_COPPER);
+				r.atop(mu, mv, Blocks.LIGHTNING_ROD.defaultBlockState());
+				r.chest(1, mv, f.dir(1, 0), 2);
+				r.block(w - 2, d - 3, Blocks.SEA_LANTERN);
+			}
+			case LIBRARY -> {
+				for (int u = 2; u <= w - 2; u++) for (int h = 0; h < 3; h++) if (r.ok(u, d - 2)) { f.set(u, y + h, d - 2, Blocks.BOOKSHELF); if (h == 2) r.keep(u, d - 2); }
+				for (int v = 3; v <= d - 3; v++) for (int h = 0; h < 3; h++) if (r.ok(w - 2, v)) { f.set(w - 2, y + h, v, Blocks.BOOKSHELF); if (h == 2) r.keep(w - 2, v); }
+				r.furn(mu, mv - 1, Blocks.LECTERN.defaultBlockState().setValue(BlockStateProperties.HORIZONTAL_FACING, f.dir(0, 1)));
+				r.table(mu, mv + 1);
+				r.chest(1, d - 2, f.dir(1, 0), 3);
+			}
+			case WAR -> {
+				// A long table under a map of Latveria: slabs on posts, green and black carpet for the land and the roads.
+				for (int u = mu - 1; u <= mu + 1; u++) for (int v = mv - 1; v <= mv + 1; v++) {
+					if (!r.ok(u, v)) continue;
+					r.block(u, v, Blocks.POLISHED_DEEPSLATE_SLAB.defaultBlockState().setValue(net.minecraft.world.level.block.SlabBlock.TYPE, net.minecraft.world.level.block.state.properties.SlabType.TOP));
+				}
+				r.block(mu - 2, mv, stairs(Blocks.SPRUCE_STAIRS, f.dir(1, 0), false));
+				r.block(mu + 2, mv, stairs(Blocks.SPRUCE_STAIRS, f.dir(-1, 0), false));
+				r.block(w - 2, 2, Blocks.CARTOGRAPHY_TABLE);
+				r.furn(w - 2, d - 2, Blocks.LECTERN.defaultBlockState().setValue(BlockStateProperties.HORIZONTAL_FACING, f.dir(-1, 0)));
+				r.chest(1, d - 2, f.dir(1, 0), 3);
+				for (int v = 2; v <= d - 3; v += 3) if (r.ok(w - 2, v)) { f.fill(w - 2, y + 1, v, w - 2, y + 2, v, Blocks.GREEN_WOOL); r.keep(w - 2, v); }
+			}
+			case SHRINE -> {
+				// Doom's trophies: gold on a black plinth, green carpet to it, lanterns on posts.
+				r.block(mu, d - 2, Blocks.POLISHED_BLACKSTONE_BRICKS);
+				r.atop(mu, d - 2, Blocks.GOLD_BLOCK.defaultBlockState());
+				r.block(mu - 1, d - 2, Blocks.POLISHED_BLACKSTONE_WALL);
+				r.atop(mu - 1, d - 2, standing());
+				r.block(mu + 1, d - 2, Blocks.POLISHED_BLACKSTONE_WALL);
+				r.atop(mu + 1, d - 2, standing());
+				r.rug(mu, 1, 1, d - 3, Blocks.GREEN_CARPET, Blocks.GREEN_CARPET);
+				r.chest(1, d - 2, f.dir(1, 0), 3);
+			}
+			default -> {
+				// A Doombot bay: charging pods of iron under redstone lamps, chains from the ceiling, tools.
+				for (int u = 2; u <= w - 2; u += 2) {
+					if (!r.ok(u, d - 2)) continue;
+					r.block(u, d - 2, Blocks.IRON_BLOCK);
+					r.atop(u, d - 2, Blocks.REDSTONE_LAMP.defaultBlockState().setValue(BlockStateProperties.LIT, true));
+				}
+				r.block(w - 2, 2, Blocks.ANVIL);
+				r.block(w - 2, 3, Blocks.SMITHING_TABLE);
+				r.chest(1, mv, f.dir(1, 0), 2);
+				r.block(mu, mv, Blocks.WAXED_COPPER_BLOCK);
+			}
+		}
+		r.rug(Math.max(1, mu - 1), Math.max(1, mv - 1), 3, 3, Blocks.GREEN_CARPET, Blocks.BLACK_CARPET);
+		// Light: lamps on posts in the free corners.
+		for (int[] c : new int[][]{{w - 2, 1}, {1, d - 2}, {w - 2, d - 2}, {2, d - 2}, {w - 2, 2}}) {
+			if (!r.ok(c[0], c[1])) continue;
+			r.block(c[0], c[1], Blocks.POLISHED_BLACKSTONE_WALL);
+			r.atop(c[0], c[1], standing());
+		}
+	}
+
+	/** A floor of a square shaft: x0..x0+size-1, the walls on the border; floor slab at {@code floorY}, and a ladder through it. */
+	static void shaftFloor(int x0, int z0, int size, int floorY, int ceilingY, int kind) {
+		Frame f = new Frame(x0, z0, Direction.NORTH);
+		// The ladder: up the west wall in the north-west corner, through a hole in the floor above.
+		BlockState ladder = Blocks.LADDER.defaultBlockState().setValue(BlockStateProperties.HORIZONTAL_FACING, Direction.EAST);
+		f.fill(1, floorY + 1, 1, 1, ceilingY, 1, ladder);
+		if (ceilingY > floorY + 3) f.set(1, ceilingY, 1, ladder);
+		towerRoom(f, size, size, floorY + 1, kind);
+		f.set(size / 2, ceilingY - 1, size / 2, hanging());
 	}
 }

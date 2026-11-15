@@ -50,6 +50,10 @@ final class LatveriaCastle {
 		LatveriaPlan.tower(45, -205, 6, F, F + 36, 12);
 		LatveriaPlan.tower(-45, -297, 6, F, F + 46, 14);
 		LatveriaPlan.tower(45, -297, 6, F, F + 46, 14);
+		roundFloors(-45, -205, 6, F, F + 36);
+		roundFloors(45, -205, 6, F, F + 36);
+		roundFloors(-45, -297, 6, F, F + 46);
+		roundFloors(45, -297, 6, F, F + 46);
 		SPIRE_TIPS.add(new int[]{-45, F + 36 + 12 + 2, -205});
 		SPIRE_TIPS.add(new int[]{45, F + 36 + 12 + 2, -205});
 		SPIRE_TIPS.add(new int[]{-45, F + 46 + 14 + 2, -297});
@@ -81,7 +85,7 @@ final class LatveriaCastle {
 
 	private static void keepTowers() {
 		// Back corners: big, 11 wide. Front corners: slighter, 9 wide.
-		int[][] t = {{-43, -296, 11, 66, 30}, {33, -296, 11, 66, 30}, {-43, -260, 9, 48, 22}, {35, -260, 9, 48, 22}};
+		int[][] t = {{-38, -296, 11, 66, 30}, {28, -296, 11, 66, 30}, {-43, -260, 9, 48, 22}, {35, -260, 9, 48, 22}};
 		for (int[] a : t) {
 			fill(a[0] - 1, F + 18, a[1] - 1, a[0] + a[2], F + 19, a[1] + a[2], WALL2);
 			int tip = LatveriaTowers.square(a[0], a[1], a[2], F + 20, a[3], a[4], Blocks.DEEPSLATE_TILE_STAIRS, TILE);
@@ -133,6 +137,19 @@ final class LatveriaCastle {
 				window(x0, wy, mz + off, Direction.Axis.Z);
 				window(x1, wy, mz + off, Direction.Axis.Z);
 			}
+		}
+		// Floors: on each, four rooms round the middle, and a ladder in the north-west corner up through the slab.
+		int floor = y0;
+		for (int y = y0 + 11; ; y += 12) {
+			int ceiling = y < top - 1 ? y : top;
+			BlockState ladder = Blocks.LADDER.defaultBlockState().setValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.HORIZONTAL_FACING, Direction.EAST);
+			fill(x0 + 1, floor + 1, z0 + 1, x0 + 1, ceiling, z0 + 1, ladder);
+			int half = size / 2;
+			for (int qx = 0; qx < 2; qx++) for (int qz = 0; qz < 2; qz++) {
+				LatveriaInteriors.towerRoom(new Frame(x0 + qx * half, z0 + qz * half, Direction.NORTH), half + 1, half + 1, floor + 1, RND.nextInt(8));
+			}
+			if (ceiling >= top) break;
+			floor = ceiling;
 		}
 		// Light inside: under each floor slab a chandelier hangs on a chain.
 		for (int y = y0 + 11; y < top - 1; y += 12) {
@@ -219,10 +236,10 @@ final class LatveriaCastle {
 
 	/** Roofs of stairs over the wings, ridges running north to south, rising above the keep's battlements. */
 	private static void wingRoofs() {
-		Frame west = new Frame(-40, -296, Direction.NORTH);
-		LatveriaHouses.roof(west, 17, 42, F + 19, Blocks.DEEPSLATE_TILE_STAIRS, TILE, WALL, false, true, true);
-		Frame east = new Frame(24, -296, Direction.NORTH);
-		LatveriaHouses.roof(east, 17, 42, F + 19, Blocks.DEEPSLATE_TILE_STAIRS, TILE, WALL, false, true, true);
+		Frame west = new Frame(-40, -284, Direction.NORTH);
+		LatveriaHouses.roof(west, 17, 23, F + 19, Blocks.DEEPSLATE_TILE_STAIRS, TILE, WALL, false, true, true);
+		Frame east = new Frame(24, -284, Direction.NORTH);
+		LatveriaHouses.roof(east, 17, 23, F + 19, Blocks.DEEPSLATE_TILE_STAIRS, TILE, WALL, false, true, true);
 	}
 
 	// ------------------------------------------------------------------ the finishing touches
@@ -257,5 +274,26 @@ final class LatveriaCastle {
 	private static void strand(int x, int z, Direction wall, int top) {
 		int len = rand(3, 10);
 		for (int i = 0; i < len; i++) set(x, top - i, z, vine(wall));
+	}
+
+	/** Floors in a round tower every seven blocks: a disc of planks, a ladder up the north wall, and a room on each. */
+	private static void roundFloors(int cx, int cz, int r, int y0, int y1) {
+		int in = r - 2;
+		BlockState ladder = Blocks.LADDER.defaultBlockState().setValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.HORIZONTAL_FACING, Direction.SOUTH);
+		int floor = y0;
+		for (int y = y0 + 7; ; y += 7) {
+			int ceiling = y < y1 - 3 ? y : y1;
+			if (ceiling < y1) {
+				for (int dz = -in; dz <= in; dz++) {
+					int half = (int) Math.round(Math.sqrt(in * in + in - dz * dz));
+					fill(cx - half, ceiling, cz + dz, cx + half, ceiling, cz + dz, Blocks.SPRUCE_PLANKS);
+				}
+			}
+			fill(cx, floor + 1, cz - in, cx, ceiling, cz - in, ladder);
+			LatveriaInteriors.towerRoom(new Frame(cx - 3, cz - 3, Direction.NORTH), 7, 7, floor + 1, RND.nextInt(8));
+			set(cx, ceiling - 1, cz, hanging());
+			if (ceiling >= y1) break;
+			floor = ceiling;
+		}
 	}
 }
