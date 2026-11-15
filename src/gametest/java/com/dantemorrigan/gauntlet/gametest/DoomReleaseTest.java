@@ -3,6 +3,7 @@ package com.dantemorrigan.gauntlet.gametest;
 import com.dantemorrigan.gauntlet.ModComponents;
 import com.dantemorrigan.gauntlet.ModEntities;
 import com.dantemorrigan.gauntlet.ModItems;
+import com.dantemorrigan.gauntlet.Stone;
 import com.dantemorrigan.gauntlet.boss.BossFlight;
 import com.dantemorrigan.gauntlet.boss.ThanosEncounter;
 import com.dantemorrigan.gauntlet.cosmos.CosmosTravel;
@@ -145,7 +146,7 @@ public final class DoomReleaseTest implements FabricClientGameTest {
 		server.runCommand("difficulty normal");
 		server.runOnServer(s -> {
 			ServerPlayer p = player(s);
-			p.setItemInHand(InteractionHand.OFF_HAND, DoomFinalEncounter.buildGauntletFromMask(0x3F));
+			p.setItemInHand(InteractionHand.OFF_HAND, DoomFinalEncounter.buildGauntletFromMask(1 << Stone.SPACE.ordinal()));
 			CosmosTravel.action(p, 0);
 			p.teleport(new TeleportTransition(s.getLevel(CosmosTravel.DIMENSION), new Vec3(30000, 256, 500),
 					Vec3.ZERO, 0, 0, TeleportTransition.DO_NOTHING));
