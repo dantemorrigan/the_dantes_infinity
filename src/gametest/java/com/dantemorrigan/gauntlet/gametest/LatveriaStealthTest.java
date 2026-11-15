@@ -46,6 +46,7 @@ public class LatveriaStealthTest implements FabricClientGameTest {
 			server.runCommand("effect give @p minecraft:resistance 900 4 true");
 			server.runCommand("execute in infinity_gauntlet:latveria run tp @p 0.5 69 64.5 180 -10");
 			ctx.waitTicks(20);
+			server.runOnServer(s -> LatveriaHunt.grace(player(s), 0));
 			server.runCommand("execute as @p run gauntlet latveria alarm");
 			ctx.waitTicks(30);
 			ctx.takeScreenshot("stealth_01_launch");

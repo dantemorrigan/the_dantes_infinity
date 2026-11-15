@@ -114,6 +114,7 @@ public final class LatveriaHunt {
 		LAST_POS.clear();
 		VELOCITY.clear();
 		WAS_ON_GROUND.clear();
+		GRACE.clear();
 		Searchlights.focus(false, 0, 0, clock);
 	}
 
@@ -128,15 +129,35 @@ public final class LatveriaHunt {
 	/** The phase's name, for tests. */
 	public static String phase() { return hunt == null ? "NONE" : hunt.phase.name(); }
 
+	/** Until when (game time) each newcomer is beneath notice: nobody sees, hears or lights them. */
+	private static final Map<UUID, Long> GRACE = new HashMap<>();
+
+	/** Gives a player who has just arrived a quiet spell: no beam, robot or noise counts against them for {@code ticks}. */
+	public static void grace(ServerPlayer p, int ticks) {
+		GRACE.put(p.getUUID(), p.level().getServer().overworld().getGameTime() + ticks);
+		METER.put(p.getUUID(), 0f);
+		if (hunt != null && p.getUUID().equals(hunt.quarry)) hunt.phase = Phase.OUTBOUND;
+	}
+
+	/** True while a player is still in their quiet spell after arriving. */
+	public static boolean graced(ServerPlayer p) {
+		Long until = GRACE.get(p.getUUID());
+		if (until == null) return false;
+		if (p.level().getServer().overworld().getGameTime() >= until) { GRACE.remove(p.getUUID()); return false; }
+		return true;
+	}
+
 	public static float meter(ServerPlayer p) { return METER.getOrDefault(p.getUUID(), 0f); }
 
 	private static void raise(ServerPlayer p, float by) {
+		if (graced(p)) return;
 		if (hunt != null && (hunt.phase == Phase.SIEGE || hunt.phase == Phase.HOTZONE)) by *= 1.5f;
 		METER.put(p.getUUID(), Mth.clamp(meter(p) + by, 0, 1));
 	}
 
 	/** The intruder is in a searchlight's beam: true once the detection is full and the alarm should sound. */
 	static boolean lit(ServerLevel level, ServerPlayer p) {
+		if (graced(p)) return false;
 		raise(p, 0.3f);
 		if (hunt != null && hunt.quarry.equals(p.getUUID())) seen(level, p);
 		return meter(p) >= 1 && (hunt == null || hunt.phase == Phase.OUTBOUND || hunt.phase == Phase.HOTZONE || hunt.phase == Phase.SEARCH);
@@ -512,6 +533,7 @@ public final class LatveriaHunt {
 	// ------------------------------------------------------------------ eyes and ears
 
 	private static void senses(ServerLevel level, ServerPlayer p, long now) {
+		if (graced(p)) return;
 		Vec3 eye = p.getEyePosition();
 		// Noise: how far the intruder can be heard right now.
 		Vec3 last = LAST_POS.getOrDefault(p.getUUID(), p.position());

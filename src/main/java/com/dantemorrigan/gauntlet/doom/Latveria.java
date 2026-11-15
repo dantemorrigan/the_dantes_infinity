@@ -488,6 +488,8 @@ public final class Latveria {
 			Vec3 at = to.add((i % 3 - 1) * 1.2, 0, i / 3 * 1.2);
 			i++;
 			p.teleport(new TeleportTransition(level, at, Vec3.ZERO, 180f, 0f, TeleportTransition.DO_NOTHING));
+			// Time to look round, and (the first time) to read the welcome, before anyone notices the newcomer.
+			LatveriaHunt.grace(p, Boolean.TRUE.equals(p.getAttached(LOGO_SEEN)) ? 200 : 2400);
 			p.level().playSound(null, p.blockPosition(), SoundEvents.PORTAL_TRAVEL, SoundSource.PLAYERS, 0.4f, 1.3f);
 			if (!Boolean.TRUE.equals(p.getAttached(LOGO_SEEN))) {
 				p.setAttached(LOGO_SEEN, true);
@@ -539,7 +541,8 @@ public final class Latveria {
 		Searchlights.tick(level);
 		LatveriaHunt.tick(level);
 		LatveriaCourt.tick(level);
-		for (ServerPlayer p : level.players()) {
+		// A copy: leaving through the gate takes the player out of this level's list while we walk it.
+		for (ServerPlayer p : List.copyOf(level.players())) {
 			Integer due = logoDue.get(p.getUUID());
 			if (due != null) {
 				if (due <= 0) { logoDue.remove(p.getUUID()); DoomFx.send(p, DoomFx.LOGO, 1, p.position(), 0, 200); }

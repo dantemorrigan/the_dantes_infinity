@@ -17,6 +17,14 @@ public class LatveriaWelcomeTest implements FabricClientGameTest {
 			ctx.waitTicks(320);
 			boolean shown = ctx.computeOnClient(mc -> mc.screen instanceof LatveriaWelcomeScreen);
 			System.out.println("WELCOME shown " + shown);
+			boolean graced = server.computeOnServer(s -> com.dantemorrigan.gauntlet.doom.LatveriaHunt.graced(s.getPlayerList().getPlayers().getFirst()));
+			System.out.println("WELCOME grace " + graced);
+			if (!graced) throw new AssertionError("A newcomer must be unnoticed while they read the welcome");
+			// Even held in a beam of the great lamps, nobody notices them.
+			server.runCommand("execute as @p run gauntlet latveria alarm");
+			ctx.waitTicks(40);
+			String ph = server.computeOnServer(s -> com.dantemorrigan.gauntlet.doom.LatveriaHunt.phase());
+			System.out.println("WELCOME phase after the alarm command " + ph);
 			ctx.takeScreenshot("welcome_en");
 			if (!shown) throw new AssertionError("The welcome to Latveria did not open after the title card");
 			ctx.runOnClient(mc -> { com.dantemorrigan.gauntlet.client.lang.ModLang.set("ru"); mc.setScreen(new LatveriaWelcomeScreen()); });
