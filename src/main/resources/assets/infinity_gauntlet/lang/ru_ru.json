@@ -887,5 +887,18 @@
   "hud.infinity_gauntlet.stealth.suspect": "Подозрение",
   "hud.infinity_gauntlet.stealth.inbound": "Летят Перехватчики",
   "hud.infinity_gauntlet.stealth.search": "Ищут: %s",
-  "hud.infinity_gauntlet.stealth.found": "ОБНАРУЖЕН"
+  "hud.infinity_gauntlet.stealth.found": "ОБНАРУЖЕН",
+  "screen.infinity_gauntlet.latveria_welcome.title": "Добро пожаловать в Латверию!",
+  "screen.infinity_gauntlet.latveria_welcome.intro": "Это земли Доктора Дума, и поэтому здесь вам нужно быть предельно осторожным.",
+  "screen.infinity_gauntlet.latveria_welcome.s1.title": "Земля",
+  "screen.infinity_gauntlet.latveria_welcome.s1.text": "В долине под замком на горе лежит город за стеной, где живут горожане. Здесь ничего нельзя разрушить: ни киркой, ни взрывом, ни лучом, ни силами Перчатки, а огонь, который вы разожжёте, гаснет сам. Врата на южном краю города возвращают домой.",
+  "screen.infinity_gauntlet.latveria_welcome.s2.title": "Глаза Дума",
+  "screen.infinity_gauntlet.latveria_welcome.s2.text": "Ночью прожекторы прочёсывают склон и улицы города. Глаз вверху экрана показывает, насколько вы близки к обнаружению: его заполняют луч, Думбот, который вас видит, и шум (бег, прыжки, бой, силы Перчатки). Приседайте, держитесь темноты и уходите с линии взгляда.",
+  "screen.infinity_gauntlet.latveria_welcome.s3.title": "Думботы",
+  "screen.infinity_gauntlet.latveria_welcome.s3.text": "Когда звучит тревога, за вами вылетает отряд Перехватчиков. Они ищут там, где вас видели в последний раз, расспрашивают горожан и заглядывают в дома. Жёлтый «?» над роботом значит, что он что-то заметил, красный «!» — что вы найдены. Две минуты без следа, и они улетят.",
+  "screen.infinity_gauntlet.latveria_welcome.s4.title": "Путь в замок",
+  "screen.infinity_gauntlet.latveria_welcome.s4.text": "Дорога поднимается к воротам замка, их стережёт патруль и прожекторы. Ворота — не единственный путь внутрь: присмотритесь к стенам замка и подумайте, что питает его огни.",
+  "screen.infinity_gauntlet.latveria_welcome.s5.title": "Сам Дум",
+  "screen.infinity_gauntlet.latveria_welcome.s5.text": "Тот, кто дойдёт до тронного зала, встретится с Доктором Думом. Приходите вооружёнными, готовыми и не ждите пощады.",
+  "screen.infinity_gauntlet.latveria_welcome.ok": "Понятно"
 }

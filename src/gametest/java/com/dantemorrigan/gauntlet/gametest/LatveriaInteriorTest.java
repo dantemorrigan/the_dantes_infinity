@@ -25,7 +25,7 @@ public class LatveriaInteriorTest implements FabricClientGameTest {
 					level.getChunk(p);
 					for (Direction d : Direction.Plane.HORIZONTAL) {
 						BlockPos side = p.above().relative(d, 2).relative(d.getClockWise());
-						if (!level.getBlockState(side).isAir() && level.getBlockState(p.above().relative(d, 2)).isAir()) {
+						if (!level.getBlockState(side).isAir() && (level.getBlockState(p.above().relative(d, 2)).isAir() || level.getBlockState(p.above().relative(d, 2)).getBlock() instanceof net.minecraft.world.level.block.DoorBlock)) {
 							float yaw = d.toYRot();
 							return p.getX() + 0.5 + d.getStepX() * 3 + " " + (p.getY() + 3.2) + " " + (p.getZ() + 0.5 + d.getStepZ() * 3) + " " + yaw + " 15";
 						}

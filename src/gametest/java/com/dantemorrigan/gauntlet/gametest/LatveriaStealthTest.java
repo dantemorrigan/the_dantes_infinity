@@ -60,7 +60,7 @@ public class LatveriaStealthTest implements FabricClientGameTest {
 				var level = s.getLevel(Latveria.LEVEL);
 				for (var d : net.minecraft.core.Direction.Plane.HORIZONTAL) {
 					var door = best.above().relative(d, 2);
-					if (level.getBlockState(door).isAir() && !level.getBlockState(door.relative(d.getClockWise())).isAir()) {
+					if ((level.getBlockState(door).isAir() || level.getBlockState(door).getBlock() instanceof net.minecraft.world.level.block.DoorBlock) && !level.getBlockState(door.relative(d.getClockWise())).isAir()) {
 						var in = best.above().relative(d, 5);
 						p.teleportTo(level, in.getX() + 0.5, in.getY(), in.getZ() + 0.5, java.util.Set.of(), d.toYRot(), 0, false);
 						break;

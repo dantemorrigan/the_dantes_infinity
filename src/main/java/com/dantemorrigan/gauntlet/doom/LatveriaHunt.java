@@ -517,7 +517,7 @@ public final class LatveriaHunt {
 		if (!level.hasChunkAt(spot)) return null;
 		for (Direction d : Direction.Plane.HORIZONTAL) {
 			BlockPos door = spot.above().relative(d, 2);
-			if (level.getBlockState(door).isAir() && !level.getBlockState(door.relative(d.getClockWise())).isAir()
+			if (LatveriaKit.doorway(level.getBlockState(door)) && !level.getBlockState(door.relative(d.getClockWise())).isAir()
 					&& !level.getBlockState(door.relative(d.getCounterClockWise())).isAir()) return d;
 		}
 		return null;

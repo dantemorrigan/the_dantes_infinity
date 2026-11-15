@@ -887,5 +887,18 @@
   "hud.infinity_gauntlet.stealth.suspect": "Suspicious",
   "hud.infinity_gauntlet.stealth.inbound": "Interceptors inbound",
   "hud.infinity_gauntlet.stealth.search": "Searching %s",
-  "hud.infinity_gauntlet.stealth.found": "FOUND"
+  "hud.infinity_gauntlet.stealth.found": "FOUND",
+  "screen.infinity_gauntlet.latveria_welcome.title": "Welcome to Latveria!",
+  "screen.infinity_gauntlet.latveria_welcome.intro": "These are the lands of Doctor Doom, and so here you must be extremely careful.",
+  "screen.infinity_gauntlet.latveria_welcome.s1.title": "The land",
+  "screen.infinity_gauntlet.latveria_welcome.s1.text": "A walled city of townsfolk lies in the valley under the castle on the mountain. Nothing here can be broken: not by pickaxe, blast, beam or the Gauntlet's powers, and fire you light dies out by itself. The gate at the south end of the city takes you back home.",
+  "screen.infinity_gauntlet.latveria_welcome.s2.title": "The eyes of Doom",
+  "screen.infinity_gauntlet.latveria_welcome.s2.text": "At night searchlights comb the slope and the city's streets. The eye at the top of the screen shows how close you are to being found: a beam, a Doombot that sees you, and noise (running, jumping, fighting, the Gauntlet's powers) fill it. Crouch, keep to the dark and break their line of sight.",
+  "screen.infinity_gauntlet.latveria_welcome.s3.title": "The Doombots",
+  "screen.infinity_gauntlet.latveria_welcome.s3.text": "When the alarm sounds, a squad of Interceptors flies out for you. They search where you were last seen, question the townsfolk and look into houses. A yellow \"?\" over a robot means it senses something, a red \"!\" that you are found. Give them nothing for two minutes and they fly home.",
+  "screen.infinity_gauntlet.latveria_welcome.s4.title": "The way into the castle",
+  "screen.infinity_gauntlet.latveria_welcome.s4.text": "The road climbs to the castle gate, watched by a patrol and by the lamps. The gate is not the only way in: look closely at the castle's walls, and think about what keeps its lights burning.",
+  "screen.infinity_gauntlet.latveria_welcome.s5.title": "Doom himself",
+  "screen.infinity_gauntlet.latveria_welcome.s5.text": "Whoever reaches the throne room will face Doctor Doom. Come armed, come ready, and do not expect mercy.",
+  "screen.infinity_gauntlet.latveria_welcome.ok": "Understood"
 }

@@ -283,7 +283,8 @@ final class LatveriaInteriors {
 				r.block(w - 2, 2, Blocks.CARTOGRAPHY_TABLE);
 				r.furn(w - 2, d - 2, Blocks.LECTERN.defaultBlockState().setValue(BlockStateProperties.HORIZONTAL_FACING, f.dir(-1, 0)));
 				r.chest(1, d - 2, f.dir(1, 0), 3);
-				for (int v = 2; v <= d - 3; v += 3) if (r.ok(w - 2, v)) { f.fill(w - 2, y + 1, v, w - 2, y + 2, v, Blocks.GREEN_WOOL); r.keep(w - 2, v); }
+				// Standards: green banners of wool on black posts (they stand on the floor, wherever the room's edge is).
+				for (int v = 2; v <= d - 3; v += 3) if (r.ok(w - 2, v)) { r.block(w - 2, v, Blocks.POLISHED_BLACKSTONE_WALL); f.fill(w - 2, y + 1, v, w - 2, y + 2, v, Blocks.GREEN_WOOL); }
 			}
 			case SHRINE -> {
 				// Doom's trophies: gold on a black plinth, green carpet to it, lanterns on posts.

@@ -379,6 +379,8 @@ public final class DoomVfxClient {
 	}
 
 	/** Cones from the castle towers sweeping the slope, and the great lamps combing the city; red and fixed on the intruder while the alarm sounds. */
+	private static final double[] SPOT_Y = {Double.NaN, Double.NaN, Double.NaN, Double.NaN, Double.NaN, Double.NaN, Double.NaN, Double.NaN};
+
 	private static void searchlights(Draw d, Minecraft mc, float partial) {
 		double t = mc.level.getGameTime() + partial;
 		Entity caught = alarmTicks > 0 ? mc.level.getEntity(alarmEntity) : null;
@@ -390,6 +392,13 @@ public final class DoomVfxClient {
 			Vec3 dir = caught != null ? caught.getPosition(partial).add(0, caught.getBbHeight() * 0.5, 0).subtract(lamp).normalize()
 					: com.dantemorrigan.gauntlet.doom.Searchlights.direction(i, t);
 			Vec3 spot = com.dantemorrigan.gauntlet.doom.Searchlights.spot(mc.level, i, dir);
+			boolean city = i >= com.dantemorrigan.gauntlet.doom.Searchlights.SLOPE_LAMPS;
+			if (city && caught == null) {
+				// The spot climbs onto a roof and down to the street over a few frames instead of jumping.
+				if (Double.isNaN(SPOT_Y[i]) || Math.abs(SPOT_Y[i] - spot.y) > 40) SPOT_Y[i] = spot.y;
+				else SPOT_Y[i] += (spot.y - SPOT_Y[i]) * 0.18;
+				spot = new Vec3(spot.x, SPOT_Y[i], spot.z);
+			}
 			float spotR = com.dantemorrigan.gauntlet.doom.Searchlights.spotRadius(i);
 			// A beam held on the viewer would fill the screen: it thins out toward them instead.
 			float end = caught == mc.getCameraEntity() ? 0.25f : 1;
@@ -397,9 +406,15 @@ public final class DoomVfxClient {
 			d.cone(SEARCH, lamp, spot, 0.3f, spotR * 1.1f, color, 0.3f * flicker, 0.1f * flicker * end);
 			d.billboard(GLOW, lamp, 3.2f, color, 0.8f * flicker);
 			d.billboard(CORE, lamp, 1.1f, 0xFFFFFF, 0.95f);
-			if (spot.distanceTo(lamp) > com.dantemorrigan.gauntlet.doom.Searchlights.range(i) - 1) continue;
-		d.flat(GLOW, spot.add(0, 0.08, 0), spotR * 1.25f, 0, color, 0.42f * flicker);
-			d.flat(GLOW, spot.add(0, 0.09, 0), spotR * 0.55f, 0, 0xFFFFFF, 0.25f * flicker);
+			if (!city && spot.distanceTo(lamp) > com.dantemorrigan.gauntlet.doom.Searchlights.range(i) - 1) continue;
+			float bright = city ? 1.7f : 1;
+			d.flat(GLOW, spot.add(0, 0.08, 0), spotR * 1.25f, 0, color, Math.min(1, 0.42f * flicker * bright));
+			d.flat(GLOW, spot.add(0, 0.09, 0), spotR * 0.55f, 0, 0xFFFFFF, Math.min(1, 0.25f * flicker * bright));
+			if (city) {
+				// A wide halo and a light shaft standing on the spot, so it can be seen from down the street and over roofs.
+				d.flat(GLOW, spot.add(0, 0.1, 0), spotR * 2.1f, 0, color, 0.22f * flicker);
+				d.vertical(GLOW, spot.add(0, 1.6, 0), spotR * 0.7f, color, 0.28f * flicker);
+			}
 		}
 	}
 

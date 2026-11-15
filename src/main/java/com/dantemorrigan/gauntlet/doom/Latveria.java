@@ -542,7 +542,7 @@ public final class Latveria {
 		for (ServerPlayer p : level.players()) {
 			Integer due = logoDue.get(p.getUUID());
 			if (due != null) {
-				if (due <= 0) { logoDue.remove(p.getUUID()); DoomFx.send(p, DoomFx.LOGO, 0, p.position(), 0, 200); }
+				if (due <= 0) { logoDue.remove(p.getUUID()); DoomFx.send(p, DoomFx.LOGO, 1, p.position(), 0, 200); }
 				else logoDue.put(p.getUUID(), due - 1);
 			}
 			if (LatveriaPlan.RETURN_GATE.contains(p.position()) && p.isAlive()) {

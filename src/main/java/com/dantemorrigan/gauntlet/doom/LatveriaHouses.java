@@ -87,7 +87,12 @@ final class LatveriaHouses {
 			f.fill(1, y0, d - 2, 1, y0 + 4 * (floors - 1) + 1, d - 2, ladder);
 		}
 		// The door and its hood, lantern and frame.
-		f.fill(wc, y0, 0, wc, y0 + 2, 0, AIR);
+		// A wooden door, and a small window over it.
+		Block doorBlock = chance(0.5) ? Blocks.SPRUCE_DOOR : Blocks.DARK_OAK_DOOR;
+		boolean hinge = chance(0.5);
+		f.set(wc, y0, 0, door(doorBlock, f.dir(0, 1), false, hinge));
+		f.set(wc, y0 + 1, 0, door(doorBlock, f.dir(0, 1), true, hinge));
+		f.set(wc, y0 + 2, 0, pane(Blocks.GLASS_PANE, f.alongU()));
 		f.fill(wc - 1, y0, 0, wc - 1, y0 + 3, 0, log(Blocks.STRIPPED_DARK_OAK_LOG, Direction.Axis.Y));
 		f.fill(wc + 1, y0, 0, wc + 1, y0 + 3, 0, log(Blocks.STRIPPED_DARK_OAK_LOG, Direction.Axis.Y));
 		f.set(wc, y0 + 3, 0, p.canopy);

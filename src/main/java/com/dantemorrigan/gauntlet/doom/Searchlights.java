@@ -54,14 +54,7 @@ public final class Searchlights {
 
 	/** Where lamp {@code i} points at game time {@code t} (ticks, may be fractional). */
 	public static Vec3 direction(int i, double t) {
-		if (i >= SLOPE_LAMPS) {
-			// The city lamps drive their spots along slow, crossing loops over the streets, the square and the roofs.
-			int k = i - SLOPE_LAMPS;
-			double x = 70 * Math.sin(t * (0.0042 + 0.0011 * k) + k * 2.1);
-			double z = 38 + 84 * Math.sin(t * (0.0029 + 0.0007 * k) + k * 1.3);
-			Vec3 to = new Vec3(x, LatveriaPlan.VALLEY_Y + 1, z);
-			return to.subtract(LAMPS[i]).normalize();
-		}
+		if (i >= SLOPE_LAMPS) return cityTarget(i, t).subtract(LAMPS[i]).normalize();
 		double center = i == 0 ? 24 : i == 1 ? -24 : 0, swing = i == 2 ? 34 : 26;
 		double yaw = Math.toRadians(center + swing * Math.sin(t * (0.010 + 0.0027 * i) + i * 2.1));
 		double pitch = Math.toRadians(-(34 + 7 * Math.sin(t * (0.016 + 0.002 * i) + i * 1.3)));
@@ -91,8 +84,33 @@ public final class Searchlights {
 		return to;
 	}
 
+	/**
+	 * Where a city lamp's spot is on the ground at time {@code t}. Each lamp keeps to its own quarter and glides along
+	 * it slowly and without a break, so its spot can be watched and dodged: the west quarter in a long loop, the east
+	 * quarter the other way round, and the main street and the square up and down the city.
+	 */
+	public static Vec3 cityTarget(int i, double t) {
+		double x, z;
+		switch (i - SLOPE_LAMPS) {
+			case 0 -> { double a = t * 0.0035; x = -46 + 26 * Math.cos(a); z = 40 + 62 * Math.sin(a); }
+			case 1 -> { double a = -t * 0.0031 + 1.7; x = 46 + 26 * Math.cos(a); z = 40 + 62 * Math.sin(a); }
+			default -> { x = 7 * Math.sin(t * 0.011); z = 40 + 82 * Math.sin(t * 0.0024); }
+		}
+		return new Vec3(x, LatveriaPlan.VALLEY_Y + 1, z);
+	}
+
 	/** Where the beam of lamp {@code i} lands: the first block in its way, or the end of its reach. */
 	public static Vec3 spot(Level level, int i, Vec3 dir) {
+		if (i >= SLOPE_LAMPS) {
+			// A city beam lands on whatever is under its target, roof or street, found straight down from above it, so
+			// the spot slides on smoothly instead of jumping where the long beam grazes a chimney on its way.
+			Vec3 along = LAMPS[i].add(dir.scale(range(i)));
+			double k = (LatveriaPlan.VALLEY_Y + 1 - LAMPS[i].y) / dir.y;
+			Vec3 ground = LAMPS[i].add(dir.scale(Math.max(0, k)));
+			Vec3 top = new Vec3(ground.x, LatveriaPlan.VALLEY_Y + 40, ground.z);
+			Vec3 hit = march(level, top, new Vec3(ground.x, LatveriaPlan.VALLEY_Y, ground.z));
+			return dir.y < -0.01 ? hit : along;
+		}
 		return march(level, LAMPS[i].add(dir.scale(1.5)), LAMPS[i].add(dir.scale(range(i))));
 	}
 

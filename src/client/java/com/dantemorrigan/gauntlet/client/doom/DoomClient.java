@@ -51,6 +51,7 @@ public final class DoomClient {
 	private static final int[] cooldown = new int[6], cooldownMax = {1, 1, 1, 1, 1, 1};
 	private static int fuel = DoomArmor.FUEL, bastion, suns, selected, holdTicks;
 	// One-off scenes.
+	private static boolean welcomeDue;
 	private static int logoAge = -1, logoTicks, barsAge = -1, barsTicks, flashAge = -1, flashTicks;
 	/** Doom's last spoken line and its age in ticks: during the entrance it is shown as a subtitle inside the letterbox. */
 	private static Component subtitle;
@@ -100,7 +101,7 @@ public final class DoomClient {
 	public static void init() {
 		ClientPlayNetworking.registerGlobalReceiver(ModNetwork.DoomFx.TYPE, (fx, ctx) -> {
 			switch (fx.kind()) {
-				case DoomFx.LOGO -> { logoAge = 0; logoTicks = Math.max(60, fx.ticks()); }
+				case DoomFx.LOGO -> { logoAge = 0; logoTicks = Math.max(60, fx.ticks()); if (fx.id() == 1) welcomeDue = true; }
 				case DoomFx.CUTSCENE -> { barsAge = 0; barsTicks = Math.max(20, fx.ticks()); }
 				case DoomFx.SHAKE -> Cutscene.shake(Math.min(1f, fx.f() * 0.5f), fx.ticks());
 				case DoomFx.FLASH -> { flashAge = 0; flashTicks = Math.max(4, fx.ticks()); flashStrength = fx.f(); }
@@ -164,6 +165,11 @@ public final class DoomClient {
 		if (bastion > 0) bastion--;
 		if (jet && fuel > 0) fuel--;
 		if (logoAge >= 0 && ++logoAge > logoTicks) logoAge = -1;
+		// The first arrival: after the title card, the welcome to Latveria.
+		if (welcomeDue && logoAge < 0 && mc.screen == null && mc.player != null) {
+			welcomeDue = false;
+			mc.setScreen(new LatveriaWelcomeScreen());
+		}
 		if (barsAge >= 0 && ++barsAge > barsTicks) barsAge = -1;
 		if (subtitle != null && ++subtitleAge > 90) subtitle = null;
 		GodDoomScene.tick();

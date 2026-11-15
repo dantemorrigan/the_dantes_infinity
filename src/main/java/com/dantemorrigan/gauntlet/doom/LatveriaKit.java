@@ -114,6 +114,17 @@ final class LatveriaKit {
 
 	static BlockState hay() { return Blocks.HAY_BLOCK.defaultBlockState(); }
 
+	/** One half of a closed door that opens into the building ({@code inward}), hinged on the given side. */
+	static BlockState door(Block door, Direction inward, boolean upper, boolean rightHinge) {
+		return door.defaultBlockState().setValue(net.minecraft.world.level.block.DoorBlock.FACING, inward)
+				.setValue(net.minecraft.world.level.block.DoorBlock.HALF, upper ? net.minecraft.world.level.block.state.properties.DoubleBlockHalf.UPPER : net.minecraft.world.level.block.state.properties.DoubleBlockHalf.LOWER)
+				.setValue(net.minecraft.world.level.block.DoorBlock.HINGE, rightHinge ? net.minecraft.world.level.block.state.properties.DoorHingeSide.RIGHT : net.minecraft.world.level.block.state.properties.DoorHingeSide.LEFT)
+				.setValue(net.minecraft.world.level.block.DoorBlock.OPEN, false);
+	}
+
+	/** True for a doorway: open air or a door. */
+	static boolean doorway(BlockState s) { return s.isAir() || s.getBlock() instanceof net.minecraft.world.level.block.DoorBlock; }
+
 	/** One of the given blocks, by chance. */
 	static BlockState pick(List<BlockState> states) { return states.get(RND.nextInt(states.size())); }
 

@@ -35,7 +35,9 @@ final class LatveriaLandmarks {
 		int tip = LatveriaTowers.square(x0, z0, size, y0 + 1, h, 12, Blocks.OXIDIZED_CUT_COPPER_STAIRS, Blocks.OXIDIZED_CUT_COPPER.defaultBlockState());
 		// The door on the south face, under an arch, with a lantern.
 		int mx = x0 + size / 2, y = y0 + 1;
-		fill(mx, y, z0 + size - 1, mx, y + 2, z0 + size - 1, AIR);
+		set(mx, y, z0 + size - 1, door(Blocks.DARK_OAK_DOOR, Direction.NORTH, false, false));
+		set(mx, y + 1, z0 + size - 1, door(Blocks.DARK_OAK_DOOR, Direction.NORTH, true, false));
+		set(mx, y + 2, z0 + size - 1, AIR);
 		set(mx, y + 3, z0 + size - 1, stairs(Blocks.DEEPSLATE_BRICK_STAIRS, Direction.NORTH, true));
 		set(mx, y + 2, z0 + size, hanging());
 		set(mx, y + 3, z0 + size, Blocks.DEEPSLATE_BRICKS);
