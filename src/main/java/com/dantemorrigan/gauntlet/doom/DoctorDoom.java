@@ -202,6 +202,7 @@ public class DoctorDoom extends Monster {
 	public void setArenaCenter(Vec3 center) { this.arenaCenter = center; }
 
 	public void setupArenaWait(Vec3 center, net.minecraft.world.item.ItemStack gauntlet) {
+		this.bar.setVisible(false);
 		this.arenaCenter = center;
 		this.duelOpponent = null;
 		this.setItemSlot(net.minecraft.world.entity.EquipmentSlot.OFFHAND, gauntlet.copy());
@@ -212,6 +213,7 @@ public class DoctorDoom extends Monster {
 	}
 
 	public void beginDuelWithThanos(LivingEntity thanos, Vec3 center) {
+		this.bar.setVisible(false);
 		this.arenaCenter = center;
 		this.duelOpponent = thanos;
 		this.setInvulnerable(true);
@@ -234,6 +236,8 @@ public class DoctorDoom extends Monster {
 		if (attr != null) attr.setBaseValue(620);
 		this.setHealth(this.getMaxHealth());
 		this.bar.setName(Component.translatable("boss.infinity_gauntlet.doom.gauntlet_name"));
+		this.bar.setProgress(1f);
+		this.bar.setVisible(true);
 		setAction(A_IDLE);
 		this.cooldown = 16;
 	}
@@ -1338,7 +1342,9 @@ public class DoctorDoom extends Monster {
 		boolean axe = source.is(Stormbreaker.DAMAGE);
 		float scaled = Math.min(amount, MAX_HIT);
 		if (finalBoss()) {
-			scaled = axe ? Math.min(amount * 1.25f, 65f) : Math.min(amount * 0.55f, 18f);
+			if (axe) scaled = Math.min(amount * 1.25f, 65f);
+			else if (source.is(DoomCombat.ARMOR_DAMAGE)) scaled = Math.min(amount, 42f);
+			else scaled = Math.min(amount * 0.55f, 18f);
 		}
 		if (flag(FLAG_SHIELD)) {
 			// The shield is whole: nothing gets through it, neither a fist, a beam nor the axe.

@@ -64,6 +64,8 @@ public final class DoomReleaseTest implements FabricClientGameTest {
 				player(s).teleportTo(at.x, at.y, at.z);
 			});
 			ctx.waitTicks(235);
+			check(!ctx.computeOnClient(mc -> com.dantemorrigan.gauntlet.client.boss.ThanosClient.hasBossBar()),
+					"Thanos displayed a health bar during Doom's duel");
 			server.runOnServer(s -> check(DoomFinalEncounter.debugForceBreakDome(player(s)), "Doom's dome did not start"));
 			ctx.waitTicks(260);
 			server.runOnServer(s -> {

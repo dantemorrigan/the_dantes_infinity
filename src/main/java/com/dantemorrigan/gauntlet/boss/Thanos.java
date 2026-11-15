@@ -65,7 +65,7 @@ public class Thanos extends Monster {
 	public static final int A_IDLE = 0, A_DESCEND = 1, A_RIFT = 2, A_INTRO = 3, A_SWING = 4, A_THROW = 5, A_LEAP = 6,
 			A_SLAM = 7, A_BACKHAND = 8, A_STAGGER = 9, A_KNEEL = 10, A_LEAVE = 11, A_ROAR = 12,
 			A_RAGE_QUAKE = 13, A_RAGE_BARRAGE = 14;
-	public static final int FLAG_GAUNTLET = 1, FLAG_SWORD_OUT = 2, FLAG_ENRAGED = 4, FLAG_FIGHT = 8;
+	public static final int FLAG_GAUNTLET = 1, FLAG_SWORD_OUT = 2, FLAG_ENRAGED = 4, FLAG_FIGHT = 8, FLAG_DOME_DUEL = 16;
 	/** Ticks of the defeat: kneel and speak, then turn to dust. */
 	public static final int DEATH_TICKS = 230, DUST_START = 150;
 	public static final int QUAKE_WINDUP = 28, BARRAGE_INTERVAL = 24, BARRAGE_WINDUP = 20, BARRAGE_STRIKES = 3;
@@ -152,6 +152,8 @@ public class Thanos extends Monster {
 
 	public boolean fighting() { return flag(FLAG_FIGHT); }
 
+	public boolean showsBossBar() { return !flag(FLAG_DOME_DUEL) && (fighting() || isDeadOrDying()); }
+
 	public void setHasGauntlet(boolean v) { setFlag(FLAG_GAUNTLET, v); }
 
 	private void setAction(int a) {
@@ -216,6 +218,7 @@ public class Thanos extends Monster {
 
 	/** Struck down by Doom during the dome shatter cutscene: kneels and dissolves into ash. */
 	public void killInCutscene(ServerLevel level) {
+		setFlag(FLAG_DOME_DUEL, true);
 		this.duelRival = null;
 		this.scripted = true;
 		this.setInvulnerable(true);
@@ -230,6 +233,7 @@ public class Thanos extends Monster {
 
 	/** Starts a choreographed duel against another boss (Doctor Doom inside the dome), ignoring players. */
 	public void beginDuelWithMob(LivingEntity rival) {
+		setFlag(FLAG_DOME_DUEL, true);
 		this.duelRival = rival;
 		this.scripted = false;
 		this.scriptFrom = this.scriptTo = null;
@@ -774,10 +778,10 @@ public class Thanos extends Monster {
 			return false;
 		}
 		boolean stormbreaker = source.is(Stormbreaker.DAMAGE);
-		float scaled = rawDamage || stormbreaker ? amount : amount * takenMultiplier(source);
-		if (!rawDamage && !stormbreaker && amount >= 1000f) scaled = Math.min(scaled, looseStone(source) ? 90f : 60f);
+		boolean ordinary = !rawDamage && !stormbreaker && !source.is(com.dantemorrigan.gauntlet.doom.DoomCombat.ARMOR_DAMAGE);
+		float scaled = ordinary ? amount * takenMultiplier(source) : amount;
 		// Sharpness, Strength, crits, maces and TNT stack up: an ordinary weapon never takes more than a sliver per hit.
-		if (!rawDamage && !stormbreaker) scaled = Math.min(scaled, source.is(DamageTypeTags.IS_EXPLOSION) ? 20f : looseStone(source) ? 10f : 6f);
+		if (ordinary) scaled = Math.min(scaled, source.is(DamageTypeTags.IS_EXPLOSION) ? 20f : looseStone(source) ? 10f : 6f);
 		float beforeRage = this.getHealth() - this.getMaxHealth() * RAGE_HEALTH;
 		if (flag(FLAG_ENRAGED)) {
 			scaled *= RAGE_TAKEN;

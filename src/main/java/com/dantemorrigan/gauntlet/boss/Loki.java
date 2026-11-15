@@ -688,7 +688,7 @@ public final class Loki extends Monster {
 		if (source.is(DamageTypes.ARROW)) amount *= 1.6f;
 		else if (source.is(DamageTypeTags.IS_EXPLOSION)) amount *= 1.7f;
 		// Buffed swords, crits and maces cannot melt him: ordinary hits are capped (arrows and blasts exploit the weak point).
-		if (!gauntletBlow) amount = Math.min(amount, weakPoint ? (isEnraged() ? 16f : 24f) : (isEnraged() ? 8f : 12f)) * (weakPoint ? 1f : .75f);
+		if (!gauntletBlow && !source.is(com.dantemorrigan.gauntlet.doom.DoomCombat.ARMOR_DAMAGE)) amount = Math.min(amount, weakPoint ? (isEnraged() ? 16f : 24f) : (isEnraged() ? 8f : 12f)) * (weakPoint ? 1f : .75f);
 		if (wardTicks() > 0) amount *= weakPoint ? .85f : .4f;
 		if (isEnraged()) {
 			amount *= .55f;

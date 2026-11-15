@@ -1,11 +1,21 @@
 package com.dantemorrigan.gauntlet.doom;
 
+import com.dantemorrigan.gauntlet.InfinityGauntlet;
+import com.dantemorrigan.gauntlet.boss.LivingTribunal;
+import com.dantemorrigan.gauntlet.boss.Loki;
+import com.dantemorrigan.gauntlet.boss.Thanos;
+import com.dantemorrigan.gauntlet.power.CombatTargets;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.damagesource.DamageType;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.boss.enderdragon.EnderDragon;
+import net.minecraft.world.entity.boss.wither.WitherBoss;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.phys.AABB;
@@ -26,6 +36,11 @@ import java.util.function.Predicate;
  * draws the pack's sprite on it every tick and checks what it touches, so nothing is left behind after a restart.
  */
 public final class DoomCombat {
+	public static final ResourceKey<DamageType> ARMOR_DAMAGE =
+			ResourceKey.create(Registries.DAMAGE_TYPE, InfinityGauntlet.id("doom_armor"));
+	private static final float BOSS_ARMOR_MULTIPLIER = 1.5f;
+	private static final float BOSS_ARMOR_CAP = 52f;
+
 	private static final class Bolt {
 		ServerLevel level;
 		Vec3 pos, vel;
@@ -84,8 +99,20 @@ public final class DoomCombat {
 			if (stopped) next = wall.getLocation();
 			LivingEntity struck = null;
 			AABB path = new AABB(b.pos, next).inflate(b.radius);
-			for (LivingEntity e : b.level.getEntitiesOfClass(LivingEntity.class, path, e -> e != b.owner && e.isAlive() && b.hits.test(e))) {
-				if (e.getBoundingBox().inflate(b.radius).clip(b.pos, next).isPresent() || e.getBoundingBox().inflate(b.radius).contains(next)) { struck = e; break; }
+			List<LivingEntity> targets = b.owner instanceof ServerPlayer player
+					? CombatTargets.inArea(player, path)
+					: b.level.getEntitiesOfClass(LivingEntity.class, path, e -> e != b.owner && e.isAlive());
+			double closest = Double.POSITIVE_INFINITY;
+			for (LivingEntity target : targets) {
+				if (!b.hits.test(target)) continue;
+				Vec3 contact = CombatTargets.clip(target, b.pos, next, b.radius).orElse(null);
+				if (contact == null && target.getBoundingBox().inflate(b.radius).contains(next)) contact = next;
+				if (contact == null) continue;
+				double distance = contact.distanceToSqr(b.pos);
+				if (distance < closest) {
+					closest = distance;
+					struck = target;
+				}
 			}
 			b.pos = next;
 			if (struck == null && !stopped) continue;
@@ -121,9 +148,21 @@ public final class DoomCombat {
 			DoomVfx.at(level, DoomVfx.RIFT, victim.position().add(0, 1, 0), 0.8f, 8, DoomVfx.GREEN);
 			return false;
 		}
+		if (owner instanceof ServerPlayer p && isBoss(victim)) {
+			var type = level.registryAccess().lookupOrThrow(Registries.DAMAGE_TYPE).getOrThrow(ARMOR_DAMAGE);
+			var source = new DamageSource(type, p);
+			float damage = Math.min(amount * BOSS_ARMOR_MULTIPLIER, BOSS_ARMOR_CAP);
+			return victim instanceof EnderDragon dragon ? dragon.hurt(level, dragon.head, source, damage)
+					: victim.hurtServer(level, source, damage);
+		}
 		DamageSource source = owner instanceof Player p ? level.damageSources().indirectMagic(p, p)
 				: owner instanceof LivingEntity l ? level.damageSources().mobAttack(l) : level.damageSources().magic();
 		return victim.hurtServer(level, source, amount);
+	}
+
+	private static boolean isBoss(LivingEntity target) {
+		return target instanceof Thanos || target instanceof Loki || target instanceof DoctorDoom
+				|| target instanceof LivingTribunal || target instanceof EnderDragon || target instanceof WitherBoss;
 	}
 
 	private DoomCombat() {}

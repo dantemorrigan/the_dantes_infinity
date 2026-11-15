@@ -69,6 +69,11 @@ public class ThanosCombatTest implements FabricClientGameTest {
 				float full = lost(s, t -> GauntletDamage.hurt(level, t, p, src, 18f));
 				// The beam: ten slices in the same tick all land (no hurt-immunity gaps).
 				float beam = lost(s, t -> { for (int i = 0; i < 10; i++) t.hurtByBeam(level, p, 5f); });
+				float doomBolt = lost(s, t -> com.dantemorrigan.gauntlet.doom.DoomCombat.hurt(level, t, p, 12f));
+				float doomEdict = lost(s, t -> com.dantemorrigan.gauntlet.doom.DoomCombat.hurt(level, t, p, 34f));
+				if (doomBolt < 16f || doomEdict < 45f || doomEdict > 52f) {
+					throw new AssertionError("Doom armor damage still uses the sword cap or exceeds the ability cap");
+				}
 				return new float[]{netherite, diamond, loose, gauntlet, full, beam};
 			});
 			System.out.println("THANOS-DAMAGE netherite=" + r[0] + " diamond=" + r[1] + " looseStone=" + r[2] + " gauntlet=" + r[3] + " fullGauntlet=" + r[4] + " beam10slices=" + r[5]);

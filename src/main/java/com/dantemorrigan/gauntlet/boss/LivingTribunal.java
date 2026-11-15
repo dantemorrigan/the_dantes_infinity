@@ -126,7 +126,9 @@ public final class LivingTribunal extends Monster {
         lastDamageTick=now;
         boolean core=gauntletImpact!=null && TribunalHitbox.core(this).inflate(1.5).contains(gauntletImpact);
         float cost=core?.5f:1;
-        float resistance=gauntletHit?(core?(exposed?.45f:.25f):(exposed?.18f:.10f)):.10f;
+        boolean doomArmor = source.is(com.dantemorrigan.gauntlet.doom.DoomCombat.ARMOR_DAMAGE);
+        float resistance = gauntletHit ? (core ? (exposed ? .45f : .25f) : (exposed ? .18f : .10f))
+                : doomArmor ? (exposed ? .28f : .20f) : .10f;
         // Refill every tick: natural beam pulses always regain damage; the glowing core spends half the budget.
         float hit=Math.min(Math.min(amount,100)*resistance,damageCredit/cost);
         if(hit<=.001f)return false;

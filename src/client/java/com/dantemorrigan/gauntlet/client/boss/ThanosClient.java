@@ -712,7 +712,7 @@ public final class ThanosClient {
 		Thanos best = null;
 		double bestD = 128 * 128;
 		for (Thanos t : mc.level.getEntitiesOfClass(Thanos.class, mc.player.getBoundingBox().inflate(128), e -> true)) {
-			if (!t.fighting() && !t.isDeadOrDying()) continue;
+			if (!t.showsBossBar()) continue;
 			double d = t.distanceToSqr(mc.player);
 			if (d < bestD) { bestD = d; best = t; }
 		}
