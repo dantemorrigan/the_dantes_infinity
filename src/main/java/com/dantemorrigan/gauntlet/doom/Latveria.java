@@ -562,6 +562,7 @@ public final class Latveria {
 		timed("searchlights", () -> Searchlights.tick(level));
 		timed("hunt", () -> LatveriaHunt.tick(level));
 		timed("court", () -> LatveriaCourt.tick(level));
+		timed("lift", () -> LatveriaLift.tick(level));
 		// A copy: leaving through the gate takes the player out of this level's list while we walk it.
 		for (ServerPlayer p : List.copyOf(level.players())) {
 			LatveriaQuests.checkCloakProximity(level, p);

@@ -166,6 +166,18 @@ public final class LatveriaQuests {
 				b -> b.isAlive() && !b.allied() && (b.squad() == Latveria.SQUAD_LAB || b.getY() < LatveriaPlan.FLOOR - 1))) {
 			bot.discard();
 		}
+		// A world built before the East Wing had its lift: lay the lift in (the old stairs led nowhere).
+		if (LatveriaCastle.LIFT_TO > LatveriaCastle.LIFT_FROM && !level.getBlockState(new BlockPos(31, LatveriaPlan.FLOOR - 14, -279)).is(net.minecraft.world.level.block.Blocks.EMERALD_BLOCK)
+				&& level.isLoaded(new BlockPos(31, LatveriaPlan.FLOOR - 14, -279)) && level.isLoaded(new BlockPos(31, LatveriaPlan.FLOOR, -270))) {
+			Latveria.edit(() -> {
+				BlockPos.MutableBlockPos at = new BlockPos.MutableBlockPos();
+				for (LatveriaPlan.Op op : LatveriaPlan.OPS.subList(LatveriaCastle.LIFT_FROM, LatveriaCastle.LIFT_TO)) {
+					for (int x = op.x0(); x <= op.x1(); x++) for (int z = op.z0(); z <= op.z1(); z++) for (int y = op.y0(); y <= op.y1(); y++) {
+						level.setBlock(at.set(x, y, z), op.state(), net.minecraft.world.level.block.Block.UPDATE_CLIENTS | net.minecraft.world.level.block.Block.UPDATE_KNOWN_SHAPE);
+					}
+				}
+			});
+		}
 		// Check if the basement under the castle is still solid stone from an older world save
 		if (!level.getBlockState(new BlockPos(0, LatveriaPlan.FLOOR - 12, -258)).isAir()) {
 			Latveria.edit(() -> {
@@ -206,7 +218,7 @@ public final class LatveriaQuests {
 		return flags;
 	}
 
-	private static boolean hasItem(ServerPlayer player, net.minecraft.world.item.Item item) {
+	static boolean hasItem(ServerPlayer player, net.minecraft.world.item.Item item) {
 		if (player.getOffhandItem().is(item) || player.getMainHandItem().is(item)) return true;
 		return player.getInventory().countItem(item) > 0;
 	}

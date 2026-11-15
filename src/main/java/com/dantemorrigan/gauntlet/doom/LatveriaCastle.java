@@ -96,25 +96,40 @@ final class LatveriaCastle {
 		set(18, gy + 4, -266, hanging());
 		set(26, gy + 4, -266, hanging());
 
-		// Grand descending staircase in the East Wing (x = 30..33, stepping down southward from z = -279 at y = F-1 to z = -267 at y = gy)
+		// The East Wing's anti-gravity lift: an open shaft (x = 30..33, z = -280..-277) from the ground-floor hall to the basement,
+		// a lit tunnel at its foot into the generator vault. LatveriaLift carries whoever steps in. The ops are kept in a
+		// range of their own so a world generated before the lift existed can be given it (see LatveriaQuests).
+		LIFT_FROM = LatveriaPlan.OPS.size();
 		fill(29, F, -280, 34, F + 2, -265, Blocks.POLISHED_DEEPSLATE_WALL.defaultBlockState());
 		fill(30, F, -280, 33, F + 4, -266, AIR);
+		fill(30, F - 1, -276, 33, F - 1, -266, WALL2);
 		set(29, F + 2, -280, standing());
 		set(34, F + 2, -280, standing());
-		for (int step = 0; step < 13; step++) {
-			int sy = F - 1 - step;
-			int sz = -279 + step;
-			fill(29, sy - 1, sz - 1, 34, sy + 5, sz + 1, WALL);
-			fill(30, sy, sz, 33, sy + 4, sz, AIR);
-			fill(30, sy - 1, sz, 33, sy - 1, sz, WALL2);
-			for (int sx = 30; sx <= 33; sx++) {
-				set(sx, sy, sz, stairs(Blocks.DEEPSLATE_BRICK_STAIRS, Direction.NORTH, false));
-			}
-			if (step % 4 == 2) {
-				set(30, sy + 4, sz, hanging());
-			}
+		fill(29, gy - 1, -281, 34, F - 2, -269, WALL);
+		fill(30, gy, -280, 33, F - 1, -277, AIR);
+		fill(30, gy, -276, 33, gy + 4, -269, AIR);
+		fill(30, gy - 1, -280, 33, gy - 1, -269, WALL2);
+		// The pad at the foot: emerald with lamps at its corners.
+		fill(31, gy - 1, -279, 32, gy - 1, -278, Blocks.EMERALD_BLOCK);
+		for (int x : new int[]{30, 33}) for (int z : new int[]{-280, -277}) set(x, gy - 1, z, Blocks.SEA_LANTERN);
+		// Lamps up the walls of the shaft, and green glass panes between them.
+		for (int y = gy + 2; y <= F - 3; y += 3) {
+			set(29, y, -279, Blocks.SEA_LANTERN);
+			set(34, y, -278, Blocks.SEA_LANTERN);
+			set(31, y, -281, Blocks.SEA_LANTERN);
+			set(32, y, -281, Blocks.GREEN_STAINED_GLASS);
+			set(29, y + 1, -278, Blocks.GREEN_STAINED_GLASS);
+			set(34, y + 1, -279, Blocks.GREEN_STAINED_GLASS);
+			if (y >= gy + 5) set(32, y, -276, Blocks.SEA_LANTERN);
 		}
+		for (int x : new int[]{30, 33}) set(x, gy + 4, -275, hanging());
+		set(31, gy + 4, -272, hanging());
+		set(32, gy + 4, -270, hanging());
+		LIFT_TO = LatveriaPlan.OPS.size();
 	}
+
+	/** The range of {@link LatveriaPlan#OPS} that builds the East Wing's lift. */
+	static int LIFT_FROM, LIFT_TO;
 
 	// ------------------------------------------------------------------ the outer wall
 
