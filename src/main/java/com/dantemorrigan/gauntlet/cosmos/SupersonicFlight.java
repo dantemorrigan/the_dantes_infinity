@@ -86,7 +86,7 @@ public final class SupersonicFlight {
                 BlockPos pos=b.fire().removeFirst();budget--;
                 var state=Blocks.FIRE.defaultBlockState();
                 if(CoopRules.canEdit(b.owner(), b.level(), pos) && b.level().getBlockState(pos).isAir() && state.canSurvive(b.level(),pos))
-                    b.level().setBlock(pos,state,Block.UPDATE_ALL);
+                    com.dantemorrigan.gauntlet.power.TempFire.light((net.minecraft.server.level.ServerLevel) b.level(),pos,state,100);
             }
             if(b.blocks().isEmpty() && b.fire().isEmpty()) BLASTS.removeFirst();
         }

@@ -170,6 +170,21 @@ public final class DoomRenderers {
 		@Override
 		public BotState createRenderState() { return new BotState(); }
 
+		/** A hunter that senses something shows a yellow "?", one that has the intruder a red "!", as in a stealth game. */
+		@Override
+		protected boolean shouldShowName(Doombot e, double distanceSq) {
+			return e.awareness() > 0 && distanceSq < 64 * 64 || super.shouldShowName(e, distanceSq);
+		}
+
+		@Override
+		protected net.minecraft.network.chat.Component getNameTag(Doombot e) {
+			return switch (e.awareness()) {
+				case 2 -> net.minecraft.network.chat.Component.literal("!").withStyle(net.minecraft.ChatFormatting.RED, net.minecraft.ChatFormatting.BOLD);
+				case 1 -> net.minecraft.network.chat.Component.literal("?").withStyle(net.minecraft.ChatFormatting.YELLOW, net.minecraft.ChatFormatting.BOLD);
+				default -> super.getNameTag(e);
+			};
+		}
+
 		@Override
 		protected AABB getBoundingBoxForCulling(Doombot entity) {
 			return super.getBoundingBoxForCulling(entity).inflate(1.5, 1.0, 1.5);

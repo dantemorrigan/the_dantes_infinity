@@ -872,5 +872,20 @@
   "msg.infinity_gauntlet.latveria.armor.last_stand": "§aThe armor of Doom will not let you fall.",
   "tooltip.infinity_gauntlet.doom_chestplate.4": "Full set: +15 hearts, Resistance, Regeneration, a last stand.",
   "tooltip.infinity_gauntlet.doom_leggings.4": "Full set: +15 hearts, Resistance, Regeneration, a last stand.",
-  "tooltip.infinity_gauntlet.doom_boots.4": "Full set: +15 hearts, Resistance, Regeneration, a last stand."
+  "tooltip.infinity_gauntlet.doom_boots.4": "Full set: +15 hearts, Resistance, Regeneration, a last stand.",
+  "msg.infinity_gauntlet.latveria.hunt.launch": "§cInterceptors launched from Castle Doom. Hide.",
+  "msg.infinity_gauntlet.latveria.hunt.search": "§eThe Doombots lost you. They are searching.",
+  "msg.infinity_gauntlet.latveria.hunt.spotted": "§4Found! The Doombots are coming for you.",
+  "msg.infinity_gauntlet.latveria.hunt.lost": "§aThe Doombots give up the search and fly back to the castle.",
+  "msg.infinity_gauntlet.latveria.bot.says": "§2[Doombot]§r %s",
+  "msg.infinity_gauntlet.latveria.bot.ask.1": "Citizen. An intruder. Where did they go?",
+  "msg.infinity_gauntlet.latveria.bot.ask.2": "Halt. You will tell Doom where the stranger is hiding.",
+  "msg.infinity_gauntlet.latveria.bot.ask.3": "Speak. Have you seen the outsider?",
+  "msg.infinity_gauntlet.latveria.bot.tip": "Information confirmed. Converging.",
+  "msg.infinity_gauntlet.latveria.bot.nothing": "Useless. Continue the sweep.",
+  "hud.infinity_gauntlet.stealth.hidden": "Hidden",
+  "hud.infinity_gauntlet.stealth.suspect": "Suspicious",
+  "hud.infinity_gauntlet.stealth.inbound": "Interceptors inbound",
+  "hud.infinity_gauntlet.stealth.search": "Searching %s",
+  "hud.infinity_gauntlet.stealth.found": "FOUND"
 }

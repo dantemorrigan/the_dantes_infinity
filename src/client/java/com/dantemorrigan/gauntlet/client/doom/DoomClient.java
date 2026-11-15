@@ -107,6 +107,7 @@ public final class DoomClient {
 				case DoomFx.MUSIC -> force(Minecraft.getInstance(), fx.id());
 				case DoomFx.LIGHTS -> DoomVfxClient.lights(fx.f() > 0.5f);
 				case DoomFx.GOD -> GodDoomScene.start(fx.id(), fx.ticks());
+				case DoomFx.STEALTH -> { stealthState = fx.id(); stealthMeter = fx.f(); stealthLeft = fx.ticks(); stealthAt = System.currentTimeMillis(); }
 				case DoomFx.ALARM -> { DoomVfxClient.alarm(fx.id(), fx.ticks()); flashAge = 0; flashTicks = 8; flashStrength = 0.25f; }
 				default -> {}
 			}
@@ -137,6 +138,7 @@ public final class DoomClient {
 		});
 		HudElementRegistry.addFirst(InfinityGauntlet.id("latveria_filter"), (g, delta) -> filter(g));
 		HudElementRegistry.addLast(InfinityGauntlet.id("doom_hud"), (g, delta) -> hud(g));
+		HudElementRegistry.addLast(InfinityGauntlet.id("latveria_stealth"), (g, delta) -> stealth(g));
 		GodDoomScene.init();
 		DoomTooltips.init();
 	}
@@ -431,6 +433,67 @@ public final class DoomClient {
 		g.blit(RenderPipelines.GUI_TEXTURED, InfinityGauntlet.id(GUI + "bossbar_frame.png"), 0, 0, 0, 0, 256, 32, 256, 32, 256, 32, -1);
 		pose.popMatrix();
 		image(g, InfinityGauntlet.id(GUI + "bossbar_seal.png"), (g.guiWidth() - 256 * scale) / 2f - 20 * scale, top - 2 * scale, 36 * scale, 36 * scale, 64, 64, -1);
+	}
+
+	// ------------------------------------------------------------------ the hunt: detection eye and where the robots are
+
+	private static int stealthState, stealthLeft;
+	private static float stealthMeter, shownMeter;
+	private static long stealthAt;
+
+	/**
+	 * The detection eye at the top of the screen: shut while nobody suspects you, opening yellow as the meter fills, red and
+	 * wide when you are found; under it what the hunt is doing (and how long the search has left). Around the crosshair,
+	 * a marker toward every robot that senses you, so you know where to break line of sight.
+	 */
+	private static void stealth(GuiGraphicsExtractor g) {
+		Minecraft mc = Minecraft.getInstance();
+		if (mc.player == null || mc.options.hideGui || !LatveriaSky.active() || cinematic()) return;
+		boolean fresh = System.currentTimeMillis() - stealthAt < 1500;
+		if (!fresh) { stealthMeter = 0; stealthState = 0; }
+		shownMeter += (stealthMeter - shownMeter) * 0.2f;
+		boolean lamps = DoomVfxClient.lightsOn();
+		if (shownMeter < 0.01f && stealthState == 0 && !lamps) return;
+		int cx = g.guiWidth() / 2, top = 6 + (mc.gui.getBossOverlay() != null && hasBossBar(mc) ? 50 : 0);
+		boolean found = stealthState == com.dantemorrigan.gauntlet.doom.LatveriaHunt.CHASING;
+		int color = found ? 0xFFE8322A : shownMeter > 0.5f ? 0xFFFFB02E : shownMeter > 0.02f ? 0xFFF3E37A : 0xFFB8C8C0;
+		float open = found ? 1 : Mth.clamp(shownMeter, 0, 1);
+		// The eye: an outline, a lid that opens with the meter, and the pupil.
+		int w = 15, h = Math.max(1, Math.round(6 * open));
+		g.fill(cx - w - 2, top + 6, cx + w + 2, top + 7, 0xAA000000);
+		for (int x = -w; x <= w; x++) {
+			int y = Math.round((float) Math.sqrt(Math.max(0, 1 - (x * x) / (float) (w * w))) * h);
+			g.fill(cx + x, top + 6 - y, cx + x + 1, top + 7 + y, ARGB.color(open > 0 ? 200 : 120, (color >> 16) & 255, (color >> 8) & 255, color & 255));
+		}
+		if (open > 0.15f) g.fill(cx - 2, top + 6 - Math.min(3, h), cx + 3, top + 7 + Math.min(3, h), 0xFF101010);
+		// The meter as a bar under the eye.
+		g.fill(cx - 20, top + 15, cx + 20, top + 17, 0x88000000);
+		g.fill(cx - 20, top + 15, cx - 20 + Math.round(40 * Mth.clamp(shownMeter, 0, 1)), top + 17, color);
+		String key = switch (stealthState) {
+			case com.dantemorrigan.gauntlet.doom.LatveriaHunt.CHASING -> "hud.infinity_gauntlet.stealth.found";
+			case com.dantemorrigan.gauntlet.doom.LatveriaHunt.SEARCHING -> "hud.infinity_gauntlet.stealth.search";
+			case com.dantemorrigan.gauntlet.doom.LatveriaHunt.INBOUND -> "hud.infinity_gauntlet.stealth.inbound";
+			default -> shownMeter > 0.02f ? "hud.infinity_gauntlet.stealth.suspect" : "hud.infinity_gauntlet.stealth.hidden";
+		};
+		Component text = stealthState == com.dantemorrigan.gauntlet.doom.LatveriaHunt.SEARCHING
+				? Component.translatable(key, stealthLeft / 60 + ":" + String.format("%02d", stealthLeft % 60)) : Component.translatable(key);
+		g.centeredText(mc.font, text, cx, top + 20, color);
+		// Markers toward the robots that sense you.
+		float yaw = mc.player.getYRot();
+		for (Entity e : mc.level.entitiesForRendering()) {
+			if (!(e instanceof com.dantemorrigan.gauntlet.doom.Doombot b) || b.awareness() == 0 || b.distanceTo(mc.player) > 64) continue;
+			double dx = b.getX() - mc.player.getX(), dz = b.getZ() - mc.player.getZ();
+			float rel = (float) Math.toRadians(Mth.wrapDegrees((float) Math.toDegrees(Math.atan2(-dx, dz)) - yaw));
+			int mx = g.guiWidth() / 2 + Math.round(Mth.sin(rel) * 34), my = g.guiHeight() / 2 - Math.round(Mth.cos(rel) * 34);
+			int c = b.awareness() == 2 ? 0xFFE8322A : 0xFFFFC23A;
+			g.fill(mx - 2, my - 2, mx + 3, my + 3, 0xAA000000);
+			g.fill(mx - 1, my - 1, mx + 2, my + 2, c);
+		}
+	}
+
+	private static boolean hasBossBar(Minecraft mc) {
+		for (Entity e : mc.level.entitiesForRendering()) if (e instanceof DoctorDoom d && d.isAlive() && d.distanceToSqr(mc.player) < 80 * 80) return true;
+		return false;
 	}
 
 	private DoomClient() {}

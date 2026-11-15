@@ -428,7 +428,7 @@ public final class MeteorStream {
 			BlockPos p = level.getHeightmapPos(Heightmap.Types.MOTION_BLOCKING,
 					BlockPos.containing(m.to().x + rnd.nextGaussian() * radius, m.to().y, m.to().z + rnd.nextGaussian() * radius));
 			if (level.getBlockState(p).isAir() && BaseFireBlock.canBePlacedAt(level, p, Direction.UP) && CoopRules.canEdit(owner, level, p)) {
-				level.setBlockAndUpdate(p, BaseFireBlock.getState(level, p));
+				com.dantemorrigan.gauntlet.power.TempFire.light(level, p);
 			}
 		}
 		ModNetwork.MeteorImpact packet = new ModNetwork.MeteorImpact(m.id(), m.to(), m.size(), Block.getId(ground));

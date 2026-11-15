@@ -43,6 +43,8 @@ public class Doombot extends PathfinderMob {
 	public static final String[] NAMES = {"soldier", "bastion", "interceptor", "arcanist", "engineer", "royal_guard"};
 	public static final int A_IDLE = 0, A_ALERT = 1, A_ATTACK = 2, A_STAGGER = 3, A_SALUTE = 4, A_ACTIVATE = 5;
 	public static final int FLAG_ALLIED = 1, FLAG_SHIELD = 2, FLAG_WARD = 4, FLAG_FLYING = 8, FLAG_DECOY = 16;
+	/** What a hunter knows: something is there ("?") or it has the intruder ("!"). */
+	public static final int FLAG_SUSPICIOUS = 32, FLAG_ALERTED = 64;
 	/** A decoy stands as tall as Doom himself (2.4 blocks) and only lasts so long. */
 	public static final double DECOY_SCALE = 2.4 / 1.95;
 	public static final int DECOY_LIFE = 600;
@@ -198,6 +200,99 @@ public class Doombot extends PathfinderMob {
 
 	public boolean parked() { return !Float.isNaN(parkYaw); }
 
+	// ------------------------------------------------------------------ the hunt drives these (see LatveriaHunt)
+
+	/** 0 nothing, 1 senses something ("?"), 2 has the intruder ("!"). */
+	public int awareness() { return flag(FLAG_ALERTED) ? 2 : flag(FLAG_SUSPICIOUS) ? 1 : 0; }
+
+	public void setAwareness(int a) {
+		if (a == awareness()) return;
+		setFlag(FLAG_SUSPICIOUS, a == 1);
+		setFlag(FLAG_ALERTED, a == 2);
+		if (a == 1 && this.level() instanceof ServerLevel sl) DoomFx.sound(sl, this.getEyePosition(), SoundEvents.IRON_GOLEM_HURT, 0.5f, 0.4f);
+	}
+
+	public void engage(LivingEntity target) {
+		if (!target.getUUID().equals(targetId)) this.targetId = target.getUUID();
+	}
+
+	public void disengage() {
+		this.targetId = null;
+		if (action() == A_ATTACK) setAction(A_IDLE);
+	}
+
+	/** Flies toward a point under its own jets, easing in, body turned the way it goes. */
+	public void huntFly(Vec3 to, double speed) {
+		if (!airborne()) {
+			setFlag(FLAG_FLYING, true);
+			this.setNoGravity(true);
+			this.getNavigation().stop();
+			if (this.level() instanceof ServerLevel sl) {
+				DoomVfx.on(sl, DoomVfx.JET, this, 1, 40, DoomVfx.GOLD);
+				DoomFx.sound(sl, this.position(), SoundEvents.FIREWORK_ROCKET_LAUNCH, 1.2f, 0.7f);
+			}
+		}
+		Vec3 d = to.subtract(this.position());
+		double len = d.length();
+		Vec3 want = len < 0.3 ? Vec3.ZERO : d.scale(Math.min(speed, len * 0.25) / len);
+		this.setDeltaMovement(this.getDeltaMovement().lerp(want, 0.12));
+		if (d.horizontalDistanceSqr() > 1) face(this.position().add(d.x, 0, d.z));
+		// The jets roar and keep their flame while it flies.
+		if (this.level() instanceof ServerLevel sl && this.tickCount % 24 == 0) {
+			DoomVfx.on(sl, DoomVfx.JET, this, 1, 30, DoomVfx.GOLD);
+			DoomFx.sound(sl, this.position(), SoundEvents.BLAZE_BURN, 1.4f, 0.45f);
+		}
+	}
+
+	/** Lands (if it flies) and walks to a point: heavy steps, the ground shaking under it. */
+	public void huntWalk(Vec3 to, double speed) {
+		if (airborne()) {
+			setFlag(FLAG_FLYING, false);
+			this.setNoGravity(false);
+			hardLanding = true;
+			return;
+		}
+		if (this.getNavigation().isDone() || this.tickCount % 20 == 0) this.getNavigation().moveTo(to.x, to.y, to.z, speed);
+	}
+
+	public void huntStop() {
+		this.getNavigation().stop();
+		if (airborne()) this.setDeltaMovement(this.getDeltaMovement().scale(0.7));
+	}
+
+	public void huntFace(Vec3 at) {
+		face(at);
+		this.getLookControl().setLookAt(at.x, at.y, at.z, 30, 30);
+	}
+
+	public void huntLook(float yaw) {
+		this.setYRot(yaw);
+		this.yBodyRot = yaw;
+		this.yHeadRot = yaw;
+	}
+
+	private boolean hardLanding;
+
+	/** Every step of a three-block robot is felt: low iron steps, and a shudder close by. */
+	@Override
+	protected void playStepSound(net.minecraft.core.BlockPos pos, net.minecraft.world.level.block.state.BlockState state) {
+		this.playSound(SoundEvents.IRON_GOLEM_STEP, 1.1f, 0.55f + this.random.nextFloat() * 0.1f);
+		if (this.level() instanceof ServerLevel sl && this.tickCount % 2 == 0) DoomFx.near(sl, this.position(), 9, DoomFx.SHAKE, 0, 0.16f, 4);
+	}
+
+	@Override
+	public void tick() {
+		super.tick();
+		// Landing hard from the air: the thud, the dust and a jolt for whoever is near.
+		if (hardLanding && this.onGround() && this.level() instanceof ServerLevel sl) {
+			hardLanding = false;
+			DoomFx.sound(sl, this.position(), SoundEvents.ANVIL_LAND, 0.9f, 0.5f);
+			DoomFx.sound(sl, this.position(), SoundEvents.GENERIC_BIG_FALL, 1.4f, 0.6f);
+			DoomFx.flat(sl, ModParticles.DOOM_SLAM_WAVE, this.position(), 0.6);
+			DoomFx.near(sl, this.position(), 16, DoomFx.SHAKE, 0, 0.55f, 8);
+		}
+	}
+
 	/** Takes its place in the ranks: stands there, facing {@code yaw}, and waits (it still fights what attacks it, then returns). */
 	public void park(Vec3 slot, float yaw) {
 		this.guarding = true;
@@ -258,6 +353,8 @@ public class Doombot extends PathfinderMob {
 		LivingEntity best = null;
 		double bestD = Double.MAX_VALUE;
 		for (LivingEntity e : level.getEntitiesOfClass(LivingEntity.class, this.getBoundingBox().inflate(26, 12, 26), this::foe)) {
+			// A hunter only fights the intruder once it has found them (the hunt decides), not on a glimpse.
+			if (e instanceof Player pl && LatveriaHunt.hunter(this) && !LatveriaHunt.engaged(pl)) continue;
 			double d = e.distanceToSqr(this);
 			if (d > 12 * 12 && !this.hasLineOfSight(e)) continue;
 			if (d < bestD) { bestD = d; best = e; }
@@ -310,6 +407,7 @@ public class Doombot extends PathfinderMob {
 		}
 		if (variant() == ENGINEER && tryRepair(level)) return;
 		if (target == null) {
+			if (LatveriaHunt.hunter(this) && LatveriaHunt.drive(level, this)) return;
 			idle(level);
 			return;
 		}
@@ -637,6 +735,7 @@ public class Doombot extends PathfinderMob {
 		if (!decoy()) amount = Math.min(amount, this.getMaxHealth() * MAX_SHARE);
 		boolean hurt = super.hurtServer(level, source, amount);
 		if (hurt && source.getEntity() instanceof LivingEntity attacker && foe(attacker)) targetId = attacker.getUUID();
+		if (hurt && LatveriaHunt.hunter(this) && source.getEntity() instanceof ServerPlayer sp) LatveriaHunt.attacked(level, sp);
 		if (hurt && amount >= 24 && variant() != BASTION && action() == A_IDLE && !this.isDeadOrDying()) setAction(A_STAGGER);
 		return hurt;
 	}

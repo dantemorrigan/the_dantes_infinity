@@ -288,7 +288,7 @@ public final class PowerStoneFall {
 		for (int i = 0; i < 4; i++) {
 			BlockPos p = level.getHeightmapPos(Heightmap.Types.MOTION_BLOCKING,
 					core.offset((int) Math.round(rnd.nextGaussian() * 5), 0, (int) Math.round(rnd.nextGaussian() * 5)));
-			if (level.getBlockState(p).isAir() && BaseFireBlock.canBePlacedAt(level, p, Direction.UP)) level.setBlockAndUpdate(p, BaseFireBlock.getState(level, p));
+			if (level.getBlockState(p).isAir() && BaseFireBlock.canBePlacedAt(level, p, Direction.UP)) com.dantemorrigan.gauntlet.power.TempFire.light(level, p);
 		}
 		return core;
 	}

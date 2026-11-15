@@ -151,8 +151,13 @@ public final class Latveria {
 	public static boolean protects(net.minecraft.world.level.Level level, BlockPos pos, net.minecraft.world.level.block.state.BlockState next) {
 		if (editing > 0 || level.isClientSide() || level.dimension() != LEVEL || !(level instanceof ServerLevel sl)) return false;
 		net.minecraft.world.level.block.state.BlockState old = level.getBlockState(pos);
-		if (old.isAir() || old.canBeReplaced() || old.getBlock() == next.getBlock()) return false;
-		return !bypass && !placed(sl).contains(pos.asLong());
+		// Fire does not spread here: only a power lights a flame, and it goes out by itself (TempFire).
+		if (next.getBlock() instanceof net.minecraft.world.level.block.BaseFireBlock && !com.dantemorrigan.gauntlet.power.TempFire.placing) return true;
+		if (old.isAir() || old.getBlock() == next.getBlock()) return false;
+		if (bypass || placed(sl).contains(pos.asLong())) return false;
+		// Vines, flowers, grass and water are Latveria's too: a visitor may build over them, but no blast, flame or beam clears them.
+		if (old.canBeReplaced()) return next.isAir() || next.getBlock() instanceof net.minecraft.world.level.block.BaseFireBlock || !next.getFluidState().isEmpty();
+		return true;
 	}
 
 	/** Bookkeeping after a change was let through: a block set down in the open becomes the visitor's, a cleared one is forgotten. */
@@ -201,6 +206,7 @@ public final class Latveria {
 			toFurnish.clear();
 			placed = null;
 			Searchlights.clear();
+			LatveriaHunt.clear();
 			GauntletSilence.clear();
 			LatveriaCourt.clear();
 			placedDirty = false;
@@ -531,6 +537,7 @@ public final class Latveria {
 		}
 		for (int n = 0; n < 2 && !toFurnish.isEmpty(); n++) furnish(level, toFurnish.poll());
 		Searchlights.tick(level);
+		LatveriaHunt.tick(level);
 		LatveriaCourt.tick(level);
 		for (ServerPlayer p : level.players()) {
 			Integer due = logoDue.get(p.getUUID());

@@ -872,5 +872,20 @@
   "msg.infinity_gauntlet.latveria.armor.last_stand": "§aБроня Дума не даст вам пасть.",
   "tooltip.infinity_gauntlet.doom_chestplate.4": "Полный набор: +15 сердец, сопротивление, регенерация, последний рубеж.",
   "tooltip.infinity_gauntlet.doom_leggings.4": "Полный набор: +15 сердец, сопротивление, регенерация, последний рубеж.",
-  "tooltip.infinity_gauntlet.doom_boots.4": "Полный набор: +15 сердец, сопротивление, регенерация, последний рубеж."
+  "tooltip.infinity_gauntlet.doom_boots.4": "Полный набор: +15 сердец, сопротивление, регенерация, последний рубеж.",
+  "msg.infinity_gauntlet.latveria.hunt.launch": "§cИз замка Дума вылетели Перехватчики. Прячьтесь.",
+  "msg.infinity_gauntlet.latveria.hunt.search": "§eДумботы потеряли вас. Идут поиски.",
+  "msg.infinity_gauntlet.latveria.hunt.spotted": "§4Обнаружен! Думботы идут за вами.",
+  "msg.infinity_gauntlet.latveria.hunt.lost": "§aДумботы прекращают поиски и улетают в замок.",
+  "msg.infinity_gauntlet.latveria.bot.says": "§2[Думбот]§r %s",
+  "msg.infinity_gauntlet.latveria.bot.ask.1": "Гражданин. Нарушитель. Куда он ушёл?",
+  "msg.infinity_gauntlet.latveria.bot.ask.2": "Стоять. Ты скажешь Думу, где прячется чужак.",
+  "msg.infinity_gauntlet.latveria.bot.ask.3": "Говори. Ты видел чужака?",
+  "msg.infinity_gauntlet.latveria.bot.tip": "Сведения подтверждены. Сходимся.",
+  "msg.infinity_gauntlet.latveria.bot.nothing": "Бесполезно. Продолжаем прочёсывание.",
+  "hud.infinity_gauntlet.stealth.hidden": "Скрыт",
+  "hud.infinity_gauntlet.stealth.suspect": "Подозрение",
+  "hud.infinity_gauntlet.stealth.inbound": "Летят Перехватчики",
+  "hud.infinity_gauntlet.stealth.search": "Ищут: %s",
+  "hud.infinity_gauntlet.stealth.found": "ОБНАРУЖЕН"
 }

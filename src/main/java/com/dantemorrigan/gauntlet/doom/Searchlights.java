@@ -1,6 +1,7 @@
 package com.dantemorrigan.gauntlet.doom;
 
-import com.dantemorrigan.gauntlet.ModEntities;
+import net.minecraft.core.BlockPos;
+import net.minecraft.util.Mth;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -17,40 +18,82 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.CollisionContext;
 
 /**
- * The castle's searchlights. Three lamps (the two front towers and the gatehouse) sweep the slope before the gate while
- * it is shut and the generator runs. Their aim is a pure function of the game time, so client and server agree on
- * every beam without a packet. Whoever a beam finds sets off the alarm: a horn, the beams turn red and hold on the
- * intruder, and Interceptors launch from the towers. Switching the generator off in the laboratory puts them out.
+ * The castle's searchlights. Three lamps (the two front towers and the gatehouse) sweep the slope before the gate, and
+ * three great lamps high on the central tower reach all the way down into the city and comb its streets and roofs, while
+ * the gate is shut and the generator runs. Their aim is a pure function of the game time, so client and server agree on
+ * every beam without a packet. A beam that holds on someone fills their detection (see {@link LatveriaHunt}); once it is
+ * full the alarm sounds: a horn, the beams turn red and hold on the intruder, and a squad of Interceptors comes for them.
+ * Switching the generator off in the laboratory puts them out.
  */
 public final class Searchlights {
+	private static final int F = LatveriaPlan.FLOOR;
 	public static final Vec3[] LAMPS = {
-			new Vec3(-45.5, LatveriaPlan.FLOOR + 17.5, -198.0),
-			new Vec3(46.5, LatveriaPlan.FLOOR + 17.5, -198.0),
-			new Vec3(0.5, LatveriaPlan.FLOOR + 19.5, -200.2),
+			new Vec3(-45.5, F + 17.5, -198.0),
+			new Vec3(46.5, F + 17.5, -198.0),
+			new Vec3(0.5, F + 19.5, -200.2),
+			// The city lamps on the central tower's galleries.
+			new Vec3(-14.0, F + 73.5, -259.0),
+			new Vec3(15.0, F + 73.5, -259.0),
+			new Vec3(0.5, F + 129.5, -263.6),
 	};
-	public static final double RANGE = 110;
+	/** The first lamps sweep the slope; the rest are the city lamps. */
+	public static final int SLOPE_LAMPS = 3;
+	public static final double RANGE = 110, CITY_RANGE = 470;
 	/** Radius of the lit spot on the ground. */
-	public static final float SPOT = 3.6f;
-	public static final int ALARM_TICKS = 160, ALARM_COOLDOWN = 600, MAX_ALARM_BOTS = 4;
+	public static final float SPOT = 3.6f, CITY_SPOT = 6.5f;
+	public static final int ALARM_TICKS = 160, ALARM_COOLDOWN = 600;
 	public static final String ALARM_TAG = "latveria_alarm";
 
 	private static long cooldownUntil;
 
 	private Searchlights() {}
 
+	public static double range(int i) { return i < SLOPE_LAMPS ? RANGE : CITY_RANGE; }
+
+	public static float spotRadius(int i) { return i < SLOPE_LAMPS ? SPOT : CITY_SPOT; }
+
 	/** Where lamp {@code i} points at game time {@code t} (ticks, may be fractional). */
 	public static Vec3 direction(int i, double t) {
+		if (i >= SLOPE_LAMPS) {
+			// The city lamps drive their spots along slow, crossing loops over the streets, the square and the roofs.
+			int k = i - SLOPE_LAMPS;
+			double x = 70 * Math.sin(t * (0.0042 + 0.0011 * k) + k * 2.1);
+			double z = 38 + 84 * Math.sin(t * (0.0029 + 0.0007 * k) + k * 1.3);
+			Vec3 to = new Vec3(x, LatveriaPlan.VALLEY_Y + 1, z);
+			return to.subtract(LAMPS[i]).normalize();
+		}
 		double center = i == 0 ? 24 : i == 1 ? -24 : 0, swing = i == 2 ? 34 : 26;
 		double yaw = Math.toRadians(center + swing * Math.sin(t * (0.010 + 0.0027 * i) + i * 2.1));
 		double pitch = Math.toRadians(-(34 + 7 * Math.sin(t * (0.016 + 0.002 * i) + i * 1.3)));
 		return new Vec3(Math.sin(yaw) * Math.cos(pitch), Math.sin(pitch), Math.cos(yaw) * Math.cos(pitch));
 	}
 
+	/**
+	 * The first solid block between two points, marching in short steps; ground that is not loaded counts as open air, so a
+	 * beam from the castle to the city never makes the world load the miles of land between them.
+	 */
+	public static Vec3 march(Level level, Vec3 from, Vec3 to) {
+		Vec3 d = to.subtract(from);
+		double len = d.length();
+		if (len < 1e-3) return to;
+		Vec3 step = d.scale(0.6 / len);
+		Vec3 at = from;
+		BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
+		for (double walked = 0; walked < len; walked += 0.6, at = at.add(step)) {
+			pos.set(Mth.floor(at.x), Mth.floor(at.y), Mth.floor(at.z));
+			if (pos.getY() < level.getMinY() || pos.getY() >= level.getMaxY() || !level.hasChunkAt(pos)) continue;
+			var state = level.getBlockState(pos);
+			if (state.isAir()) continue;
+			var shape = state.getCollisionShape(level, pos);
+			if (!shape.isEmpty() && shape.bounds().move(pos).contains(at)) return at;
+			if (!state.getFluidState().isEmpty()) return at;
+		}
+		return to;
+	}
+
 	/** Where the beam of lamp {@code i} lands: the first block in its way, or the end of its reach. */
 	public static Vec3 spot(Level level, int i, Vec3 dir) {
-		Vec3 from = LAMPS[i].add(dir.scale(1.5)), to = LAMPS[i].add(dir.scale(RANGE));
-		var hit = level.clip(new ClipContext(from, to, ClipContext.Block.COLLIDER, ClipContext.Fluid.ANY, CollisionContext.empty()));
-		return hit.getType() == HitResult.Type.MISS ? to : hit.getLocation();
+		return march(level, LAMPS[i].add(dir.scale(1.5)), LAMPS[i].add(dir.scale(range(i))));
 	}
 
 	/** The lamps burn while the gate is shut, the generator runs and the castle is still Doom's. */
@@ -65,7 +108,7 @@ public final class Searchlights {
 			float on = active(level.getServer()) ? 1 : 0;
 			for (ServerPlayer p : level.players()) DoomFx.send(p, DoomFx.LIGHTS, 0, Vec3.ZERO, on, 0);
 		}
-		if (now % 4 != 0 || now < cooldownUntil || !active(level.getServer())) return;
+		if (now % 4 != 0 || !active(level.getServer())) return;
 		for (int i = 0; i < LAMPS.length; i++) {
 			Vec3 dir = direction(i, now);
 			Vec3 spot = spot(level, i, dir);
@@ -76,17 +119,16 @@ public final class Searchlights {
 				Vec3 v = body.subtract(LAMPS[i]);
 				double along = v.dot(dir);
 				if (along < 2 || along > reach + 2) continue;
-				double radius = 0.4 + along * SPOT / Math.max(1, reach);
+				double radius = 0.4 + along * spotRadius(i) / Math.max(1, reach);
 				if (v.subtract(dir.scale(along)).length() > radius + 0.5) continue;
-				var sight = level.clip(new ClipContext(LAMPS[i].add(dir.scale(1.5)), body, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, CollisionContext.empty()));
-				if (sight.getType() != HitResult.Type.MISS) continue;
-				alarm(level, p);
-				return;
+				if (march(level, LAMPS[i].add(dir.scale(1.5)), body).distanceToSqr(body) > 1.0) continue;
+				// Held in a beam: the detection fills fast, and the alarm sounds when it is full.
+				if (LatveriaHunt.lit(level, p) && now >= cooldownUntil) alarm(level, p);
 			}
 		}
 	}
 
-	/** Caught: the horn, the beams on the intruder, a glow that gives them away, and Interceptors from the towers. */
+	/** Caught: the horn, the beams on the intruder, a glow that gives them away, and a squad of Interceptors launched for them. */
 	public static void alarm(ServerLevel level, ServerPlayer caught) {
 		long now = level.getGameTime();
 		cooldownUntil = now + ALARM_COOLDOWN;
@@ -97,17 +139,7 @@ public final class Searchlights {
 			DoomFx.tell(p, "alarm");
 		}
 		caught.addEffect(new MobEffectInstance(MobEffects.GLOWING, 200, 0, false, false));
-		int launched = level.getEntitiesOfClass(Doombot.class, new AABB(-200, 0, -400, 200, 320, 0), b -> b.isAlive() && b.entityTags().contains(ALARM_TAG)).size();
-		for (int i = 0; i < 2 && launched < MAX_ALARM_BOTS; i++, launched++) {
-			Doombot bot = ModEntities.DOOMBOT.create(level, EntitySpawnReason.EVENT);
-			if (bot == null) return;
-			bot.setup(Doombot.INTERCEPTOR, -1);
-			bot.addTag(ALARM_TAG);
-			Vec3 at = LAMPS[i].add(0, 1.5, 0);
-			bot.snapTo(at.x, at.y, at.z, 180, 0);
-			level.addFreshEntity(bot);
-			DoomVfx.on(level, DoomVfx.JET, bot, 1, 40, DoomVfx.GOLD);
-		}
+		LatveriaHunt.launch(level, caught);
 	}
 
 	public static void clear() { cooldownUntil = 0; }

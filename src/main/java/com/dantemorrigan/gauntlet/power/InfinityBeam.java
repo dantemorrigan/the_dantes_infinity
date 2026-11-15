@@ -157,7 +157,7 @@ public final class InfinityBeam {
             if (!c.level.getBlockState(pos).isAir() && c.level.getBlockState(above).isAir()
                     && CoopRules.canEdit(c.owner, c.level, above)
                     && BaseFireBlock.canBePlacedAt(c.level, above, net.minecraft.core.Direction.UP)) {
-                c.level.setBlock(above, BaseFireBlock.getState(c.level, above), Block.UPDATE_ALL);
+                TempFire.light(c.level, above);
             }
         }
     }

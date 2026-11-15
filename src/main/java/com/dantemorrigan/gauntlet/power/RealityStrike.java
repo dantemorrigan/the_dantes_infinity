@@ -178,7 +178,7 @@ public final class RealityStrike {
 				w.level.setBlock(col.ground, Blocks.REDSTONE_BLOCK.defaultBlockState(), 3);
 				BlockPos above = col.ground.above();
 				if (col.fire && CoopRules.canEdit(owner, w.level, above) && w.level.getBlockState(above).canBeReplaced() && w.level.getFluidState(above).isEmpty()) {
-					w.level.setBlock(above, Blocks.FIRE.defaultBlockState(), 3);
+					TempFire.light(w.level, above, Blocks.FIRE.defaultBlockState(), 100);
 				}
 				if (changed++ % 3 == 0) {
 					w.level.sendParticles(ParticleTypes.FLAME, col.ground.getX() + 0.5, col.ground.getY() + 1.05, col.ground.getZ() + 0.5, 3, 0.3, 0.05, 0.3, 0.02);

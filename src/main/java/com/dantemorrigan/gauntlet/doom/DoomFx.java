@@ -21,6 +21,8 @@ public final class DoomFx {
 	public static final int LIGHTS = 6, ALARM = 7;
 	/** The ascension of God Emperor Doom: id is Doom's entity id, ticks the scene's length. */
 	public static final int GOD = 8;
+	/** The hunt, for one player: id the state (LatveriaHunt.CALM..INBOUND), f their detection 0..1, ticks the seconds left to the search. */
+	public static final int STEALTH = 9;
 
 	/**
 	 * An effect at a point. The pack's flat sprites hung in the air and lagged, so the bursts, rifts, waves and
