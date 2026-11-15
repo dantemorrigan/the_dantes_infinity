@@ -131,17 +131,21 @@ final class LatveriaLift {
 	private static void generator(ServerLevel level, long now) {
 		Vec3 core = Vec3.atCenterOf(LatveriaPlan.GENERATOR);
 		boolean off = Latveria.generatorOff(level.getServer());
-		boolean near = false;
+		boolean near = false, vault = false;
 		for (ServerPlayer p : level.players()) {
 			double d = p.distanceToSqr(core);
 			if (d < 28 * 28) near = true;
-			if (d < 9 * 9 && !off && now % 20 == 0) {
+			boolean inVault = p.getY() < F - 3;
+			if (inVault) vault = true;
+			if (inVault && d < 9 * 9 && !off && now % 20 == 0) {
 				boolean disruptor = LatveriaQuests.hasItem(p, ModItems.GENERATOR_DISRUPTOR);
 				p.sendSystemMessage(Component.translatable(disruptor ? "msg.infinity_gauntlet.latveria.generator.hint_ready"
 						: "msg.infinity_gauntlet.latveria.generator.hint_need"), true);
 			}
 		}
-		if (!near) return;
+		// The label and the sparks belong to the vault: not to the throne room above it, and not once the generator is dead.
+		if (off || !vault) { removeLabel(level, core.add(0, 6.2, 0)); if (off) return; }
+		if (!near || !vault) return;
 		if (!off) {
 			// Sparks pour off the core and a bright ring marks it as something to use.
 			for (int i = 0; i < 10; i++) {
@@ -150,7 +154,11 @@ final class LatveriaLift {
 			}
 			level.sendParticles(ParticleTypes.END_ROD, core.x, core.y + 5.5, core.z, 2, 0.6, 0.3, 0.6, 0.01);
 		}
-		label(level, core.add(0, 6.2, 0), off);
+		label(level, core.add(0, 6.2, 0), false);
+	}
+
+	private static void removeLabel(ServerLevel level, Vec3 at) {
+		for (ArmorStand s : level.getEntitiesOfClass(ArmorStand.class, new AABB(BlockPos.containing(at)).inflate(3), e -> e.entityTags().contains(LABEL_TAG))) s.discard();
 	}
 
 	/** The floating name over the generator, made once and re-worded when the generator dies. */
