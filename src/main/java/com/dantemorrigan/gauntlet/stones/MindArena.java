@@ -133,6 +133,12 @@ public final class MindArena {
 		return player.isAlive() && !player.isSpectator() && !player.isCreative();
 	}
 
+	/** The player stands inside Loki's arena while the fight is on: no flying there (it made Loki a target that could not fight back). */
+	public static boolean inFight(ServerPlayer player) {
+		MinecraftServer server = player.level().getServer();
+		return player.level() == server.overworld() && active(server) && MindCity.built(server) && inside(MindCity.site(server), player.position());
+	}
+
 	public static boolean inside(BlockPos site, Vec3 pos) {
 		double dx = pos.x - site.getX() - .5, dz = pos.z - site.getZ() - .5;
 		return dx * dx + dz * dz <= RADIUS * RADIUS && pos.y >= site.getY() - DEPTH && pos.y < site.getY() + HEIGHT;

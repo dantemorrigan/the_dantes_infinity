@@ -988,6 +988,7 @@ public final class Stormbreaker {
         Session s = session(p);
         if (s.flying) { stopFlight(p, s); return; }
         if (p.hasAttached(CosmosTravel.FLIGHT) || p.isPassenger()) return;
+        if (com.dantemorrigan.gauntlet.stones.MindArena.inFight(p)) { ModStatus.send(p, Component.translatable("msg.infinity_gauntlet.loki.no_flight")); return; }
         s.flying = true;
         var abilities = p.getAbilities();
         s.wasFlying = abilities.flying;
@@ -1124,6 +1125,10 @@ public final class Stormbreaker {
             return;
         }
         if (!mainHand(owner) || !guarded(owner) || owner.hasAttached(CosmosTravel.FLIGHT) || InfinitySnap.inVoid(owner)) stopFlight(owner, s);
+        else if (s.flying && com.dantemorrigan.gauntlet.stones.MindArena.inFight(owner)) {
+            stopFlight(owner, s);
+            ModStatus.send(owner, Component.translatable("msg.infinity_gauntlet.loki.no_flight"));
+        }
         if (s.flying && owner.getAbilities().flying && now % 5 == 0) {
             Vec3 move = owner.getDeltaMovement();
             if (move.lengthSqr() < .025) move = owner.getLookAngle();

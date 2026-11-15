@@ -124,6 +124,10 @@ public final class CosmosTravel {
             stop(p, false); return;
         }
         if (!equipped(p)) { ModStatus.send(p, Component.translatable("cosmos.infinity_gauntlet.need_stone")); return; }
+        if (action == 0 && !inCosmos(p) && com.dantemorrigan.gauntlet.stones.MindArena.inFight(p)) {
+            ModStatus.send(p, Component.translatable("msg.infinity_gauntlet.loki.no_flight"));
+            return;
+        }
         if (action == 0 && !inCosmos(p) && flightDim(p)) {
             com.dantemorrigan.gauntlet.stormbreaker.Stormbreaker.releaseFlight(p);
             var a = p.getAbilities();
@@ -205,7 +209,7 @@ public final class CosmosTravel {
             if (com.dantemorrigan.gauntlet.boss.TribunalEncounter.awaitingReturn(p)) continue;
             if (!p.hasAttached(FLIGHT)) { NAV.remove(p.getUUID()); continue; }
             if (!p.isAlive()) { stop(p, false); continue; }
-            if (!equipped(p) || p.hasAttached(SpaceManager.RECORD) || !flightDim(p)) {
+            if (!equipped(p) || p.hasAttached(SpaceManager.RECORD) || !flightDim(p) || com.dantemorrigan.gauntlet.stones.MindArena.inFight(p)) {
                 stop(p, inCosmos(p)); continue;
             }
             p.setNoGravity(true); p.fallDistance = 0;
