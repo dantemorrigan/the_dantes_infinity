@@ -87,13 +87,8 @@ public final class RedSkull extends Mob {
 		if (departing() || !(player instanceof ServerPlayer sp)) return InteractionResult.SUCCESS;
 		int line = SPOKEN.merge(sp.getUUID(), 1, Integer::sum);
 		int index = (line - 1) % LINES + 1;
-		// He turns to whoever speaks to him.
-		double dx = sp.getX() - this.getX(), dz = sp.getZ() - this.getZ();
-		float yaw = (float) Math.toDegrees(Math.atan2(-dx, dz));
-		this.setYRot(yaw);
-		this.yBodyRot = yaw;
-		this.yHeadRot = yaw;
-		this.entityData.set(TALKED_AT, this.tickCount);
+		// He stays as he is (turning on every click made him jerk), and the gesture is only started again once it has finished.
+		if (sinceTalk() > 64) this.entityData.set(TALKED_AT, this.tickCount);
 		Component name = Component.translatable("entity.infinity_gauntlet.red_skull").withStyle(ChatFormatting.BOLD, ChatFormatting.DARK_RED);
 		sp.sendSystemMessage(Component.literal("").append(name).append(Component.literal(": ").withStyle(ChatFormatting.DARK_RED))
 				.append(Component.translatable("dialog.infinity_gauntlet.red_skull." + index).withStyle(ChatFormatting.GRAY)));
