@@ -179,6 +179,7 @@ Defeat Loki and Thanos, wear the awakened gauntlet with all six stones and fly i
 - Left-click the center — insert stones. Selecting Portal or Destinations opens a separate dimension/route menu; left-click/Enter confirms, using it with R is separate. **Shift+R** with a portal selected quickly switches the dimension; the target is shown in the status.
 - Telekinesis: R grabs/throws; "Tear apart" and the safe "Release" are separate labeled entries. **Shift+R** with a grabbed mob tears it apart immediately. Switching to another stone safely releases the target.
 - Flight stays active when you select another stone. **Ctrl** boosts; to turn it off, select Flight and press R. In space this entry returns you to the atmosphere near Earth, keeping manual flight.
+- **Mouse wheel**: in the wheel it walks through the abilities (down = next) and crosses from stone to stone without stopping; with the gauntlet worn (or Doom's armor on) hold **Left Alt** (rebindable, `Quick-switch ability`) and turn the wheel to switch abilities without opening anything. The change shows on the same frame, a strip of neighbouring abilities glides under the crosshair and each notch ticks. `abilityScrollMode` in the config: `modifier` (default), `always` or `off`.
 - **Favorites**: point at an ability in the wheel and press **1–6** to pin it. Hold **B**, select a slot, then use the ability with **R**.
 - Stone and gauntlet icons show the mod's existing items and the active resource pack. The selected ability card is in the top-left panel.
 

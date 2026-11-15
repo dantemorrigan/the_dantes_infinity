@@ -43,10 +43,11 @@ public final class CosmosTravel {
     }
     private static class Navigation { int selected, planned = -1, warp, cooldown; long lastAction = -100; }
     public static boolean inCosmos(ServerPlayer p) { return p.level().dimension().equals(DIMENSION); }
-    /** Dimensions where J flight works: Overworld (with exit to space), Nether and End (bounded), and the cosmos itself. */
+    /** Dimensions where J flight works: Overworld (with exit to space), Nether, End and Latveria (bounded), and the cosmos itself. */
     private static boolean flightDim(ServerPlayer p) {
         var d = p.level().dimension();
-        return d.equals(Level.OVERWORLD) || d.equals(Level.NETHER) || d.equals(Level.END) || d.equals(DIMENSION);
+        return d.equals(Level.OVERWORLD) || d.equals(Level.NETHER) || d.equals(Level.END) || d.equals(DIMENSION)
+            || d.equals(com.dantemorrigan.gauntlet.doom.Latveria.LEVEL);
     }
     /** Re-entry from space: appear high above the take-off point and keep flying, so the descent is manual. */
     private static void reenter(ServerPlayer p) {
@@ -211,9 +212,10 @@ public final class CosmosTravel {
             if (!p.getAbilities().flying || !p.getAbilities().mayfly) enable(p);
             Navigation n = NAV.computeIfAbsent(p.getUUID(), id -> new Navigation());
             if (n.cooldown > 0) n.cooldown--;
-            if (p.level().dimension().equals(Level.NETHER) || p.level().dimension().equals(Level.END)) {
+            if (p.level().dimension().equals(Level.NETHER) || p.level().dimension().equals(Level.END)
+                    || p.level().dimension().equals(com.dantemorrigan.gauntlet.doom.Latveria.LEVEL)) {
                 // No way out of these worlds: keep the player under the roof / build limit.
-                double ceiling = p.level().dimension().equals(Level.NETHER) ? 126 : 250;
+                double ceiling = p.level().dimension().equals(Level.NETHER) ? 126 : p.level().dimension().equals(Level.END) ? 250 : p.level().getMaxY() - 2;
                 if (p.getY() > ceiling) {
                     p.teleport(new TeleportTransition(p.level(), new Vec3(p.getX(), ceiling, p.getZ()), Vec3.ZERO, p.getYRot(), p.getXRot(), TeleportTransition.DO_NOTHING));
                 }

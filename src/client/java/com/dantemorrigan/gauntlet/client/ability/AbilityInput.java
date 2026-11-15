@@ -32,9 +32,20 @@ public final class AbilityInput {
     private static boolean button,releaseGate,migrated;
     private static Level lastLevel;
     private static final Map<Stone,Ability> LAST=new EnumMap<>(Stone.class);
+    private static final Stone[] SCROLL_ORDER={Stone.POWER,Stone.SPACE,Stone.REALITY,Stone.MIND,Stone.TIME,Stone.SOUL};
+    /** Chosen by the mouse wheel and not yet sent / not yet confirmed by the server. */
+    private static Ability scrollQueued,scrollPending;
+    private static long scrollUntil;
     public static void init() {
         ClientPlayNetworking.registerGlobalReceiver(ModNetwork.AbilityState.TYPE,(p,c)->{
-            Ability a=Ability.byId(p.selected());selected=a==null?Ability.STRIKE:a;
+            Ability a=Ability.byId(p.selected());
+            // While the wheel is being scrolled the server is a few packets behind: its older answers must not
+            // snap the choice back. The first answer that matches what we asked for ends the wait.
+            if(scrollPending!=null && System.nanoTime()<scrollUntil) {
+                if(a==scrollPending) scrollPending=null;
+                a=selected;
+            } else scrollPending=null;
+            selected=a==null?Ability.STRIKE:a;
             try { states=JsonParser.parseString(p.states()).getAsJsonObject(); } catch(RuntimeException e) { states=new JsonObject(); }
             holding=p.holding();charge=p.charge();route=p.route();portal=p.portal();
             if(selected.stone!=null) LAST.put(selected.stone,selected);
@@ -80,22 +91,60 @@ public final class AbilityInput {
     }
     public static void choose(Ability a,int destination) {
         if(!selectable(a)) return;
-        cancel();
+        cancel();scrollQueued=scrollPending=null;
         if (a != Ability.PORTAL || destination != com.dantemorrigan.gauntlet.power.SpaceStone.LATVERIA_OPTION) {
             selected=a;if(a.stone!=null) LAST.put(a.stone,a);
         }
         ClientPlayNetworking.send(new ModNetwork.AbilitySelect(a.id,destination));releaseGate=true;
+    }
+    /** Every ability the wheel can step through, in wheel order: only stones that are in the gauntlet, then the two six-stone powers. */
+    public static List<Ability> scrollable() {return scrollable(false);}
+    /** @param destinations keep the "Destinations" entry that only opens the cosmic route menu (wanted by the wheel, not by the quick switch) */
+    public static List<Ability> scrollable(boolean destinations) {
+        var p=Minecraft.getInstance().player;
+        if(p==null) return List.of();
+        var stones=GauntletState.inserted(GauntletState.activeGauntlet(p));
+        var out=new ArrayList<Ability>();
+        for(Stone s:SCROLL_ORDER) if(stones.contains(s)) for(Ability a:Ability.of(s,CosmosClient.inCosmos())) if(destinations || a!=Ability.DESTINATIONS) out.add(a);
+        if(stones.size()==6) {out.add(Ability.BEAM);out.add(Ability.SNAP);}
+        return out;
+    }
+    /** The mouse wheel is allowed to steer the gauntlet right now (same locks as casting). */
+    public static boolean scrollAllowed() {
+        var mc=Minecraft.getInstance();
+        return equipped() && mc.player.isAlive() && mc.screen==null && mc.isWindowActive()
+            && !com.dantemorrigan.gauntlet.client.boss.TribunalClient.inputLocked() && !Cutscene.inputLocked() && !TimeRewindClient.inputLocked();
+    }
+    /**
+     * Steps the selection by {@code steps} (positive = next) with no wheel and no round trip: the choice changes on
+     * this very frame and the server hears about it at the next tick.
+     * @return the new ability, or null when there is nothing to switch between
+     */
+    public static Ability scroll(int steps) {
+        var list=scrollable();
+        if(list.size()<2 || steps==0) return null;
+        int i=list.indexOf(selected);
+        Ability a=list.get(i<0?(steps>0?0:list.size()-1):Math.floorMod(i+steps,list.size()));
+        if(a==selected) return a;
+        if(button || charge>0) cancel(); // a charge in progress must not follow the new choice
+        selected=a;if(a.stone!=null) LAST.put(a.stone,a);
+        scrollQueued=scrollPending=a;scrollUntil=System.nanoTime()+700_000_000L;
+        return a;
     }
     public static void inventory() {cancel();ClientPlayNetworking.send(new ModNetwork.AbilitySelect("inventory",-1));}
     public static void cancel() {
         if(Minecraft.getInstance().player!=null && ClientPlayNetworking.canSend(ModNetwork.AbilityAction.TYPE)) ClientPlayNetworking.send(new ModNetwork.AbilityAction(2));
         button=false;charge=0;releaseGate=true;
     }
-    private static void reset() {selected=Ability.STRIKE;states=new JsonObject();holding=charge=0;button=false;releaseGate=true;lastLevel=null;}
+    private static void reset() {scrollQueued=scrollPending=null;selected=Ability.STRIKE;states=new JsonObject();holding=charge=0;button=false;releaseGate=true;lastLevel=null;}
     private static void tick(Minecraft mc) {
         if(!migrated && mc.options!=null) {migrated=true;migrate(mc);}
         if(mc.player==null || mc.level==null) {reset();return;}
-        if(lastLevel!=mc.level) {cancel();lastLevel=mc.level;}
+        if(lastLevel!=mc.level) {cancel();lastLevel=mc.level;scrollQueued=scrollPending=null;}
+        if(scrollQueued!=null) { // one packet per tick however fast the wheel spins; the last choice wins
+            if(ClientPlayNetworking.canSend(ModNetwork.AbilitySelect.TYPE)) ClientPlayNetworking.send(new ModNetwork.AbilitySelect(scrollQueued.id,-1));
+            scrollQueued=null;
+        }
         boolean open=false;while(WHEEL.consumeClick()) open=true;
         boolean openFavorites = false;
         while (FAVORITES.consumeClick()) openFavorites = true;

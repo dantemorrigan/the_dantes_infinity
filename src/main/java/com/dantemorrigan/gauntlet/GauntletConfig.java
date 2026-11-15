@@ -18,6 +18,8 @@ public final class GauntletConfig {
     // Wheel input options (read on the client); legacy worn-gauntlet RMB is opt-in.
     public boolean abilityWheelToggle = false;
     public boolean legacyRightClickPower = false;
+    /** Mouse wheel switches abilities of the worn gauntlet / Doom armor: "modifier" (hold the scroll key), "always" or "off". */
+    public String abilityScrollMode = "modifier";
 	/** Show the top-left selected ability card and favorites bar while wearing the gauntlet (client). */
 	public boolean showStatusHud = true;
 	/** Mod UI language: "auto" (follow Minecraft), "en" or "ru". Applies to every string of the mod, book included. */

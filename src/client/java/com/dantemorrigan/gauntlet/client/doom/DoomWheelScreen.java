@@ -5,7 +5,10 @@ import com.dantemorrigan.gauntlet.doom.DoomArmor;
 import com.dantemorrigan.gauntlet.net.ModNetwork;
 import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
+import com.dantemorrigan.gauntlet.client.ability.AbilityScroll;
+import com.dantemorrigan.gauntlet.client.ui.Smooth;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.ScrollWheelHandler;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.KeyEvent;
@@ -18,6 +21,14 @@ import org.lwjgl.glfw.GLFW;
 /** The wheel of the Doom armor: hold the key, point at a power, let go (or click) to cast it. */
 public final class DoomWheelScreen extends Screen {
 	private int hovered = -1;
+	/** Per-power hover progress (0..1) and the opening fade; both ease by real time, not by tick. */
+	private final float[] glow = new float[6];
+	private float open;
+	private long lastFrame;
+	private final ScrollWheelHandler wheel = new ScrollWheelHandler();
+	private double mouseX = -1000, mouseY = -1000, anchorX, anchorY;
+	/** The wheel or a key chose the power: a little mouse jitter must not take it away. */
+	private boolean scrolled;
 
 	public DoomWheelScreen() {
 		super(Component.translatable("doom.infinity_gauntlet.wheel"));
@@ -80,9 +91,33 @@ public final class DoomWheelScreen extends Screen {
 
 	@Override
 	public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
-		if (event.button() == 0) { pick(event.x(), event.y()); select(); }
+		if (event.button() == 0) { pointer(event.x(), event.y()); select(); }
 		else Minecraft.getInstance().setScreen(null);
 		return true;
+	}
+
+	/** The wheel walks around the ring (down = next); the choice shows at once and the cast stays a separate press. */
+	@Override
+	public boolean mouseScrolled(double mx, double my, double dx, double dy) {
+		var steps = wheel.onMouseScroll(dx, dy);
+		int delta = steps.y != 0 ? steps.y : -steps.x;
+		if (delta == 0) return true;
+		int direction = Math.max(-3, Math.min(3, -delta));
+		hovered = Math.floorMod((hovered >= 0 ? hovered : DoomClient.selected()) + direction, 6);
+		scrolled = true;
+		anchorX = mouseX;
+		anchorY = mouseY;
+		AbilityScroll.tick(direction);
+		return true;
+	}
+
+	private void pointer(double mx, double my) {
+		if (mx == mouseX && my == mouseY) return;
+		if (scrolled && Math.hypot(mx - anchorX, my - anchorY) < 10) return;
+		mouseX = mx;
+		mouseY = my;
+		scrolled = false;
+		pick(mx, my);
 	}
 
 	private void pick(double mx, double my) {
@@ -97,29 +132,39 @@ public final class DoomWheelScreen extends Screen {
 
 	@Override
 	public void extractRenderState(GuiGraphicsExtractor g, int mx, int my, float delta) {
-		pick(mx, my);
-		g.fill(0, 0, width, height, 0x9C06100A);
-		int size = iconSize();
+		pointer(mx, my);
+		long now = System.nanoTime();
+		float dt = Smooth.dt(lastFrame, now);
+		lastFrame = now;
+		open = Smooth.approach(open, 1f, 16f, dt);
+		for (int i = 0; i < 6; i++) glow[i] = Smooth.approach(glow[i], i == hovered ? 1f : 0f, 22f, dt);
+		g.fill(0, 0, width, height, ARGB.color((int) (0x9C * open), 0x06, 0x10, 0x0A));
+		int base = iconSize();
 		for (int i = 0; i < 6; i++) {
 			double[] p = point(i);
 			boolean ready = DoomClient.cooldown(i) <= 0;
-			int x = (int) (p[0] - size / 2.0), y = (int) (p[1] - size / 2.0);
+			// The hovered power swells and settles with a soft pop; the whole ring eases in as it opens.
+			float lift = 1f + 0.16f * Smooth.outBack(glow[i]) * (glow[i] > 0 ? 1f : 0f);
+			float size = base * lift * (0.82f + 0.18f * Smooth.smoothstep(open));
+			float x = (float) (p[0] - size / 2.0), y = (float) (p[1] - size / 2.0);
+			int fade = (int) (255 * Smooth.smoothstep(open));
 			String frame = i == hovered ? "state_warning" : ready ? "state_active" : "state_cooldown";
-			if (i == DoomClient.selected()) g.fill(x - size / 3, y - size / 3, x + size + size / 3, y + size + size / 3, 0x44FFD36B);
-			blit(g, "textures/gui/doctor_doom/" + frame + ".png", x - size / 4, y - size / 4, size + size / 2, -1);
-			blit(g, "textures/gui/doctor_doom/icons/" + DoomClient.ICONS[i] + ".png", x, y, size, ready ? -1 : ARGB.color(255, 96, 104, 100));
+			if (i == DoomClient.selected()) g.fill((int) (x - size / 3), (int) (y - size / 3), (int) (x + size + size / 3), (int) (y + size + size / 3), 0x44FFD36B);
+			blit(g, "textures/gui/doctor_doom/" + frame + ".png", x - size / 4, y - size / 4, size + size / 2, ARGB.color(fade, 255, 255, 255));
+			blit(g, "textures/gui/doctor_doom/icons/" + DoomClient.ICONS[i] + ".png", x, y, size, ready ? ARGB.color(fade, 255, 255, 255) : ARGB.color(fade, 96, 104, 100));
 			Component name = Component.translatable("doom.infinity_gauntlet.power." + DoomArmor.NAMES[i]);
 			// Names go outward from the wheel: above the top power, below the bottom one, beside the others.
-			int color = i == hovered ? 0xFF9CFFB4 : 0xFFE8E0C8, pad = size / 4 + 4;
+			int color = ARGB.color(fade, (int) (0xE8 + (0x9C - 0xE8) * glow[i]), (int) (0xE0 + (0xFF - 0xE0) * glow[i]), (int) (0xC8 + (0xB4 - 0xC8) * glow[i]));
+			int pad = (int) (size / 4) + 4;
 			switch (i) {
-				case 0 -> g.centeredText(font, name, (int) p[0], y - pad - 9, color);
-				case 3 -> g.centeredText(font, name, (int) p[0], y + size + pad, color);
-				case 1, 2 -> g.text(font, name, x + size + pad, (int) p[1] - 4, color, true);
-				default -> g.text(font, name, x - pad - font.width(name), (int) p[1] - 4, color, true);
+				case 0 -> g.centeredText(font, name, (int) p[0], (int) (y - pad - 9), color);
+				case 3 -> g.centeredText(font, name, (int) p[0], (int) (y + size + pad), color);
+				case 1, 2 -> g.text(font, name, (int) (x + size + pad), (int) p[1] - 4, color, true);
+				default -> g.text(font, name, (int) (x - pad - font.width(name)), (int) p[1] - 4, color, true);
 			}
 			if (!ready) g.centeredText(font, Component.literal(String.valueOf((DoomClient.cooldown(i) + 19) / 20)), (int) p[0], (int) p[1] - 4, 0xFFFFE08A);
 		}
-		blit(g, "textures/gui/doctor_doom/latveria_emblem.png", width / 2 - size / 2, (int) centerY() - size / 2, size, -1);
+		blit(g, "textures/gui/doctor_doom/latveria_emblem.png", width / 2f - base / 2f, (float) centerY() - base / 2f, base, ARGB.color((int) (255 * open), 255, 255, 255));
 		var help = font.split(Component.translatable("doom.infinity_gauntlet.wheel_help"), Math.max(120, width - 40));
 		int y = height - 14 - help.size() * 10;
 		for (var line : help) {
@@ -128,7 +173,7 @@ public final class DoomWheelScreen extends Screen {
 		}
 	}
 
-	private static void blit(GuiGraphicsExtractor g, String path, int x, int y, int size, int color) {
+	private static void blit(GuiGraphicsExtractor g, String path, float x, float y, float size, int color) {
 		var pose = g.pose();
 		pose.pushMatrix();
 		pose.translate(x, y);

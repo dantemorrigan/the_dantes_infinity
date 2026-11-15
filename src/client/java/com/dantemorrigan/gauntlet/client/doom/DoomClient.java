@@ -59,6 +59,8 @@ public final class DoomClient {
 	/** A letterboxed scene is playing (Doom's entrance, the ascension, or the final gauntlet storyline): the rest of the HUD steps aside. */
 	public static boolean cinematic() { return barsAge >= 0 || GodDoomScene.active() || DoomFinalClient.inCutscene(); }
 	private static int subtitleAge;
+	private static float selGlide = -1;
+	private static long selFrameAt;
 	private static float flashStrength;
 	// Music.
 	private static Track track;
@@ -85,6 +87,13 @@ public final class DoomClient {
 		ClientPlayNetworking.send(new ModNetwork.DoomCast(selected));
 		Minecraft mc = Minecraft.getInstance();
 		if (mc.player != null && selected != DoomArmor.JET && (cooldown[selected] <= 0 || selected == DoomArmor.SUNS && suns > 0)) mc.player.swing(net.minecraft.world.InteractionHand.MAIN_HAND);
+	}
+
+	/** The mouse wheel steps the selection (positive = next) with a soft tick; the gold frame in the HUD glides to it. */
+	public static void scroll(int steps) {
+		if (!set || steps == 0) return;
+		select(Math.floorMod(selected + steps, 6));
+		com.dantemorrigan.gauntlet.client.ability.AbilityScroll.tick(steps);
 	}
 
 	public static boolean logoShowing() { return logoAge >= 0; }
@@ -419,11 +428,17 @@ public final class DoomClient {
 		// The armor's six powers down the right edge: the selected one framed in gold, lit when ready, dim with
 		// seconds left while cooling; the jets show their fuel, the suns how many still orbit.
 		int size = 18, x = w - size - 6, y0 = h / 2 - 3 * (size + 4);
+		// The gold frame glides to the selected power instead of jumping, whatever the frame rate.
+		long frameAt = System.nanoTime();
+		float frameDt = com.dantemorrigan.gauntlet.client.ui.Smooth.dt(selFrameAt, frameAt);
+		selFrameAt = frameAt;
+		selGlide = selGlide < 0 ? selected : com.dantemorrigan.gauntlet.client.ui.Smooth.approach(selGlide, selected, 24f, frameDt);
+		int glideY = y0 + Math.round(selGlide * (size + 4));
+		g.fill(x - 5, glideY - 5, x + size + 5, glideY + size + 5, 0x66FFD36B);
 		for (int i = 0; i < 6; i++) {
 			int y = y0 + i * (size + 4);
 			boolean active = i == DoomArmor.JET && jet || i == DoomArmor.BASTION && bastion > 0 || i == DoomArmor.SUNS && suns > 0;
 			boolean ready = cooldown[i] <= 0 || active;
-			if (i == selected) g.fill(x - 5, y - 5, x + size + 5, y + size + 5, 0x66FFD36B);
 			image(g, InfinityGauntlet.id(GUI + (active ? "state_warning" : ready ? "state_active" : "state_cooldown") + ".png"), x - 3, y - 3, size + 6, size + 6, 64, 64, -1);
 			image(g, InfinityGauntlet.id(GUI + "icons/" + ICONS[i] + ".png"), x, y, size, size, 64, 64, ready ? -1 : ARGB.color(255, 96, 104, 100));
 			if (!ready) g.centeredText(mc.font, Component.literal(String.valueOf((cooldown[i] + 19) / 20)), x + size / 2, y + 5, 0xFFFFE08A);

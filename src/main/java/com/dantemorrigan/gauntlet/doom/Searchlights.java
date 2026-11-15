@@ -173,14 +173,21 @@ public final class Searchlights {
 		if (now % 4 != 0 || !active(level.getServer())) return;
 		for (int i = 0; i < LAMPS.length; i++) {
 			Vec3 dir = direction(i, now);
-			Vec3 spot = spot(level, i, dir);
-			double reach = spot.distanceTo(LAMPS[i]);
+			// The long march that finds where the beam lands is only worth doing when someone is inside the beam's widest cone.
+			Vec3 spot = null;
+			double reach = 0;
 			for (ServerPlayer p : level.players()) {
 				if (!p.isAlive() || p.isSpectator() || p.isCreative()) continue;
 				Vec3 body = p.position().add(0, p.getBbHeight() * 0.5, 0);
 				Vec3 v = body.subtract(LAMPS[i]);
 				double along = v.dot(dir);
-				if (along < 2 || along > reach + 2) continue;
+				if (along < 2 || along > range(i) + 2) continue;
+				if (v.subtract(dir.scale(along)).length() > 0.9 + spotRadius(i) * 2.4) continue; // the most any beam can reach sideways
+				if (spot == null) {
+					spot = spot(level, i, dir);
+					reach = spot.distanceTo(LAMPS[i]);
+				}
+				if (along > reach + 2) continue;
 				double radius = 0.4 + along * spotRadius(i) / Math.max(1, reach);
 				if (v.subtract(dir.scale(along)).length() > radius + 0.5) continue;
 				if (march(level, LAMPS[i].add(dir.scale(1.5)), body).distanceToSqr(body) > 1.0) continue;

@@ -207,7 +207,7 @@ public final class Latveria {
 		ServerTickEvents.START_SERVER_TICK.register(server -> bypass = false);
 		for (LatveriaPlan.Op op : LatveriaPlan.FURNITURE) furnitureChunks.add(ChunkPos.pack(op.x0() >> 4, op.z0() >> 4));
 		for (BlockPos p : LatveriaPlan.VILLAGERS) furnitureChunks.add(ChunkPos.pack(p.getX() >> 4, p.getZ() >> 4));
-		ServerLifecycleEvents.SERVER_STOPPING.register(server -> { DoomItems.TimePlatforms.tick(true); flushPlaced(server); });
+		ServerLifecycleEvents.SERVER_STOPPING.register(server -> { DoomItems.TimePlatforms.tick(true); LatveriaHunt.restoreAll(server.getLevel(LEVEL)); flushPlaced(server); });
 		ServerLifecycleEvents.SERVER_STOPPED.register(server -> {
 			loaded = false;
 			boss = null;
@@ -554,13 +554,14 @@ public final class Latveria {
 		ServerLevel level = server.getLevel(LEVEL);
 		if (level == null || level.players().isEmpty()) {
 			if (boss != null && level != null) callOff(level);
+			LatveriaHunt.restoreAll(level);
 			return;
 		}
-		for (int n = 0; n < 2 && !toFurnish.isEmpty(); n++) furnish(level, toFurnish.poll());
-		LatveriaQuests.ensureNpcs(level);
-		Searchlights.tick(level);
-		LatveriaHunt.tick(level);
-		LatveriaCourt.tick(level);
+		timed("furnish", () -> { for (int n = 0; n < 2 && !toFurnish.isEmpty(); n++) furnish(level, toFurnish.poll()); });
+		timed("npcs", () -> LatveriaQuests.ensureNpcs(level));
+		timed("searchlights", () -> Searchlights.tick(level));
+		timed("hunt", () -> LatveriaHunt.tick(level));
+		timed("court", () -> LatveriaCourt.tick(level));
 		// A copy: leaving through the gate takes the player out of this level's list while we walk it.
 		for (ServerPlayer p : List.copyOf(level.players())) {
 			LatveriaQuests.checkCloakProximity(level, p);
@@ -576,9 +577,25 @@ public final class Latveria {
 			} else inGate.remove(p.getUUID());
 		}
 		if (time % 10 != 0) return;
-		squads(level);
-		barriers(level);
-		fight(level);
+		timed("squads", () -> squads(level));
+		timed("barriers", () -> barriers(level));
+		timed("fight", () -> fight(level));
+	}
+
+	private static long lastSlowLog;
+
+	/**
+	 * Runs one section of Latveria's tick and, if it ate more than 25 ms of the server's 50 ms, says so in the log (at most
+	 * every ten seconds), so a lag spike can be traced to the part of the hunt that caused it.
+	 */
+	private static void timed(String section, Runnable body) {
+		long t0 = System.nanoTime();
+		body.run();
+		long ms = (System.nanoTime() - t0) / 1_000_000;
+		if (ms >= 25 && t0 - lastSlowLog > 10_000_000_000L) {
+			lastSlowLog = t0;
+			InfinityGauntlet.LOGGER.warn("Latveria tick section '{}' took {} ms", section, ms);
+		}
 	}
 
 	private static void squads(ServerLevel level) {

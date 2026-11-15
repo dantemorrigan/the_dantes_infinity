@@ -114,7 +114,7 @@ public final class LatveriaQuests {
 		if (level.dimension() != Latveria.LEVEL) return;
 		if (level.players().isEmpty()) return;
 		long time = level.getGameTime();
-		if (time % 40 != 0) return;
+		if (time % 100 != 0) return;
 
 		ensureBasementMigrated(level);
 

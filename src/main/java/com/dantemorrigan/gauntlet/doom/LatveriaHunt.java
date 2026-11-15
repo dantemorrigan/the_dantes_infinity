@@ -72,6 +72,14 @@ public final class LatveriaHunt {
 
 		Vec3 center() { return doorCenter().add(Vec3.atLowerCornerOf(in.getUnitVec3i()).scale(5)); }
 
+		/** Inside the house's walls, give or take {@code margin} blocks: what the robots may tear down to get at a hidden intruder. */
+		boolean contains(Vec3 at, double margin) {
+			Vec3 rel = at.subtract(doorCenter());
+			Vec3 into = Vec3.atLowerCornerOf(in.getUnitVec3i()), side = Vec3.atLowerCornerOf(in.getClockWise().getUnitVec3i());
+			double along = rel.dot(into), lateral = Math.abs(rel.dot(side));
+			return along > 0.3 - margin && along < 12 + margin && lateral < 7.5 + margin && rel.y > -1.5 && rel.y < 13 + margin;
+		}
+
 		boolean contains(Vec3 at) {
 			Vec3 rel = at.subtract(doorCenter());
 			Vec3 into = Vec3.atLowerCornerOf(in.getUnitVec3i()), side = Vec3.atLowerCornerOf(in.getClockWise().getUnitVec3i());
@@ -331,6 +339,7 @@ public final class LatveriaHunt {
 				Searchlights.focus(false, 0, 0, now);
 			}
 		}
+		if (!BROKEN.isEmpty() && now % 10 == 0) restoreWalls(level, hunt == null || hunt.phase == Phase.OUTBOUND, false);
 		ServerPlayer quarry = hunt == null ? null : level.getServer().getPlayerList().getPlayer(hunt.quarry);
 		if (hunt != null) {
 			boolean gone = quarry == null || !quarry.isAlive() || quarry.level() != level || quarry.isCreative() || quarry.isSpectator();
@@ -531,6 +540,104 @@ public final class LatveriaHunt {
 		}
 	}
 
+	// ------------------------------------------------------------------ tearing the walls down
+
+	/** A block a robot tore out of a house, to be put back once the hunt is over. */
+	private record Broken(BlockState state, long when) {}
+
+	private static final Map<Long, Broken> BROKEN = new java.util.LinkedHashMap<>();
+	private static final int BREACH_ROBOTS = 3, BREACH_PER_PUNCH = 16;
+
+	/**
+	 * The intruder is inside a house and the robot has no line to them: it flies up the facade to their floor, then
+	 * punches a tunnel through the wall toward them (a few blocks at a time, with the noise to match) and flies in.
+	 * Only the house's own walls give way, nothing with an inventory, nothing unbreakable. False once it sees them,
+	 * when the ordinary fight takes over.
+	 */
+	private static boolean breach(ServerLevel level, Doombot b, ServerPlayer q, int index) {
+		if (index >= BREACH_ROBOTS || q.level() != level) return false;
+		House h = houseAt(level, q.position());
+		if (h == null) return false;
+		var hit = level.clip(new ClipContext(b.getEyePosition(), q.getEyePosition(), ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, b));
+		if (hit.getType() == HitResult.Type.MISS) return false;
+		double floor = Math.floor(q.getY() + 0.01);
+		Vec3 post = post(h, index);
+		double away = b.position().multiply(1, 0, 1).distanceTo(post.multiply(1, 0, 1));
+		// Over the roofs to the post beside the house, then straight up (or down) the outside wall to their floor.
+		if (away > 3) {
+			b.huntFly(new Vec3(post.x, Math.max(b.getY(), h.door().getY() + 15), post.z), 1.2);
+			return true;
+		}
+		if (Math.abs(b.getY() - floor) > 1.0) {
+			b.huntFly(new Vec3(post.x, floor, post.z), 0.9);
+			return true;
+		}
+		Vec3 flat = new Vec3(q.getX() - b.getX(), 0, q.getZ() - b.getZ());
+		if (flat.length() < 1.5) return false;
+		Vec3 dir = flat.normalize();
+		b.huntFace(q.getEyePosition());
+		if (b.tickCount % 5 == 0) punch(level, b, h, dir, (int) floor);
+		b.huntFly(new Vec3(q.getX() - dir.x * 2, floor, q.getZ() - dir.z * 2), 0.5);
+		return true;
+	}
+
+	/** One blow of the robot's fists: the next stretch of wall ahead of it, three wide and three high, comes down. */
+	private static void punch(ServerLevel level, Doombot b, House h, Vec3 dir, int row) {
+		Vec3 side = new Vec3(-dir.z, 0, dir.x);
+		int[] removed = {0};
+		Latveria.edit(() -> {
+			for (double s = 1.0; s <= 7.0 && removed[0] < BREACH_PER_PUNCH; s += 0.5) {
+				for (int l = -1; l <= 1 && removed[0] < BREACH_PER_PUNCH; l++) {
+					for (int dy = 0; dy < 3 && removed[0] < BREACH_PER_PUNCH; dy++) {
+						BlockPos p = BlockPos.containing(b.getX() + dir.x * s + side.x * l, row + dy, b.getZ() + dir.z * s + side.z * l);
+						BlockState st = level.getBlockState(p);
+						if (st.isAir() || !st.getFluidState().isEmpty() || st.getDestroySpeed(level, p) < 0 || level.getBlockEntity(p) != null) continue;
+						if (!h.contains(Vec3.atCenterOf(p), 1.6)) continue;
+						BROKEN.putIfAbsent(p.asLong(), new Broken(st, level.getGameTime()));
+						level.setBlock(p, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
+						if (removed[0]++ % 3 == 0) level.levelEvent(2001, p, net.minecraft.world.level.block.Block.getId(st));
+					}
+				}
+			}
+		});
+		if (removed[0] > 0) {
+			Vec3 at = b.position().add(dir.scale(2.5)).add(0, 1.5, 0);
+			DoomFx.sound(level, at, SoundEvents.GENERIC_EXPLODE.value(), 1.3f, 0.9f + level.getRandom().nextFloat() * 0.3f);
+			DoomFx.bill(level, ModParticles.DOOM_DOOM_SMOKE, at, 1.8);
+			DoomFx.near(level, at, 20, DoomFx.SHAKE, 0, 0.45f, 8);
+			b.swing(net.minecraft.world.InteractionHand.MAIN_HAND);
+		}
+	}
+
+	/**
+	 * Puts the torn-down walls back, a few blocks a tick, when the hunt is over (or after five minutes whatever happens).
+	 * A block is skipped while something stands where it belongs, or a visitor has built there.
+	 */
+	static void restoreWalls(ServerLevel level, boolean huntOver, boolean all) {
+		long now = level.getGameTime();
+		int budget = all ? Integer.MAX_VALUE : 40;
+		var it = BROKEN.entrySet().iterator();
+		int done = 0;
+		while (it.hasNext() && done < budget) {
+			var e = it.next();
+			if (!all && !huntOver && now - e.getValue().when() < 6000) continue;
+			BlockPos p = BlockPos.of(e.getKey());
+			if (!level.isLoaded(p)) continue;
+			BlockState now0 = level.getBlockState(p);
+			if (!now0.isAir() && !now0.canBeReplaced()) { it.remove(); continue; }
+			if (!all && !level.noCollision(new AABB(p))) continue;
+			final BlockState back = e.getValue().state();
+			Latveria.edit(() -> level.setBlock(p, back, 3));
+			it.remove();
+			done++;
+		}
+	}
+
+	/** Restores every wall at once (the hunt is cleared, or the server is stopping). */
+	public static void restoreAll(ServerLevel level) {
+		if (level != null) restoreWalls(level, true, true);
+	}
+
 	// ------------------------------------------------------------------ eyes and ears
 
 	private static void senses(ServerLevel level, ServerPlayer p, long now) {
@@ -664,6 +771,8 @@ public final class LatveriaHunt {
 			}
 			case CHASE -> {
 				ServerPlayer q = level.getServer().getPlayerList().getPlayer(hunt.quarry);
+				// Hiding upstairs behind walls is no use: they climb the facade to the floor and tear the wall down.
+				if (q != null && breach(level, b, q, index)) return true;
 				if (q != null && engaged(q)) { b.engage(q); return false; }
 				// Lost sight for a moment: on to where they must be.
 				b.disengage();

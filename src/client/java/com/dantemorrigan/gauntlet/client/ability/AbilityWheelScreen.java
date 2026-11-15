@@ -6,13 +6,16 @@ import com.dantemorrigan.gauntlet.cosmos.*;
 import com.dantemorrigan.gauntlet.client.cosmos.CosmosClient;
 import com.dantemorrigan.gauntlet.power.SpaceStone;
 import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
+import com.dantemorrigan.gauntlet.client.ui.Smooth;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.ScrollWheelHandler;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.network.chat.Component;
+import net.minecraft.util.ARGB;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import org.lwjgl.glfw.GLFW;
@@ -29,6 +32,15 @@ public final class AbilityWheelScreen extends Screen {
     private long hoverSince;
     private Stone pending;
     private boolean finished;
+    // Smooth feel: everything below eases by real time, so it is the same at any frame rate.
+    private final Map<String,Float> glow=new HashMap<>();
+    private float open,switchIn=1,dt;
+    private long lastFrame;
+    private Stone shown;
+    private final ScrollWheelHandler wheel=new ScrollWheelHandler();
+    /** The wheel or a key chose the focus: a little hand jitter on the mouse must not take it away. */
+    private boolean scrolled;
+    private double anchorX,anchorY;
     public AbilityWheelScreen() {super(Component.translatable("ability.infinity_gauntlet.wheel"));stone=AbilityInput.selected().stone==null?Stone.POWER:AbilityInput.selected().stone;}
     @Override public boolean isPauseScreen() {return false;}
     private float scale() {return Math.max(.2f,Math.min(1.05f,Math.min((width-16)/360f,(height-95)/360f)));}
@@ -49,6 +61,8 @@ public final class AbilityWheelScreen extends Screen {
     }
     private void pointer(double mx,double my) {
         if(mx==mouseX && my==mouseY) return;
+        if(scrolled && Math.hypot(mx-anchorX,my-anchorY)<10) return;
+        scrolled=false;
         mouseX=mx;mouseY=my;keyboard=null;hovered=null;target=-1;
         if(submenu==2) {
             for(int i=0;i<CosmosRoutes.ALL.size();i++) {int[] r=destinationBounds(i);if(mx>=r[0] && mx<r[0]+r[2] && my>=r[1] && my<r[1]+r[3]) target=i;}
@@ -128,6 +142,29 @@ public final class AbilityWheelScreen extends Screen {
         }
         return true; // No gameplay key events escape an open wheel.
     }
+    /** The mouse wheel walks the abilities (down = next), crossing from one stone to the next without a stop. */
+    @Override public boolean mouseScrolled(double mx,double my,double dx,double dy) {
+        var steps=wheel.onMouseScroll(dx,dy);
+        int delta=steps.y!=0?steps.y:-steps.x;
+        if(delta==0) return true;
+        int dir=Math.max(-3,Math.min(3,-delta));
+        if(submenu!=0) {
+            int n=submenu==1?portalCount():CosmosRoutes.ALL.size();
+            target=Math.floorMod((target<0?(dir>0?-1:0):target)+dir,n);
+        } else {
+            var flat=AbilityInput.scrollable(true);
+            if(flat.isEmpty()) return true;
+            Ability sel=AbilityInput.selected();
+            Ability cur=keyboard!=null?keyboard:hovered!=null?hovered:sel.stone==stone?sel:AbilityInput.last(stone);
+            int i=flat.indexOf(cur);
+            Ability next=flat.get(i<0?(dir>0?0:flat.size()-1):Math.floorMod(i+dir,flat.size()));
+            keyboard=next;hovered=null;pending=null;
+            if(next.stone!=null) stone=next.stone;
+        }
+        scrolled=true;anchorX=mouseX;anchorY=mouseY;
+        AbilityScroll.tick(dir);
+        return true;
+    }
     @Override public boolean mouseClicked(MouseButtonEvent event,boolean doubleClick) {
         pointer(event.x(),event.y());
         if(event.button()==1) {if(submenu!=0){submenu=0;target=-1;}else onClose();return true;}
@@ -147,17 +184,22 @@ public final class AbilityWheelScreen extends Screen {
         return AbilityInput.selectable(Ability.PORTAL) && l!=null && !(i==0&&l.dimension().equals(Level.NETHER)||i==1&&l.dimension().equals(Level.END)||i==2&&l.dimension().equals(Level.OVERWORLD));
     }
     @Override public void extractRenderState(GuiGraphicsExtractor g,int mx,int my,float delta) {
-        pointer(mx,my);g.fill(0,0,width,height,0x9C090811);
+        pointer(mx,my);
+        long now=System.nanoTime();dt=Smooth.dt(lastFrame,now);lastFrame=now;
+        open=Smooth.approach(open,1f,16f,dt);
+        if(shown!=stone) {if(shown!=null) switchIn=0;shown=stone;}
+        switchIn=Smooth.approach(switchIn,1f,13f,dt);
+        g.fill(0,0,width,height,ARGB.color((int)(0x9C*open),0x09,0x08,0x11));
         tooltipLine(g,Component.translatable("ability.infinity_gauntlet.wheel").withStyle(net.minecraft.ChatFormatting.BOLD),8,0xFFF4D68D);
         if(submenu==2) { drawDestinations(g); return; }
-        blit(g,"wheel_frame",(int)(cx()-128*scale()),(int)(cy()-128*scale()),256*scale(),256*scale(),256,256);
+        blit(g,"wheel_frame",(int)(cx()-128*scale()),(int)(cy()-128*scale()),256*scale(),256*scale(),256,256,fadeColor());
         if(submenu==0) {
             for(int i=0;i<6;i++) {
                 Stone s=ORDER[i];double a=Math.toRadians(-90+i*60);
-                button(g,Math.cos(a)*88,Math.sin(a)*88,new ItemStack(s.item()),null,s==stone,GauntletState.inserted(GauntletState.activeGauntlet(Minecraft.getInstance().player)).contains(s),s,54);
+                button(g,"s"+s,Math.cos(a)*88,Math.sin(a)*88,new ItemStack(s.item()),null,s==stone,GauntletState.inserted(GauntletState.activeGauntlet(Minecraft.getInstance().player)).contains(s),s,54);
             }
             for(Ability a:Ability.of(stone,CosmosClient.inCosmos())) {
-                double[] p=abilityPoint(a);button(g,(p[0]-cx())/scale(),(p[1]-cy())/scale(),null,a,a==(keyboard!=null?keyboard:hovered),AbilityInput.selectable(a),stone,48);
+                double[] p=abilityPoint(a);button(g,"a"+a.id,(p[0]-cx())/scale(),(p[1]-cy())/scale(),null,a,a==(keyboard!=null?keyboard:hovered),AbilityInput.selectable(a),stone,48);
                 if(stone==Stone.MIND) {
                     float labelScale=Math.min(1f,scale()*1.65f);
                     String key=a==Ability.GRAB&&AbilityInput.holding()>0?"throw":a==Ability.GRAB?"grab":a==Ability.TEAR?"tear":"drop";
@@ -166,15 +208,15 @@ public final class AbilityWheelScreen extends Screen {
                     g.pose().popMatrix();
                 }
             }
-            button(g,-140,135,null,Ability.BEAM,(keyboard!=null?keyboard:hovered)==Ability.BEAM,AbilityInput.selectable(Ability.BEAM),Stone.MIND,48);
-            button(g,140,135,null,Ability.SNAP,(keyboard!=null?keyboard:hovered)==Ability.SNAP,AbilityInput.selectable(Ability.SNAP),Stone.MIND,48);
-            button(g,0,0,GauntletState.activeGauntlet(Minecraft.getInstance().player),null,false,true,stone,68);
+            button(g,"a"+Ability.BEAM.id,-140,135,null,Ability.BEAM,(keyboard!=null?keyboard:hovered)==Ability.BEAM,AbilityInput.selectable(Ability.BEAM),Stone.MIND,48);
+            button(g,"a"+Ability.SNAP.id,140,135,null,Ability.SNAP,(keyboard!=null?keyboard:hovered)==Ability.SNAP,AbilityInput.selectable(Ability.SNAP),Stone.MIND,48);
+            button(g,null,0,0,GauntletState.activeGauntlet(Minecraft.getInstance().player),null,false,true,stone,68);
         } else {
             int count=portalCount();
             for(int i=0;i<count;i++) {
                 double a=Math.toRadians(-90+360.0*i/count);double x=Math.cos(a)*115,y=Math.sin(a)*115;
                 boolean enabled=destinationAllowed(i);
-                button(g,x,y,null,null,i==target,enabled,Stone.SPACE,54);
+                button(g,"d"+i,x,y,null,null,i==target,enabled,Stone.SPACE,54);
                 Component label;
                 if(i==SpaceStone.LATVERIA_OPTION) {
                     boolean open=AbilityInput.latveriaOpen();
@@ -193,7 +235,7 @@ public final class AbilityWheelScreen extends Screen {
                 }
                 text(g,label,(int)(cx()+x*scale()),(int)(cy()+(y+34)*scale()),enabled?0xFFDEE8F9:0xFF85818A);
             }
-            button(g,0,0,null,null,false,true,Stone.SPACE,62);
+            button(g,null,0,0,null,null,false,true,Stone.SPACE,62);
             blit(g,"icons_64/back",(int)(cx()-16*scale()),(int)(cy()-16*scale()),32*scale(),32*scale(),64,64);
         }
         Ability focus=keyboard!=null?keyboard:hovered;
@@ -272,13 +314,26 @@ public final class AbilityWheelScreen extends Screen {
     private static void text(GuiGraphicsExtractor g,Component text,int center,int y,int color) {
         var font=Minecraft.getInstance().font;g.text(font,text,center-font.width(text)/2,y,color,true);
     }
-    private void button(GuiGraphicsExtractor g,double x,double y,ItemStack stack,Ability ability,boolean selected,boolean enabled,Stone stone,int size) {
-        int px=(int)(cx()+x*scale()-size*scale()/2),py=(int)(cy()+y*scale()-size*scale()/2);float s=size*scale();
-        blit(g,"button_disc",px,py,s,s,64,64);
-        if(selected) blit(g,"selection_halo",px-2,py-2,s+4,s+4,64,64);
+    private int fadeColor() {return ARGB.color((int)(255*Smooth.smoothstep(open)),255,255,255);}
+    private float glow(String key,boolean on) {
+        if(key==null) return on?1f:0f;
+        float v=Smooth.approach(glow.getOrDefault(key,on?1f:0f),on?1f:0f,22f,dt);glow.put(key,v);return v;
+    }
+    /** {@code key} names the button for hover easing (null = no easing): the disc swells and its halo fades in and out instead of snapping. */
+    private void button(GuiGraphicsExtractor g,String key,double x,double y,ItemStack stack,Ability ability,boolean selected,boolean enabled,Stone stone,int size) {
+        float gl=glow(key,selected);
+        boolean fresh=ability!=null && submenu==0 && ability!=Ability.BEAM && ability!=Ability.SNAP;
+        float appear=fresh?.62f+.38f*Smooth.outBack(switchIn):1f;
+        float s=size*scale()*(1f+.12f*gl)*appear*(.85f+.15f*Smooth.smoothstep(open));
+        float cxp=(float)(cx()+x*scale()),cyp=(float)(cy()+y*scale());
+        float px=cxp-s/2,py=cyp-s/2;
+        float a=Smooth.smoothstep(open)*(fresh?Math.min(1f,switchIn*1.6f):1f);
+        int color=ARGB.color((int)(255*a),255,255,255);
+        blit(g,"button_disc",px,py,s,s,64,64,color);
+        if(gl>0.01f) {float h=s*.07f;blit(g,"selection_halo",px-h,py-h,s+2*h,s+2*h,64,64,ARGB.color((int)(255*a*gl),255,255,255));}
         if(stack!=null) item(g,stack,px+s*.2f,py+s*.2f,s*.6f);
-        else if(ability!=null) icon(g,ability,px+s*.2f,py+s*.2f,s*.6f);
-        if(ability!=null && AbilityInput.cooldown(ability)>0) {text(g,Component.literal(""+((AbilityInput.cooldown(ability)+19)/20)),(int)(px+s/2),(int)(py+s/2-4),0xFFFFDE82);}
+        else if(ability!=null) icon(g,ability,px+s*.2f,py+s*.2f,s*.6f,color);
+        if(ability!=null && AbilityInput.cooldown(ability)>0) {text(g,Component.literal(""+((AbilityInput.cooldown(ability)+19)/20)),(int)cxp,(int)(cyp-4),0xFFFFDE82);}
     }
     private static String destinationIcon(String id) {
         return switch(id) {
@@ -286,16 +341,21 @@ public final class AbilityWheelScreen extends Screen {
             default -> "destinations";
         };
     }
-    public static void icon(GuiGraphicsExtractor g,Ability a,float x,float y,float size) {
-        String id=a==Ability.WARP?"route_earth":a==Ability.PORTAL?"portal_"+new String[]{"nether","end","overworld"}[Math.floorMod(AbilityInput.portal(),3)]:a==Ability.FLIGHT&&CosmosClient.flying()?"flight_disable":a==Ability.GRAB&&AbilityInput.holding()>0?"mind_throw":a.id;
-        blit(g,"icons_64/"+id,x,y,size,size,64,64);
+    /** Texture name (under icons_64/) of an ability as the wheel and the quick-switch strip draw it. */
+    public static String iconName(Ability a) {
+        return a==Ability.WARP?"route_earth":a==Ability.PORTAL?"portal_"+new String[]{"nether","end","overworld"}[Math.floorMod(AbilityInput.portal(),3)]:a==Ability.FLIGHT&&CosmosClient.flying()?"flight_disable":a==Ability.GRAB&&AbilityInput.holding()>0?"mind_throw":a.id;
+    }
+    public static void icon(GuiGraphicsExtractor g,Ability a,float x,float y,float size) {icon(g,a,x,y,size,-1);}
+    public static void icon(GuiGraphicsExtractor g,Ability a,float x,float y,float size,int color) {
+        blit(g,"icons_64/"+iconName(a),x,y,size,size,64,64,color);
     }
     private static void item(GuiGraphicsExtractor g,ItemStack stack,float x,float y,float size) {
         g.pose().pushMatrix();g.pose().translate(x,y);g.pose().scale(size/16,size/16);g.item(stack,0,0);g.pose().popMatrix();
     }
-    private static void blit(GuiGraphicsExtractor g,String name,float x,float y,float width,float height,int sourceW,int sourceH) {
+    private static void blit(GuiGraphicsExtractor g,String name,float x,float y,float width,float height,int sourceW,int sourceH) {blit(g,name,x,y,width,height,sourceW,sourceH,-1);}
+    private static void blit(GuiGraphicsExtractor g,String name,float x,float y,float width,float height,int sourceW,int sourceH,int color) {
         g.pose().pushMatrix();g.pose().translate(x,y);g.pose().scale(width/sourceW,height/sourceH);
-        g.blit(RenderPipelines.GUI_TEXTURED,InfinityGauntlet.id("textures/gui/ability_wheel/"+name+".png"),0,0,0f,0f,sourceW,sourceH,sourceW,sourceH);
+        g.blit(RenderPipelines.GUI_TEXTURED,InfinityGauntlet.id("textures/gui/ability_wheel/"+name+".png"),0,0,0f,0f,sourceW,sourceH,sourceW,sourceH,sourceW,sourceH,color);
         g.pose().popMatrix();
     }
 }
