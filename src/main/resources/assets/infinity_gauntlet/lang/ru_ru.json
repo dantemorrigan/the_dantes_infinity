@@ -900,5 +900,21 @@
   "screen.infinity_gauntlet.latveria_welcome.s4.text": "Дорога поднимается к воротам замка, их стережёт патруль и прожекторы. Ворота — не единственный путь внутрь: присмотритесь к стенам замка и подумайте, что питает его огни.",
   "screen.infinity_gauntlet.latveria_welcome.s5.title": "Сам Дум",
   "screen.infinity_gauntlet.latveria_welcome.s5.text": "Тот, кто дойдёт до тронного зала, встретится с Доктором Думом. Приходите вооружёнными, готовыми и не ждите пощады.",
-  "screen.infinity_gauntlet.latveria_welcome.ok": "Понятно"
+  "screen.infinity_gauntlet.latveria_welcome.ok": "Понятно",
+  "msg.infinity_gauntlet.latveria.bot.knock.1": "Открывайте. По приказу Доктора Дума.",
+  "msg.infinity_gauntlet.latveria.bot.knock.2": "Плановая проверка. Не сопротивляйтесь.",
+  "msg.infinity_gauntlet.latveria.bot.xray": "Тепловое сканирование жилища.",
+  "msg.infinity_gauntlet.latveria.bot.tip.house": "Свидетель подтверждает: нарушитель вошёл в тот дом.",
+  "msg.infinity_gauntlet.latveria.bot.tip.seen": "Свидетель видел нарушителя поблизости. Прочёсываем район.",
+  "msg.infinity_gauntlet.latveria.bot.siege.1": "Нарушитель! Дом окружён. Выходи и сдавайся Думу!",
+  "msg.infinity_gauntlet.latveria.bot.siege.2": "Пятнадцать секунд. Терпение Дума не безгранично.",
+  "msg.infinity_gauntlet.latveria.bot.siege.3": "Последнее предупреждение. Мы входим.",
+  "msg.infinity_gauntlet.latveria.bot.siege.storm": "Штурм!",
+  "msg.infinity_gauntlet.latveria.bot.siege.empty": "Дом пуст. Нарушитель ускользнул. Расширить поиск.",
+  "msg.infinity_gauntlet.latveria.bot.siege.out": "Цель вышла. Огонь!",
+  "msg.infinity_gauntlet.latveria.bot.hot": "Сектор объявлен горячей зоной. Патрули на позициях.",
+  "msg.infinity_gauntlet.latveria.hunt.siege": "§cДом окружён. Выберитесь незамеченным — или выходите и сражайтесь.",
+  "msg.infinity_gauntlet.latveria.hunt.hotzone": "§6Думботы потеряли вас, но район стал горячей зоной: его прочёсывают патрули и прожекторы.",
+  "hud.infinity_gauntlet.stealth.siege": "ОКРУЖЁН %s",
+  "hud.infinity_gauntlet.stealth.hot": "Горячая зона %s"
 }

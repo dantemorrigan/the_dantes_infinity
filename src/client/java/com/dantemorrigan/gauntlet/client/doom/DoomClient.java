@@ -108,7 +108,15 @@ public final class DoomClient {
 				case DoomFx.MUSIC -> force(Minecraft.getInstance(), fx.id());
 				case DoomFx.LIGHTS -> DoomVfxClient.lights(fx.f() > 0.5f);
 				case DoomFx.GOD -> GodDoomScene.start(fx.id(), fx.ticks());
-				case DoomFx.STEALTH -> { stealthState = fx.id(); stealthMeter = fx.f(); stealthLeft = fx.ticks(); stealthAt = System.currentTimeMillis(); }
+				case DoomFx.STEALTH -> {
+					stealthState = fx.id(); stealthMeter = fx.f(); stealthLeft = fx.ticks(); stealthAt = System.currentTimeMillis();
+					// The hot zone the city's lamps circle (none when the point is zero); the server's copy, in one game, agrees.
+					var mc = Minecraft.getInstance();
+					if (mc.level != null) {
+						boolean on = fx.at().lengthSqr() > 0;
+						com.dantemorrigan.gauntlet.doom.Searchlights.focus(on, fx.at().x, fx.at().z, mc.level.getGameTime());
+					}
+				}
 				case DoomFx.ALARM -> { DoomVfxClient.alarm(fx.id(), fx.ticks()); flashAge = 0; flashTicks = 8; flashStrength = 0.25f; }
 				default -> {}
 			}
@@ -166,7 +174,7 @@ public final class DoomClient {
 		if (jet && fuel > 0) fuel--;
 		if (logoAge >= 0 && ++logoAge > logoTicks) logoAge = -1;
 		// The first arrival: after the title card, the welcome to Latveria.
-		if (welcomeDue && logoAge < 0 && mc.screen == null && mc.player != null) {
+		if (welcomeDue && logoAge < 0 && mc.screen == null && mc.player != null && !Boolean.getBoolean("infinity_gauntlet.noWelcome")) {
 			welcomeDue = false;
 			mc.setScreen(new LatveriaWelcomeScreen());
 		}
@@ -461,7 +469,7 @@ public final class DoomClient {
 		boolean lamps = DoomVfxClient.lightsOn();
 		if (shownMeter < 0.01f && stealthState == 0 && !lamps) return;
 		int cx = g.guiWidth() / 2, top = 6 + (mc.gui.getBossOverlay() != null && hasBossBar(mc) ? 50 : 0);
-		boolean found = stealthState == com.dantemorrigan.gauntlet.doom.LatveriaHunt.CHASING;
+		boolean found = stealthState == com.dantemorrigan.gauntlet.doom.LatveriaHunt.CHASING || stealthState == com.dantemorrigan.gauntlet.doom.LatveriaHunt.SIEGE;
 		int color = found ? 0xFFE8322A : shownMeter > 0.5f ? 0xFFFFB02E : shownMeter > 0.02f ? 0xFFF3E37A : 0xFFB8C8C0;
 		float open = found ? 1 : Mth.clamp(shownMeter, 0, 1);
 		// The eye: an outline, a lid that opens with the meter, and the pupil.
@@ -479,9 +487,14 @@ public final class DoomClient {
 			case com.dantemorrigan.gauntlet.doom.LatveriaHunt.CHASING -> "hud.infinity_gauntlet.stealth.found";
 			case com.dantemorrigan.gauntlet.doom.LatveriaHunt.SEARCHING -> "hud.infinity_gauntlet.stealth.search";
 			case com.dantemorrigan.gauntlet.doom.LatveriaHunt.INBOUND -> "hud.infinity_gauntlet.stealth.inbound";
+			case com.dantemorrigan.gauntlet.doom.LatveriaHunt.SIEGE -> "hud.infinity_gauntlet.stealth.siege";
+			case com.dantemorrigan.gauntlet.doom.LatveriaHunt.HOTZONE -> "hud.infinity_gauntlet.stealth.hot";
 			default -> shownMeter > 0.02f ? "hud.infinity_gauntlet.stealth.suspect" : "hud.infinity_gauntlet.stealth.hidden";
 		};
-		Component text = stealthState == com.dantemorrigan.gauntlet.doom.LatveriaHunt.SEARCHING
+		boolean timed = stealthState == com.dantemorrigan.gauntlet.doom.LatveriaHunt.SEARCHING || stealthState == com.dantemorrigan.gauntlet.doom.LatveriaHunt.SIEGE
+				|| stealthState == com.dantemorrigan.gauntlet.doom.LatveriaHunt.HOTZONE;
+		if (stealthState == com.dantemorrigan.gauntlet.doom.LatveriaHunt.HOTZONE) color = 0xFFFF8A2E;
+		Component text = timed
 				? Component.translatable(key, stealthLeft / 60 + ":" + String.format("%02d", stealthLeft % 60)) : Component.translatable(key);
 		g.centeredText(mc.font, text, cx, top + 20, color);
 		// Markers toward the robots that sense you.

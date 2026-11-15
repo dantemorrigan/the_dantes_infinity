@@ -132,4 +132,6 @@ loom.runs.named('clientGameTest') {
     }
     cleaned.addAll(['--username', testName])
     programArguments.set(cleaned)
+    // The welcome to Latveria pauses a single-player game; tests other than its own skip it.
+    vmArg('-Dinfinity_gauntlet.noWelcome=true')
 }

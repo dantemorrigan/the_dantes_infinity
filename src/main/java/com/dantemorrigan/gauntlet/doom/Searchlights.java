@@ -96,8 +96,50 @@ public final class Searchlights {
 			case 1 -> { double a = -t * 0.0031 + 1.7; x = 46 + 26 * Math.cos(a); z = 40 + 62 * Math.sin(a); }
 			default -> { x = 7 * Math.sin(t * 0.011); z = 40 + 82 * Math.sin(t * 0.0024); }
 		}
+		double w = focusWeight(t);
+		if (w > 0) {
+			// The hot zone: every city lamp circles the place where the intruder was lost, each on its own ring.
+			int k = i - SLOPE_LAMPS;
+			double a = t * (0.012 + 0.003 * k) * (k == 1 ? -1 : 1) + k * 2.1, r = 8 + 9 * k;
+			double hx = focusX + r * Math.cos(a), hz = focusZ + r * Math.sin(a);
+			x += (hx - x) * w;
+			z += (hz - z) * w;
+		}
 		return new Vec3(x, LatveriaPlan.VALLEY_Y + 1, z);
 	}
+
+	private static double focusX, focusZ;
+	private static long focusOn = Long.MIN_VALUE / 2, focusOff = Long.MIN_VALUE / 2;
+	private static boolean focused;
+	private static final double FOCUS_BLEND = 120;
+
+	/** How far the city lamps have turned to the hot zone at time {@code t}: 0 not at all, 1 fully. */
+	private static double focusWeight(double t) {
+		if (focused) return Mth.clamp((t - focusOn) / FOCUS_BLEND, 0, 1);
+		double was = Mth.clamp((focusOff - focusOn) / FOCUS_BLEND, 0, 1);
+		return Math.max(0, was - (t - focusOff) / FOCUS_BLEND);
+	}
+
+	/**
+	 * Turns the city lamps onto a hot zone round (x, z), or back to their rounds when {@code on} is false; they swing
+	 * over smoothly. Called by the hunt on the server and by the hunt's messages on a client, with the same values.
+	 */
+	public static void focus(boolean on, double x, double z, long now) {
+		if (on && focused && Math.abs(x - focusX) < 3 && Math.abs(z - focusZ) < 3) return;
+		if (!on && !focused) return;
+		if (on) {
+			if (focused || focusWeight(now) > 0) { focusOn = now - (long) (focusWeight(now) * FOCUS_BLEND); }
+			else focusOn = now;
+			focusX = x;
+			focusZ = z;
+			focused = true;
+		} else {
+			focusOff = now;
+			focused = false;
+		}
+	}
+
+	public static boolean focused() { return focused; }
 
 	/** Where the beam of lamp {@code i} lands: the first block in its way, or the end of its reach. */
 	public static Vec3 spot(Level level, int i, Vec3 dir) {

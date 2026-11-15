@@ -900,5 +900,21 @@
   "screen.infinity_gauntlet.latveria_welcome.s4.text": "The road climbs to the castle gate, watched by a patrol and by the lamps. The gate is not the only way in: look closely at the castle's walls, and think about what keeps its lights burning.",
   "screen.infinity_gauntlet.latveria_welcome.s5.title": "Doom himself",
   "screen.infinity_gauntlet.latveria_welcome.s5.text": "Whoever reaches the throne room will face Doctor Doom. Come armed, come ready, and do not expect mercy.",
-  "screen.infinity_gauntlet.latveria_welcome.ok": "Understood"
+  "screen.infinity_gauntlet.latveria_welcome.ok": "Understood",
+  "msg.infinity_gauntlet.latveria.bot.knock.1": "Open. By order of Doctor Doom.",
+  "msg.infinity_gauntlet.latveria.bot.knock.2": "Routine inspection. Do not resist.",
+  "msg.infinity_gauntlet.latveria.bot.xray": "Thermal scan of the dwelling.",
+  "msg.infinity_gauntlet.latveria.bot.tip.house": "Witness confirms: the intruder entered that house.",
+  "msg.infinity_gauntlet.latveria.bot.tip.seen": "Witness saw the intruder nearby. Sweeping the area.",
+  "msg.infinity_gauntlet.latveria.bot.siege.1": "Intruder! The house is surrounded. Come out and surrender to Doom!",
+  "msg.infinity_gauntlet.latveria.bot.siege.2": "Fifteen seconds. Doom's patience has limits.",
+  "msg.infinity_gauntlet.latveria.bot.siege.3": "Last warning. We are coming in.",
+  "msg.infinity_gauntlet.latveria.bot.siege.storm": "Breach!",
+  "msg.infinity_gauntlet.latveria.bot.siege.empty": "The house is empty. The intruder slipped away. Widen the search.",
+  "msg.infinity_gauntlet.latveria.bot.siege.out": "Target is out. Engage!",
+  "msg.infinity_gauntlet.latveria.bot.hot": "Sector declared a hot zone. Patrols in position.",
+  "msg.infinity_gauntlet.latveria.hunt.siege": "§cThe house is surrounded. Slip out unseen, or come out and fight.",
+  "msg.infinity_gauntlet.latveria.hunt.hotzone": "§6The Doombots lost you, but the district is now a hot zone: patrols and searchlights comb it.",
+  "hud.infinity_gauntlet.stealth.siege": "SURROUNDED %s",
+  "hud.infinity_gauntlet.stealth.hot": "Hot zone %s"
 }

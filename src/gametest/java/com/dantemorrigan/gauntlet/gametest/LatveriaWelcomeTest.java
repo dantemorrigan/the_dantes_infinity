@@ -8,6 +8,7 @@ import net.fabricmc.fabric.api.client.gametest.v1.context.ClientGameTestContext;
 public class LatveriaWelcomeTest implements FabricClientGameTest {
 	@Override
 	public void runTest(ClientGameTestContext ctx) {
+		System.setProperty("infinity_gauntlet.noWelcome", "false");
 		try (var sp = ctx.worldBuilder().create()) {
 			sp.getClientLevel().waitForChunksRender();
 			var server = sp.getServer();

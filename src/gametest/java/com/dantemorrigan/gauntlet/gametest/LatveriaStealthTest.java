@@ -27,7 +27,7 @@ public class LatveriaStealthTest implements FabricClientGameTest {
 
 	private static void status(ClientGameTestContext ctx, net.fabricmc.fabric.api.client.gametest.v1.context.TestServerContext server, String when) {
 		System.out.println("STEALTH " + when + ": " + server.computeOnServer(s -> LatveriaHunt.debug() + " meter " + LatveriaHunt.meter(player(s))
-				+ " " + hunters(s, 200).stream().map(b -> b.blockPosition().toShortString() + "/" + b.awareness()).toList()));
+				+ " " + hunters(s, 200).stream().map(b -> b.blockPosition().toShortString() + "/" + b.awareness() + "/t" + b.tickCount + "/" + s.getLevel(Latveria.LEVEL).isPositionEntityTicking(b.blockPosition())).toList()));
 	}
 
 	@Override
@@ -68,18 +68,52 @@ public class LatveriaStealthTest implements FabricClientGameTest {
 				}
 				p.setShiftKeyDown(true);
 			});
-			for (int i = 0; i < 6; i++) {
-				ctx.waitTicks(100);
+			// They search the houses round the place: knock, scan through the walls, find the one hiding inside, and surround it.
+			server.runOnServer(s -> { LatveriaHunt.siegeTime = 240; LatveriaHunt.hotTime = 500; });
+			boolean besieged = false;
+			for (int i = 0; i < (Boolean.getBoolean("quick") ? 3 : 24) && !besieged; i++) {
+				ctx.waitTicks(50);
 				server.runOnServer(s -> player(s).setShiftKeyDown(true));
 				status(ctx, server, "hiding " + i);
-				if (i == 2) ctx.takeScreenshot("stealth_02_hiding");
+				if (i == 3) ctx.takeScreenshot("stealth_02_hiding");
+				besieged = server.computeOnServer(s -> LatveriaHunt.phase().equals("SIEGE"));
 			}
-			ctx.takeScreenshot("stealth_03_search");
-			ctx.waitTicks(400);
-			status(ctx, server, "after the search");
-			String gone = server.computeOnServer(s -> LatveriaHunt.debug());
-			ctx.takeScreenshot("stealth_04_gone");
-			System.out.println("STEALTH end: " + gone);
+			check(besieged, "The robots must find the intruder hiding in a house and surround it");
+			ctx.waitTicks(120);
+			status(ctx, server, "siege");
+			ctx.takeScreenshot("stealth_03_siege");
+			// Stay inside: they break the door in and fight.
+			boolean stormed = false;
+			for (int i = 0; i < 12 && !stormed; i++) {
+				ctx.waitTicks(20);
+				stormed = server.computeOnServer(s -> LatveriaHunt.phase().equals("CHASE"));
+			}
+			status(ctx, server, "stormed");
+			check(stormed, "When the siege runs out with the intruder inside, they storm the house");
+			ctx.takeScreenshot("stealth_04_storm");
+			// Slip far away into a dark corner: they lose the trail, search, and the district becomes a hot zone.
+			server.runOnServer(s -> LatveriaHunt.giveUp = 300);
+			server.runCommand("execute in infinity_gauntlet:latveria run tp @p 88.5 69 140.5");
+			boolean hot = false;
+			for (int i = 0; i < 40 && !hot; i++) {
+				ctx.waitTicks(20);
+				server.runOnServer(s -> player(s).setShiftKeyDown(true));
+				hot = server.computeOnServer(s -> LatveriaHunt.phase().equals("HOTZONE"));
+				if (i % 5 == 0) status(ctx, server, "escaping " + i);
+			}
+			check(hot, "Losing the intruder must leave a hot zone, not an empty sky");
+			ctx.waitTicks(100);
+			status(ctx, server, "hot zone");
+			int patrol = server.computeOnServer(s -> hunters(s, 300).size());
+			check(patrol > LatveriaHunt.SQUAD - 1, "Reinforcements must patrol the hot zone, got " + patrol);
+			check(server.computeOnServer(s -> com.dantemorrigan.gauntlet.doom.Searchlights.focused()), "The city lamps must turn on the hot zone");
+			ctx.takeScreenshot("stealth_05_hotzone");
+			ctx.waitTicks(560);
+			status(ctx, server, "after the hot zone");
+			String end = server.computeOnServer(s -> LatveriaHunt.phase());
+			check(end.equals("OUTBOUND") || end.equals("NONE"), "After the hot zone they go home, got " + end);
+			ctx.takeScreenshot("stealth_06_gone");
+			System.out.println("STEALTH end: " + end);
 		}
 	}
 }
