@@ -249,14 +249,14 @@ public final class DoomFinalClient {
 		float t = localTicks + partial;
 
 		// 1. Render the Energy Dome around Doom & Thanos during the duel
-		boolean showDome = (stage == DoomFinalEncounter.STAGE_THANOS_ARRIVAL && t >= 150)
+		boolean showDome = (stage == DoomFinalEncounter.STAGE_THANOS_ARRIVAL && t >= 205)
 				|| stage == DoomFinalEncounter.STAGE_DOME_DUEL
 				|| (stage == DoomFinalEncounter.STAGE_KILL_THANOS_CUTSCENE && t < 18);
 		if (showDome && mc.level.dimension() == Level.OVERWORLD && cam.distanceTo(center) < 180) {
 			float scale = 1.0f;
 			float alpha = 1.0f;
 			if (stage == DoomFinalEncounter.STAGE_THANOS_ARRIVAL) {
-				scale = Mth.clamp((t - 150) / 16f, 0.05f, 1.0f);
+				scale = Mth.clamp((t - 205) / 16f, 0.05f, 1.0f);
 				alpha = scale;
 			} else if (stage == DoomFinalEncounter.STAGE_KILL_THANOS_CUTSCENE) {
 				alpha = Mth.clamp(1.0f - t / 18f, 0f, 1f);
@@ -330,88 +330,85 @@ public final class DoomFinalClient {
 						ARGB.color((int) (150 * alpha), 130, 145, 175));
 			}
 			// Ambient cloudy interior mist planes so the entire interior behind the glass is milky/diffused
-			for (int m = -2; m <= 2; m++) {
-				Vec3 mistCenter = forward.scale(m * 1.8).add(0, 2.2, 0);
-				int mistCol = ARGB.color((int) (78 * alpha), 155, 215, 190);
+			for (int m = -1; m <= 1; m++) {
+				Vec3 mistCenter = forward.scale(m * 2.6).add(0, 2.2, 0);
+				int mistCol = ARGB.color((int) (62 * alpha), 155, 215, 190);
 				drawBillboard(buf, p, mistCenter, right, 6.5f, 4.2f, mistCol);
 			}
 		});
 
-		// 2. Three concentric frosted-glass hemisphere shells with counter-drifting cellular frost UVs
+		// 2. Two frosted-glass shells (the inner one seen from inside, the outer from outside, at different radii so the
+		// two never fight over the same pixels) with a colour that flows slowly from jade through teal to ice blue.
 		ctx.submitNodeCollector().submitCustomGeometry(pose, RenderTypes.entityTranslucent(FROSTED_TEX), (p, buf) -> {
-			float[] radii = {radius * 0.94f, radius * 0.972f, radius};
-			int[] layerAlphas = {
-					(int) (115 * alpha * pulse),
-					(int) (130 * alpha * pulse),
-					(int) (148 * alpha * pulse)
-			};
-			float[] uvShifts = {time * 0.0018f, -time * 0.0014f, time * 0.0009f};
-
-			for (int layer = 0; layer < radii.length; layer++) {
-				float rLayer = radii[layer];
-				int aLayer = layerAlphas[layer];
-				float shift = uvShifts[layer];
-
-				for (int i = 0; i < segsPitch; i++) {
-					float p0 = (i / (float) segsPitch) * Mth.HALF_PI;
-					float p1 = ((i + 1) / (float) segsPitch) * Mth.HALF_PI;
-					float r0 = Mth.cos(p0) * rLayer, y0 = Mth.sin(p0) * rLayer;
-					float r1 = Mth.cos(p1) * rLayer, y1 = Mth.sin(p1) * rLayer;
-					float v0 = (i / (float) segsPitch) * 2.0f + shift * 0.5f;
-					float v1 = ((i + 1) / (float) segsPitch) * 2.0f + shift * 0.5f;
-
-					int col = (layer == 1)
-							? ARGB.color(aLayer, 185, 238, 218)
-							: (i % 2 == 0)
-									? ARGB.color(aLayer, 150, 222, 195)
-									: ARGB.color(aLayer, 168, 210, 232);
-
-					for (int j = 0; j < segsYaw; j++) {
-						float a0 = (j / (float) segsYaw) * Mth.TWO_PI + shift;
-						float a1 = ((j + 1) / (float) segsYaw) * Mth.TWO_PI + shift;
-						float u0 = (j / (float) segsYaw) * 4.0f + shift;
-						float u1 = ((j + 1) / (float) segsYaw) * 4.0f + shift;
-
-						float x00 = Mth.cos(a0) * r0, z00 = Mth.sin(a0) * r0;
-						float x10 = Mth.cos(a1) * r0, z10 = Mth.sin(a1) * r0;
-						float x11 = Mth.cos(a1) * r1, z11 = Mth.sin(a1) * r1;
-						float x01 = Mth.cos(a0) * r1, z01 = Mth.sin(a0) * r1;
-
-						// Outer frosted glass face
-						vtx(buf, p, x00, y0, z00, u0, v0, col);
-						vtx(buf, p, x10, y0, z10, u1, v0, col);
-						vtx(buf, p, x11, y1, z11, u1, v1, col);
-						vtx(buf, p, x01, y1, z01, u0, v1, col);
-
-						// Inner frosted glass face
-						vtx(buf, p, x01, y1, z01, u0, v1, col);
-						vtx(buf, p, x11, y1, z11, u1, v1, col);
-						vtx(buf, p, x10, y0, z10, u1, v0, col);
-						vtx(buf, p, x00, y0, z00, u0, v0, col);
+			// Time for the shimmer comes from the wall clock, not from the stage ticks: those are re-synced from the server
+			// and would make the colours jump. One tick is a twentieth of a second.
+			float flow = (System.nanoTime() / 1_000_000L % 3_600_000L) / 50f;
+			float breathe = 0.95f + 0.05f * Mth.sin(flow * 0.035f);
+			int rows = SHELL_PITCH + 1, cols = SHELL_YAW + 1;
+			for (int i = 0; i < rows; i++) {
+				float pitch = (i / (float) SHELL_PITCH) * Mth.HALF_PI;
+				RING_COS[i] = Mth.cos(pitch);
+				RING_SIN[i] = Mth.sin(pitch);
+			}
+			for (int j = 0; j < cols; j++) {
+				float a = (j / (float) SHELL_YAW) * Mth.TWO_PI;
+				YAW_COS[j] = Mth.cos(a);
+				YAW_SIN[j] = Mth.sin(a);
+			}
+			for (int shell = 0; shell < 2; shell++) {
+				boolean outer = shell == 1;
+				float r = radius * (outer ? 1.0f : 0.965f);
+				float base = (outer ? 150 : 118) * alpha * breathe;
+				float drift = flow * (outer ? 0.0007f : -0.0011f);
+				// One colour per grid point: the GPU blends it across each quad, so the shimmer has no seams or steps.
+				for (int i = 0; i < rows; i++) {
+					for (int j = 0; j < cols; j++) {
+						float wave = 0.5f + 0.5f * Mth.sin(j * 0.52f + i * 0.9f + flow * (outer ? 0.021f : -0.017f) + (outer ? 0f : 1.7f));
+						float wave2 = 0.5f + 0.5f * Mth.sin(j * 0.31f - i * 0.55f + flow * 0.013f);
+						// jade (150,222,195) -> ice blue (168,210,232) -> pale mint (190,245,222)
+						float rr = Mth.lerp(wave, 150, 168) + 22 * wave2, gg = Mth.lerp(wave, 222, 210) + 23 * wave2, bb = Mth.lerp(wave, 195, 232) - 10 * wave2;
+						float edge = 1f - 0.35f * (i / (float) SHELL_PITCH) * (i / (float) SHELL_PITCH); // a little clearer toward the crown
+						SHELL_COLOR[i * cols + j] = ARGB.color((int) (base * edge), Mth.clamp((int) rr, 0, 255), Mth.clamp((int) gg, 0, 255), Mth.clamp((int) bb, 0, 255));
+					}
+				}
+				for (int i = 0; i < SHELL_PITCH; i++) {
+					float v0 = (i / (float) SHELL_PITCH) * 2.0f + drift, v1 = ((i + 1) / (float) SHELL_PITCH) * 2.0f + drift;
+					for (int j = 0; j < SHELL_YAW; j++) {
+						float u0 = (j / (float) SHELL_YAW) * 4.0f + drift * 1.6f, u1 = ((j + 1) / (float) SHELL_YAW) * 4.0f + drift * 1.6f;
+						int c00 = SHELL_COLOR[i * cols + j], c10 = SHELL_COLOR[i * cols + j + 1], c11 = SHELL_COLOR[(i + 1) * cols + j + 1], c01 = SHELL_COLOR[(i + 1) * cols + j];
+						float x00 = YAW_COS[j] * RING_COS[i] * r, z00 = YAW_SIN[j] * RING_COS[i] * r, y0 = RING_SIN[i] * r;
+						float x10 = YAW_COS[j + 1] * RING_COS[i] * r, z10 = YAW_SIN[j + 1] * RING_COS[i] * r;
+						float x11 = YAW_COS[j + 1] * RING_COS[i + 1] * r, z11 = YAW_SIN[j + 1] * RING_COS[i + 1] * r, y1 = RING_SIN[i + 1] * r;
+						float x01 = YAW_COS[j] * RING_COS[i + 1] * r, z01 = YAW_SIN[j] * RING_COS[i + 1] * r;
+						if (outer) {
+							vtx(buf, p, x00, y0, z00, u0, v0, c00); vtx(buf, p, x10, y0, z10, u1, v0, c10);
+							vtx(buf, p, x11, y1, z11, u1, v1, c11); vtx(buf, p, x01, y1, z01, u0, v1, c01);
+						} else {
+							vtx(buf, p, x01, y1, z01, u0, v1, c01); vtx(buf, p, x11, y1, z11, u1, v1, c11);
+							vtx(buf, p, x10, y0, z10, u1, v0, c10); vtx(buf, p, x00, y0, z00, u0, v0, c00);
+						}
 					}
 				}
 			}
-
-			// Subtle frosted glass ribs along latitude & longitude
-			int ribCol = ARGB.color((int) (135 * alpha), 195, 250, 225);
-			float rh = 0.11f;
-			for (int i = 1; i < segsPitch; i += 2) {
-				float p0 = (i / (float) segsPitch) * Mth.HALF_PI;
-				float r0 = Mth.cos(p0) * (radius + 0.03f), y0 = Mth.sin(p0) * (radius + 0.03f);
-				for (int j = 0; j < segsYaw; j++) {
-					float a0 = (j / (float) segsYaw) * Mth.TWO_PI;
-					float a1 = ((j + 1) / (float) segsYaw) * Mth.TWO_PI;
-					float x0 = Mth.cos(a0) * r0, z0 = Mth.sin(a0) * r0;
-					float x1 = Mth.cos(a1) * r0, z1 = Mth.sin(a1) * r0;
-					vtx(buf, p, x0, y0, z0, 0, 1, ribCol);
-					vtx(buf, p, x1, y0, z1, 1, 1, ribCol);
-					vtx(buf, p, x1, y0 + rh, z1, 1, 0, ribCol);
-					vtx(buf, p, x0, y0 + rh, z0, 0, 0, ribCol);
+			// Faint ribs along latitude, standing clear of the glass.
+			int ribCol = ARGB.color((int) (110 * alpha * breathe), 195, 250, 225);
+			float rh = 0.1f, rr = radius + 0.08f;
+			for (int i = 2; i < SHELL_PITCH; i += 3) {
+				float r0 = RING_COS[i] * rr, y0 = RING_SIN[i] * rr;
+				for (int j = 0; j < SHELL_YAW; j++) {
+					float x0 = YAW_COS[j] * r0, z0 = YAW_SIN[j] * r0, x1 = YAW_COS[j + 1] * r0, z1 = YAW_SIN[j + 1] * r0;
+					vtx(buf, p, x0, y0, z0, 0, 1, ribCol); vtx(buf, p, x1, y0, z1, 1, 1, ribCol);
+					vtx(buf, p, x1, y0 + rh, z1, 1, 0, ribCol); vtx(buf, p, x0, y0 + rh, z0, 0, 0, ribCol);
 				}
 			}
 		});
 		pose.popPose();
 	}
+
+	private static final int SHELL_PITCH = 8, SHELL_YAW = 28;
+	private static final float[] RING_COS = new float[SHELL_PITCH + 1], RING_SIN = new float[SHELL_PITCH + 1];
+	private static final float[] YAW_COS = new float[SHELL_YAW + 1], YAW_SIN = new float[SHELL_YAW + 1];
+	private static final int[] SHELL_COLOR = new int[(SHELL_PITCH + 1) * (SHELL_YAW + 1)];
 
 	private static void drawSilhouetteBlur(VertexConsumer buf, PoseStack.Pose p, Vec3 relPos, Vec3 right, Vec3 forward,
 			float halfW, float height, int coreCol, int haloCol) {
