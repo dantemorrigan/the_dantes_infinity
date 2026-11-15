@@ -201,7 +201,8 @@ public final class DoomFinalEncounter {
 		int mask = 0;
 		Set<Stone> inserted = GauntletState.inserted(gauntlet);
 		for (Stone st : inserted) mask |= (1 << st.ordinal());
-		return mask == 0 ? 0x1F : mask;
+		// A gauntlet with no stones in it is stolen empty and given back empty: the stones are never made up.
+		return mask;
 	}
 
 	public static ItemStack buildGauntletFromMask(int mask) {

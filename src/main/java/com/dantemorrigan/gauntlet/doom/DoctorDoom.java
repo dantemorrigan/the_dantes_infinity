@@ -1096,6 +1096,18 @@ public class DoctorDoom extends Monster {
 		return true;
 	}
 
+	/**
+	 * Whatever Doom holds (above all a stolen Infinity Gauntlet) is never dropped: the gauntlet goes back to its owner by the
+	 * victory scene, and a second copy lying on the ground would double the stones inside it.
+	 */
+	@Override
+	protected void dropCustomDeathLoot(ServerLevel level, DamageSource source, boolean killedByPlayer) {
+		for (net.minecraft.world.entity.EquipmentSlot slot : net.minecraft.world.entity.EquipmentSlot.values()) {
+			if (slot.getType() == net.minecraft.world.entity.EquipmentSlot.Type.HAND) this.setDropChance(slot, 0f);
+		}
+		super.dropCustomDeathLoot(level, source, killedByPlayer);
+	}
+
 	@Override
 	public void die(DamageSource source) {
 		boolean was = this.dead;
