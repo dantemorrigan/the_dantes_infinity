@@ -56,6 +56,8 @@ public final class GauntletEffects {
 	static final double REALITY_TOUGHNESS = 10;
 	static final double FULL_HEALTH = 180;        // total extra max health when awakened (~100 hearts)
 	static final float FULL_REGEN_PER_TICK = 2;
+	/** Hit points a second while the gauntlet is worn, by number of stones in it (index 0 is unused). */
+	static final float[] WORN_REGEN_PER_SECOND = {0f, 0.6f, 1.2f, 2f, 3f, 4.5f};
 	static final int RITUAL_TICKS = 60;           // 3 s of vulnerability
 
 	private static final Identifier HEALTH_ID = InfinityGauntlet.id("gauntlet_health");
@@ -161,6 +163,9 @@ public final class GauntletEffects {
 		// Regeneration
 		if (s.phase == Phase.AWAKENED && !com.dantemorrigan.gauntlet.boss.TribunalEncounter.inTrial(player)) {
 			player.heal(FULL_REGEN_PER_TICK);
+		} else if (active && !s.worn.isEmpty() && !com.dantemorrigan.gauntlet.boss.TribunalEncounter.inTrial(player)) {
+			// Worn, the stones mend their bearer: the more of them, the faster (hit points a second: 0.6, 1.2, 2, 3, 4.5).
+			if (player.getHealth() < player.getMaxHealth()) player.heal(WORN_REGEN_PER_SECOND[Math.min(s.worn.size(), 5)] / 20f);
 		} else if (active && s.inventoryBonus && !com.dantemorrigan.gauntlet.boss.TribunalEncounter.inTrial(player) && now % INV_REGEN_INTERVAL == 0) {
 			player.heal(1);
 		}
