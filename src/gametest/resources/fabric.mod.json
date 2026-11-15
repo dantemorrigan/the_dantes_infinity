@@ -12,6 +12,7 @@
       "com.dantemorrigan.gauntlet.gametest.LatveriaTowerTest",
       "com.dantemorrigan.gauntlet.gametest.LatveriaStatueTest",
       "com.dantemorrigan.gauntlet.gametest.LatveriaFolkTest",
+      "com.dantemorrigan.gauntlet.gametest.JetPoseTest",
       "com.dantemorrigan.gauntlet.gametest.LatveriaInteriorTest",
       "com.dantemorrigan.gauntlet.gametest.DoomBossBarTest",
       "com.dantemorrigan.gauntlet.gametest.ThanosTest",

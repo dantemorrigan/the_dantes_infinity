@@ -43,6 +43,31 @@ public abstract class HumanoidModelMixin {
 		}
 	}
 
+	/**
+	 * Under Doom's jets nobody walks: the body is carried, so the walk cycle (which would swing arms and legs with the
+	 * speed of the flight) gives way to a held pose: legs straight and together, arms down at the sides a little out and
+	 * back against the thrust, with only a faint sway. The gesture (applied after this) can still lift the gauntlet arm.
+	 */
+	@Inject(method = "setupAnim(Lnet/minecraft/client/renderer/entity/state/HumanoidRenderState;)V", at = @At("TAIL"))
+	private void infinityGauntlet$jetPose(HumanoidRenderState state, CallbackInfo ci) {
+		if (!(state instanceof AvatarRenderState avatar) || !com.dantemorrigan.gauntlet.client.render.JetLean.jetting(avatar.id)) return;
+		HumanoidModel<?> model = (HumanoidModel<?>) (Object) this;
+		float sway = Mth.sin(state.ageInTicks * 0.09f) * 0.03f;
+		for (ModelPart leg : new ModelPart[]{model.rightLeg, model.leftLeg}) {
+			leg.xRot = 0.1f + sway;
+			leg.yRot = 0;
+			leg.zRot = 0;
+		}
+		model.rightLeg.zRot = 0.03f;
+		model.leftLeg.zRot = -0.03f;
+		model.rightArm.xRot = 0.18f - sway;
+		model.rightArm.yRot = 0;
+		model.rightArm.zRot = 0.14f;
+		model.leftArm.xRot = 0.18f + sway;
+		model.leftArm.yRot = 0;
+		model.leftArm.zRot = -0.14f;
+	}
+
 	@Inject(method = "setupAnim(Lnet/minecraft/client/renderer/entity/state/HumanoidRenderState;)V", at = @At("TAIL"))
 	private void infinityGauntlet$gesture(HumanoidRenderState state, CallbackInfo ci) {
 		if (!(state instanceof AvatarRenderState avatar)) return;

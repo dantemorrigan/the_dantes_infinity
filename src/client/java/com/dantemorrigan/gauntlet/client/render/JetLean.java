@@ -33,6 +33,14 @@ public final class JetLean {
 
 	public static void clear() { LEAN.clear(); }
 
+	/** True while this entity flies under Doom's jets (the local player from its own state, others from the server's word). */
+	public static boolean jetting(int id) {
+		Minecraft mc = Minecraft.getInstance();
+		if (mc.level == null) return false;
+		Entity e = mc.level.getEntity(id);
+		return e != null && jetting(e);
+	}
+
 	private static boolean jetting(Entity e) {
 		Minecraft mc = Minecraft.getInstance();
 		return e == mc.player ? DoomClient.jetActive() : DoomVfxClient.jetting(e.getId());
