@@ -1,9 +1,16 @@
-# The heavy client game tests (software-rendered Minecraft under xvfb). Run by hand when needed:
-# Actions -> regression -> Run workflow.
+# Run the Doom release scenario when its server code or test changes.
+# Run the full client regression manually from Actions -> regression.
 
 name: regression
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/regression.yml
+      - src/main/java/com/dantemorrigan/gauntlet/doom/**
+      - src/main/java/com/dantemorrigan/gauntlet/boss/ThanosEncounter.java
+      - src/gametest/java/com/dantemorrigan/gauntlet/gametest/DoomReleaseTest.java
 
 concurrency:
   group: regression
@@ -23,23 +30,27 @@ jobs:
       - name: make gradle wrapper executable
         run: chmod +x ./gradlew
       - name: ability wheel client regression
+        if: github.event_name == 'workflow_dispatch'
         timeout-minutes: 12
         env:
           LIBGL_ALWAYS_SOFTWARE: 'true'
           ALSOFT_DRIVERS: 'null'
         run: xvfb-run -a ./gradlew runClientGameTest -PonlyTest=AbilityWheelTest
       - name: Infinity Snap client regression
+        if: github.event_name == 'workflow_dispatch'
         timeout-minutes: 8
         env:
           LIBGL_ALWAYS_SOFTWARE: 'true'
         run: xvfb-run -a ./gradlew runClientGameTest -PonlyTest=SnapTest
       - name: Living Tribunal client regression
+        if: github.event_name == 'workflow_dispatch'
         timeout-minutes: 10
         env:
           LIBGL_ALWAYS_SOFTWARE: 'true'
           ALSOFT_DRIVERS: 'null'
         run: xvfb-run -a ./gradlew runClientGameTest -PonlyTest=TribunalTest
       - name: Cosmic Tribunal and routes client regression
+        if: github.event_name == 'workflow_dispatch'
         timeout-minutes: 10
         env:
           LIBGL_ALWAYS_SOFTWARE: 'true'
