@@ -411,6 +411,14 @@ public class Doombot extends PathfinderMob {
 	@Override
 	protected void customServerAiStep(ServerLevel level) {
 		super.customServerAiStep(level);
+		// The generator is dead: every castle robot outside the throne hall powers down, including those that were far away (in
+		// chunks that were not loaded) when it happened and those that spawn afterwards.
+		if (!dormant() && !allied() && !decoy() && !forged && this.tickCount % 20 == 0
+				&& level.dimension().equals(Latveria.LEVEL) && Latveria.generatorOff(level.getServer())
+				&& !LatveriaPlan.ARENA_BOX.inflate(6).contains(this.position())) {
+			becomeStatue(null);
+			DoomFx.bill(level, ModParticles.DOOM_DOOM_SMOKE, this.position().add(0, 1.2, 0), 1.2);
+		}
 		if (dormant()) {
 			this.getNavigation().stop();
 			this.setDeltaMovement(0, this.getDeltaMovement().y, 0);

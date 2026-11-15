@@ -600,7 +600,7 @@ public final class Latveria {
 	}
 
 	private static void squads(ServerLevel level) {
-		if ((flags & CONQUERED) != 0) return;
+		if ((flags & CONQUERED) != 0 || (flags & GENERATOR) != 0) return;
 		for (int s = 0; s < SQUADS.length; s++) {
 			if (s == SQUAD_LAB) continue;
 			if ((spawned & 1 << s) != 0) continue;

@@ -192,6 +192,7 @@ public final class LatveriaHunt {
 
 	/** The alarm: a squad of Interceptors takes off from the castle (or comes in out of the night) for the intruder. */
 	public static void launch(ServerLevel level, ServerPlayer quarry) {
+		if (Latveria.generatorOff(level.getServer())) return;
 		long now = level.getGameTime();
 		if (hunt != null && hunt.phase != Phase.OUTBOUND) {
 			hunt.quarry = quarry.getUUID();
