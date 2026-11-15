@@ -7,6 +7,8 @@ import com.dantemorrigan.gauntlet.Stone;
 import com.dantemorrigan.gauntlet.boss.Loki;
 import com.dantemorrigan.gauntlet.boss.Thanos;
 import com.dantemorrigan.gauntlet.boss.ThanosEncounter;
+import com.dantemorrigan.gauntlet.doom.DoctorDoom;
+import com.dantemorrigan.gauntlet.doom.DoomFinalEncounter;
 import com.dantemorrigan.gauntlet.stones.MindQuest;
 import com.dantemorrigan.gauntlet.net.ModNetwork;
 import com.dantemorrigan.gauntlet.net.ModStatus;
@@ -107,13 +109,26 @@ public final class PlanetDestruction {
 	}
 
 	public static boolean bossBlocksDestruction(ServerPlayer player) {
-		if (ThanosEncounter.running() || com.dantemorrigan.gauntlet.boss.TribunalEncounter.inTrial(player) || MindQuest.lokiEncounterRunning(player.level().getServer())
-				|| com.dantemorrigan.gauntlet.stones.MindArena.active(player.level().getServer())) return true;
+		MinecraftServer server = player.level().getServer();
+		if (ThanosEncounter.running() || com.dantemorrigan.gauntlet.boss.TribunalEncounter.inTrial(player)
+				|| MindQuest.lokiEncounterRunning(server)
+				|| com.dantemorrigan.gauntlet.stones.MindArena.active(server)) return true;
+
+		int doomStage = DoomFinalEncounter.currentStage(server);
+		if (doomStage >= DoomFinalEncounter.STAGE_THANOS_ARRIVAL && doomStage <= DoomFinalEncounter.STAGE_FINAL_BOSS) {
+			BlockPos arena = DoomFinalEncounter.arenaPosition(server);
+			if (arena != null) {
+				Vec3 center = Vec3.atBottomCenterOf(arena).add(0, 1, 0);
+				if (!server.overworld().getPlayers(p -> p.isAlive() && !p.isSpectator()
+						&& p.distanceToSqr(center) <= 72 * 72).isEmpty()) return true;
+			}
+		}
 
 		// Summoned bosses can fight outside their scripted arenas.
 		return !player.level().getEntitiesOfClass(Mob.class, player.getBoundingBox().inflate(96),
-				mob -> !mob.isRemoved() && (mob instanceof Loki loki && !loki.isIllusion()
-						|| mob instanceof Thanos || mob instanceof WitherBoss)).isEmpty();
+				mob -> mob.isAlive() && (mob instanceof Loki loki && !loki.isIllusion()
+						|| mob instanceof Thanos || mob instanceof WitherBoss
+						|| mob instanceof DoctorDoom doom && doom.fighting())).isEmpty();
 	}
 
 	/** Start the event. The caller validates the Power Stone, mode, charge and cooldown. */

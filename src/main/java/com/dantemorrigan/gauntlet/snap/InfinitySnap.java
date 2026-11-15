@@ -1,7 +1,9 @@
 package com.dantemorrigan.gauntlet.snap;
 
 import com.dantemorrigan.gauntlet.GauntletConfig;
+import com.dantemorrigan.gauntlet.boss.TribunalEncounter;
 import com.dantemorrigan.gauntlet.cosmos.CosmosTravel;
+import com.dantemorrigan.gauntlet.stones.MindArena;
 import com.dantemorrigan.gauntlet.space.PlanetDestruction;
 import com.dantemorrigan.gauntlet.GauntletState;
 import com.dantemorrigan.gauntlet.InfinityGauntlet;
@@ -143,8 +145,12 @@ public final class InfinitySnap {
 
 	/** Starts the snap (already validated: six stones, gauntlet intact, normal world). */
 	public static void cast(ServerPlayer player) {
-		if (com.dantemorrigan.gauntlet.boss.TribunalEncounter.inTrial(player)) {
+		if (TribunalEncounter.inTrial(player)) {
 			player.sendSystemMessage(Component.translatable("tribunal.infinity_gauntlet.sealed"));
+			return;
+		}
+		if (MindArena.inFight(player)) {
+			ModStatus.send(player, Component.translatable("ability.infinity_gauntlet.reason.boss_fight"));
 			return;
 		}
 		if (!GauntletConfig.get().allowInfinitySnap) return;
@@ -222,9 +228,10 @@ public final class InfinitySnap {
 			ModStatus.send(owner, Component.translatable("snap.infinity_gauntlet.erased"));
 	}
 
-	/** Players outside Dead Space and not already erased. */
+	/** Players who can be moved to the White Void without interrupting a sealed fight. */
 	private static boolean affected(ServerPlayer p) {
-		return p.isAlive() && !p.isSpectator() && !inVoid(p) && !p.hasAttached(RECORD) && !SpaceManager.inSpace(p) && !PlanetDestruction.isBusy(p);
+		return p.isAlive() && !p.isSpectator() && !inVoid(p) && !p.hasAttached(RECORD) && !SpaceManager.inSpace(p)
+				&& !PlanetDestruction.isBusy(p) && !MindArena.inFight(p) && !TribunalEncounter.inTrial(p);
 	}
 
 	/** The gauntlet and every stone inside burn out. */

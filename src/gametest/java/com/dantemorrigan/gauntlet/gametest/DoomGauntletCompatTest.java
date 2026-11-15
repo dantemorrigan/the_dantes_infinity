@@ -267,6 +267,22 @@ public class DoomGauntletCompatTest implements FabricClientGameTest {
 			check(server.computeOnServer(s -> Latveria.boss().action() == DoctorDoom.A_STAGGER), "Hard blows did not break the siphon");
 			server.runCommand("gamemode creative @p");
 
+			server.runOnServer(s -> {
+				DoctorDoom doom = Latveria.boss();
+				ServerPlayer challenger = player(s);
+				Vec3 inside = challenger.position();
+				Vec3 outside = inside.add(200, 0, 0);
+				float before = doom.getHealth();
+				challenger.setPos(outside.x, outside.y, outside.z);
+				try {
+					doom.invulnerableTime = 0;
+					doom.hurtServer(latveria(s), latveria(s).damageSources().playerAttack(challenger), 40);
+					check(doom.getHealth() == before, "Doom took damage from outside the encounter");
+				} finally {
+					challenger.setPos(inside.x, inside.y, inside.z);
+				}
+			});
+
 			// ---- 5. Leaving mid-fight: the duel is called off, Doom's guards go, and the fight can be had again.
 			faceDoom(server, ctx, 7);
 			server.runCommand("execute as @p run gauntlet latveria leave");

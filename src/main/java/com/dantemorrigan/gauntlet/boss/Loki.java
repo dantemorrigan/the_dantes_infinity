@@ -690,8 +690,13 @@ public final class Loki extends Monster {
 		// Buffed swords, crits and maces cannot melt him: ordinary hits are capped (arrows and blasts exploit the weak point).
 		if (!gauntletBlow) amount = Math.min(amount, weakPoint ? (isEnraged() ? 16f : 24f) : (isEnraged() ? 8f : 12f)) * (weakPoint ? 1f : .75f);
 		if (wardTicks() > 0) amount *= weakPoint ? .85f : .4f;
-		if (isEnraged()) amount *= .55f; // Fenrir form: far tougher
-		else amount = Math.min(amount, Math.max(10, getHealth() - getMaxHealth() * PHASE_THRESHOLD + 1));
+		if (isEnraged()) {
+			amount *= .55f;
+		} else {
+			float untilTransformation = getHealth() - getMaxHealth() * PHASE_THRESHOLD;
+			if (untilTransformation <= 0) return false;
+			amount = Math.min(amount, untilTransformation + 0.5f);
+		}
 		boolean damaged = super.hurtServer(level, source, amount);
 		if (damaged && isAlive() && !isEnraged() && wardCooldown == 0 && source.getEntity() instanceof ServerPlayer) {
 			wardCooldown = 115;

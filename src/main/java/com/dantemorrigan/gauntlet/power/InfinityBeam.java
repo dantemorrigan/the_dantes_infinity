@@ -2,6 +2,7 @@ package com.dantemorrigan.gauntlet.power;
 
 import com.dantemorrigan.gauntlet.CoopRules;
 import com.dantemorrigan.gauntlet.*;
+import com.dantemorrigan.gauntlet.boss.Loki;
 import com.dantemorrigan.gauntlet.net.ModNetwork;
 import com.dantemorrigan.gauntlet.space.PlanetDestruction;
 import com.dantemorrigan.gauntlet.space.SpaceManager;
@@ -20,6 +21,7 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.boss.enderdragon.EnderDragon;
+import net.minecraft.world.entity.boss.wither.WitherBoss;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.ClipContext;
@@ -196,6 +198,17 @@ public final class InfinityBeam {
                     float pulse = Math.min(cap - spent, amount * 4);
                     if (((com.dantemorrigan.gauntlet.boss.Thanos) target).hurtByBeam(c.level, c.owner, pulse)) c.damage.put(target.getUUID(), spent + pulse);
                 }
+            } else if ((target instanceof Loki loki && !loki.isIllusion()) || target instanceof WitherBoss) {
+                // Respect the phase gate and vanilla invulnerability instead of forcing a mob death.
+                if ((c.age - c.charge) % 10 != 0) continue;
+                float cap = target.getMaxHealth() * .60f;
+                float spent = c.damage.getOrDefault(target.getUUID(), 0f);
+                float pulse = Math.min(cap - spent, cap * 10 / c.duration);
+                if (pulse <= 0) continue;
+                var source = c.owner.damageSources().playerAttack(c.owner);
+                boolean damaged = target instanceof Loki boss
+                        ? boss.hurtByGauntlet(c.level, source, pulse) : target.hurtServer(c.level, source, pulse);
+                if (damaged) c.damage.put(target.getUUID(), spent + pulse);
             } else if (target instanceof com.dantemorrigan.gauntlet.doom.DoctorDoom || target instanceof com.dantemorrigan.gauntlet.doom.Doombot) {
                 // Doom and his robots take the beam as heavy blows through their own guards and caps, never as a delete.
                 if ((c.age - c.charge) % 4 == 0) {

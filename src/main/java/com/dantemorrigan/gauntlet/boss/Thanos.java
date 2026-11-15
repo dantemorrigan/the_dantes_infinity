@@ -779,8 +779,12 @@ public class Thanos extends Monster {
 		// Sharpness, Strength, crits, maces and TNT stack up: an ordinary weapon never takes more than a sliver per hit.
 		if (!rawDamage && !stormbreaker) scaled = Math.min(scaled, source.is(DamageTypeTags.IS_EXPLOSION) ? 20f : looseStone(source) ? 10f : 6f);
 		float beforeRage = this.getHealth() - this.getMaxHealth() * RAGE_HEALTH;
-		if (flag(FLAG_ENRAGED) || beforeRage <= 0) scaled *= RAGE_TAKEN;
-		else scaled = Math.min(scaled, beforeRage); // A single burst cannot skip the second phase.
+		if (flag(FLAG_ENRAGED)) {
+			scaled *= RAGE_TAKEN;
+		} else {
+			if (beforeRage <= 0) return false; // The combat tick still has to start the rage attack.
+			scaled = Math.min(scaled, beforeRage + 0.5f);
+		}
 		// The axe already limits hits per swing, wave and throw leg. Let each distinct hit land on the Titan.
 		if (stormbreaker) this.invulnerableTime = 0;
 		boolean hurt = super.hurtServer(level, source, scaled);

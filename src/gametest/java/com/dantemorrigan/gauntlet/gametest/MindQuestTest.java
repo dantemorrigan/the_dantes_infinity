@@ -244,6 +244,9 @@ public class MindQuestTest implements FabricClientGameTest {
 				boss.invulnerableTime = 0;
 				GauntletDamage.hurt(level, boss, p, melee, 5);
 				if (max - boss.getHealth() <= meleeDamage) throw new AssertionError("Infinity Stone powers did not deal extra damage to Loki");
+				if (!com.dantemorrigan.gauntlet.power.MindStone.isBoss(boss)) {
+					throw new AssertionError("Mind and Soul targeting can disable the real Loki");
+				}
 				Vec3 plaza = MindCity.plazaStand(site);
 				boss.setPos(plaza);
 				p.teleportTo(plaza.x, plaza.y + 1, plaza.z + 8);
@@ -355,9 +358,18 @@ public class MindQuestTest implements FabricClientGameTest {
 				var bosses = level.getEntitiesOfClass(Loki.class, city, e -> e.isAlive() && !e.isIllusion());
 				if (bosses.size() != 1) throw new AssertionError("Reset did not bring back one city Loki");
 				Loki replay = bosses.getFirst();
-				replay.hurtServer(level, level.damageSources().playerAttack(player(s)), 1000f);
-				if (!replay.isAlive()) throw new AssertionError("A hit skipped the Fenrir phase");
-				replay.setHealth(replay.getMaxHealth() * .4f);
+				var source = level.damageSources().playerAttack(player(s));
+				replay.setHealth(replay.getMaxHealth() * .45f + .25f);
+				replay.hurtByGauntlet(level, source, 1000f);
+				float phaseHealth = replay.getHealth();
+				if (phaseHealth > replay.getMaxHealth() * .45f) throw new AssertionError("Hit did not reach the Fenrir transition");
+				for (int i = 0; i < 12; i++) {
+					replay.invulnerableTime = 0;
+					replay.hurtByGauntlet(level, source, 1000f);
+				}
+				if (!replay.isAlive() || replay.getHealth() != phaseHealth) {
+					throw new AssertionError("A burst bypassed the Fenrir transition");
+				}
 			});
 			ctx.waitFor(mc -> mc.level.getEntitiesOfClass(Loki.class, city,
 					e -> e.isEnraged() && e.transformationTicks() == 0).size() == 1, 130);

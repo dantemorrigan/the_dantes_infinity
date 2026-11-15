@@ -79,6 +79,16 @@ public class ThanosCombatTest implements FabricClientGameTest {
 			if (Math.abs(r[5] - 50f) > 1f) throw new AssertionError("Ten beam slices of 5 should all land (50), got " + r[5]);
 			if (!(r[1] < r[0])) throw new AssertionError("A diamond sword should hurt less than a netherite one");
 
+			server.runOnServer(s -> {
+				Thanos boss = thanos(s);
+				ServerPlayer p = player(s);
+				boss.hurtByBeam(p.level(), p, boss.getMaxHealth());
+				float phaseHealth = boss.getHealth();
+				if (phaseHealth > boss.getMaxHealth() * .5f) throw new AssertionError("Beam did not reach the rage transition");
+				boss.hurtByBeam(p.level(), p, boss.getMaxHealth());
+				if (!boss.isAlive() || boss.getHealth() != phaseHealth) throw new AssertionError("Beam bypassed the rage transition");
+			});
+
 			// ---- Water: he is dropped into a pond and must walk out to the player.
 			server.runCommand("gauntlet thanos stop");
 			ctx.waitTicks(100);

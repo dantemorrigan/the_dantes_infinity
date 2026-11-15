@@ -1332,6 +1332,9 @@ public class DoctorDoom extends Monster {
 	public boolean hurtServer(ServerLevel level, DamageSource source, float amount) {
 		if (source.is(DamageTypes.GENERIC_KILL)) return super.hurtServer(level, source, amount);
 		if (!(amount > 0) || !Float.isFinite(amount) || this.isInvulnerable() || !fighting() || this.isDeadOrDying()) return false;
+		// A player outside the encounter cannot be targeted by Doom, even if their beam or projectile can reach him.
+		if (source.getEntity() instanceof ServerPlayer player && (arenaCenter != null || level.dimension() == Latveria.LEVEL)
+				&& !valid(player)) return false;
 		if (source.is(DamageTypes.FALL) || source.is(DamageTypeTags.IS_FIRE) || source.is(DamageTypes.IN_WALL) || source.is(DamageTypes.DROWN)
 				|| source.is(DamageTypes.LIGHTNING_BOLT) || source.getEntity() instanceof Doombot b && !b.allied()) return false;
 		boolean axe = source.is(Stormbreaker.DAMAGE);
@@ -1346,10 +1349,12 @@ public class DoctorDoom extends Monster {
 			return false;
 		} else if (!finalBoss() && phase() == 1) scaled *= Latveria.generatorOff(level.getServer()) ? 0.8f : 0.45f;
 		if (flag(FLAG_EXPOSED)) scaled *= 1.6f;
-		// One blow never skips a stage.
-		if (!finalBoss()) {
-			float floor = this.getMaxHealth() * (phase() == 1 ? 0.66f : phase() == 2 ? 0.33f : 0);
-			if (this.getHealth() > floor && floor > 0) scaled = Math.min(scaled, this.getHealth() - floor + 0.5f);
+		// Wait for the stage switch even when several players hit during the same attack animation.
+		if (!finalBoss() && phase() < 3) {
+			float floor = this.getMaxHealth() * (phase() == 1 ? 0.66f : 0.33f);
+			float untilNextStage = this.getHealth() - floor;
+			if (untilNextStage <= 0) return false;
+			scaled = Math.min(scaled, untilNextStage + 0.5f);
 		}
 		if (axe) this.invulnerableTime = 0;
 		boolean hurt = super.hurtServer(level, source, scaled);
