@@ -172,7 +172,7 @@ public final class DoomCommands {
 						d = Latveria.summon(level(ctx));
 					}
 					if (d == null) return fail(ctx, "Doctor Doom could not be summoned");
-					d.stealGauntletAndFlee(level(ctx), p);
+					if (!d.stealGauntletAndFlee(level(ctx), p)) return fail(ctx, "Theft requires an intact, incomplete gauntlet and no ongoing finale");
 					return ok(ctx, "Doom steals the Infinity Gauntlet (<=5 stones) and flees to the Overworld");
 				}))
 				.then(Commands.literal("arena").executes(ctx -> {

@@ -265,17 +265,19 @@ public class DoctorDoom extends Monster {
 
 	public static net.minecraft.world.item.ItemStack findIncompleteGauntlet(ServerPlayer p) {
 		var active = com.dantemorrigan.gauntlet.GauntletState.activeGauntlet(p);
-		if (!active.isEmpty() && com.dantemorrigan.gauntlet.GauntletState.inserted(active).size() <= 5) return active;
+		if (stealable(active)) return active;
 		var inv = p.getInventory();
 		for (int i = 0; i < inv.getContainerSize(); i++) {
 			var s = inv.getItem(i);
-			if (s.is(com.dantemorrigan.gauntlet.ModItems.GAUNTLET)
-					&& !Boolean.TRUE.equals(s.get(com.dantemorrigan.gauntlet.ModComponents.SNAPPED))
-					&& com.dantemorrigan.gauntlet.GauntletState.inserted(s).size() <= 5) {
-				return s;
-			}
+			if (stealable(s)) return s;
 		}
 		return net.minecraft.world.item.ItemStack.EMPTY;
+	}
+
+	private static boolean stealable(net.minecraft.world.item.ItemStack stack) {
+		return stack.is(com.dantemorrigan.gauntlet.ModItems.GAUNTLET)
+				&& !Boolean.TRUE.equals(stack.get(com.dantemorrigan.gauntlet.ModComponents.SNAPPED))
+				&& com.dantemorrigan.gauntlet.GauntletState.inserted(stack).size() <= 5;
 	}
 
 	/**
@@ -283,36 +285,25 @@ public class DoctorDoom extends Monster {
 	 * cutscene, and teleports Doom out of Latveria to the Overworld sandy-fiery battlefield!
 	 */
 	public boolean stealGauntletAndFlee(ServerLevel level, ServerPlayer victim) {
-		if (ascending() || stealingGauntlet() || this.isDeadOrDying()) return false;
-		net.minecraft.world.item.ItemStack stolen = net.minecraft.world.item.ItemStack.EMPTY;
-		if (victim != null) {
-			var off = victim.getOffhandItem();
-			if (off.is(com.dantemorrigan.gauntlet.ModItems.GAUNTLET) && com.dantemorrigan.gauntlet.GauntletState.inserted(off).size() <= 5) {
-				stolen = off.copy();
-				victim.setItemSlot(net.minecraft.world.entity.EquipmentSlot.OFFHAND, net.minecraft.world.item.ItemStack.EMPTY);
-			} else {
-				var inv = victim.getInventory();
-				for (int i = 0; i < inv.getContainerSize(); i++) {
-					var s = inv.getItem(i);
-					if (s.is(com.dantemorrigan.gauntlet.ModItems.GAUNTLET) && com.dantemorrigan.gauntlet.GauntletState.inserted(s).size() <= 5) {
-						stolen = s.copy();
-						inv.setItem(i, net.minecraft.world.item.ItemStack.EMPTY);
-						break;
-					}
+		if (victim == null || ascending() || stealingGauntlet() || this.isDeadOrDying()
+				|| DoomFinalEncounter.isActive(level.getServer())) return false;
+		var selected = findIncompleteGauntlet(victim);
+		if (selected.isEmpty()) return false;
+		var stolen = selected.copy();
+		com.dantemorrigan.gauntlet.ability.AbilityController.cancel(victim);
+		if (victim.getOffhandItem() == selected) {
+			victim.setItemSlot(net.minecraft.world.entity.EquipmentSlot.OFFHAND, net.minecraft.world.item.ItemStack.EMPTY);
+		} else {
+			var inventory = victim.getInventory();
+			for (int i = 0; i < inventory.getContainerSize(); i++) {
+				if (inventory.getItem(i) == selected) {
+					inventory.setItem(i, net.minecraft.world.item.ItemStack.EMPTY);
+					break;
 				}
 			}
 		}
-		if (stolen.isEmpty()) {
-			stolen = new net.minecraft.world.item.ItemStack(com.dantemorrigan.gauntlet.ModItems.GAUNTLET);
-			com.dantemorrigan.gauntlet.GauntletState.setInserted(stolen, java.util.EnumSet.of(
-					com.dantemorrigan.gauntlet.Stone.POWER, com.dantemorrigan.gauntlet.Stone.SPACE,
-					com.dantemorrigan.gauntlet.Stone.REALITY, com.dantemorrigan.gauntlet.Stone.SOUL,
-					com.dantemorrigan.gauntlet.Stone.MIND));
-		}
-		if (victim != null) {
-			com.dantemorrigan.gauntlet.ability.AbilityController.cancel(victim);
-			ascendVictim = victim.getUUID();
-		}
+		victim.inventoryMenu.broadcastChanges();
+		ascendVictim = victim.getUUID();
 		// The gauntlet flies to his hand first (the cutscene's first second); only then is it on his arm.
 		this.setItemSlot(net.minecraft.world.entity.EquipmentSlot.OFFHAND, net.minecraft.world.item.ItemStack.EMPTY);
 		this.stolenInHand = stolen.copy();
@@ -357,9 +348,6 @@ public class DoctorDoom extends Monster {
 			DoomFx.flat(level, ModParticles.DOOM_SLAM_WAVE, at, 6);
 			DoomFx.near(level, at, 120, DoomFx.FLASH, 0, 1.0f, 14);
 			DoomFx.sound(level, at, SoundEvents.ENDERMAN_TELEPORT, 2.5f, 0.55f);
-		}
-		if (t >= 136) {
-			Latveria.onDoomStolenFled(level, ascendVictim);
 		}
 	}
 
@@ -511,10 +499,7 @@ public class DoctorDoom extends Monster {
 				return;
 			}
 			// If the gauntlet has 5 or fewer stones, Doom seizes the gauntlet itself and teleports away to hunt the last stone!
-			if (victim != null && canStealGauntletFrom(victim) && !finalBoss()) {
-				stealGauntletAndFlee(level, victim);
-				return;
-			}
+			if (!finalBoss() && stealGauntletAndFlee(level, victim)) return;
 			this.heal(this.getMaxHealth() * 0.08f);
 			GauntletSilence.silence(victim, SIPHON_SILENCE);
 			com.dantemorrigan.gauntlet.ability.AbilityController.cancel(victim);

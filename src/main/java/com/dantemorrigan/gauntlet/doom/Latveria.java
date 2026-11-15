@@ -193,9 +193,8 @@ public final class Latveria {
 				boss.ascend(p.level(), p);
 				return false;
 			}
-			if (DoctorDoom.canStealGauntletFrom(p)) {
+			if (boss.stealGauntletAndFlee(p.level(), p)) {
 				p.setHealth(6);
-				boss.stealGauntletAndFlee(p.level(), p);
 				return false;
 			}
 			return true;
@@ -757,7 +756,8 @@ public final class Latveria {
 			p.setHealth(p.getMaxHealth());
 			p.removeAllEffects();
 			grantAccess(p);
-			if (!p.getInventory().contains(new ItemStack(ModItems.LATVERIA_KEY))) {
+			if (!p.getUUID().equals(victim) && !p.getOffhandItem().is(ModItems.LATVERIA_KEY)
+					&& !p.getInventory().contains(new ItemStack(ModItems.LATVERIA_KEY))) {
 				ItemStack key = new ItemStack(ModItems.LATVERIA_KEY);
 				if (!p.getInventory().add(key)) p.drop(key, false);
 			}

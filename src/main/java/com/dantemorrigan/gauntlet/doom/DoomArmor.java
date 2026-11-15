@@ -91,7 +91,7 @@ public final class DoomArmor {
 		boolean jet, hadSet;
 	}
 
-	private record Timed(long at, UUID owner, Runnable run) {}
+	private record Timed(long at, ServerPlayer owner, ServerLevel level, Runnable run) {}
 
 	private static final Map<UUID, Wearer> WEARERS = new HashMap<>();
 	private static final List<Timed> TIMED = new ArrayList<>();
@@ -229,7 +229,7 @@ public final class DoomArmor {
 	}
 
 	private static void later(ServerPlayer owner, int ticks, Runnable run) {
-		TIMED.add(new Timed(owner.level().getGameTime() + ticks, owner.getUUID(), run));
+		TIMED.add(new Timed(owner.level().getGameTime() + ticks, owner, owner.level(), run));
 	}
 
 	private static Vec3 hand(ServerPlayer p) {
@@ -390,9 +390,13 @@ public final class DoomArmor {
 	public static void tick(MinecraftServer server) {
 		for (Iterator<Timed> it = TIMED.iterator(); it.hasNext();) {
 			Timed t = it.next();
-			ServerPlayer owner = server.getPlayerList().getPlayer(t.owner());
-			if (owner == null || !owner.isAlive()) { it.remove(); continue; }
-			if (owner.level().getGameTime() < t.at()) continue;
+			ServerPlayer owner = t.owner();
+			if (!owner.isAlive() || owner.isSpectator() || owner.level() != t.level()
+					|| server.getPlayerList().getPlayer(owner.getUUID()) != owner) {
+				it.remove();
+				continue;
+			}
+			if (t.level().getGameTime() < t.at()) continue;
 			it.remove();
 			t.run().run();
 		}

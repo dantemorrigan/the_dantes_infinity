@@ -203,7 +203,8 @@ public final class ThanosEncounter {
 	/** Starts the encounter for this player now (command or trigger). Returns false if one is already running. */
 	public static boolean start(ServerPlayer player, boolean skipWarning) {
 		if (active != null || player.level().getDifficulty() == net.minecraft.world.Difficulty.PEACEFUL || beaten(player.level().getServer())
-				|| MindArena.excludesThanos(player.level(), player.position())) return false;
+				|| MindArena.excludesThanos(player.level(), player.position())
+				|| com.dantemorrigan.gauntlet.doom.DoomFinalEncounter.isActive(player.level().getServer())) return false;
 		Encounter e = new Encounter();
 		e.playerId = player.getUUID();
 		e.level = (ServerLevel) player.level();
@@ -826,7 +827,8 @@ public final class ThanosEncounter {
 
 	/** Debug: a Thanos right here, already fighting (no scene). */
 	public static Thanos spawnNow(ServerPlayer p) {
-		if (active != null || beaten(p.level().getServer()) || MindArena.excludesThanos(p.level(), p.position())) return null;
+		if (active != null || beaten(p.level().getServer()) || MindArena.excludesThanos(p.level(), p.position())
+				|| com.dantemorrigan.gauntlet.doom.DoomFinalEncounter.isActive(p.level().getServer())) return null;
 		Encounter e = new Encounter();
 		e.playerId = p.getUUID();
 		e.level = (ServerLevel) p.level();

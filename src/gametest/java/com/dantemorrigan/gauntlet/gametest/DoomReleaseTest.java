@@ -1,8 +1,12 @@
 package com.dantemorrigan.gauntlet.gametest;
 
+import com.dantemorrigan.gauntlet.ModComponents;
+import com.dantemorrigan.gauntlet.ModEntities;
 import com.dantemorrigan.gauntlet.ModItems;
+import com.dantemorrigan.gauntlet.boss.ThanosEncounter;
 import com.dantemorrigan.gauntlet.doom.DoctorDoom;
 import com.dantemorrigan.gauntlet.doom.DoomFinalEncounter;
+import com.dantemorrigan.gauntlet.doom.Latveria;
 import com.dantemorrigan.gauntlet.doom.LatveriaQuests;
 import net.fabricmc.fabric.api.client.gametest.v1.FabricClientGameTest;
 import net.fabricmc.fabric.api.client.gametest.v1.context.ClientGameTestContext;
@@ -12,6 +16,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3;
 
@@ -55,11 +60,23 @@ public final class DoomReleaseTest implements FabricClientGameTest {
 
 				ItemStack stolen = DoomFinalEncounter.buildGauntletFromMask(0b10101);
 				stolen.set(DataComponents.CUSTOM_NAME, Component.literal(STOLEN_NAME));
-				DoomFinalEncounter.onGauntletStolen(s, p, stolen);
+				ItemStack burned = new ItemStack(ModItems.GAUNTLET);
+				burned.set(ModComponents.SNAPPED, true);
+				p.setItemInHand(InteractionHand.OFF_HAND, burned);
+				p.getInventory().add(stolen);
+				var latveria = s.getLevel(Latveria.LEVEL);
+				DoctorDoom actor = ModEntities.DOCTOR_DOOM.create(latveria, EntitySpawnReason.EVENT);
+				check(actor != null && actor.stealGauntletAndFlee(latveria, p), "Doom could not steal the working gauntlet");
+				check(Boolean.TRUE.equals(p.getOffhandItem().get(ModComponents.SNAPPED)) && returnedCount(p) == 0,
+						"Doom stole the burned gauntlet instead of the working one in the inventory");
+				check(!ThanosEncounter.start(p, false) && ThanosEncounter.spawnNow(p) == null,
+						"A second Thanos encounter could start during Doom's storyline");
 				DoomFinalEncounter.debugTpArena(p);
 			});
 			ctx.waitTicks(145);
 			server.runOnServer(s -> {
+				check(Latveria.gateOpen(s) && player(s).getInventory().countItem(ModItems.LATVERIA_KEY) == 1,
+						"Leaving Latveria during the theft prevented the gates or key from unlocking");
 				var at = Vec3.atBottomCenterOf(DoomFinalEncounter.arenaPosition(s)).add(0, 1, 12);
 				player(s).teleportTo(at.x, at.y, at.z);
 			});

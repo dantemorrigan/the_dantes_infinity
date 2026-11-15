@@ -113,6 +113,9 @@ public final class DoomFinalEncounter {
 	private static final AttachmentType<String> GAUNTLET_RECEIPT = AttachmentRegistry.<String>builder()
 			.persistent(Codec.STRING).copyOnDeath().buildAndRegister(InfinityGauntlet.id("doom_gauntlet_receipt"));
 
+	private static final AttachmentType<String> THEFT_KEY_RECEIPT = AttachmentRegistry.<String>builder()
+			.persistent(Codec.STRING).copyOnDeath().buildAndRegister(InfinityGauntlet.id("doom_theft_key_receipt"));
+
 	private static boolean loaded;
 	private static int stage = STAGE_NONE;
 	private static int stageTicks = 0;
@@ -203,8 +206,8 @@ public final class DoomFinalEncounter {
 			stolenGauntlet = s.gauntlet().isEmpty() ? buildGauntletFromMask(stoneMask) : s.gauntlet().copy();
 			returnId = s.returnId();
 			s.victors().stream().map(UUID::fromString).forEach(victors::add);
-			if (stage == STAGE_THEFT_CUTSCENE || stage == STAGE_THANOS_ARRIVAL || stage == STAGE_DOME_DUEL
-					|| stage == STAGE_KILL_THANOS_CUTSCENE) {
+			if (stage == STAGE_THEFT_CUTSCENE) stageTicks = 135;
+			if (stage == STAGE_THANOS_ARRIVAL || stage == STAGE_DOME_DUEL || stage == STAGE_KILL_THANOS_CUTSCENE) {
 				stage = STAGE_WAITING_OVERWORLD;
 			}
 			if (stage == STAGE_VICTORY_CUTSCENE) {
@@ -350,6 +353,7 @@ public final class DoomFinalEncounter {
 	private static void tick(MinecraftServer server) {
 		load(server);
 		if (stage == STAGE_NONE) return;
+		if (stage >= STAGE_WAITING_OVERWORLD && server.getTickCount() % 20 == 0) deliverTheftKey(server);
 		if (stage == STAGE_DONE) {
 			if (server.getTickCount() % 20 == 0) returnGauntlet(server);
 			return;
@@ -365,7 +369,10 @@ public final class DoomFinalEncounter {
 		if (stageTicks % 15 == 0 && (stage != STAGE_VICTORY_CUTSCENE || stageTicks < 210)) syncAll(server);
 		if (stage == STAGE_THEFT_CUTSCENE) {
 			if (stageTicks >= 136) {
+				ServerLevel latveria = server.getLevel(Latveria.LEVEL);
+				if (latveria != null) Latveria.onDoomStolenFled(latveria, ownerId);
 				stage = STAGE_WAITING_OVERWORLD;
+				deliverTheftKey(server);
 				stageTicks = 0;
 				save(server);
 				syncAll(server);
@@ -411,7 +418,7 @@ public final class DoomFinalEncounter {
 				if (doom != null && stageTicks % 8 == 0) {
 					overworld.sendParticles(ModParticles.DOOM_RUNE_MOTE, doom.getX(), doom.getY() + 1.5, doom.getZ(), 2, 0.4, 0.4, 0.4, 0.02);
 				}
-				if (doom != null && nearest != null && nearest.position().distanceTo(center) <= 16.5) {
+				if (!ThanosEncounter.running() && doom != null && nearest != null && nearest.position().distanceTo(center) <= 16.5) {
 					// Push player back and start Cutscene 2 (Thanos Arrival & Dome Duel)!
 					Vec3 dir = nearest.position().subtract(center);
 					Vec3 flat = new Vec3(dir.x, 0, dir.z);
@@ -759,6 +766,18 @@ public final class DoomFinalEncounter {
 		stageTicks = 0;
 		save(server);
 		syncAll(server);
+	}
+
+	private static void deliverTheftKey(MinecraftServer server) {
+		if (ownerId == null || returnId.isEmpty()) return;
+		ServerPlayer owner = server.getPlayerList().getPlayer(ownerId);
+		if (owner == null || !owner.isAlive() || owner.isSpectator() || returnId.equals(owner.getAttached(THEFT_KEY_RECEIPT))) return;
+		ItemStack key = new ItemStack(ModItems.LATVERIA_KEY);
+		if (!owner.getOffhandItem().is(ModItems.LATVERIA_KEY) && !owner.getInventory().contains(key)) {
+			if (owner.getInventory().getFreeSlot() < 0 || !owner.getInventory().add(key)) return;
+		}
+		Latveria.grantAccess(owner);
+		owner.setAttached(THEFT_KEY_RECEIPT, returnId);
 	}
 
 	private static void returnGauntlet(MinecraftServer server) {
