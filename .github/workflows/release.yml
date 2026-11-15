@@ -1,4 +1,4 @@
-# Builds the mod and publishes a GitHub release with the jar for the version in gradle.properties.
+# Builds the mod and publishes a GitHub release (a pre-release when the version has a hyphen, e.g. 1.1.0-pre.1) with the jar for the version in gradle.properties.
 # Start it by hand (Actions -> release -> Run workflow, on main) or by pushing the tag vX.Y.Z.
 # The release text is docs/releases/vX.Y.Z.md; a run started by hand creates the tag on the commit it built.
 
@@ -43,5 +43,8 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          # A version with a hyphen (1.1.0-pre.1) is published as a pre-release.
+          flags=""
+          case "$VERSION" in *-*) flags="--prerelease" ;; esac
           gh release create "$TAG" "build/libs/infinity_gauntlet-$VERSION.jar" \
-            --title "$TAG" --notes-file "docs/releases/$TAG.md" --target "$GITHUB_SHA"
+            --title "$TAG" --notes-file "docs/releases/$TAG.md" --target "$GITHUB_SHA" $flags
