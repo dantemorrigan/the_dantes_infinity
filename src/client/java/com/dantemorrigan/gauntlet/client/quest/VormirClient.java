@@ -62,15 +62,10 @@ public final class VormirClient {
 		if (factor <= 0.01f) return;
 		int w = g.guiWidth(), h = g.guiHeight();
 		g.fill(0, 0, w, h, ARGB.color((int) (factor * 86), 92, 74, 58));
-		int band = Math.max(24, Math.min(w, h) / 3);
-		for (int i = 0; i < 8; i++) {
-			int a = (int) (factor * 70 * (1 - i / 8f));
-			int c = ARGB.color(a, 18, 12, 8);
-			int t = band * i / 8, u = band / 8 + 1;
-			g.fill(t, 0, w - t, u + 0, c);
-			g.fill(t, h - u, w - t, h, c);
-		}
-		g.fillGradient(0, 0, band, h, ARGB.color((int) (factor * 80), 18, 12, 8), 0);
-		g.fillGradient(w - band, 0, w, h, 0, ARGB.color((int) (factor * 80), 18, 12, 8));
+		// Only the warm grey wash and a soft darkening toward the top and bottom edges: smooth gradients, no bands.
+		int band = h / 4;
+		int dark = ARGB.color((int) (factor * 60), 18, 12, 8);
+		g.fillGradient(0, 0, w, band, dark, 0);
+		g.fillGradient(0, h - band, w, h, 0, dark);
 	}
 }
