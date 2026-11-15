@@ -69,14 +69,16 @@ public final class Searchlights {
 		Vec3 d = to.subtract(from);
 		double len = d.length();
 		if (len < 1e-3) return to;
-		Vec3 step = d.scale(0.6 / len);
+		double stepLen = 1.0;
+		Vec3 step = d.scale(stepLen / len);
 		Vec3 at = from;
 		BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
-		for (double walked = 0; walked < len; walked += 0.6, at = at.add(step)) {
+		for (double walked = 0; walked < len; walked += stepLen, at = at.add(step)) {
 			pos.set(Mth.floor(at.x), Mth.floor(at.y), Mth.floor(at.z));
 			if (pos.getY() < level.getMinY() || pos.getY() >= level.getMaxY() || !level.hasChunkAt(pos)) continue;
 			var state = level.getBlockState(pos);
 			if (state.isAir()) continue;
+			if (state.isSolidRender()) return at;
 			var shape = state.getCollisionShape(level, pos);
 			if (!shape.isEmpty() && shape.bounds().move(pos).contains(at)) return at;
 			if (!state.getFluidState().isEmpty()) return at;

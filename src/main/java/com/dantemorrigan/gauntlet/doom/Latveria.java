@@ -73,7 +73,7 @@ public final class Latveria {
 			{Doombot.ENGINEER, Doombot.ENGINEER, Doombot.ARCANIST, Doombot.SOLDIER}};
 	private static final Vec3[] SQUAD_AT = {
 			new Vec3(0.5, LatveriaPlan.roadHeight(-120) + 1.6, -120.5), new Vec3(0.5, LatveriaPlan.FLOOR, -195.5),
-			new Vec3(0.5, LatveriaPlan.FLOOR, -231.5), new Vec3(31.5, LatveriaPlan.FLOOR, -264.5)};
+			new Vec3(0.5, LatveriaPlan.FLOOR, -231.5), new Vec3(-33.5, LatveriaPlan.FLOOR, -230.5)};
 	public static final int SQUAD_ROAD = 0, SQUAD_GATE = 1, SQUAD_YARD = 2, SQUAD_LAB = 3;
 
 	private record Save(int spawned, List<Integer> alive, int flags, List<String> owners, List<Long> furnished) {
@@ -376,7 +376,7 @@ public final class Latveria {
 		PLACES.put("workshop", new double[]{-27.5, LatveriaPlan.VALLEY_Y + 1, 16.5, 90});
 		PLACES.put("tavern", new double[]{27.5, LatveriaPlan.VALLEY_Y + 1, 15.5, 270});
 		PLACES.put("cellar", new double[]{32.5, LatveriaPlan.VALLEY_Y - 4, 15.5, 270});
-		PLACES.put("under_generator", new double[]{0.5, LatveriaPlan.FLOOR - 13, -248.5, 0});
+		PLACES.put("under_generator", new double[]{0.5, LatveriaPlan.FLOOR - 13, -258.5, 180});
 		PLACES.put("watchtower", new double[]{11.5, LatveriaPlan.VALLEY_Y + 18, -59.5, 180});
 		PLACES.put("road", new double[]{0.5, LatveriaPlan.roadHeight(-120) + 1.6, -112.5, 180});
 		PLACES.put("gate", new double[]{0.5, f, -186.5, 180});
@@ -384,7 +384,7 @@ public final class Latveria {
 		PLACES.put("barracks", new double[]{-33.5, f, -230.5, 90});
 		PLACES.put("forge", new double[]{33.5, f, -230.5, 270});
 		PLACES.put("service_door", new double[]{50.5, f, -283.5, 90});
-		PLACES.put("lab", new double[]{34.5, f, -270.5, 135});
+		PLACES.put("lab", new double[]{32.0, f, -281.5, 0});
 		PLACES.put("hall", new double[]{0.5, f, -256.5, 180});
 		PLACES.put("throne", new double[]{0.5, f + 2, -289.5, 0});
 		PLACES.put("armory", new double[]{-33.5, f, -284.5, 90});
@@ -584,6 +584,7 @@ public final class Latveria {
 	private static void squads(ServerLevel level) {
 		if ((flags & CONQUERED) != 0) return;
 		for (int s = 0; s < SQUADS.length; s++) {
+			if (s == SQUAD_LAB) continue;
 			if ((spawned & 1 << s) != 0) continue;
 			Vec3 at = SQUAD_AT[s];
 			if (!level.isLoaded(BlockPos.containing(at))) continue;
@@ -632,13 +633,10 @@ public final class Latveria {
 		if ((flags & GENERATOR) != 0) {
 			open(level, LatveriaPlan.LAB_DOOR, Blocks.GREEN_STAINED_GLASS);
 			if (level.isLoaded(LatveriaPlan.GENERATOR) && level.getBlockState(LatveriaPlan.GENERATOR).is(Blocks.SEA_LANTERN)) {
-				edit(() -> level.setBlockAndUpdate(LatveriaPlan.GENERATOR, Blocks.COAL_BLOCK.defaultBlockState()));
-			}
-			BlockPos ug = LatveriaQuests.UNDER_CASTLE_GEN;
-			if (level.isLoaded(ug) && level.getBlockState(new BlockPos(0, LatveriaPlan.FLOOR - 11, -242)).is(Blocks.SEA_LANTERN)) {
 				edit(() -> {
+					level.setBlockAndUpdate(LatveriaPlan.GENERATOR, Blocks.COAL_BLOCK.defaultBlockState());
 					int gy = LatveriaPlan.FLOOR - 13;
-					for (BlockPos p : BlockPos.betweenClosed(-3, gy + 2, -245, 3, gy + 7, -239)) {
+					for (BlockPos p : BlockPos.betweenClosed(-3, gy + 2, -269, 3, gy + 7, -263)) {
 						if (level.getBlockState(p).is(Blocks.SEA_LANTERN)) level.setBlockAndUpdate(p, Blocks.COAL_BLOCK.defaultBlockState());
 					}
 				});
@@ -871,17 +869,21 @@ public final class Latveria {
 		if (!level.hasChunk(cx, cz)) return;
 		furnished.add(chunk);
 		save(level.getServer());
-		for (LatveriaPlan.Op op : LatveriaPlan.FURNITURE) {
-			if (op.x0() >> 4 != cx || op.z0() >> 4 != cz) continue;
-			edit(() -> level.setBlock(new BlockPos(op.x0(), op.y0(), op.z0()), op.state(), Block.UPDATE_CLIENTS));
-			// The castle library's lectern holds Boris's chronicle of his master.
-			if (op.state().is(Blocks.LECTERN) && op.z0() < -200) {
-				BlockPos at = new BlockPos(op.x0(), op.y0(), op.z0());
-				edit(() -> net.minecraft.world.level.block.LecternBlock.tryPlaceBook(null, level, at, level.getBlockState(at), chronicle()));
-			}
+		List<LatveriaPlan.Op> furnOps = LatveriaPlan.furnitureForChunk(chunk);
+		if (!furnOps.isEmpty()) {
+			edit(() -> {
+				for (LatveriaPlan.Op op : furnOps) {
+					BlockPos at = new BlockPos(op.x0(), op.y0(), op.z0());
+					level.setBlock(at, op.state(), Block.UPDATE_CLIENTS | Block.UPDATE_KNOWN_SHAPE);
+					// The castle library's lectern holds Boris's chronicle of his master.
+					if (op.state().is(Blocks.LECTERN) && op.z0() < -200) {
+						net.minecraft.world.level.block.LecternBlock.tryPlaceBook(null, level, at, level.getBlockState(at), chronicle());
+					}
+				}
+			});
 		}
-		for (int[] c : LatveriaPlan.CHESTS) {
-			if (c[0] >> 4 != cx || c[2] >> 4 != cz || !(level.getBlockEntity(new BlockPos(c[0], c[1], c[2])) instanceof Container chest)) continue;
+		for (int[] c : LatveriaPlan.chestsForChunk(chunk)) {
+			if (!(level.getBlockEntity(new BlockPos(c[0], c[1], c[2])) instanceof Container chest)) continue;
 			ItemStack[] loot = switch (c[3]) {
 				case 0 -> new ItemStack[]{new ItemStack(Items.BREAD, 8), new ItemStack(Items.COOKED_BEEF, 6), new ItemStack(Items.APPLE, 4), new ItemStack(Items.CANDLE, 4)};
 				case 1 -> new ItemStack[]{new ItemStack(Items.ARROW, 16), new ItemStack(Items.IRON_INGOT, 5), new ItemStack(ModItems.DOOM_CIRCUIT, 2), new ItemStack(Items.SHIELD)};
@@ -890,8 +892,7 @@ public final class Latveria {
 			};
 			for (int i = 0; i < loot.length; i++) chest.setItem(4 + i * 5, loot[i]);
 		}
-		for (BlockPos p : LatveriaPlan.VILLAGERS) {
-			if (p.getX() >> 4 != cx || p.getZ() >> 4 != cz) continue;
+		for (BlockPos p : LatveriaPlan.villagersForChunk(chunk)) {
 			var villager = EntityType.VILLAGER.create(level, EntitySpawnReason.STRUCTURE);
 			if (villager == null) continue;
 			villager.snapTo(p.getX() + 0.5, p.getY() + 1, p.getZ() + 0.5, 0f, 0);

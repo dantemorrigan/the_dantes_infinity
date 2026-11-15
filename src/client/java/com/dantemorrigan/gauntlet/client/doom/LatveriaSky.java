@@ -23,7 +23,7 @@ public final class LatveriaSky {
 	private static final String DIR = "textures/environment/latveria/";
 	private static final Identifier DOME = tex("dome"), CLOUDS_A = tex("clouds_a"), CLOUDS_B = tex("clouds_b"), RIDGES = tex("ridges"),
 			AURORA = tex("aurora"), MOON = tex("moon"), MOON_GLOW = tex("moon_glow"), BOLT = tex("bolt");
-	private static final int SEG = 64;
+	private static final int SEG = 32;
 	private static final long SLOT = 260;
 
 	private static Identifier tex(String name) {

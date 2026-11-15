@@ -87,6 +87,9 @@ public final class DoomVfxClient {
 	private static void clear() {
 		lightsOn = false;
 		alarmTicks = 0;
+		lastSpotTick = -1;
+		java.util.Arrays.fill(CACHED_SPOT_PREV, null);
+		java.util.Arrays.fill(CACHED_SPOT_CURR, null);
 		FX.clear();
 		BOLTS.clear();
 		SHIELDS.clear();
@@ -376,12 +379,38 @@ public final class DoomVfxClient {
 				d.tear(preview.add(0, 1.0, 0), 0.22f, 1.8f, STYLE[DoomVfx.GREEN], 0.5f * pulse);
 			}
 		}
+		d.flush();
 	}
 
 	/** Cones from the castle towers sweeping the slope, and the great lamps combing the city; red and fixed on the intruder while the alarm sounds. */
 	private static final double[] SPOT_Y = {Double.NaN, Double.NaN, Double.NaN, Double.NaN, Double.NaN, Double.NaN, Double.NaN, Double.NaN};
+	private static final Vec3[] CACHED_SPOT_PREV = new Vec3[8];
+	private static final Vec3[] CACHED_SPOT_CURR = new Vec3[8];
+	private static long lastSpotTick = -1;
+
+	private static void updateCachedSpots(Minecraft mc) {
+		long gt = mc.level.getGameTime();
+		if (gt == lastSpotTick) return;
+		lastSpotTick = gt;
+		Entity caught = alarmTicks > 0 ? mc.level.getEntity(alarmEntity) : null;
+		for (int i = 0; i < com.dantemorrigan.gauntlet.doom.Searchlights.LAMPS.length; i++) {
+			Vec3 lamp = com.dantemorrigan.gauntlet.doom.Searchlights.LAMPS[i];
+			Vec3 dir = caught != null ? caught.position().add(0, caught.getBbHeight() * 0.5, 0).subtract(lamp).normalize()
+					: com.dantemorrigan.gauntlet.doom.Searchlights.direction(i, gt);
+			Vec3 spot = com.dantemorrigan.gauntlet.doom.Searchlights.spot(mc.level, i, dir);
+			boolean city = i >= com.dantemorrigan.gauntlet.doom.Searchlights.SLOPE_LAMPS;
+			if (city && caught == null) {
+				if (Double.isNaN(SPOT_Y[i]) || Math.abs(SPOT_Y[i] - spot.y) > 40) SPOT_Y[i] = spot.y;
+				else SPOT_Y[i] += (spot.y - SPOT_Y[i]) * 0.28;
+				spot = new Vec3(spot.x, SPOT_Y[i], spot.z);
+			}
+			CACHED_SPOT_PREV[i] = CACHED_SPOT_CURR[i] != null ? CACHED_SPOT_CURR[i] : spot;
+			CACHED_SPOT_CURR[i] = spot;
+		}
+	}
 
 	private static void searchlights(Draw d, Minecraft mc, float partial) {
+		updateCachedSpots(mc);
 		double t = mc.level.getGameTime() + partial;
 		Entity caught = alarmTicks > 0 ? mc.level.getEntity(alarmEntity) : null;
 		boolean red = alarmTicks > 0;
@@ -389,16 +418,10 @@ public final class DoomVfxClient {
 		float flicker = red ? 0.8f + 0.2f * Mth.sin((float) t * 1.7f) : 1;
 		for (int i = 0; i < com.dantemorrigan.gauntlet.doom.Searchlights.LAMPS.length; i++) {
 			Vec3 lamp = com.dantemorrigan.gauntlet.doom.Searchlights.LAMPS[i];
-			Vec3 dir = caught != null ? caught.getPosition(partial).add(0, caught.getBbHeight() * 0.5, 0).subtract(lamp).normalize()
-					: com.dantemorrigan.gauntlet.doom.Searchlights.direction(i, t);
-			Vec3 spot = com.dantemorrigan.gauntlet.doom.Searchlights.spot(mc.level, i, dir);
+			Vec3 spot = CACHED_SPOT_PREV[i] != null && CACHED_SPOT_CURR[i] != null
+					? CACHED_SPOT_PREV[i].lerp(CACHED_SPOT_CURR[i], partial)
+					: lamp.add(0, -10, 10);
 			boolean city = i >= com.dantemorrigan.gauntlet.doom.Searchlights.SLOPE_LAMPS;
-			if (city && caught == null) {
-				// The spot climbs onto a roof and down to the street over a few frames instead of jumping.
-				if (Double.isNaN(SPOT_Y[i]) || Math.abs(SPOT_Y[i] - spot.y) > 40) SPOT_Y[i] = spot.y;
-				else SPOT_Y[i] += (spot.y - SPOT_Y[i]) * 0.18;
-				spot = new Vec3(spot.x, SPOT_Y[i], spot.z);
-			}
 			float spotR = com.dantemorrigan.gauntlet.doom.Searchlights.spotRadius(i);
 			// A beam held on the viewer would fill the screen: it thins out toward them instead.
 			float end = caught == mc.getCameraEntity() ? 0.25f : 1;
@@ -431,11 +454,38 @@ public final class DoomVfxClient {
 		return e.getEyePosition(partial).add(look.scale(0.6)).add(right.scale(0.35)).add(0, -0.35, 0);
 	}
 
-	/** Builds quads in camera-relative world space; every type is the emissive "eyes" type with a soft texture. */
-	private record Draw(LevelRenderContext ctx, PoseStack pose, Vec3 cam, Vec3 right, Vec3 up) {
+	/** Builds quads in camera-relative world space, batched by texture into a single submission per texture. */
+	private static final class Draw {
+		private final LevelRenderContext ctx;
+		private final PoseStack pose;
+		private final Vec3 cam;
+		private final Vec3 right;
+		private final Vec3 up;
+		private final Map<Identifier, List<java.util.function.Consumer<Emit>>> batches = new java.util.LinkedHashMap<>();
+
+		Draw(LevelRenderContext ctx, PoseStack pose, Vec3 cam, Vec3 right, Vec3 up) {
+			this.ctx = ctx;
+			this.pose = pose;
+			this.cam = cam;
+			this.right = right;
+			this.up = up;
+		}
+
 		private void quads(Identifier texture, java.util.function.Consumer<Emit> body) {
-			RenderType type = RenderTypes.eyes(texture);
-			ctx.submitNodeCollector().submitCustomGeometry(pose, type, (p, out) -> body.accept(new Emit(p, out, cam)));
+			batches.computeIfAbsent(texture, k -> new ArrayList<>()).add(body);
+		}
+
+		void flush() {
+			for (var entry : batches.entrySet()) {
+				RenderType type = RenderTypes.eyes(entry.getKey());
+				List<java.util.function.Consumer<Emit>> list = entry.getValue();
+				ctx.submitNodeCollector().submitCustomGeometry(pose, type, (p, out) -> {
+					Emit emit = new Emit(p, out, cam);
+					for (int i = 0, n = list.size(); i < n; i++) {
+						list.get(i).accept(emit);
+					}
+				});
+			}
 		}
 
 		void billboard(Identifier texture, Vec3 c, float size, int rgb, float alpha) {

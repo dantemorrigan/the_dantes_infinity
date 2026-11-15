@@ -148,8 +148,14 @@ public final class DoomClient {
 		HudElementRegistry.addFirst(InfinityGauntlet.id("latveria_filter"), (g, delta) -> filter(g));
 		HudElementRegistry.addLast(InfinityGauntlet.id("doom_hud"), (g, delta) -> hud(g));
 		HudElementRegistry.addLast(InfinityGauntlet.id("latveria_stealth"), (g, delta) -> stealth(g));
-		ClientPlayNetworking.registerGlobalReceiver(ModNetwork.LatveriaDialogOpen.TYPE, (pkt, ctx) ->
-				Minecraft.getInstance().setScreen(new LatveriaDialogScreen(pkt.entityId(), pkt.role(), pkt.flags())));
+		ClientPlayNetworking.registerGlobalReceiver(ModNetwork.LatveriaDialogOpen.TYPE, (pkt, ctx) -> {
+			Minecraft mc = Minecraft.getInstance();
+			if (mc.screen instanceof LatveriaDialogScreen existing && existing.matches(pkt.entityId(), pkt.role())) {
+				existing.updateState(pkt.flags());
+			} else {
+				mc.setScreen(new LatveriaDialogScreen(pkt.entityId(), pkt.role(), pkt.flags()));
+			}
+		});
 		GodDoomScene.init();
 		DoomFinalClient.init();
 		DoomTooltips.init();

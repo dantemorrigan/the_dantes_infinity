@@ -32,6 +32,8 @@ public final class LatveriaDialogScreen extends Screen {
 	private String nodeId;
 	private int revealTick;
 	private int totalChars;
+	private int panelW = 380;
+	private int panelH = 186;
 	private final List<Option> currentOptions = new ArrayList<>();
 
 	private record Option(Component label, String nextNode, int serverAction, boolean enabled) {}
@@ -44,14 +46,21 @@ public final class LatveriaDialogScreen extends Screen {
 		this.nodeId = (flags & LatveriaQuests.FLAG_CONQUERED) != 0 ? "king" : "root";
 	}
 
+	public boolean matches(int id, int r) {
+		return this.entityId == id && this.role == r;
+	}
+
 	public void updateState(int newFlags) {
+		String oldNode = this.nodeId;
 		this.flags = newFlags;
 		if (role == LatveriaNpc.ROLE_MECHANIC && (flags & LatveriaQuests.FLAG_HAS_DISRUPTOR) != 0 && "plan".equals(nodeId)) {
 			this.nodeId = "given";
 		} else if (role == LatveriaNpc.ROLE_TAVERN_KEEPER && (flags & LatveriaQuests.FLAG_HAS_CLOAK) != 0 && "cloak_offer".equals(nodeId)) {
 			this.nodeId = "cloak_given";
 		}
-		this.revealTick = 0;
+		if (!oldNode.equals(this.nodeId)) {
+			this.revealTick = 0;
+		}
 		rebuildWidgets();
 	}
 
@@ -175,22 +184,32 @@ public final class LatveriaDialogScreen extends Screen {
 	@Override
 	protected void init() {
 		buildOptions();
-		String raw = currentSpeech().getString();
+		Component speech = currentSpeech();
+		String raw = speech.getString();
 		totalChars = Math.max(1, raw.length());
 
-		int panelW = Math.min(390, width - 24);
-		int panelH = 176;
-		int x0 = (width - panelW) / 2;
-		int y0 = height - panelH - 12;
+		panelW = Math.min(400, width - 24);
+		int textW = Math.max(120, panelW - 28);
+		int speechLines = Math.max(3, font.split(speech, textW).size());
+		int speechH = speechLines * 11 + 12;
+		int buttonsH = currentOptions.size() * 21 + 10;
+		panelH = Math.min(height - 16, Math.max(168, 46 + speechH + buttonsH));
 
-		int btnY = y0 + panelH - 8 - currentOptions.size() * 22;
+		int x0 = (width - panelW) / 2;
+		int y0 = height - panelH - 8;
+
+		int btnY = y0 + panelH - 8 - currentOptions.size() * 21;
 		for (Option opt : currentOptions) {
-			Button btn = Button.builder(opt.label, b -> selectOption(opt))
-					.bounds(x0 + 14, btnY, panelW - 28, 20)
+			int maxBtnTextW = Math.max(80, panelW - 44);
+			Component btnLabel = font.width(opt.label) > maxBtnTextW
+					? Component.literal(font.substrByWidth(opt.label, maxBtnTextW - 6).getString() + "...")
+					: opt.label;
+			Button btn = Button.builder(btnLabel, b -> selectOption(opt))
+					.bounds(x0 + 14, btnY, panelW - 28, 19)
 					.build();
 			btn.active = opt.enabled;
 			addRenderableWidget(btn);
-			btnY += 22;
+			btnY += 21;
 		}
 	}
 
@@ -204,7 +223,9 @@ public final class LatveriaDialogScreen extends Screen {
 		}
 		this.nodeId = opt.nextNode;
 		this.revealTick = 0;
-		playClientMurmur();
+		if (opt.serverAction == 0) {
+			playClientMurmur();
+		}
 		rebuildWidgets();
 	}
 
@@ -214,7 +235,7 @@ public final class LatveriaDialogScreen extends Screen {
 		int charsShown = revealTick * 3;
 		if (charsShown < totalChars) {
 			revealTick++;
-			if (revealTick % 3 == 0) {
+			if (revealTick % 5 == 0) {
 				playClientMurmur();
 			}
 		}
@@ -229,15 +250,13 @@ public final class LatveriaDialogScreen extends Screen {
 			default -> 1.0f;
 		};
 		float pitch = basePitch + (mc.player.getRandom().nextFloat() - 0.5f) * 0.14f;
-		mc.player.playSound(SoundEvents.VILLAGER_AMBIENT, 0.35f, pitch);
+		mc.player.playSound(SoundEvents.VILLAGER_AMBIENT, 0.28f, pitch);
 	}
 
 	@Override
 	public void extractRenderState(GuiGraphicsExtractor g, int mx, int my, float delta) {
-		int panelW = Math.min(390, width - 24);
-		int panelH = 176;
 		int x0 = (width - panelW) / 2;
-		int y0 = height - panelH - 12;
+		int y0 = height - panelH - 8;
 		int x1 = x0 + panelW;
 		int y1 = y0 + panelH;
 
@@ -259,20 +278,33 @@ public final class LatveriaDialogScreen extends Screen {
 		g.blit(RenderPipelines.GUI_TEXTURED, skin, px, py, 40, 8, 32, 32, 8, 8, 64, 64, -1);
 
 		// Speaker name, subtitle, and Latverian emblem
-		g.text(font, title.copy().withStyle(s -> s.withBold(true)), px + 42, py + 6, 0xFFFFE08A, true);
-		g.text(font, speakerSubtitle(), px + 42, py + 19, 0xFF9CFFB4, false);
+		int maxHeaderW = Math.max(60, x1 - 36 - (px + 42));
+		Component nameComp = title.copy().withStyle(s -> s.withBold(true));
+		Component subComp = speakerSubtitle();
+		if (font.width(nameComp) > maxHeaderW) {
+			nameComp = Component.literal(font.substrByWidth(nameComp, maxHeaderW).getString()).withStyle(s -> s.withBold(true));
+		}
+		if (font.width(subComp) > maxHeaderW) {
+			subComp = Component.literal(font.substrByWidth(subComp, maxHeaderW).getString());
+		}
+		g.text(font, nameComp, px + 42, py + 6, 0xFFFFE08A, true);
+		g.text(font, subComp, px + 42, py + 19, 0xFF9CFFB4, false);
 		g.blit(RenderPipelines.GUI_TEXTURED, EMBLEM, x1 - 30, y0 + 12, 0, 0, 20, 20, 64, 64, 64, 64, -1);
 
-		// Typewriter speech text
+		// Typewriter speech text clipped strictly above the option buttons
+		int btnTop = y0 + panelH - 8 - currentOptions.size() * 21;
+		g.enableScissor(x0 + 6, y0 + 46, x1 - 6, btnTop - 4);
 		String full = currentSpeech().getString();
 		int shown = Mth.clamp(revealTick * 3, 1, full.length());
 		Component visibleComp = Component.literal(full.substring(0, shown));
-		List<FormattedCharSequence> lines = font.split(visibleComp, panelW - 28);
-		int ty = y0 + 54;
+		List<FormattedCharSequence> lines = font.split(visibleComp, Math.max(120, panelW - 28));
+		int ty = y0 + 51;
 		for (FormattedCharSequence line : lines) {
+			if (ty + 9 > btnTop - 4) break;
 			g.text(font, line, x0 + 14, ty, 0xFFE6F0EA, false);
 			ty += 11;
 		}
+		g.disableScissor();
 
 		super.extractRenderState(g, mx, my, delta);
 	}

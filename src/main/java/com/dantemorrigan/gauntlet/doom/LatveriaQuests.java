@@ -56,12 +56,13 @@ public final class LatveriaQuests {
 	public static final BlockPos MECHANIC_POS = new BlockPos(-29, LatveriaPlan.VALLEY_Y + 1, 16);
 	public static final BlockPos TAVERN_KEEPER_POS = new BlockPos(28, LatveriaPlan.VALLEY_Y + 1, 13);
 
-	/** Center of the huge generator chamber deep beneath Castle Doom. */
-	public static final BlockPos UNDER_CASTLE_GEN = new BlockPos(0, LatveriaPlan.CASTLE_Y - 11, -242);
-	public static final AABB UNDER_CASTLE_GEN_BOX = new AABB(-8, LatveriaPlan.CASTLE_Y - 14, -250, 9, LatveriaPlan.CASTLE_Y - 4, -234);
+	/** Center of the huge generator chamber in the basement directly beneath Castle Doom. */
+	public static final BlockPos UNDER_CASTLE_GEN = LatveriaPlan.GENERATOR;
+	public static final AABB UNDER_CASTLE_GEN_BOX = new AABB(-8, LatveriaPlan.CASTLE_Y - 14, -274, 9, LatveriaPlan.CASTLE_Y - 4, -258);
 
 	private static final Map<UUID, Long> CLOAK_EXPOSED_UNTIL = new HashMap<>();
-	private static boolean npcsChecked;
+	private static final Map<UUID, Long> LAST_DIALOG_TICK = new HashMap<>();
+	private static boolean basementChecked;
 
 	public static void init() {
 		// Attacking anything in Latveria while wearing the cloak breaks order and exposes the player.
@@ -81,13 +82,16 @@ public final class LatveriaQuests {
 		UseEntityCallback.EVENT.register((player, world, hand, entity, hitResult) -> {
 			if (hand == InteractionHand.MAIN_HAND && world instanceof ServerLevel level && level.dimension() == Latveria.LEVEL
 					&& entity instanceof Villager villager && player instanceof ServerPlayer sp) {
+				long now = level.getGameTime();
+				if (now - LAST_DIALOG_TICK.getOrDefault(sp.getUUID(), -100L) < 8) {
+					return InteractionResult.SUCCESS_SERVER;
+				}
+				LAST_DIALOG_TICK.put(sp.getUUID(), now);
 				boolean conquered = Latveria.conquered(level.getServer());
 				float pitch = 0.92f + (level.getRandom().nextFloat() - 0.5f) * 0.16f;
 				level.playSound(null, villager.getX(), villager.getY(), villager.getZ(),
 						conquered ? SoundEvents.VILLAGER_CELEBRATE : SoundEvents.VILLAGER_AMBIENT,
 						SoundSource.NEUTRAL, 0.85f, pitch);
-				level.playSound(null, villager.getX(), villager.getY(), villager.getZ(),
-						SoundEvents.VILLAGER_TRADE, SoundSource.NEUTRAL, 0.45f, pitch + 0.08f);
 				int role = LatveriaNpc.ROLE_CITIZEN_1 + (Math.abs(villager.getUUID().hashCode()) % 4);
 				ServerPlayNetworking.send(sp, new ModNetwork.LatveriaDialogOpen(villager.getId(), role, dialogFlagsFor(sp, null)));
 				return InteractionResult.SUCCESS_SERVER;
@@ -98,56 +102,88 @@ public final class LatveriaQuests {
 
 	public static void resetRuntime() {
 		CLOAK_EXPOSED_UNTIL.clear();
-		npcsChecked = false;
+		LAST_DIALOG_TICK.clear();
+		basementChecked = false;
 	}
 
-	/** Ensures the Old Mechanic, Tavern Keeper, and player-skinned Latverian citizens are present in the city. */
+	/**
+	 * Ensures the Old Mechanic Radovan and Tavern Keeper Mirko are present (without duplicates),
+	 * removes any legacy wandering Steve NPCs, and ensures the under-castle basement generator is present.
+	 */
 	public static void ensureNpcs(ServerLevel level) {
 		if (level.dimension() != Latveria.LEVEL) return;
-		if (npcsChecked && level.getGameTime() % 100 != 0) return;
 		if (level.players().isEmpty()) return;
-		npcsChecked = true;
+		long time = level.getGameTime();
+		if (time % 40 != 0) return;
 
+		ensureBasementMigrated(level);
+
+		// Clean up any legacy wandering Steve NPCs or duplicates in loaded city chunks
 		AABB cityBox = new AABB(-120, 40, -60, 120, 130, 160);
 		List<LatveriaNpc> existing = level.getEntitiesOfClass(LatveriaNpc.class, cityBox);
-		boolean hasMechanic = false;
-		boolean hasTavern = false;
-		int citizenCount = 0;
+		LatveriaNpc mechanic = null;
+		LatveriaNpc tavern = null;
 		for (LatveriaNpc npc : existing) {
-			if (npc.role() == LatveriaNpc.ROLE_MECHANIC) hasMechanic = true;
-			else if (npc.role() == LatveriaNpc.ROLE_TAVERN_KEEPER) hasTavern = true;
-			else citizenCount++;
+			if (!npc.isAlive()) continue;
+			if (npc.role() == LatveriaNpc.ROLE_MECHANIC) {
+				if (mechanic == null) mechanic = npc;
+				else npc.discard();
+			} else if (npc.role() == LatveriaNpc.ROLE_TAVERN_KEEPER) {
+				if (tavern == null) tavern = npc;
+				else npc.discard();
+			} else {
+				npc.discard();
+			}
 		}
 
-		if (!hasMechanic) {
-			level.getChunk(MECHANIC_POS);
-			spawnNpc(level, LatveriaNpc.ROLE_MECHANIC, MECHANIC_POS, 90f);
-		}
-		if (!hasTavern) {
-			level.getChunk(TAVERN_KEEPER_POS);
-			spawnNpc(level, LatveriaNpc.ROLE_TAVERN_KEEPER, TAVERN_KEEPER_POS, -90f);
-		}
-		if (citizenCount < 10) {
-			BlockPos[] spots = {
-					new BlockPos(-8, LatveriaPlan.VALLEY_Y + 1, 24),
-					new BlockPos(10, LatveriaPlan.VALLEY_Y + 1, 34),
-					new BlockPos(-14, LatveriaPlan.VALLEY_Y + 1, 46),
-					new BlockPos(14, LatveriaPlan.VALLEY_Y + 1, 52),
-					new BlockPos(0, LatveriaPlan.VALLEY_Y + 1, 68),
-					new BlockPos(-36, LatveriaPlan.VALLEY_Y + 1, 28),
-					new BlockPos(36, LatveriaPlan.VALLEY_Y + 1, 32),
-					new BlockPos(-36, LatveriaPlan.VALLEY_Y + 1, 70),
-					new BlockPos(36, LatveriaPlan.VALLEY_Y + 1, 74),
-					new BlockPos(18, LatveriaPlan.VALLEY_Y + 1, 25),
-					new BlockPos(-20, LatveriaPlan.VALLEY_Y + 1, 14),
-					new BlockPos(4, LatveriaPlan.VALLEY_Y + 1, 14)
-			};
-			for (int i = citizenCount; i < spots.length; i++) {
-				BlockPos pos = spots[i];
-				level.getChunk(pos);
-				int role = LatveriaNpc.ROLE_CITIZEN_1 + (i % 4);
-				spawnNpc(level, role, pos, (i * 73) % 360);
+		if (mechanic == null && level.isPositionEntityTicking(MECHANIC_POS)) {
+			List<LatveriaNpc> near = level.getEntitiesOfClass(LatveriaNpc.class, new AABB(MECHANIC_POS).inflate(20),
+					n -> n.isAlive() && n.role() == LatveriaNpc.ROLE_MECHANIC);
+			if (near.isEmpty()) {
+				spawnNpc(level, LatveriaNpc.ROLE_MECHANIC, MECHANIC_POS, 90f);
 			}
+		}
+		if (tavern == null && level.isPositionEntityTicking(TAVERN_KEEPER_POS)) {
+			List<LatveriaNpc> near = level.getEntitiesOfClass(LatveriaNpc.class, new AABB(TAVERN_KEEPER_POS).inflate(20),
+					n -> n.isAlive() && n.role() == LatveriaNpc.ROLE_TAVERN_KEEPER);
+			if (near.isEmpty()) {
+				spawnNpc(level, LatveriaNpc.ROLE_TAVERN_KEEPER, TAVERN_KEEPER_POS, -90f);
+			}
+		}
+	}
+
+	/**
+	 * If a player opens an existing world save where Castle Doom was generated before the generator room was moved
+	 * into the basement under the castle, migrates the East Wing stairwell and Castle Basement in place.
+	 */
+	private static void ensureBasementMigrated(ServerLevel level) {
+		if (basementChecked) return;
+		if (!level.isLoaded(LatveriaPlan.GENERATOR) || !level.isLoaded(new BlockPos(32, LatveriaPlan.FLOOR, -274))) return;
+		basementChecked = true;
+		// Remove any Doombots that may have been spawned in the East Wing lab or basement in older saves
+		AABB labAndBasement = new AABB(-18, LatveriaPlan.FLOOR - 16, -288, 46, LatveriaPlan.FLOOR + 8, -252);
+		for (Doombot bot : level.getEntitiesOfClass(Doombot.class, labAndBasement,
+				b -> b.isAlive() && !b.allied() && (b.squad() == Latveria.SQUAD_LAB || b.getY() < LatveriaPlan.FLOOR - 1))) {
+			bot.discard();
+		}
+		// Check if the basement under the castle is still solid stone from an older world save
+		if (!level.getBlockState(new BlockPos(0, LatveriaPlan.FLOOR - 12, -258)).isAir()) {
+			Latveria.edit(() -> {
+				BlockPos.MutableBlockPos at = new BlockPos.MutableBlockPos();
+				for (LatveriaPlan.Op op : LatveriaPlan.OPS) {
+					if (op.z1() < -289 || op.z0() > -235) continue;
+					boolean inBasement = op.y1() <= LatveriaPlan.FLOOR;
+					boolean inEastLab = op.x0() >= 22 && op.x1() <= 45 && op.y1() <= LatveriaPlan.FLOOR + 8;
+					if (!inBasement && !inEastLab) continue;
+					for (int x = op.x0(); x <= op.x1(); x++) {
+						for (int z = op.z0(); z <= op.z1(); z++) {
+							for (int y = op.y0(); y <= op.y1(); y++) {
+								level.setBlock(at.set(x, y, z), op.state(), net.minecraft.world.level.block.Block.UPDATE_CLIENTS | net.minecraft.world.level.block.Block.UPDATE_KNOWN_SHAPE);
+							}
+						}
+					}
+				}
+			});
 		}
 	}
 
@@ -180,6 +216,12 @@ public final class LatveriaQuests {
 		Entity entity = level.getEntity(entityId);
 		if (entity != null && entity.distanceToSqr(player) > 144.0) return;
 
+		long now = level.getGameTime();
+		if (actionId != ACTION_TALK_SOUND) {
+			if (now - LAST_DIALOG_TICK.getOrDefault(player.getUUID(), -100L) < 6) return;
+			LAST_DIALOG_TICK.put(player.getUUID(), now);
+		}
+
 		if (entity instanceof LatveriaNpc npc) {
 			npc.triggerTalk(30);
 			npc.playVoiceMurmur(level, actionId != ACTION_TALK_SOUND);
@@ -191,18 +233,21 @@ public final class LatveriaQuests {
 
 		switch (actionId) {
 			case ACTION_CLAIM_DISRUPTOR -> {
-				if (!hasItem(player, ModItems.GENERATOR_DISRUPTOR)) {
+				boolean alreadyHad = hasItem(player, ModItems.GENERATOR_DISRUPTOR);
+				if (!alreadyHad) {
 					ItemStack disruptor = new ItemStack(ModItems.GENERATOR_DISRUPTOR);
 					if (!player.getInventory().add(disruptor)) player.drop(disruptor, false);
+					player.sendSystemMessage(Component.translatable("msg.infinity_gauntlet.latveria.quest.disruptor_received"));
 				}
 				level.playSound(null, player.getX(), player.getY(), player.getZ(),
 						SoundEvents.ANVIL_USE, SoundSource.PLAYERS, 0.65f, 1.35f);
-				level.playSound(null, player.getX(), player.getY(), player.getZ(),
-						SoundEvents.VILLAGER_YES, SoundSource.NEUTRAL, 0.9f, 0.78f);
-				player.sendSystemMessage(Component.translatable("msg.infinity_gauntlet.latveria.quest.disruptor_received"));
 				ServerPlayNetworking.send(player, new ModNetwork.LatveriaDialogOpen(entityId, LatveriaNpc.ROLE_MECHANIC, dialogFlagsFor(player, null)));
 			}
 			case ACTION_TRADE_WHEAT_FOR_CLOAK -> {
+				if (hasItem(player, ModItems.LATVERIA_CLOAK) || wearingCloak(player)) {
+					ServerPlayNetworking.send(player, new ModNetwork.LatveriaDialogOpen(entityId, LatveriaNpc.ROLE_TAVERN_KEEPER, dialogFlagsFor(player, null)));
+					return;
+				}
 				int count = player.getInventory().countItem(Items.WHEAT);
 				if (!player.isCreative() && count < WHEAT_COST) {
 					player.sendSystemMessage(Component.translatable("msg.infinity_gauntlet.latveria.quest.need_wheat"), true);
@@ -223,8 +268,6 @@ public final class LatveriaQuests {
 
 				level.playSound(null, player.getX(), player.getY(), player.getZ(),
 						SoundEvents.BREWING_STAND_BREW, SoundSource.BLOCKS, 0.9f, 1.0f);
-				level.playSound(null, player.getX(), player.getY(), player.getZ(),
-						SoundEvents.VILLAGER_CELEBRATE, SoundSource.NEUTRAL, 0.9f, 0.88f);
 				player.sendSystemMessage(Component.translatable("msg.infinity_gauntlet.latveria.quest.cloak_received"));
 				ServerPlayNetworking.send(player, new ModNetwork.LatveriaDialogOpen(entityId, LatveriaNpc.ROLE_TAVERN_KEEPER, dialogFlagsFor(player, null)));
 			}
@@ -275,7 +318,6 @@ public final class LatveriaQuests {
 		CLOAK_EXPOSED_UNTIL.put(player.getUUID(), now + 20 * 25);
 		if (now >= prev) {
 			player.sendSystemMessage(Component.translatable("msg.infinity_gauntlet.latveria.cloak.exposed_close"), true);
-			player.sendSystemMessage(Component.translatable("msg.infinity_gauntlet.latveria.cloak.exposed_close"));
 			level.playSound(null, player.getX(), player.getY(), player.getZ(),
 					SoundEvents.BEACON_DEACTIVATE, SoundSource.HOSTILE, 1.0f, 1.25f);
 		}
@@ -290,6 +332,7 @@ public final class LatveriaQuests {
 	 * or sprints noisily right in front of one (< 6.5 blocks). If so, the Doombot sees through the disguise!
 	 */
 	public static boolean checkCloakProximity(ServerLevel level, ServerPlayer player) {
+		if ((level.getGameTime() + player.getId()) % 4 != 0) return false;
 		if (!isCloakActive(level, player)) return false;
 		if (Latveria.conquered(level.getServer()) || Latveria.generatorOff(level.getServer())) return false;
 		List<Doombot> nearby = level.getEntitiesOfClass(Doombot.class, player.getBoundingBox().inflate(7.0),
@@ -355,7 +398,6 @@ public final class LatveriaQuests {
 				? "msg.infinity_gauntlet.latveria.generator.sabotaged_full"
 				: "msg.infinity_gauntlet.latveria.generator.off");
 		for (ServerPlayer p : level.players()) {
-			p.sendSystemMessage(msg, true);
 			p.sendSystemMessage(msg);
 		}
 		return true;

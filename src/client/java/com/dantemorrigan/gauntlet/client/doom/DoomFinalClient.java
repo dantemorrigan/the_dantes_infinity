@@ -47,6 +47,8 @@ public final class DoomFinalClient {
 			"key.infinity_gauntlet.break_dome", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_G, ClientPower.CATEGORY));
 
 	private static final Identifier WHITE_TEX = InfinityGauntlet.id("textures/gui/doctor_doom/state_active.png");
+	private static final Identifier FROSTED_TEX = InfinityGauntlet.id("textures/fx/doom/dome_frosted.png");
+	private static final Identifier GLOW_TEX = InfinityGauntlet.id("textures/fx/doom/glow.png");
 	private static final ItemStackRenderState FLYING_GAUNTLET_STATE = new ItemStackRenderState();
 
 	private static int stage = DoomFinalEncounter.STAGE_NONE;
@@ -291,60 +293,152 @@ public final class DoomFinalClient {
 	}
 
 	private static void renderEnergyDome(LevelRenderContext ctx, PoseStack pose, Vec3 cam, Vec3 c, float radius, float alpha, float time) {
+		Minecraft mc = Minecraft.getInstance();
+		float partial = mc.getDeltaTracker().getGameTimeDeltaPartialTick(false);
 		pose.pushPose();
 		pose.translate(c.x - cam.x, c.y - cam.y, c.z - cam.z);
-		int segsYaw = 28;
-		int segsPitch = 10;
-		float pulse = 0.85f + 0.15f * Mth.sin(time * 0.12f);
-		int shellAlpha = (int) (72 * alpha * pulse);
-		int ribAlpha = (int) (175 * alpha);
+		int segsYaw = 32;
+		int segsPitch = 12;
+		float pulse = 0.92f + 0.08f * Mth.sin(time * 0.08f);
 
-		ctx.submitNodeCollector().submitCustomGeometry(pose, RenderTypes.entityTranslucentEmissive(WHITE_TEX), (p, buf) -> {
-			for (int i = 0; i < segsPitch; i++) {
-				float p0 = (i / (float) segsPitch) * Mth.HALF_PI;
-				float p1 = ((i + 1) / (float) segsPitch) * Mth.HALF_PI;
-				float r0 = Mth.cos(p0) * radius, y0 = Mth.sin(p0) * radius;
-				float r1 = Mth.cos(p1) * radius, y1 = Mth.sin(p1) * radius;
-				boolean band = (i % 2 == 0);
-				int col = band ? ARGB.color(shellAlpha, 45, 235, 130) : ARGB.color(shellAlpha, 155, 85, 255);
+		// 1. Silhouette-blurring diffusion halos around Doom & Thanos inside the dome so their figures look
+		// blurred and diffused as through thick frosted glass.
+		Vec3 camRel = cam.subtract(c);
+		Vec3 toCamHoriz = new Vec3(camRel.x, 0, camRel.z);
+		Vec3 right = toCamHoriz.lengthSqr() > 1e-4
+				? new Vec3(-toCamHoriz.z, 0, toCamHoriz.x).normalize()
+				: new Vec3(1, 0, 0);
+		Vec3 forward = toCamHoriz.lengthSqr() > 1e-4 ? toCamHoriz.normalize() : new Vec3(0, 0, 1);
 
-				for (int j = 0; j < segsYaw; j++) {
-					float a0 = (j / (float) segsYaw) * Mth.TWO_PI + time * 0.005f;
-					float a1 = ((j + 1) / (float) segsYaw) * Mth.TWO_PI + time * 0.005f;
-					float x00 = Mth.cos(a0) * r0, z00 = Mth.sin(a0) * r0;
-					float x10 = Mth.cos(a1) * r0, z10 = Mth.sin(a1) * r0;
-					float x11 = Mth.cos(a1) * r1, z11 = Mth.sin(a1) * r1;
-					float x01 = Mth.cos(a0) * r1, z01 = Mth.sin(a0) * r1;
+		Entity doomEnt = (mc.level != null && doomId >= 0) ? mc.level.getEntity(doomId) : null;
+		Entity thanosEnt = (mc.level != null && thanosId >= 0) ? mc.level.getEntity(thanosId) : null;
+		Vec3 doomRel = doomEnt != null ? doomEnt.getPosition(partial).subtract(c) : new Vec3(-2.5, 0, 0);
+		Vec3 thanosRel = thanosEnt != null ? thanosEnt.getPosition(partial).subtract(c) : new Vec3(2.5, 0, 0);
 
-					// Outer face
-					vtx(buf, p, x00, y0, z00, 0, 1, col);
-					vtx(buf, p, x10, y0, z10, 1, 1, col);
-					vtx(buf, p, x11, y1, z11, 1, 0, col);
-					vtx(buf, p, x01, y1, z01, 0, 0, col);
+		ctx.submitNodeCollector().submitCustomGeometry(pose, RenderTypes.entityTranslucent(GLOW_TEX), (p, buf) -> {
+			// Blurred dark-jade silhouette aura around Doom
+			drawSilhouetteBlur(buf, p, doomRel, right, forward, 1.35f, 2.4f,
+					ARGB.color((int) (185 * alpha), 18, 42, 30),
+					ARGB.color((int) (145 * alpha), 95, 175, 135));
+			// Blurred dark-titan silhouette aura around Thanos
+			if (thanosEnt != null || stage != DoomFinalEncounter.STAGE_KILL_THANOS_CUTSCENE) {
+				drawSilhouetteBlur(buf, p, thanosRel, right, forward, 1.75f, 3.1f,
+						ARGB.color((int) (190 * alpha), 32, 24, 48),
+						ARGB.color((int) (150 * alpha), 130, 145, 175));
+			}
+			// Ambient cloudy interior mist planes so the entire interior behind the glass is milky/diffused
+			for (int m = -2; m <= 2; m++) {
+				Vec3 mistCenter = forward.scale(m * 1.8).add(0, 2.2, 0);
+				int mistCol = ARGB.color((int) (78 * alpha), 155, 215, 190);
+				drawBillboard(buf, p, mistCenter, right, 6.5f, 4.2f, mistCol);
+			}
+		});
 
-					// Inner face
-					vtx(buf, p, x01, y1, z01, 0, 0, col);
-					vtx(buf, p, x11, y1, z11, 1, 0, col);
-					vtx(buf, p, x10, y0, z10, 1, 1, col);
-					vtx(buf, p, x00, y0, z00, 0, 1, col);
+		// 2. Three concentric frosted-glass hemisphere shells with counter-drifting cellular frost UVs
+		ctx.submitNodeCollector().submitCustomGeometry(pose, RenderTypes.entityTranslucent(FROSTED_TEX), (p, buf) -> {
+			float[] radii = {radius * 0.94f, radius * 0.972f, radius};
+			int[] layerAlphas = {
+					(int) (115 * alpha * pulse),
+					(int) (130 * alpha * pulse),
+					(int) (148 * alpha * pulse)
+			};
+			float[] uvShifts = {time * 0.0018f, -time * 0.0014f, time * 0.0009f};
+
+			for (int layer = 0; layer < radii.length; layer++) {
+				float rLayer = radii[layer];
+				int aLayer = layerAlphas[layer];
+				float shift = uvShifts[layer];
+
+				for (int i = 0; i < segsPitch; i++) {
+					float p0 = (i / (float) segsPitch) * Mth.HALF_PI;
+					float p1 = ((i + 1) / (float) segsPitch) * Mth.HALF_PI;
+					float r0 = Mth.cos(p0) * rLayer, y0 = Mth.sin(p0) * rLayer;
+					float r1 = Mth.cos(p1) * rLayer, y1 = Mth.sin(p1) * rLayer;
+					float v0 = (i / (float) segsPitch) * 2.0f + shift * 0.5f;
+					float v1 = ((i + 1) / (float) segsPitch) * 2.0f + shift * 0.5f;
+
+					int col = (layer == 1)
+							? ARGB.color(aLayer, 185, 238, 218)
+							: (i % 2 == 0)
+									? ARGB.color(aLayer, 150, 222, 195)
+									: ARGB.color(aLayer, 168, 210, 232);
+
+					for (int j = 0; j < segsYaw; j++) {
+						float a0 = (j / (float) segsYaw) * Mth.TWO_PI + shift;
+						float a1 = ((j + 1) / (float) segsYaw) * Mth.TWO_PI + shift;
+						float u0 = (j / (float) segsYaw) * 4.0f + shift;
+						float u1 = ((j + 1) / (float) segsYaw) * 4.0f + shift;
+
+						float x00 = Mth.cos(a0) * r0, z00 = Mth.sin(a0) * r0;
+						float x10 = Mth.cos(a1) * r0, z10 = Mth.sin(a1) * r0;
+						float x11 = Mth.cos(a1) * r1, z11 = Mth.sin(a1) * r1;
+						float x01 = Mth.cos(a0) * r1, z01 = Mth.sin(a0) * r1;
+
+						// Outer frosted glass face
+						vtx(buf, p, x00, y0, z00, u0, v0, col);
+						vtx(buf, p, x10, y0, z10, u1, v0, col);
+						vtx(buf, p, x11, y1, z11, u1, v1, col);
+						vtx(buf, p, x01, y1, z01, u0, v1, col);
+
+						// Inner frosted glass face
+						vtx(buf, p, x01, y1, z01, u0, v1, col);
+						vtx(buf, p, x11, y1, z11, u1, v1, col);
+						vtx(buf, p, x10, y0, z10, u1, v0, col);
+						vtx(buf, p, x00, y0, z00, u0, v0, col);
+					}
 				}
+			}
 
-				// Bright energy ring at each latitude
-				int ringCol = ARGB.color(ribAlpha, 110, 255, 175);
-				float rh = 0.14f;
+			// Subtle frosted glass ribs along latitude & longitude
+			int ribCol = ARGB.color((int) (135 * alpha), 195, 250, 225);
+			float rh = 0.11f;
+			for (int i = 1; i < segsPitch; i += 2) {
+				float p0 = (i / (float) segsPitch) * Mth.HALF_PI;
+				float r0 = Mth.cos(p0) * (radius + 0.03f), y0 = Mth.sin(p0) * (radius + 0.03f);
 				for (int j = 0; j < segsYaw; j++) {
 					float a0 = (j / (float) segsYaw) * Mth.TWO_PI;
 					float a1 = ((j + 1) / (float) segsYaw) * Mth.TWO_PI;
-					float x0 = Mth.cos(a0) * (r0 + 0.04f), z0 = Mth.sin(a0) * (r0 + 0.04f);
-					float x1 = Mth.cos(a1) * (r0 + 0.04f), z1 = Mth.sin(a1) * (r0 + 0.04f);
-					vtx(buf, p, x0, y0, z0, 0, 1, ringCol);
-					vtx(buf, p, x1, y0, z1, 1, 1, ringCol);
-					vtx(buf, p, x1, y0 + rh, z1, 1, 0, ringCol);
-					vtx(buf, p, x0, y0 + rh, z0, 0, 0, ringCol);
+					float x0 = Mth.cos(a0) * r0, z0 = Mth.sin(a0) * r0;
+					float x1 = Mth.cos(a1) * r0, z1 = Mth.sin(a1) * r0;
+					vtx(buf, p, x0, y0, z0, 0, 1, ribCol);
+					vtx(buf, p, x1, y0, z1, 1, 1, ribCol);
+					vtx(buf, p, x1, y0 + rh, z1, 1, 0, ribCol);
+					vtx(buf, p, x0, y0 + rh, z0, 0, 0, ribCol);
 				}
 			}
 		});
 		pose.popPose();
+	}
+
+	private static void drawSilhouetteBlur(VertexConsumer buf, PoseStack.Pose p, Vec3 relPos, Vec3 right, Vec3 forward,
+			float halfW, float height, int coreCol, int haloCol) {
+		// Multi-sample offset billboards in front of and around the character to blur their silhouette
+		float[][] offsets = {
+				{0f, 0f, 0.55f, 1.0f},
+				{-0.28f, 0.12f, 0.75f, 1.18f},
+				{0.28f, -0.10f, 0.75f, 1.18f},
+				{0f, 0.22f, 0.95f, 1.35f},
+				{0f, -0.15f, -0.35f, 1.25f}
+		};
+		for (int i = 0; i < offsets.length; i++) {
+			float[] o = offsets[i];
+			Vec3 at = relPos.add(right.scale(o[0])).add(forward.scale(o[2])).add(0, height * 0.5f + o[1], 0);
+			int col = (i == 0) ? coreCol : haloCol;
+			drawBillboard(buf, p, at, right, halfW * o[3], height * 0.55f * o[3], col);
+		}
+	}
+
+	private static void drawBillboard(VertexConsumer buf, PoseStack.Pose p, Vec3 center, Vec3 right, float hw, float hh, int col) {
+		float rx = (float) (right.x * hw), rz = (float) (right.z * hw);
+		float x = (float) center.x, y = (float) center.y, z = (float) center.z;
+		vtx(buf, p, x - rx, y - hh, z - rz, 0, 1, col);
+		vtx(buf, p, x + rx, y - hh, z + rz, 1, 1, col);
+		vtx(buf, p, x + rx, y + hh, z + rz, 1, 0, col);
+		vtx(buf, p, x - rx, y + hh, z - rz, 0, 0, col);
+		vtx(buf, p, x - rx, y + hh, z - rz, 0, 0, col);
+		vtx(buf, p, x + rx, y + hh, z + rz, 1, 0, col);
+		vtx(buf, p, x + rx, y - hh, z + rz, 1, 1, col);
+		vtx(buf, p, x - rx, y - hh, z - rz, 0, 1, col);
 	}
 
 	private static void vtx(VertexConsumer b, PoseStack.Pose p, float x, float y, float z, float u, float v, int col) {
@@ -362,24 +456,56 @@ public final class DoomFinalClient {
 
 		int w = g.guiWidth(), h = g.guiHeight();
 		boolean hasAxe = holdsStormbreakerClient(mc);
-		int boxW = 310, boxH = hasAxe ? 38 : 28;
-		int bx = (w - boxW) / 2;
-		int by = h - 98;
-
-		float pulse = 0.7f + 0.3f * Mth.sin((localTicks) * 0.2f);
-		int borderCol = hasAxe ? ARGB.color((int) (220 * pulse), 95, 225, 255) : ARGB.color(200, 255, 175, 70);
-		g.fill(bx - 2, by - 2, bx + boxW + 2, by + boxH + 2, borderCol);
-		g.fill(bx, by, bx + boxW, by + boxH, 0xDF0B1418);
+		int maxTextW = Math.min(w - 32, 340);
 
 		if (hasAxe) {
 			Component btn = Component.translatable("hud.infinity_gauntlet.dome.break_button",
 					BREAK_DOME_KEY.getTranslatedKeyMessage()).withStyle(ChatFormatting.AQUA, ChatFormatting.BOLD);
 			Component tip = Component.translatable("hud.infinity_gauntlet.dome.break_tooltip").withStyle(ChatFormatting.GRAY);
-			g.centeredText(mc.font, btn, w / 2, by + 7, 0xFF70F4FF);
-			g.centeredText(mc.font, tip, w / 2, by + 21, 0xFFD8E8F0);
+			var btnLines = mc.font.split(btn, maxTextW);
+			var tipLines = mc.font.split(tip, maxTextW);
+			int contentW = 200;
+			for (var l : btnLines) contentW = Math.max(contentW, mc.font.width(l));
+			for (var l : tipLines) contentW = Math.max(contentW, mc.font.width(l));
+			int boxW = contentW + 24;
+			int boxH = 12 + (btnLines.size() + tipLines.size()) * 11 + 4;
+			int bx = (w - boxW) / 2;
+			int by = h - 68 - boxH;
+
+			float pulse = 0.7f + 0.3f * Mth.sin((localTicks) * 0.2f);
+			int borderCol = ARGB.color((int) (220 * pulse), 95, 225, 255);
+			g.fill(bx - 2, by - 2, bx + boxW + 2, by + boxH + 2, borderCol);
+			g.fill(bx, by, bx + boxW, by + boxH, 0xDF0B1418);
+
+			int ty = by + 6;
+			for (var l : btnLines) {
+				g.centeredText(mc.font, l, w / 2, ty, 0xFF70F4FF);
+				ty += 11;
+			}
+			ty += 2;
+			for (var l : tipLines) {
+				g.centeredText(mc.font, l, w / 2, ty, 0xFFD8E8F0);
+				ty += 11;
+			}
 		} else {
 			Component need = Component.translatable("hud.infinity_gauntlet.dome.need_stormbreaker").withStyle(ChatFormatting.GOLD);
-			g.centeredText(mc.font, need, w / 2, by + 10, 0xFFFFC864);
+			var needLines = mc.font.split(need, maxTextW);
+			int contentW = 200;
+			for (var l : needLines) contentW = Math.max(contentW, mc.font.width(l));
+			int boxW = contentW + 24;
+			int boxH = 12 + needLines.size() * 11;
+			int bx = (w - boxW) / 2;
+			int by = h - 68 - boxH;
+
+			int borderCol = ARGB.color(200, 255, 175, 70);
+			g.fill(bx - 2, by - 2, bx + boxW + 2, by + boxH + 2, borderCol);
+			g.fill(bx, by, bx + boxW, by + boxH, 0xDF0B1418);
+
+			int ty = by + 6;
+			for (var l : needLines) {
+				g.centeredText(mc.font, l, w / 2, ty, 0xFFFFC864);
+				ty += 11;
+			}
 		}
 	}
 

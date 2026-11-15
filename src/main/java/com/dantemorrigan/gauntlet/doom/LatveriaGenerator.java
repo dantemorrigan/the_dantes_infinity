@@ -73,7 +73,7 @@ public final class LatveriaGenerator extends ChunkGenerator {
 				chunk.setBlockState(at.set(bx + dx, y, bz + dz), state, 0);
 			}
 		}
-		apply(chunk, LatveriaPlan.OPS, bx, bz);
+		apply(chunk, LatveriaPlan.opsForChunk(bx >> 4, bz >> 4), bx, bz);
 		Heightmap.primeHeightmaps(chunk, EnumSet.of(Heightmap.Types.OCEAN_FLOOR_WG, Heightmap.Types.WORLD_SURFACE_WG));
 		return CompletableFuture.completedFuture(chunk);
 	}

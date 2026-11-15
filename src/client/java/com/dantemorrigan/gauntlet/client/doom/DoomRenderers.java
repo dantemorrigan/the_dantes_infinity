@@ -134,22 +134,20 @@ public final class DoomRenderers {
 			pose.mulPose(Axis.YP.rotationDegrees(180f - s.bodyYaw));
 			Identifier tex = s.god ? DoomAssets.GOD : DoomAssets.TEXTURE;
 			var type = fade < 1 ? RenderTypes.entityTranslucent(tex) : RenderTypes.entityCutout(tex);
-			collector.submitCustomGeometry(pose, type, (p, out) -> DoomAssets.MODEL.render(stack(p), out, bones, light, overlay, (b, c) -> color));
-			if (!s.offhand.isEmpty() && s.offhand.is(com.dantemorrigan.gauntlet.ModItems.GAUNTLET)) {
+			boolean hasGauntlet = !s.offhand.isEmpty() && s.offhand.is(com.dantemorrigan.gauntlet.ModItems.GAUNTLET);
+			collector.submitCustomGeometry(pose, type, (p, out) -> DoomAssets.MODEL.render(stack(p), out, bones, light, overlay,
+					(b, c) -> hasGauntlet && b.name.equals("forearm_l") && c.centerY < 18.6f ? 0 : color));
+			if (hasGauntlet && fade > 0.05f) {
 				var mc = net.minecraft.client.Minecraft.getInstance();
 				var worn = s.offhand.copy();
 				worn.set(net.minecraft.core.component.DataComponents.ITEM_MODEL, InfinityGauntlet.id("gauntlet_worn"));
 				mc.getItemModelResolver().updateForTopItem(DOOM_GAUNTLET_STATE, worn, net.minecraft.world.item.ItemDisplayContext.NONE, mc.level, null, 0);
-				GeoModel.BonePose armL = bones.getOrDefault("arm_l", new GeoModel.BonePose());
 				pose.pushPose();
-				pose.translate(6.28f / 16f, 26.65f / 16f, 0);
-				if (armL.rz != 0) pose.mulPose(Axis.ZP.rotationDegrees(armL.rz));
-				if (armL.ry != 0) pose.mulPose(Axis.YP.rotationDegrees(armL.ry));
-				if (armL.rx != 0) pose.mulPose(Axis.XP.rotationDegrees(armL.rx));
-				pose.translate(0, -8.5f / 16f, 0);
+				DoomAssets.MODEL.transformTo(pose, "forearm_l", bones);
+				pose.translate(6.6f / 16f, 14.5f / 16f, 0f);
 				pose.mulPose(Axis.XP.rotationDegrees(180f));
 				pose.mulPose(Axis.YP.rotationDegrees(90f));
-				pose.scale(1.05f, 0.68f, 1.25f);
+				pose.scale(0.98f, 0.72f, 1.18f);
 				DOOM_GAUNTLET_STATE.submit(pose, collector, 0xF000F0, OverlayTexture.NO_OVERLAY, 0);
 				pose.popPose();
 			}

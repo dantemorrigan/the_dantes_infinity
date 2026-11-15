@@ -36,7 +36,8 @@ public final class LatveriaPlan {
 	public static final Vec3 THRONE = new Vec3(0.5, FLOOR + 2, -290.5);
 	/** The throne room's inside, where the fight is held. */
 	public static final AABB ARENA_BOX = new AABB(-21, FLOOR - 1, -294, 22, FLOOR + 17, -253);
-	public static final BlockPos GENERATOR = new BlockPos(32, FLOOR + 2, -274);
+	/** The massive generator core in the basement directly beneath Castle Doom. */
+	public static final BlockPos GENERATOR = new BlockPos(0, FLOOR - 11, -266);
 	/** Seal nodes of the Edict: north, east, south, west of the arena's centre. */
 	public static final BlockPos[] SEAL_NODES = {
 			new BlockPos(0, FLOOR + 1, -287), new BlockPos(15, FLOOR + 1, -272),
@@ -478,16 +479,8 @@ public final class LatveriaPlan {
 		chest(-39, f, -260, Direction.EAST, 0); chest(-39, f, -261, Direction.EAST, 0);
 		set(-39, f, -263, Blocks.CRAFTING_TABLE); set(-39, f, -264, Blocks.WATER_CAULDRON.defaultBlockState().setValue(BlockStateProperties.LEVEL_CAULDRON, 3));
 
-		// East wing, ground floor: the laboratory, its generator and the service door through the outer wall.
-		int gx = GENERATOR.getX(), gz = GENERATOR.getZ();
-		fill(gx - 2, f, gz - 2, gx + 2, f, gz + 2, Blocks.WAXED_CUT_COPPER);
-		fill(gx - 1, f + 1, gz - 1, gx + 1, f + 1, gz + 1, Blocks.WAXED_COPPER_BLOCK);
-		set(gx, f + 2, gz, Blocks.SEA_LANTERN);
-		for (int[] c : new int[][]{{-2, -2}, {2, -2}, {-2, 2}, {2, 2}}) {
-			fill(gx + c[0], f + 1, gz + c[1], gx + c[0], f + 5, gz + c[1], Blocks.LIGHTNING_ROD.defaultBlockState());
-			set(gx + c[0], f + 6, gz + c[1], Blocks.REDSTONE_LAMP);
-		}
-		fill(gx, f + 3, gz, gx, f + 7, gz, GLASS);
+		// East wing, ground floor: laboratory passage, courtyard doorway, and the service door through the outer wall (generator is in the basement beneath the castle).
+		fill(31, f, -253, 33, f + 3, -252, AIR);
 		for (int z = -290; z <= -280; z += 5) {
 			fill(38, f, z, 39, f + 2, z + 2, Blocks.GLASS); fill(38, f, z + 1, 38, f + 1, z + 1, Blocks.WATER);
 			set(26, f, z, Blocks.CAULDRON); set(26, f, z + 1, Blocks.SMITHING_TABLE);
@@ -526,11 +519,50 @@ public final class LatveriaPlan {
 		fill(30, u, -262, 31, u, -261, Blocks.SPRUCE_FENCE); fill(30, u + 1, -262, 31, u + 1, -261, Blocks.SPRUCE_PRESSURE_PLATE);
 	}
 
+	private static final it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap<List<Op>> OPS_BY_CHUNK = new it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap<>();
+	private static final it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap<List<Op>> FURN_BY_CHUNK = new it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap<>();
+	private static final it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap<List<int[]>> CHESTS_BY_CHUNK = new it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap<>();
+	private static final it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap<List<BlockPos>> VILLAGERS_BY_CHUNK = new it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap<>();
+
+	public static List<Op> opsForChunk(int cx, int cz) {
+		return OPS_BY_CHUNK.getOrDefault(net.minecraft.world.level.ChunkPos.pack(cx, cz), java.util.Collections.emptyList());
+	}
+
+	public static List<Op> furnitureForChunk(long chunk) {
+		return FURN_BY_CHUNK.getOrDefault(chunk, java.util.Collections.emptyList());
+	}
+
+	public static List<int[]> chestsForChunk(long chunk) {
+		return CHESTS_BY_CHUNK.getOrDefault(chunk, java.util.Collections.emptyList());
+	}
+
+	public static List<BlockPos> villagersForChunk(long chunk) {
+		return VILLAGERS_BY_CHUNK.getOrDefault(chunk, java.util.Collections.emptyList());
+	}
+
 	static {
 		city();
 		road();
 		castle();
 		LatveriaCastle.build();
+		for (Op op : OPS) {
+			int cx0 = op.x0() >> 4, cx1 = op.x1() >> 4;
+			int cz0 = op.z0() >> 4, cz1 = op.z1() >> 4;
+			for (int cx = cx0; cx <= cx1; cx++) {
+				for (int cz = cz0; cz <= cz1; cz++) {
+					OPS_BY_CHUNK.computeIfAbsent(net.minecraft.world.level.ChunkPos.pack(cx, cz), k -> new ArrayList<>()).add(op);
+				}
+			}
+		}
+		for (Op op : FURNITURE) {
+			FURN_BY_CHUNK.computeIfAbsent(net.minecraft.world.level.ChunkPos.pack(op.x0() >> 4, op.z0() >> 4), k -> new ArrayList<>()).add(op);
+		}
+		for (int[] c : CHESTS) {
+			CHESTS_BY_CHUNK.computeIfAbsent(net.minecraft.world.level.ChunkPos.pack(c[0] >> 4, c[2] >> 4), k -> new ArrayList<>()).add(c);
+		}
+		for (BlockPos p : VILLAGERS) {
+			VILLAGERS_BY_CHUNK.computeIfAbsent(net.minecraft.world.level.ChunkPos.pack(p.getX() >> 4, p.getZ() >> 4), k -> new ArrayList<>()).add(p);
+		}
 	}
 
 	private LatveriaPlan() {}

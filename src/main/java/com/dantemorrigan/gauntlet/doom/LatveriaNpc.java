@@ -1,5 +1,6 @@
 package com.dantemorrigan.gauntlet.doom;
 
+import com.dantemorrigan.gauntlet.ModItems;
 import com.dantemorrigan.gauntlet.net.ModNetwork;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.core.BlockPos;
@@ -18,6 +19,7 @@ import net.minecraft.world.InteractionResult;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.PathfinderMob;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
@@ -26,17 +28,19 @@ import net.minecraft.world.entity.ai.goal.FloatGoal;
 import net.minecraft.world.entity.ai.goal.LookAtPlayerGoal;
 import net.minecraft.world.entity.ai.goal.MoveTowardsRestrictionGoal;
 import net.minecraft.world.entity.ai.goal.RandomLookAroundGoal;
-import net.minecraft.world.entity.ai.goal.WaterAvoidingRandomStrollGoal;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
 
+import java.util.List;
+
 /**
- * Player-skinned Latverian NPCs:
+ * Stylized humanoid Latverian Quest NPCs:
  * - {@link #ROLE_MECHANIC}: Old Mechanic Radovan in the resistance workshop.
  * - {@link #ROLE_TAVERN_KEEPER}: Tavern Trader Mirko by the dark cellar entrance in the tavern.
- * - {@link #ROLE_CITIZEN_1}..{@link #ROLE_CITIZEN_4}: Latverian townsfolk strolling through Doomstadt.
  */
 public class LatveriaNpc extends PathfinderMob {
 	public static final int ROLE_MECHANIC = 0;
@@ -52,6 +56,7 @@ public class LatveriaNpc extends PathfinderMob {
 
 	private BlockPos anchorPos = BlockPos.ZERO;
 	private int greetCooldown;
+	private long lastInteractGameTime = -100L;
 
 	public LatveriaNpc(EntityType<? extends LatveriaNpc> type, Level level) {
 		super(type, level);
@@ -68,7 +73,7 @@ public class LatveriaNpc extends PathfinderMob {
 	@Override
 	protected void defineSynchedData(SynchedEntityData.Builder builder) {
 		super.defineSynchedData(builder);
-		builder.define(ROLE, ROLE_CITIZEN_1);
+		builder.define(ROLE, ROLE_MECHANIC);
 		builder.define(BOWING, false);
 		builder.define(TALK_TICKS, 0);
 	}
@@ -92,19 +97,22 @@ public class LatveriaNpc extends PathfinderMob {
 	public void setup(int role, BlockPos home) {
 		entityData.set(ROLE, role);
 		this.anchorPos = home != null ? home : blockPosition();
-		int radius = (role == ROLE_MECHANIC || role == ROLE_TAVERN_KEEPER) ? 2 : 28;
-		this.setHomeTo(this.anchorPos, radius);
-		refreshName();
+		this.setHomeTo(this.anchorPos, 2);
+		refreshNameAndGear();
 	}
 
-	private void refreshName() {
+	private void refreshNameAndGear() {
 		int r = role();
 		if (r == ROLE_MECHANIC) {
 			setCustomName(Component.translatable("entity.infinity_gauntlet.latveria_npc.mechanic"));
 			setCustomNameVisible(true);
+			setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(ModItems.REPAIR_TOOL));
+			setDropChance(EquipmentSlot.MAINHAND, 0.0F);
 		} else if (r == ROLE_TAVERN_KEEPER) {
 			setCustomName(Component.translatable("entity.infinity_gauntlet.latveria_npc.tavern_keeper"));
 			setCustomNameVisible(true);
+			setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(Items.HONEY_BOTTLE));
+			setDropChance(EquipmentSlot.MAINHAND, 0.0F);
 		} else {
 			setCustomName(null);
 			setCustomNameVisible(false);
@@ -116,35 +124,43 @@ public class LatveriaNpc extends PathfinderMob {
 		this.goalSelector.addGoal(0, new FloatGoal(this));
 		this.goalSelector.addGoal(2, new MoveTowardsRestrictionGoal(this, 0.85));
 		this.goalSelector.addGoal(4, new LookAtPlayerGoal(this, Player.class, 10.0F));
-		this.goalSelector.addGoal(5, new WaterAvoidingRandomStrollGoal(this, 0.72) {
-			@Override
-			public boolean canUse() {
-				int r = role();
-				if (r == ROLE_MECHANIC || r == ROLE_TAVERN_KEEPER || bowing()) return false;
-				return super.canUse();
-			}
-		});
 		this.goalSelector.addGoal(6, new RandomLookAroundGoal(this));
 	}
 
 	@Override
 	protected void customServerAiStep(ServerLevel level) {
 		super.customServerAiStep(level);
+		int r = role();
+		// Only Quest NPCs (Mechanic & Tavern Keeper) remain humanoid LatveriaNpc; remove any old wandering citizens.
+		if (r != ROLE_MECHANIC && r != ROLE_TAVERN_KEEPER) {
+			this.discard();
+			return;
+		}
+		// Self-deduplicate if an older save spawned two NPCs of the same role.
+		if (this.tickCount % 20 == 1) {
+			List<LatveriaNpc> nearby = level.getEntitiesOfClass(LatveriaNpc.class, getBoundingBox().inflate(24.0),
+					other -> other != this && other.isAlive() && other.role() == r);
+			for (LatveriaNpc other : nearby) {
+				if (other.getId() < this.getId()) {
+					this.discard();
+					return;
+				}
+			}
+		}
+
 		int tt = talkTicks();
 		if (tt > 0) {
 			entityData.set(TALK_TICKS, tt - 1);
-			if (tt % 7 == 0) playVoiceMurmur(level, false);
 		}
 		if (greetCooldown > 0) greetCooldown--;
 
-		int r = role();
-		if ((r == ROLE_MECHANIC || r == ROLE_TAVERN_KEEPER) && !anchorPos.equals(BlockPos.ZERO)) {
-			if (blockPosition().distSqr(anchorPos) > 9.0) {
+		if (!anchorPos.equals(BlockPos.ZERO)) {
+			if (blockPosition().distSqr(anchorPos) > 6.0) {
 				getNavigation().moveTo(anchorPos.getX() + 0.5, anchorPos.getY(), anchorPos.getZ() + 0.5, 0.85);
 			}
 		}
 
-		// When Doom is defeated, townsfolk bow respectfully to the new King when nearby.
+		// When Doom is defeated, quest NPCs bow respectfully to the new King when nearby.
 		boolean conquered = Latveria.conquered(level.getServer());
 		if (conquered) {
 			Player nearest = level.getNearestPlayer(this, 6.5);
@@ -169,22 +185,25 @@ public class LatveriaNpc extends PathfinderMob {
 		float basePitch = switch (r) {
 			case ROLE_MECHANIC -> 0.76f;
 			case ROLE_TAVERN_KEEPER -> 0.88f;
-			case ROLE_CITIZEN_2, ROLE_CITIZEN_4 -> 1.12f;
 			default -> 0.96f;
 		};
-		float pitch = basePitch + (random.nextFloat() - 0.5f) * 0.12f;
-		SoundEvent primary = happy ? SoundEvents.VILLAGER_CELEBRATE : SoundEvents.VILLAGER_AMBIENT;
-		SoundEvent secondary = r == ROLE_TAVERN_KEEPER ? SoundEvents.WANDERING_TRADER_YES : SoundEvents.VILLAGER_TRADE;
+		float pitch = basePitch + (random.nextFloat() - 0.5f) * 0.10f;
+		SoundEvent primary = happy ? SoundEvents.VILLAGER_CELEBRATE
+				: (r == ROLE_TAVERN_KEEPER ? SoundEvents.WANDERING_TRADER_YES : SoundEvents.VILLAGER_TRADE);
 		level.playSound(null, getX(), getY(), getZ(), primary, SoundSource.NEUTRAL, 0.85f, pitch);
-		level.playSound(null, getX(), getY(), getZ(), secondary, SoundSource.NEUTRAL, 0.45f, pitch + 0.06f);
 	}
 
 	@Override
 	protected InteractionResult mobInteract(Player player, InteractionHand hand) {
 		if (hand != InteractionHand.MAIN_HAND) return InteractionResult.PASS;
 		if (level() instanceof ServerLevel serverLevel && player instanceof ServerPlayer sp) {
+			long now = serverLevel.getGameTime();
+			if (now - lastInteractGameTime < 8L) {
+				return InteractionResult.SUCCESS_SERVER;
+			}
+			lastInteractGameTime = now;
 			getLookControl().setLookAt(sp, 35.0F, 35.0F);
-			triggerTalk(35);
+			triggerTalk(30);
 			boolean conquered = Latveria.conquered(serverLevel.getServer());
 			playVoiceMurmur(serverLevel, conquered);
 			int stateFlags = LatveriaQuests.dialogFlagsFor(sp, this);
@@ -204,7 +223,6 @@ public class LatveriaNpc extends PathfinderMob {
 		return switch (role()) {
 			case ROLE_MECHANIC -> 0.78f;
 			case ROLE_TAVERN_KEEPER -> 0.88f;
-			case ROLE_CITIZEN_2, ROLE_CITIZEN_4 -> 1.14f;
 			default -> 0.96f;
 		};
 	}
@@ -235,7 +253,7 @@ public class LatveriaNpc extends PathfinderMob {
 	@Override
 	protected void readAdditionalSaveData(ValueInput in) {
 		super.readAdditionalSaveData(in);
-		int r = in.getIntOr("Role", ROLE_CITIZEN_1);
+		int r = in.getIntOr("Role", ROLE_MECHANIC);
 		int hx = in.getIntOr("HomeX", blockPosition().getX());
 		int hy = in.getIntOr("HomeY", blockPosition().getY());
 		int hz = in.getIntOr("HomeZ", blockPosition().getZ());

@@ -11,13 +11,18 @@ import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.entity.HumanoidMobRenderer;
 import net.minecraft.client.renderer.entity.LivingEntityRenderer;
 import net.minecraft.client.renderer.entity.layers.HumanoidArmorLayer;
-import net.minecraft.client.renderer.entity.layers.ItemInHandLayer;
+import net.minecraft.client.renderer.entity.layers.PlayerItemInHandLayer;
 import net.minecraft.client.renderer.entity.state.AvatarRenderState;
+import net.minecraft.client.renderer.rendertype.RenderType;
+import net.minecraft.client.renderer.rendertype.RenderTypes;
+import net.minecraft.core.ClientAsset;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
+import net.minecraft.world.entity.player.PlayerModelType;
+import net.minecraft.world.entity.player.PlayerSkin;
 
 /**
- * Renders Latverian NPCs (Old Mechanic Radovan, Tavern Keeper Mirko, and Latverian Citizens)
+ * Renders Latverian Quest NPCs (Old Mechanic Radovan and Tavern Keeper Mirko)
  * using the standard Minecraft player model and custom 64x64 Latverian player skins.
  */
 public class LatveriaNpcRenderer extends LivingEntityRenderer<LatveriaNpc, AvatarRenderState, PlayerModel> {
@@ -29,6 +34,11 @@ public class LatveriaNpcRenderer extends LivingEntityRenderer<LatveriaNpc, Avata
 			InfinityGauntlet.id("textures/entity/latveria/citizen_3.png"),
 			InfinityGauntlet.id("textures/entity/latveria/citizen_4.png")
 	};
+
+	private static final PlayerSkin MECHANIC_PLAYER_SKIN = new PlayerSkin(
+			new ClientAsset.ResourceTexture(MECHANIC_SKIN, MECHANIC_SKIN), null, null, PlayerModelType.WIDE, true);
+	private static final PlayerSkin TAVERN_PLAYER_SKIN = new PlayerSkin(
+			new ClientAsset.ResourceTexture(TAVERN_SKIN, TAVERN_SKIN), null, null, PlayerModelType.WIDE, true);
 
 	public static class State extends AvatarRenderState {
 		public int role;
@@ -56,9 +66,9 @@ public class LatveriaNpcRenderer extends LivingEntityRenderer<LatveriaNpc, Avata
 			}
 		}, 0.5F);
 		this.addLayer(new HumanoidArmorLayer<>(this,
-				ArmorModelSet.bake(ModelLayers.PLAYER_ARMOR, context.getModelSet(), part -> new HumanoidModel<>(part)),
+				ArmorModelSet.bake(ModelLayers.PLAYER_ARMOR, context.getModelSet(), part -> new PlayerModel(part, false)),
 				context.getEquipmentRenderer()));
-		this.addLayer(new ItemInHandLayer<>(this));
+		this.addLayer(new PlayerItemInHandLayer<>(this));
 	}
 
 	@Override
@@ -76,7 +86,15 @@ public class LatveriaNpcRenderer extends LivingEntityRenderer<LatveriaNpc, Avata
 
 	@Override
 	public Identifier getTextureLocation(AvatarRenderState state) {
-		return state instanceof State st ? skinForRole(st.role) : MECHANIC_SKIN;
+		return state instanceof State st ? skinForRole(st.role) : state.skin.body().texturePath();
+	}
+
+	@Override
+	protected RenderType getRenderType(AvatarRenderState state, boolean bodyVisible, boolean translucent, boolean glowing) {
+		if (bodyVisible) {
+			return RenderTypes.entityTranslucent(getTextureLocation(state));
+		}
+		return super.getRenderType(state, bodyVisible, translucent, glowing);
 	}
 
 	@Override
@@ -88,11 +106,13 @@ public class LatveriaNpcRenderer extends LivingEntityRenderer<LatveriaNpc, Avata
 	public void extractRenderState(LatveriaNpc npc, AvatarRenderState s, float partialTicks) {
 		super.extractRenderState(npc, s, partialTicks);
 		HumanoidMobRenderer.extractHumanoidRenderState(npc, s, partialTicks, this.itemModelResolver);
+		int role = npc.role();
 		if (s instanceof State state) {
-			state.role = npc.role();
+			state.role = role;
 			state.bowing = npc.bowing();
 			state.talkTicks = npc.talkTicks();
 		}
+		s.skin = role == LatveriaNpc.ROLE_TAVERN_KEEPER ? TAVERN_PLAYER_SKIN : MECHANIC_PLAYER_SKIN;
 		s.rightArmPose = npc.getMainHandItem().isEmpty() ? HumanoidModel.ArmPose.EMPTY : HumanoidModel.ArmPose.ITEM;
 		s.leftArmPose = npc.getOffhandItem().isEmpty() ? HumanoidModel.ArmPose.EMPTY : HumanoidModel.ArmPose.ITEM;
 		s.id = npc.getId();
