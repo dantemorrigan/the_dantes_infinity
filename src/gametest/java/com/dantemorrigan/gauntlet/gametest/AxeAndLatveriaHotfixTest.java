@@ -122,7 +122,7 @@ public final class AxeAndLatveriaHotfixTest implements FabricClientGameTest {
 		Zombie target = server.computeOnServer(s -> {
 			ServerPlayer p = player(s);
 			var level = p.level();
-			for (BlockPos floor : BlockPos.betweenClosed(-10, 143, -265, 10, 143, -234)) {
+			for (BlockPos floor : BlockPos.betweenClosed(-10, 143, -269, 10, 143, -234)) {
 				level.setBlockAndUpdate(floor, Blocks.NETHERRACK.defaultBlockState());
 			}
 			level.setBlockAndUpdate(drill, Blocks.STONE.defaultBlockState());
