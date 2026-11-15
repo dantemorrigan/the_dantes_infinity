@@ -113,19 +113,12 @@ public final class AbilityController {
         // Selection is always available; readiness is checked only when casting.
         if(!p.isAlive() || GauntletState.activeGauntlet(p).isEmpty()) {sync(p);return;}
         if (a == Ability.PORTAL && destination == SpaceStone.LATVERIA_OPTION) {
-            // The seal is read: the option is a real way in now.
-            if (SpaceStone.latveriaSealed(p) && com.dantemorrigan.gauntlet.doom.Latveria.hasAccess(p) && reasonIgnoringCooldown(p, a)) {
+            // Latveria is an ordinary destination: through the portal and back.
+            if (reasonIgnoringCooldown(p, a)) {
                 cancel(p);
                 MindStone.drop(p);
                 if (p.level().dimension() == com.dantemorrigan.gauntlet.doom.Latveria.LEVEL) com.dantemorrigan.gauntlet.doom.Latveria.leave(p);
                 else com.dantemorrigan.gauntlet.doom.Latveria.enter(p, false);
-                sync(p);
-                return;
-            }
-            if (!SpaceStone.latveriaSealed(p) && !SpaceStone.latveriaActive(p) && reasonIgnoringCooldown(p, a)) {
-                cancel(p);
-                MindStone.drop(p);
-                SpaceStone.glimpseLatveria(p);
             }
             sync(p);
             return;
@@ -235,8 +228,8 @@ public final class AbilityController {
         JsonObject state=new JsonObject();
         boolean previewing = SpaceStone.latveriaActive(p);
         state.addProperty("latveriaActive", previewing);
-        state.addProperty("latveriaSealed", !previewing && SpaceStone.latveriaSealed(p));
-        state.addProperty("latveriaOpen", !previewing && SpaceStone.latveriaSealed(p) && com.dantemorrigan.gauntlet.doom.Latveria.hasAccess(p));
+        state.addProperty("latveriaSealed", false);
+        state.addProperty("latveriaOpen", true);
         for(Ability a:Ability.values()) {
             JsonObject entry=new JsonObject();entry.addProperty("reason",reason(p,a));entry.addProperty("cooldown",cooldown(p,a));state.add(a.id,entry);
         }
