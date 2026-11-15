@@ -625,8 +625,11 @@ public final class Stormbreaker {
         }
         Vec3 pos = axe.position();
         Vec3 hand = p.getEyePosition().add(0, -.4, 0);
-        if (flight.age >= 16 && axe.phase() == StormbreakerEntity.OUTBOUND) {
-            turn(axe, flight);
+        // A thrown axe does not come back by itself: at the end of its reach it sticks where it is (like Kratos's), and stays
+        // until its owner calls it with the recall key.
+        if (flight.age >= 24 && axe.phase() == StormbreakerEntity.OUTBOUND && !flight.recall) {
+            embedThrown(p, s, pos);
+            return;
         }
         boolean returning = axe.phase() == StormbreakerEntity.RETURNING;
         Vec3 toHand = hand.subtract(pos);
@@ -646,12 +649,12 @@ public final class Stormbreaker {
                 : pos.add(direction.scale(speed)).add(0, rise, 0);
         if (!p.level().hasChunkAt(BlockPos.containing(next))) {
             if (returning) returnToOwner(p, s, false);
-            else turn(axe, flight);
+            else embedThrown(p, s, pos);
             return;
         }
-        if (!flight.recall && !clearPath(p, pos, next)) {
-            if (returning) returnToOwner(p, s, false);
-            else turn(axe, flight);
+        if (!flight.recall && p.level().clip(new ClipContext(pos, next, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, p)).getType() != HitResult.Type.MISS) {
+            // Hit a wall or the ground: it bites into it and stays.
+            embedThrown(p, s, pos);
             return;
         }
         axe.setYRot(flight.yaw);
@@ -660,7 +663,7 @@ public final class Stormbreaker {
         if (flight.age % 3 == 1) {
             (returning ? StormFx.THROW_RETURN : StormFx.THROW_OUT).play(p.level(), next.subtract(direction.scale(1.05)), 2.65, direction);
         }
-        if (flight.recall) return;
+        if (flight.recall && flight.crossDimensionRecall) return;
         for (LivingEntity target : p.level().getEntitiesOfClass(LivingEntity.class, new AABB(pos, next).inflate(.7), Entity::isAlive)) {
             if (flight.hit.contains(target.getUUID()) || target.getBoundingBox().inflate(.7).clip(pos, next).isEmpty()
                     && !target.getBoundingBox().inflate(.7).contains(pos)) continue;
@@ -684,6 +687,20 @@ public final class Stormbreaker {
             StormFx.IMPACT.play(level, hit.getLocation(), .88);
         }
         return false;
+    }
+
+    /** The thrown axe stays where it stopped: planted in the ground below that spot, ready to be called back. */
+    private static void embedThrown(ServerPlayer p, Session s, Vec3 at) {
+        Relic relic = record(p);
+        Vec3 site = surface((ServerLevel) p.level(), at, 1, 64);
+        if (relic == null || site == null) { returnToOwner(p, s, false); return; }
+        removeDisplay(s);
+        s.flight = null;
+        plant(p, relic, s, site);
+        StormFx.IMPACT.play(p.level(), site.add(0, .4, 0), 1.6);
+        sound(p.level(), site, SoundEvents.TRIDENT_HIT_GROUND, 1.3f, .7f);
+        ModStatus.send(p, Component.translatable("stormbreaker.infinity_gauntlet.planted",
+                Component.keybind("key.infinity_gauntlet.stormbreaker_recall")));
     }
 
     private static void turn(StormbreakerEntity axe, Flight flight) {
