@@ -13,11 +13,12 @@ import org.lwjgl.glfw.GLFW;
 /** Exercises real V/R input, destructive-cast cancellation and safe telekinetic release. */
 public class AbilityWheelTest implements FabricClientGameTest {
     private static void open(ClientGameTestContext ctx) {
-        ctx.getInput().holdKey(GLFW.GLFW_KEY_V);
+        ctx.getInput().pressKey(GLFW.GLFW_KEY_V);
         ctx.waitFor(mc->mc.screen instanceof AbilityWheelScreen,100);ctx.waitTicks(3);
     }
     private static void close(ClientGameTestContext ctx) {
-        ctx.getInput().releaseKey(GLFW.GLFW_KEY_V);ctx.waitFor(mc->mc.screen==null,100);ctx.waitTicks(8);
+        if (ctx.computeOnClient(mc -> mc.screen instanceof AbilityWheelScreen)) ctx.getInput().pressKey(GLFW.GLFW_KEY_V);
+        ctx.waitFor(mc->mc.screen==null,100);ctx.waitTicks(8);
     }
     private static void choose(ClientGameTestContext ctx,Ability a,int target) {
         ctx.runOnClient(mc->AbilityInput.choose(a,target));ctx.waitTicks(8);
@@ -44,6 +45,13 @@ public class AbilityWheelTest implements FabricClientGameTest {
             ctx.getInput().pressKey(GLFW.GLFW_KEY_1);
             ctx.getInput().pressKey(GLFW.GLFW_KEY_ESCAPE);
             close(ctx);
+            ctx.getInput().pressKey(GLFW.GLFW_KEY_G);
+            ctx.waitFor(mc -> AbilityInput.selected() == Ability.STRIKE, 100);
+            ctx.waitTicks(5);
+            if (!server.computeOnServer(s -> AbilityController.selected(s.getPlayerList().getPlayers().getFirst()) == Ability.STRIKE)) {
+                throw new AssertionError("Cycling favorites did not switch the server selection");
+            }
+            choose(ctx, Ability.PLANET, -1);
             ctx.getInput().holdKey(GLFW.GLFW_KEY_B);
             ctx.waitFor(mc->mc.screen instanceof AbilityFavoritesScreen,100);
             ctx.takeScreenshot("favorites_quick_selection");
@@ -90,10 +98,10 @@ public class AbilityWheelTest implements FabricClientGameTest {
             ctx.getInput().holdKey(GLFW.GLFW_KEY_LEFT_SHIFT);ctx.getInput().pressKey(GLFW.GLFW_KEY_R);ctx.getInput().releaseKey(GLFW.GLFW_KEY_LEFT_SHIFT);ctx.waitTicks(GauntletConfig.get().mindRuptureTicks+12);
             if(server.computeOnServer(s->{for(var e:s.overworld().getAllEntities())if(e.entityTags().contains("wheel_test")&&e.isAlive())return true;return false;}))throw new AssertionError("Shift+R did not tear held mob");
             choose(ctx,Ability.PORTAL,0);
-            // Releasing V over Portal keeps its destination menu open.
+            // Releasing V leaves the wheel open. Enter over Portal opens the destination menu.
             open(ctx);ctx.getInput().pressKey(GLFW.GLFW_KEY_RIGHT);ctx.getInput().pressKey(GLFW.GLFW_KEY_LEFT);
-            ctx.getInput().releaseKey(GLFW.GLFW_KEY_V);ctx.waitTicks(5);
-            if(!ctx.computeOnClient(mc->mc.screen instanceof AbilityWheelScreen))throw new AssertionError("Portal release skipped destination menu");
+            ctx.getInput().pressKey(GLFW.GLFW_KEY_ENTER);ctx.waitTicks(5);
+            if(!ctx.computeOnClient(mc->mc.screen instanceof AbilityWheelScreen))throw new AssertionError("Portal selection skipped destination menu");
             ctx.getInput().pressKey(GLFW.GLFW_KEY_RIGHT);ctx.getInput().pressKey(GLFW.GLFW_KEY_RIGHT);ctx.takeScreenshot("wheel_portal_dimensions");ctx.getInput().pressKey(GLFW.GLFW_KEY_ENTER);ctx.waitFor(mc->mc.screen==null,100);ctx.waitTicks(8);
             server.runOnServer(s->{var p=s.getPlayerList().getPlayers().getFirst();if(SpaceStone.destination(GauntletState.activeGauntlet(p),p.level())!=1)throw new AssertionError("Wheel did not choose End destination");});
             ctx.getInput().holdKey(GLFW.GLFW_KEY_LEFT_SHIFT);ctx.getInput().pressKey(GLFW.GLFW_KEY_R);ctx.getInput().releaseKey(GLFW.GLFW_KEY_LEFT_SHIFT);ctx.waitTicks(8);
@@ -106,7 +114,7 @@ public class AbilityWheelTest implements FabricClientGameTest {
             open(ctx);
             ctx.getInput().pressKey(GLFW.GLFW_KEY_RIGHT);
             ctx.getInput().pressKey(GLFW.GLFW_KEY_LEFT);
-            ctx.getInput().releaseKey(GLFW.GLFW_KEY_V);
+            ctx.getInput().pressKey(GLFW.GLFW_KEY_ENTER);
             ctx.waitTicks(5);
             for (int i = 0; i < 4; i++) ctx.getInput().pressKey(GLFW.GLFW_KEY_RIGHT);
             ctx.takeScreenshot("latveria_mystery_destination");
@@ -141,7 +149,7 @@ public class AbilityWheelTest implements FabricClientGameTest {
             open(ctx);
             ctx.getInput().pressKey(GLFW.GLFW_KEY_RIGHT);
             ctx.getInput().pressKey(GLFW.GLFW_KEY_LEFT);
-            ctx.getInput().releaseKey(GLFW.GLFW_KEY_V);
+            ctx.getInput().pressKey(GLFW.GLFW_KEY_ENTER);
             ctx.waitTicks(5);
             for (int i = 0; i < 4; i++) ctx.getInput().pressKey(GLFW.GLFW_KEY_RIGHT);
             ctx.takeScreenshot("latveria_permanently_sealed");

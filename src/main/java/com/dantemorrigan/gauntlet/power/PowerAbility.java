@@ -172,6 +172,10 @@ public final class PowerAbility {
 
 	/** Block or entity in front of the player within reach; misses resolve to the max-reach point. */
 	public static HitResult pick(ServerPlayer player, double reach) {
+		return pick(player, reach, entity -> false);
+	}
+
+	public static HitResult pick(ServerPlayer player, double reach, java.util.function.Predicate<Entity> extraTargets) {
 		Vec3 eye = player.getEyePosition();
 		Vec3 end = eye.add(player.getLookAngle().scale(reach));
 		BlockHitResult block = player.level().clip(new ClipContext(eye, end, ClipContext.Block.OUTLINE, ClipContext.Fluid.NONE, player));
@@ -179,7 +183,8 @@ public final class PowerAbility {
 		Vec3 entityEnd = eye.add(player.getLookAngle().scale(max));
 		AABB box = player.getBoundingBox().expandTowards(player.getLookAngle().scale(max)).inflate(1.0);
 		EntityHitResult entity = ProjectileUtil.getEntityHitResult(player, eye, entityEnd, box,
-				e -> !e.isSpectator() && e.isPickable() && e instanceof LivingEntity && !(e instanceof com.dantemorrigan.gauntlet.boss.LivingTribunal), max * max);
+				e -> !e.isSpectator() && e.isPickable() && (e instanceof LivingEntity || extraTargets.test(e))
+						&& !(e instanceof com.dantemorrigan.gauntlet.boss.LivingTribunal), max * max);
 		var giant=com.dantemorrigan.gauntlet.boss.TribunalEncounter.targetFor(player);
         if(giant!=null) {
             Vec3 contact=CombatTargets.clip(giant,eye,entityEnd,1).orElse(null);

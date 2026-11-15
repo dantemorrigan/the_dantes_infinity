@@ -16,7 +16,6 @@ import java.nio.file.Path;
  */
 public final class GauntletConfig {
     // Wheel input options (read on the client); legacy worn-gauntlet RMB is opt-in.
-    public boolean abilityWheelToggle = false;
     public boolean legacyRightClickPower = false;
     /** Mouse wheel switches abilities of the worn gauntlet / Doom armor: "modifier" (hold the scroll key), "always" or "off". */
     public String abilityScrollMode = "modifier";

@@ -49,6 +49,12 @@ public final class StormNetwork {
                 Stormbreaker.action(context.player(), packet.action()));
     }
 
+    static void flightStatus(ServerPlayer owner, int ticks) {
+        if (ServerPlayNetworking.canSend(owner, Visual.TYPE)) {
+            ServerPlayNetworking.send(owner, new Visual(owner.getId(), "flight_timer", ticks, owner.position()));
+        }
+    }
+
     static void visual(ServerPlayer owner, String clip, int elapsed, Vec3 origin) {
         visual(owner.level(), owner.getId(), clip, elapsed, origin);
     }

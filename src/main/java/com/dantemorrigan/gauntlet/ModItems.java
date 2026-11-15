@@ -20,7 +20,7 @@ public final class ModItems {
 							net.minecraft.network.chat.Component.keybind("key.infinity_gauntlet.stormbreaker_wrath")),
 					net.minecraft.network.chat.Component.translatable("tooltip.infinity_gauntlet.stormbreaker_controls",
 							net.minecraft.network.chat.Component.keybind("key.infinity_gauntlet.stormbreaker_throw"),
-							net.minecraft.network.chat.Component.keybind("key.infinity_gauntlet.stormbreaker_flight"),
+							net.minecraft.network.chat.Component.keybind("key.jump"),
 							net.minecraft.network.chat.Component.keybind("key.infinity_gauntlet.stormbreaker_recall"))))));
 	public static final Item GAUNTLET = register("gauntlet", GauntletItem::new, epic().component(DataComponents.CONTAINER, ItemContainerContents.EMPTY));
 

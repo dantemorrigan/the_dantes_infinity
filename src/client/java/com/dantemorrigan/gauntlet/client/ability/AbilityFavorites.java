@@ -15,7 +15,7 @@ import java.nio.file.StandardCopyOption;
 import java.util.Arrays;
 
 public final class AbilityFavorites {
-    private static final int COUNT = 6;
+    static final int COUNT = 6;
     private static final int STEP = 22;
     private static final int CELL_WIDTH = 20;
     public static final int WIDTH = COUNT * STEP - 2;

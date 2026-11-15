@@ -35,6 +35,7 @@ import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.client.renderer.texture.OverlayTexture;
+import net.minecraft.network.chat.Component;
 import net.minecraft.util.ARGB;
 import net.minecraft.util.LightCoordsUtil;
 import net.minecraft.util.Mth;
@@ -50,17 +51,15 @@ import java.util.List;
 import java.util.Map;
 
 public final class StormbreakerClient {
-    // The left-hand row: Z throws, X calls Heaven's Wrath, C toggles flight. The older keys (H and J) stay as a second set.
     private static final KeyMapping THROW = key("throw", GLFW.GLFW_KEY_Z);
     private static final KeyMapping WRATH = key("wrath", GLFW.GLFW_KEY_X);
-    private static final KeyMapping FLIGHT = key("flight", GLFW.GLFW_KEY_C);
-    private static final KeyMapping WRATH_ALT = key("wrath_alt", GLFW.GLFW_KEY_H);
-    private static final KeyMapping FLIGHT_ALT = key("flight_alt", GLFW.GLFW_KEY_J);
-    private static final KeyMapping RECALL = key("recall", GLFW.GLFW_KEY_K);
+    private static final KeyMapping RECALL = key("recall", GLFW.GLFW_KEY_C);
+    private static final int DOUBLE_JUMP_TICKS = 7;
     private static final Map<Integer, Animation> ANIMATIONS = new HashMap<>();
     private static final Map<String, Long> COOLDOWNS = new HashMap<>();
     private static ClientLevel level;
-    private static boolean primaryActive, flightDown, recallDown;
+    private static boolean primaryActive, jumpDown, recallDown, descending, recallMigrated;
+    private static long lastJump = -1, flightUntil = -1;
     private static JsonObject clips;
     private static Storm storm;
     private static final List<SkyBolt> SKY_BOLTS = new ArrayList<>();
@@ -135,7 +134,9 @@ public final class StormbreakerClient {
         storm = null;
         SKY_BOLTS.clear();
         primaryActive = false;
-        flightDown = FLIGHT.isDown() || FLIGHT_ALT.isDown();
+        jumpDown = Minecraft.getInstance().options.keyJump.isDown();
+        lastJump = flightUntil = -1;
+        descending = false;
         recallDown = RECALL.isDown();
         ANIMATIONS.clear();
         COOLDOWNS.clear();
@@ -143,6 +144,7 @@ public final class StormbreakerClient {
     }
 
     private static void tick(Minecraft mc) {
+        if (!recallMigrated) migrateRecall(mc);
         if (level != mc.level) reset(mc.level);
         if (level == null || mc.player == null) return;
         long now = level.getGameTime();
@@ -152,21 +154,44 @@ public final class StormbreakerClient {
         boolean controls = canUse(mc);
         boolean held = controls && mc.player.getMainHandItem().is(ModItems.STORMBREAKER);
         if (consume(THROW) && held) send(StormNetwork.THROW);
-        boolean wrathClick = consume(WRATH);
-        wrathClick |= consume(WRATH_ALT);
-        if (wrathClick && held) send(StormNetwork.WRATH);
-        boolean flightClick = consume(FLIGHT);
-        flightClick |= consume(FLIGHT_ALT);
+        if (consume(WRATH) && held) send(StormNetwork.WRATH);
         boolean recallClick = consume(RECALL);
-        if (!flightDown && flightClick && held) send(StormNetwork.FLIGHT);
         if (!recallDown && recallClick && controls) send(StormNetwork.RECALL);
-        flightDown = FLIGHT.isDown() || FLIGHT_ALT.isDown();
         recallDown = RECALL.isDown();
+        boolean jump = mc.options.keyJump.isDown();
+        if (!held || mc.player.isPassenger() || mc.player.isInWater()) {
+            lastJump = -1;
+        } else if (jump && !jumpDown) {
+            if (!descending && flightUntil < now && lastJump >= 0 && now - lastJump <= DOUBLE_JUMP_TICKS) {
+                send(StormNetwork.FLIGHT);
+                lastJump = -1;
+            } else {
+                lastJump = now;
+            }
+        }
+        jumpDown = jump;
         if (primaryActive && (!held || !mc.options.keyAttack.isDown())) {
             primaryActive = false;
             if (ClientPlayNetworking.canSend(StormNetwork.Action.TYPE)) {
                 send(held ? StormNetwork.PRIMARY_RELEASE : StormNetwork.PRIMARY_CANCEL);
             }
+        }
+    }
+
+    private static void migrateRecall(Minecraft mc) {
+        recallMigrated = true;
+        var marker = net.fabricmc.loader.api.FabricLoader.getInstance().getConfigDir().resolve("stormbreaker_recall_v2");
+        if (java.nio.file.Files.exists(marker)) return;
+        if (KeyMappingHelper.getBoundKeyOf(RECALL).getValue() == GLFW.GLFW_KEY_K) {
+            RECALL.setKey(InputConstants.Type.KEYSYM.getOrCreate(GLFW.GLFW_KEY_C));
+            KeyMapping.resetMapping();
+            mc.options.save();
+        }
+        try {
+            java.nio.file.Files.createDirectories(marker.getParent());
+            java.nio.file.Files.writeString(marker, "recall-v2");
+        } catch (java.io.IOException exception) {
+            InfinityGauntlet.LOGGER.warn("Could not record Stormbreaker key migration", exception);
         }
     }
 
@@ -190,6 +215,11 @@ public final class StormbreakerClient {
         Minecraft mc = Minecraft.getInstance();
         if (mc.level == null) return;
         if (level != mc.level) reset(mc.level);
+        if ("flight_timer".equals(packet.clip())) {
+            flightUntil = packet.elapsed() > 0 ? level.getGameTime() + packet.elapsed() : -1;
+            descending = packet.elapsed() < 0;
+            return;
+        }
         long start = level.getGameTime() - packet.elapsed();
         if ("sky_bolt".equals(packet.clip()) || "sky_bolt_heavy".equals(packet.clip())) {
             SKY_BOLTS.add(new SkyBolt(packet.origin(), start, "sky_bolt_heavy".equals(packet.clip())));
@@ -397,9 +427,15 @@ public final class StormbreakerClient {
         boolean bound = mc.player.getMainHandItem().has(ModComponents.STORMBREAKER_SEAL);
         String[] icons = {"combo", "ground_wave", "lightning", "throw", "wrath", "flight", "guard"};
         String[] labels = {"", "", "", THROW.getTranslatedKeyMessage().getString(),
-                WRATH.getTranslatedKeyMessage().getString(), FLIGHT.getTranslatedKeyMessage().getString(), ""};
+                WRATH.getTranslatedKeyMessage().getString(), "", ""};
         int x = g.guiWidth() - 132, y = g.guiHeight() - 45;
         g.fill(x - 4, y - 2, x + 126, y + 27, 0xC30A1729);
+        long flightLeft = flightUntil - level.getGameTime();
+        if (descending || flightLeft > 0) {
+            Component timer = descending ? Component.translatable("stormbreaker.infinity_gauntlet.landing")
+                    : Component.translatable("stormbreaker.infinity_gauntlet.flight_time", (flightLeft + 19) / 20);
+            g.text(mc.font, timer, x + 61 - mc.font.width(timer) / 2, y - 16, 0xFFC4E8FF, true);
+        }
         Animation charge = ANIMATIONS.get(mc.player.getId());
         if (charge != null && "ground_charge".equals(charge.clip)) {
             float fill = Mth.clamp((level.getGameTime() - charge.start)

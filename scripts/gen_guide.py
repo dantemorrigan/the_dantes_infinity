@@ -28,8 +28,8 @@ add('hints',
  f"{H}Where to look{R}\n{B}Power{R}: follow the fallen stars.\n{B}Space{R}: beat the dragon. Wear iron.\n{B}Reality{R}: shoot the Nether mist wisp.\n{B}Time{R}: 3 gears in the Time Temple.\n{B}Mind{R}: Ruined City. Beat Loki.\n{B}Soul{R}: temple map. Offer a sacrifice.",
  f"{H}Где искать{R}\n{B}Сила{R}: упавшие звёзды.\n{B}Пространство{R}: дракон и броня.\n{B}Реальность{R}: туман в Незере.\n{B}Время{R}: 3 шестерни в Храме.\n{B}Разум{R}: Локи в Разрушенном городе.\n{B}Душа{R}: карта храма и жертва.")
 add('wheel',
- f"{H}Ability wheel{R}\nHold {B}V{R}, point at a stone, then an ability, release. {B}R{R} uses it; hold R for charged powers.\n\n{B}Esc{R} cancels. Pin with 1–6. Hold B for favorites.",
- f"{H}Колесо способностей{R}\nДержи {B}V{R}, наведи на камень, потом на способность, отпусти. {B}R{R} — применить, держи R для заряжаемых.\n\n{B}Esc{R} — отмена. 1–6 закрепляют способность. Держи B для избранного.")
+ f"{H}Ability wheel{R}\nPress {B}V{R} to open the wheel, then press it again to select. {B}R{R} uses it; hold R for charged powers.\n\n{B}Esc{R} cancels. Pin with 1–6, cycle favorites with G.",
+ f"{H}Колесо способностей{R}\nНажми {B}V{R} для открытия, нажми снова для выбора. {B}R{R} — применить, держи R для заряжаемых.\n\n{B}Esc{R} — отмена. 1–6 закрепляют способность, G перебирает избранное.")
 add('power',
  f"{H}Power Stone{R}\n{B}Power strike{R}: hold R, release.\n{B}Planet Destruction{R}: needs Time. Charge, hit ground.\n{B}Celestial Destruction{R}: aim at a luminary.\n{B}Meteor Stream{R}: lock on, aim low, release R.\n\nHeld bare, it kills.",
  f"{H}Камень Силы{R}\n{B}Силовой удар{R}: держи R, отпусти.\n{B}Уничтожение планеты{R}: Камень Времени, удар вниз.\n{B}Разрушение светил{R}: цель — светило.\n{B}Поток метеоритов{R}: захват, вниз, отпусти R.\nГолым убивает.")
@@ -70,17 +70,17 @@ add('extractor',
  f"{H}Infinity Extractor{R}\nPulls a stone out of someone's gauntlet: hold right-click on them, three cycles. Shift + right-click picks which stone.\n\nYour stones stay with you when you die, unless another player kills you.",
  f"{H}Извлекатель{R}\nВытягивает камень из чужой перчатки: держи ПКМ на цели, три цикла. Shift + ПКМ выбирает камень.\n\nПосле смерти камни остаются у тебя, если не убил другой игрок.")
 add('settings',
- f"{H}Settings{R}\n{B}Menu{R}: Options or Pause, button {B}Infinity Gauntlet{R} (language, wheel mode, HUD, shake, flash).\n\nLost the book? {B}/gauntlet_guide{R}.\n\n{G}Use the power wisely.",
- f"{H}Настройки{R}\n{B}Меню{R}: Настройки или Пауза, кнопка {B}Infinity Gauntlet{R} (язык, колесо, HUD, тряска, вспышки).\n\nПотерял книгу? {B}/gauntlet_guide{R}.\n\n{G}Распоряжайся силой мудро.")
+ f"{H}Settings{R}\n{B}Menu{R}: Options or Pause, button {B}Infinity Gauntlet{R} (language, HUD, shake, flash).\n\nLost the book? {B}/gauntlet_guide{R}.\n\n{G}Use the power wisely.",
+ f"{H}Настройки{R}\n{B}Меню{R}: Настройки или Пауза, кнопка {B}Infinity Gauntlet{R} (язык, HUD, тряска, вспышки).\n\nПотерял книгу? {B}/gauntlet_guide{R}.\n\n{G}Распоряжайся силой мудро.")
 add('storm_find',
  f"{H}Stormbreaker{R}\nOne axe per world. Forge it with {B}5 Uru ingots{R}, a Nether Star and a jungle log. Or find it after a thunderstorm skyfall. A compass appears within 110 blocks. Right-click to claim it.",
  f"{H}Гром-Секира{R}\nОдна на сервер. Для ковки нужны {B}5 слитков Уру{R}, звезда Незера и тропическое бревно. В грозу ищи её по компасу в радиусе 110 блоков. Подними секиру ПКМ.")
 add('storm_combat',
- f"{H}Stormbreaker combat{R}\n{B}Left click{R}: three-hit combo. Hold at the ground and release for a lightning wall.\n{B}Right click{R}: lightning, radius 7.\n{B}H{R}: storm, radius 20.\n{B}X{R}: throw. {B}J{R}: flight.",
- f"{H}Бой с Гром-Секирой{R}\n{B}ЛКМ{R}: тройное комбо. Зажми на земле и отпусти для стены молний.\n{B}ПКМ{R}: молнии, радиус 7.\n{B}H{R}: гроза, радиус 20.\n{B}X{R}: бросок. {B}J{R}: полёт.")
+ f"{H}Stormbreaker combat{R}\n{B}Left click{R}: three-hit combo. Hold at the ground and release for a lightning wall.\n{B}Right click{R}: lightning, radius 7.\n{B}X{R}: storm, radius 20.\n{B}Z{R}: throw. C recalls the axe. {B}Double-tap Space{R}: 15 s of flight, then slow descent.",
+ f"{H}Бой с Гром-Секирой{R}\n{B}ЛКМ{R}: тройное комбо. Зажми на земле и отпусти для стены молний.\n{B}ПКМ{R}: молнии, радиус 7.\n{B}X{R}: гроза, радиус 20.\n{B}Z{R}: бросок. C возвращает секиру. {B}Двойной пробел{R}: 15 с полёта, затем плавное снижение.")
 add('storm_owner',
- f"{H}The chosen wielder{R}\n{B}Q{R} or death plants the axe. Only the owner can recover it. {B}K{R} recalls it from any dimension or the void.\nIn hand, it gives strength and softens gauntlet hits.",
- f"{H}Владелец секиры{R}\n{B}Q{R} или смерть оставляют секиру в земле. Забрать её может владелец. {B}K{R} призывает её из других измерений и бездны.\nВ руке даёт силу и снижает урон Перчатки.")
+ f"{H}The chosen wielder{R}\n{B}Q{R} or death plants the axe. Only the owner can recover it. {B}C{R} recalls it from any dimension or the void.\nIn hand, it gives strength and softens gauntlet hits.",
+ f"{H}Владелец секиры{R}\n{B}Q{R} или смерть оставляют секиру в земле. Забрать её может владелец. {B}C{R} призывает её из других измерений и бездны.\nВ руке даёт силу и снижает урон Перчатки.")
 # --- The Fury of Doom (appended, so the earlier page numbers stay put) ---
 add('doom',
  f"{H}The Fury of Doom{R}\nBeat {B}Loki{R}. Carry the {B}Mind Stone{R}: it reads Doom's seal on the Space Stone portal. Pick {B}Latveria{R} on the portal wheel.\nFriends within 4 blocks come along.",

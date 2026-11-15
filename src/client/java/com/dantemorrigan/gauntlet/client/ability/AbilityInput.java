@@ -25,6 +25,8 @@ public final class AbilityInput {
     public static final KeyMapping WHEEL=KeyMappingHelper.registerKeyMapping(new KeyMapping("key.infinity_gauntlet.ability_wheel",InputConstants.Type.KEYSYM,GLFW.GLFW_KEY_V,ClientPower.CATEGORY));
     public static final KeyMapping FAVORITES = KeyMappingHelper.registerKeyMapping(new KeyMapping(
         "key.infinity_gauntlet.favorites", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_B, ClientPower.CATEGORY));
+    public static final KeyMapping NEXT_FAVORITE = KeyMappingHelper.registerKeyMapping(new KeyMapping(
+        "key.infinity_gauntlet.next_favorite", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_G, ClientPower.CATEGORY));
     public static final KeyMapping CAST=KeyMappingHelper.registerKeyMapping(new KeyMapping("key.infinity_gauntlet.ability_cast",InputConstants.Type.KEYSYM,GLFW.GLFW_KEY_R,ClientPower.CATEGORY));
     private static Ability selected=Ability.STRIKE;
     private static JsonObject states=new JsonObject();
@@ -125,11 +127,25 @@ public final class AbilityInput {
         if(list.size()<2 || steps==0) return null;
         int i=list.indexOf(selected);
         Ability a=list.get(i<0?(steps>0?0:list.size()-1):Math.floorMod(i+steps,list.size()));
-        if(a==selected) return a;
+        queueSelection(a);
+        return a;
+    }
+    private static void nextFavorite() {
+        var available = scrollable();
+        int current = AbilityFavorites.find(selected);
+        for (int i = 1; i <= AbilityFavorites.COUNT; i++) {
+            Ability favorite = AbilityFavorites.get((current + i) % AbilityFavorites.COUNT);
+            if (favorite != null && available.contains(favorite)) {
+                queueSelection(favorite);
+                return;
+            }
+        }
+    }
+    private static void queueSelection(Ability a) {
+        if(a==selected) return;
         if(button || charge>0) cancel(); // a charge in progress must not follow the new choice
         selected=a;if(a.stone!=null) LAST.put(a.stone,a);
         scrollQueued=scrollPending=a;scrollUntil=System.nanoTime()+700_000_000L;
-        return a;
     }
     public static void inventory() {cancel();ClientPlayNetworking.send(new ModNetwork.AbilitySelect("inventory",-1));}
     public static void cancel() {
@@ -141,6 +157,9 @@ public final class AbilityInput {
         if(!migrated && mc.options!=null) {migrated=true;migrate(mc);}
         if(mc.player==null || mc.level==null) {reset();return;}
         if(lastLevel!=mc.level) {cancel();lastLevel=mc.level;scrollQueued=scrollPending=null;}
+        boolean cycleFavorite = false;
+        while (NEXT_FAVORITE.consumeClick()) cycleFavorite = true;
+        if (cycleFavorite && scrollAllowed()) nextFavorite();
         if(scrollQueued!=null) { // one packet per tick however fast the wheel spins; the last choice wins
             if(ClientPlayNetworking.canSend(ModNetwork.AbilitySelect.TYPE)) ClientPlayNetworking.send(new ModNetwork.AbilitySelect(scrollQueued.id,-1));
             scrollQueued=null;

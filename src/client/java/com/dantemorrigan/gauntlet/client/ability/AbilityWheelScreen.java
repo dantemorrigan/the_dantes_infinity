@@ -21,7 +21,7 @@ import net.minecraft.world.level.Level;
 import org.lwjgl.glfw.GLFW;
 import java.util.*;
 
-/** Non-pausing radial screen. Mouse release chooses; only a later R press can cast. */
+/** Non-pausing radial screen. Selection is separate from casting. */
 public final class AbilityWheelScreen extends Screen {
     private static final Stone[] ORDER={Stone.POWER,Stone.SPACE,Stone.REALITY,Stone.MIND,Stone.TIME,Stone.SOUL};
     private Stone stone;
@@ -31,7 +31,7 @@ public final class AbilityWheelScreen extends Screen {
     private double mouseX=-100,mouseY=-100;
     private long hoverSince;
     private Stone pending;
-    private boolean finished;
+    private boolean finished, wheelReleased;
     // Smooth feel: everything below eases by real time, so it is the same at any frame rate.
     private final Map<String,Float> glow=new HashMap<>();
     private float open,switchIn=1,dt;
@@ -86,13 +86,17 @@ public final class AbilityWheelScreen extends Screen {
     }
     @Override public void tick() {
         if(!AbilityInput.equipped() || Minecraft.getInstance().player==null || !Minecraft.getInstance().player.isAlive()) {onClose();return;}
+        int key = KeyMappingHelper.getBoundKeyOf(AbilityInput.WHEEL).getValue();
+        if (key >= GLFW.GLFW_KEY_SPACE && GLFW.glfwGetKey(minecraft.getWindow().handle(), key) == GLFW.GLFW_RELEASE) {
+            wheelReleased = true;
+        }
     }
     private void finish() {
         if(finished) return;
         Ability a=keyboard!=null?keyboard:hovered;
         if(submenu==0 && (a==Ability.PORTAL || a==Ability.DESTINATIONS)) {
             submenu=a==Ability.PORTAL?1:2;target=-1;keyboard=null;hovered=null;pending=null;
-            return; // Keep destinations visible after releasing V; click or Enter confirms.
+            return;
         }
         if(submenu!=0 && (target<0 || !destinationAllowed(target))) return;
         finished=true;
@@ -105,17 +109,18 @@ public final class AbilityWheelScreen extends Screen {
     }
     @Override public void onClose() {finished=true;Minecraft.getInstance().setScreen(null);}
     @Override public boolean keyReleased(KeyEvent event) {
-        if(event.key()==KeyMappingHelper.getBoundKeyOf(AbilityInput.WHEEL).getValue() && !GauntletConfig.get().abilityWheelToggle) {
-            if(submenu!=1 || target!=SpaceStone.LATVERIA_OPTION) finish();
-            return true;
-        }
+        if (event.key() == KeyMappingHelper.getBoundKeyOf(AbilityInput.WHEEL).getValue()) wheelReleased = true;
         return true;
     }
     @Override public boolean keyPressed(KeyEvent event) {
         int key=event.key();
         if(key==GLFW.GLFW_KEY_ESCAPE) {if(submenu!=0){submenu=0;target=-1;}else onClose();return true;}
-        if(key==KeyMappingHelper.getBoundKeyOf(AbilityInput.WHEEL).getValue() && GauntletConfig.get().abilityWheelToggle) {
-            if(submenu!=1 || target!=SpaceStone.LATVERIA_OPTION) finish();
+        if (key == KeyMappingHelper.getBoundKeyOf(AbilityInput.WHEEL).getValue()) {
+            if (wheelReleased) {
+                Ability a = keyboard != null ? keyboard : hovered;
+                if (submenu != 0 || a == Ability.PORTAL || a == Ability.DESTINATIONS) onClose();
+                else finish();
+            }
             return true;
         }
         int favoriteSlot = AbilityFavorites.slotForKey(key);
@@ -247,7 +252,7 @@ public final class AbilityWheelScreen extends Screen {
         } else if (focus != null && submenu == 0) {
             tooltipLine(g, AbilityInput.title(focus), firstLine, color(focus.stone == null ? Stone.MIND : focus.stone));
             Component hint = focus == Ability.DESTINATIONS || focus == Ability.PORTAL
-                ? Component.translatable("ability.infinity_gauntlet.open_submenu", AbilityInput.WHEEL.getTranslatedKeyMessage())
+                ? Component.translatable("ability.infinity_gauntlet.open_submenu")
                 : AbilityInput.hint(focus);
             tooltipLine(g, hint, firstLine + 10, 0xFFE1D9E8);
             int slot = AbilityFavorites.find(focus);
@@ -259,7 +264,7 @@ public final class AbilityWheelScreen extends Screen {
             String key=submenu==1 && target==SpaceStone.LATVERIA_OPTION ? "ability.infinity_gauntlet.latveria_open" : "ability.infinity_gauntlet.pick_destination";
             tooltipLine(g, Component.translatable(key), firstLine, 0xFFDED7EA);
         }
-        tooltipLine(g, Component.translatable("ability.infinity_gauntlet.wheel_help",
+        tooltipLine(g, Component.translatable(submenu == 0 ? "ability.infinity_gauntlet.wheel_help" : "ability.infinity_gauntlet.open_submenu",
             AbilityInput.WHEEL.getTranslatedKeyMessage()), firstLine + 30, 0xFF9BA7BB);
     }
 
@@ -286,7 +291,7 @@ public final class AbilityWheelScreen extends Screen {
         blit(g,"tooltip_panel",8,top,width-16,55,320,80);
         tooltipLine(g,Component.translatable("ability.infinity_gauntlet.pick_destination"),top+8,0xffffdfa0);
         if(target>=0) tooltipLine(g,Component.translatable("cosmos.infinity_gauntlet."+CosmosRoutes.ALL.get(target).id()),top+20,0xff86d8ff);
-        tooltipLine(g,Component.translatable("ability.infinity_gauntlet.wheel_help",AbilityInput.WHEEL.getTranslatedKeyMessage()),top+34,0xffb1bacd);
+        tooltipLine(g,Component.translatable("ability.infinity_gauntlet.open_submenu"),top+34,0xffb1bacd);
     }
 
     private void tooltipLine(GuiGraphicsExtractor graphics, Component label, int y, int color) {

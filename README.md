@@ -18,7 +18,7 @@ Requirements: **Java 25**. Build: `./gradlew build` → `build/libs/infinity_gau
 
 ## Getting started
 
-- **Uru ore** generates in new Overworld chunks from the bottom of the world up to Y=0. Look around Y=−32 and use a diamond or netherite pickaxe. Smelt raw Uru in a furnace or blast furnace. Fortune increases the drop, and Silk Touch preserves the ore block.
+- **Uru ore** generates in new Overworld chunks from the bottom of the world up to Y=0. Look around Y=−32 and use a diamond or netherite pickaxe. Smelt raw Uru in a furnace or blast furnace. Fortune increases the drop, and Silk Touch preserves the ore block. One ore block can also appear in mineshaft, dungeon, village weaponsmith, pyramid, ancient city, bastion and End city chests.
 - **The recipe is shown in game:** the first time you hold an Uru ingot it unlocks in the recipe book and is written out in chat; it is also in the field guide (page 17) and on every Gauntlet Schematic; `/gauntlet_recipe` prints it again (no operator rights needed).
 - **Gauntlet crafting** uses a 3×3 grid. From top to bottom: Uru / gold / diamond, gold / redstone / gold, diamond / gold / Uru. Use ingots for both metals. **Infinity Gauntlet Schematics** with the forging pattern can be found in world chests (villages, smiths, strongholds, dungeons, mineshafts, temples, pyramids, shipwrecks, underwater ruins, mansions, ancient cities, bastions, fortresses, End cities) and bought from cartographers, smiths, librarians, and wandering traders; right-clicking the schematic unlocks the Gauntlet, Uru armor and Uru smelting recipes. Right-click with the gauntlet in your main hand to open the stone slots, then press F to move it to your offhand.
 - **Uru armor** follows iron armor recipes and is repaired with Uru ingots. A complete set reduces damage from a full gauntlet and loses durability when absorbing a hit.
@@ -27,8 +27,8 @@ Requirements: **Java 25**. Build: `./gradlew build` → `build/libs/infinity_gau
 ## Stormbreaker
 - Craft the axe from five Uru ingots, a Nether Star and a jungle log. The rows are **Uru / Uru / Nether Star**, **Uru / Uru / Uru**, **empty / jungle log / empty**. The first successful craft binds it to the smith.
 - During a thunderstorm, an unclaimed Stormbreaker can fall near a player in the Overworld. Players within 110 blocks see a blue compass and the distance to the crash site until someone claims the axe. Right-click the embedded axe to pull it free and become its owner. A world has one Stormbreaker, so either the first craft or the first skyfall closes the other route. The recipe requires a player at a crafting table.
-- Hold it in your main hand. **Left click** chains three overhead chops. Hold **left click** while aiming at the ground and release to send a wall of lightning and debris forward, broadside to your aim. The wave smashes through breakable blocks and leaves connected craters where ability block changes are enabled. **Right click** calls lightning in a 7-block radius. **Z** throws it horizontally: the axe flies out and **sticks where it lands (a wall or the ground) and stays there** until **K** calls it back, spinning through anything in its way and into your hand; **X** (or **H**) calls Heaven’s Wrath over a 20-block radius, and **C** (or **J**) toggles flight. **Q** plants the axe while keeping ownership, and **K** recalls it across dimensions or from the void. You can rebind the keys in Controls.
-- The flying axe cuts through breakable blocks where block changes are permitted. It returns to its owner when the path is blocked or they change dimensions. If the inventory is full, it returns as soon as a slot is available. Lightning strikes the planted axe periodically, reaching down from the clouds in the Overworld. After death, reclaim it with right-click or summon it with K.
+- Hold it in your main hand. **Left click** chains three overhead chops. Hold **left click** while aiming at the ground and release to send a wall of lightning and debris forward, broadside to your aim. The wave smashes through breakable blocks and leaves connected craters where ability block changes are enabled. **Right click** calls lightning in a 7-block radius. **Z** throws the axe horizontally, **X** calls Heaven’s Wrath, and **C** recalls the axe, including across dimensions. Double-tap **Space** to fly for up to 15 seconds, with a countdown and automatic slow descent.
+- The flying axe cuts through breakable blocks where block changes are permitted. It returns to its owner when the path is blocked or they change dimensions. If the inventory is full, it returns as soon as a slot is available. Lightning strikes the planted axe periodically, reaching down from the clouds in the Overworld. After death, reclaim it with right-click or summon it with C.
 - Carrying the bound axe anywhere in the inventory grants a higher jump and +5 hearts. Holding it gives strength and reduces direct Gauntlet damage, including meteor blasts. It wards off Mind and Soul control and hostile Snap or Planet Destruction transfers. Reality Strike and Inversion can still kill its wielder.
 
 ## Finding the Power Stone
@@ -46,7 +46,7 @@ Requirements: **Java 25**. Build: `./gradlew build` → `build/libs/infinity_gau
 - Art: pack `01_Space_Quest`. Test: `xvfb-run -a ./gradlew runClientGameTest -PonlyTest=SpaceQuestTest`.
 
 ## Finding the Reality Stone
-- Once a minute, nearby Nether players get one shared roll for red mist (`realityFogChancePerMinute`). One mist event and one stone can exist at a time. The first player to hit the stone in melee or with any projectile gets it.
+- Once a minute, nearby Nether players get one shared roll for red mist (`realityFogChancePerMinute`). One mist event and one stone can exist at a time. The first player to hit the stone in melee or with any projectile gets it. A melee swing with Stormbreaker also catches the stone.
 - Art: pack `02_Reality_Quest` (layered fog density map, stone trail, arrow hit, fog dispel). Debug: `/gauntlet reality_fog`. Smoke test: `-PonlyTest=RealityFogTest`.
 
 ## Finding the Soul Stone
@@ -165,7 +165,7 @@ The jets never touch vanilla flight, so the armor does not clash with the Infini
 - **Settings screen**: Options or Pause menu → **Infinity Gauntlet ⚙** button (bottom left).
   - **Language switcher**: cards for Auto / English / Русский; applies instantly to the whole mod (menus, HUD messages, tooltips, advancements, the book) and is saved as `language` in `config/infinity_gauntlet.json`. Auto follows Minecraft's language.
   - **Boss typography**: names, actions and dialogue use bundled Open Sans Bold, with Cyrillic support and individual colour accents. Ordinary player chat keeps its font. Font licenses are bundled under `assets/infinity_gauntlet/font/`.
-  - **Client options**: toggle **Ability Wheel** mode (`Hold` vs `Press`), show or hide the top-left **Ability HUD** card (`showStatusHud`), and cycle **Camera Shake** (`100% / 50% / Off`) and **Screen Flash** (`100% / 50% / Off`).
+  - **Client options**: show or hide the top-left **Ability HUD** card (`showStatusHud`) and cycle **Camera Shake** (`100% / 50% / Off`) and **Screen Flash** (`100% / 50% / Off`).
 - **Advancements & Recipe Unlocks**: a dedicated **The Dante’s Infinity** advancement tab tracks Uru mining, Uru armor, crafting the Gauntlet, finding each of the six Infinity Stones, flying into the Solar System, stealing a stone with the Extractor, shattering a Loki illusion, defeating Loki and Thanos, awakening the full Gauntlet, shattering a planet, executing the Infinity Snap, and undoing the Snap with the Time Stone. Raw Uru or Uru ore unlocks smelting. A Uru ingot or the schematic unlocks the Gauntlet and armor recipes.
 - **Field guide book**: every player gets a written book (22 pages, available in both languages) the first time they join a world — powers, controls, Loki, Thanos, Uru, the Extractor, settings, and Stormbreaker. Lost it? Type `/gauntlet_guide` (no operator rights needed). Disable with `giveGuideBook: false`.
 - Texts live in `lang/en_us.json` / `ru_ru.json`; the book pages are generated by `python3 scripts/gen_guide.py`. Check: `xvfb-run -a ./gradlew runClientGameTest -PonlyTest=GuideLangTest`.
@@ -178,14 +178,14 @@ Defeat Loki and Thanos, wear the awakened gauntlet with all six stones and fly i
 
 ## Ability wheel controls
 
-- Equip the gauntlet in your offhand. Hold **V** to open the wheel; point at a stone, then at an ability, and release **V** to select.
+- Equip the gauntlet in your offhand. Press **V** to open the wheel, then press **V** again to confirm the highlighted ability and close it.
 - **R** — use the selected action; hold and release for charged strikes, the beam and Reality Inversion. Opening the wheel cancels a charge without attacking.
-- **Esc** cancels the selection. **PgUp/PgDn** switch stones, arrows/Tab switch actions, Enter confirms. `abilityWheelToggle: true` in the config makes the wheel open on press instead of hold.
+- **Esc** cancels the selection. **PgUp/PgDn** switch stones, arrows/Tab switch actions, Enter confirms.
 - Left-click the center — insert stones. Selecting Portal or Destinations opens a separate dimension/route menu; left-click/Enter confirms, using it with R is separate. **Shift+R** with a portal selected quickly switches the dimension; the target is shown in the status.
 - Telekinesis: R grabs/throws; "Tear apart" and the safe "Release" are separate labeled entries. **Shift+R** with a grabbed mob tears it apart immediately. Switching to another stone safely releases the target.
 - Flight stays active when you select another stone. **Ctrl** boosts; to turn it off, select Flight and press R. In space this entry returns you to the atmosphere near Earth, keeping manual flight.
 - **Mouse wheel**: in the wheel it walks through the abilities (down = next) and crosses from stone to stone without stopping; with the gauntlet worn (or Doom's armor on) hold **Left Alt** (rebindable, `Quick-switch ability`) and turn the wheel to switch abilities without opening anything. The change shows on the same frame, a strip of neighbouring abilities glides under the crosshair and each notch ticks. `abilityScrollMode` in the config: `modifier` (default), `always` or `off`.
-- **Favorites**: point at an ability in the wheel and press **1–6** to pin it. Hold **B**, select a slot, then use the ability with **R**.
+- **Favorites**: point at an ability in the wheel and press **1–6** to pin it. **G** cycles through pinned abilities, **R** casts the selection, and **B** opens the slot picker.
 - Stone and gauntlet icons show the mod's existing items and the active resource pack. The selected ability card is in the top-left panel.
 
 The old quick keys are now **unbound by default** but still available in the controls settings. Historical factory bindings are cleared once; custom ones are kept. The old right-click charge with the gauntlet in the offhand is enabled separately via `legacyRightClickPower: true`.

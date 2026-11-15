@@ -1,5 +1,6 @@
 package com.dantemorrigan.gauntlet.stones;
 
+import com.dantemorrigan.gauntlet.ModBlocks;
 import com.dantemorrigan.gauntlet.ModItems;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.storage.loot.BuiltInLootTables;
@@ -45,7 +46,18 @@ public final class GauntletLoot {
 			Map.entry(BuiltInLootTables.BASTION_OTHER, 0.35f),
 			Map.entry(BuiltInLootTables.END_CITY_TREASURE, 0.5f));
 
+	// A single ore block per successful roll, across chest loot in all three dimensions.
+	private static final Map<ResourceKey<LootTable>, Float> URU_CHANCES = Map.of(
+			BuiltInLootTables.ABANDONED_MINESHAFT, 0.08f,
+			BuiltInLootTables.SIMPLE_DUNGEON, 0.06f,
+			BuiltInLootTables.VILLAGE_WEAPONSMITH, 0.05f,
+			BuiltInLootTables.DESERT_PYRAMID, 0.06f,
+			BuiltInLootTables.ANCIENT_CITY, 0.10f,
+			BuiltInLootTables.BASTION_TREASURE, 0.12f,
+			BuiltInLootTables.END_CITY_TREASURE, 0.10f);
+
 	public static void init() {
+		QuestLoot.distribute(URU_CHANCES, ModBlocks.URU_ORE);
 		QuestLoot.distribute(CHANCES, ModItems.QUEST_GAUNTLET_BLUEPRINT);
 	}
 

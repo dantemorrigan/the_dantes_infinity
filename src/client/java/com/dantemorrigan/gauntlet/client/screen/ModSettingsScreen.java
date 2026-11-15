@@ -46,17 +46,11 @@ public final class ModSettingsScreen extends Screen {
 		int row1Y = clientRowsY();
 		int row2Y = row1Y + 24;
 
-		addRenderableWidget(Button.builder(wheelLabel(cfg), b -> {
-			cfg.abilityWheelToggle = !cfg.abilityWheelToggle;
-			GauntletConfig.save();
-			b.setMessage(wheelLabel(cfg));
-		}).bounds(leftX, row1Y, bw, 20).build());
-
 		addRenderableWidget(Button.builder(hudLabel(cfg), b -> {
 			cfg.showStatusHud = !cfg.showStatusHud;
 			GauntletConfig.save();
 			b.setMessage(hudLabel(cfg));
-		}).bounds(rightX, row1Y, bw, 20).build());
+		}).bounds(width / 2 - bw / 2, row1Y, bw, 20).build());
 
 		addRenderableWidget(Button.builder(shakeLabel(cfg), b -> {
 			cfg.cameraShakeScale = nextStep(cfg.cameraShakeScale);
@@ -83,13 +77,6 @@ public final class ModSettingsScreen extends Screen {
 	private static Component stepText(float val) {
 		if (val <= 0.05f) return Component.translatable("settings.infinity_gauntlet.value.off");
 		return Component.literal(Math.round(val * 100f) + "%");
-	}
-
-	private static Component wheelLabel(GauntletConfig cfg) {
-		Component mode = Component.translatable(cfg.abilityWheelToggle
-				? "settings.infinity_gauntlet.wheel.toggle"
-				: "settings.infinity_gauntlet.wheel.hold");
-		return Component.translatable("settings.infinity_gauntlet.wheel", mode);
 	}
 
 	private static Component hudLabel(GauntletConfig cfg) {

@@ -12,6 +12,7 @@ import com.dantemorrigan.gauntlet.cosmos.CosmosTravel;
 import com.dantemorrigan.gauntlet.net.ModStatus;
 import com.dantemorrigan.gauntlet.power.PowerAbility;
 import com.dantemorrigan.gauntlet.snap.InfinitySnap;
+import com.dantemorrigan.gauntlet.stones.RealityWisp;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.fabricmc.fabric.api.attachment.v1.AttachmentRegistry;
@@ -43,6 +44,8 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.damagesource.DamageType;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
@@ -78,6 +81,7 @@ public final class Stormbreaker {
     private static final int SKY_FALL_TICKS = 28, PULL_TICKS = 12;
     public static final int GROUND_MAX_CHARGE = 24;
     private static final int GROUND_MIN_CHARGE = 6;
+    public static final int FLIGHT_TICKS = 15 * 20;
     private static final double WRATH_RADIUS = 20, LIGHTNING_RADIUS = 7;
     private static final int[] STRIKES = {36, 50, 65, 83};
     private static final StormFx[] COMBO = {StormFx.COMBO_1, StormFx.COMBO_2, StormFx.COMBO_3};
@@ -121,7 +125,9 @@ public final class Stormbreaker {
         Pull pull;
         int fallStart;
         int combo, lastSwing = -100, nextSwing, lightningReady, waveReady, throwReady, wrathReady, plantUntil;
-        boolean flying, wasFlying;
+        boolean flying, descending, flightUsed;
+        int flightEnd;
+        ServerLevel flightLevel;
     }
 
     private static final class Flight {
@@ -183,8 +189,9 @@ public final class Stormbreaker {
         AttackEntityCallback.EVENT.register((player, level, hand, target, result) -> {
             if (hand != InteractionHand.MAIN_HAND || !player.getMainHandItem().is(ModItems.STORMBREAKER)
                     || !(player instanceof ServerPlayer p) || p.isSpectator()) return InteractionResult.PASS;
-            if (target instanceof LivingEntity living && p.getEyePosition().distanceToSqr(living.getBoundingBox().getCenter()) < 36) {
-                swing(p, living);
+            if ((target instanceof LivingEntity || target instanceof RealityWisp)
+                    && p.getEyePosition().distanceToSqr(target.getBoundingBox().getCenter()) < 36) {
+                swing(p, target);
             }
             return InteractionResult.FAIL;
         });
@@ -292,7 +299,7 @@ public final class Stormbreaker {
         switch (action) {
             case StormNetwork.THROW -> startThrow(p);
             case StormNetwork.WRATH -> beginCast(p, true);
-            case StormNetwork.FLIGHT -> toggleFlight(p);
+            case StormNetwork.FLIGHT -> startFlight(p);
             case StormNetwork.AIR_SWING -> {
                 if (PowerAbility.pick(p, 4.5).getType() == HitResult.Type.MISS) swing(p, null);
             }
@@ -303,9 +310,9 @@ public final class Stormbreaker {
     }
 
     private static void primary(ServerPlayer p) {
-        HitResult hit = PowerAbility.pick(p, 5);
-        if (hit instanceof EntityHitResult entity && entity.getEntity() instanceof LivingEntity living) {
-            swing(p, living);
+        HitResult hit = PowerAbility.pick(p, 5, entity -> entity instanceof RealityWisp);
+        if (hit instanceof EntityHitResult entity) {
+            swing(p, entity.getEntity());
         } else if (hit instanceof BlockHitResult block && block.getType() == HitResult.Type.BLOCK
                 && block.getDirection() == Direction.UP) {
             startGroundCharge(p, block.getLocation());
@@ -314,7 +321,7 @@ public final class Stormbreaker {
         }
     }
 
-    private static void swing(ServerPlayer p, LivingEntity direct) {
+    private static void swing(ServerPlayer p, Entity direct) {
         if (!ready(p)) return;
         Session s = session(p);
         int tick = server(p).getTickCount();
@@ -342,6 +349,11 @@ public final class Stormbreaker {
         if (age < SWING_CONTACT[index]) return;
         s.swing = null;
         Entity direct = swing.target == null ? null : p.level().getEntity(swing.target);
+        if (direct instanceof RealityWisp wisp && p.hasLineOfSight(wisp)
+                && p.getEyePosition().distanceToSqr(wisp.getBoundingBox().getCenter()) < 30.25) {
+            var type = p.level().registryAccess().lookupOrThrow(Registries.DAMAGE_TYPE).getOrThrow(DAMAGE);
+            wisp.hurtServer(p.level(), new DamageSource(type, p), 10 + index * 4);
+        }
         if (direct instanceof LivingEntity living && living.isAlive() && p.hasLineOfSight(living)
                 && p.distanceToSqr(living) < 30.25 && strike(p, living, 10 + index * 4, forward, .28 + index * .16)) {
             Vec3 impact = direct.getBoundingBox().getCenter();
@@ -983,25 +995,27 @@ public final class Stormbreaker {
         s.display = null;
     }
 
-    private static void toggleFlight(ServerPlayer p) {
-        if (!ready(p)) return;
+    private static void startFlight(ServerPlayer p) {
+        if (!p.isAlive() || p.isSpectator() || p.isPassenger() || p.isInWater()
+                || p.hasAttached(CosmosTravel.FLIGHT) || InfinitySnap.inVoid(p)
+                || !ready(p)) return;
         Session s = session(p);
-        if (s.flying) { stopFlight(p, s); return; }
-        if (p.hasAttached(CosmosTravel.FLIGHT) || p.isPassenger()) return;
+        if (s.flying || s.descending || s.flightUsed) return;
         if (com.dantemorrigan.gauntlet.stones.MindArena.inFight(p)) { ModStatus.send(p, Component.translatable("msg.infinity_gauntlet.loki.no_flight")); return; }
         s.flying = true;
+        s.flightUsed = true;
+        s.flightEnd = server(p).getTickCount() + FLIGHT_TICKS;
+        s.flightLevel = p.level();
+        StormNetwork.flightStatus(p, FLIGHT_TICKS);
         var abilities = p.getAbilities();
-        s.wasFlying = abilities.flying;
         if (!abilities.mayfly) {
             p.setAttached(FLIGHT_GRANT, true);
             abilities.mayfly = true;
         }
         abilities.flying = true;
         p.onUpdateAbilities();
-        if (!s.wasFlying) {
-            p.setDeltaMovement(p.getDeltaMovement().add(0, .43, 0));
-            p.hurtMarked = true;
-        }
+        p.setDeltaMovement(p.getDeltaMovement().add(0, .43, 0));
+        p.hurtMarked = true;
         StormFx.TAKEOFF.play(p.level(), p.position().add(0, .06, 0), 2.8);
         StormNetwork.visual(p, "takeoff", 0, p.position());
         sound(p.level(), p.position(), SoundEvents.TRIDENT_RIPTIDE_3.value(), 1, .9f);
@@ -1018,16 +1032,59 @@ public final class Stormbreaker {
 
     private static void stopFlight(ServerPlayer p, Session s) {
         boolean active = s != null && s.flying;
-        if (active) s.flying = false;
+        if (s != null && (active || s.descending)) {
+            s.flying = false;
+            s.descending = false;
+            s.flightLevel = null;
+            StormNetwork.flightStatus(p, 0);
+        }
+        revokeFlight(p, active);
+    }
+
+    private static void revokeFlight(ServerPlayer p, boolean active) {
         boolean grant = p.hasAttached(FLIGHT_GRANT);
         if (grant) p.removeAttached(FLIGHT_GRANT);
         if (p.hasAttached(CosmosTravel.FLIGHT) || p.isSpectator()) return;
         var abilities = p.getAbilities();
         if (grant && !p.isCreative()) abilities.mayfly = false;
         if (active || grant) {
-            abilities.flying = active && s.wasFlying && abilities.mayfly;
+            abilities.flying = false;
             p.onUpdateAbilities();
             p.fallDistance = 0;
+        }
+    }
+
+    private static void tickWielderFlight(ServerPlayer p, Session s, int now) {
+        if (s.flightUsed && p.onGround() && !s.flying) s.flightUsed = false;
+        if (!mainHand(p) || !guarded(p) || p.hasAttached(CosmosTravel.FLIGHT) || p.isPassenger()
+                || s.flightLevel != null && s.flightLevel != p.level()) {
+            stopFlight(p, s);
+            return;
+        }
+        if (s.flying && com.dantemorrigan.gauntlet.stones.MindArena.inFight(p)) {
+            stopFlight(p, s);
+            ModStatus.send(p, Component.translatable("msg.infinity_gauntlet.loki.no_flight"));
+            return;
+        }
+        if (s.flying && (now >= s.flightEnd || !p.getAbilities().flying)) {
+            s.flying = false;
+            s.descending = true;
+            revokeFlight(p, true);
+            StormNetwork.flightStatus(p, -1);
+        }
+        if (s.descending) {
+            if (p.onGround() || p.isInWater()) {
+                stopFlight(p, s);
+            } else {
+                // Refresh a short effect until landing. Any longer existing Slow Falling effect takes precedence.
+                p.addEffect(new MobEffectInstance(MobEffects.SLOW_FALLING, 10, 0, false, false, false));
+                p.fallDistance = 0;
+            }
+        }
+        if (s.flying && now % 5 == 0) {
+            Vec3 move = p.getDeltaMovement();
+            if (move.lengthSqr() < .025) move = p.getLookAngle();
+            StormFx.FLIGHT_WAKE.play(p.level(), p.position().add(0, .65, 0).subtract(move.normalize()), 2.8, move);
         }
     }
 
@@ -1124,16 +1181,7 @@ public final class Stormbreaker {
             s.swing = null;
             return;
         }
-        if (!mainHand(owner) || !guarded(owner) || owner.hasAttached(CosmosTravel.FLIGHT) || InfinitySnap.inVoid(owner)) stopFlight(owner, s);
-        else if (s.flying && com.dantemorrigan.gauntlet.stones.MindArena.inFight(owner)) {
-            stopFlight(owner, s);
-            ModStatus.send(owner, Component.translatable("msg.infinity_gauntlet.loki.no_flight"));
-        }
-        if (s.flying && owner.getAbilities().flying && now % 5 == 0) {
-            Vec3 move = owner.getDeltaMovement();
-            if (move.lengthSqr() < .025) move = owner.getLookAngle();
-            StormFx.FLIGHT_WAKE.play(owner.level(), owner.position().add(0, .65, 0).subtract(move.normalize()), 2.8, move);
-        }
+        tickWielderFlight(owner, s, now);
         if (s.groundCharge != null) tickGroundCharge(owner, s, now);
         boolean charged = s.groundCharge != null || s.flying || s.cast != null || s.release != null || s.wave != null || s.swing != null;
         setCharged(owner.getMainHandItem(), relic, charged);
