@@ -18,12 +18,130 @@ final class LatveriaLandmarks {
 		church();
 	}
 
-	/** Four great houses on the square's east and west sides, facing the statue. */
+	/** Four great houses on the square's east and west sides, facing the statue: the Tavern and the Mechanic's Workshop among them. */
 	private static void flanks() {
-		LatveriaHouses.house(new Frame(25, 24, Direction.WEST), 17, 11, 3, false, false, true);
-		LatveriaHouses.house(new Frame(25, 52, Direction.WEST), 17, 11, 3, false, false, true);
-		LatveriaHouses.house(new Frame(-25, 8, Direction.EAST), 17, 11, 3, false, false, true);
-		LatveriaHouses.house(new Frame(-25, 36, Direction.EAST), 17, 11, 3, false, false, true);
+		Frame tavern = new Frame(25, 24, Direction.WEST);
+		LatveriaHouses.house(tavern, 17, 11, 3, true, false, true);
+		buildTavernAndCellar(tavern, 17, 11);
+
+		LatveriaHouses.house(new Frame(25, 52, Direction.WEST), 17, 11, 3, true, true, true);
+
+		Frame workshop = new Frame(-25, 8, Direction.EAST);
+		LatveriaHouses.house(workshop, 17, 11, 3, true, false, true);
+		buildMechanicWorkshop(workshop, 17, 11);
+
+		LatveriaHouses.house(new Frame(-25, 36, Direction.EAST), 17, 11, 3, true, true, true);
+	}
+
+	/**
+	 * The Doomstadt Tavern on the east side of the square: oak tables, a long bar counter, warm hearth,
+	 * and a dark stone-brick entrance at the back leading down into the subterranean Ale Cellar.
+	 */
+	private static void buildTavernAndCellar(Frame f, int w, int d) {
+		int y0 = G + 1;
+		// Clear the ground floor interior so we can furnish the tavern hall and dark cellar entrance cleanly.
+		f.fill(1, y0, 1, w - 2, y0 + 3, d - 2, AIR);
+		f.fill(1, y0 - 1, 1, w - 2, y0 - 1, d - 2, Blocks.SPRUCE_PLANKS);
+
+		// Warm tavern runner from the front door (u = 8, v = 0) into the hall.
+		f.fill(7, y0, 1, 9, y0, 6, Blocks.RED_CARPET);
+
+		// Long bar counter on the left side (u = 2..5, v = 3..7) with barrels of ale behind it.
+		f.fill(4, y0, 3, 4, y0, 8, Blocks.SPRUCE_PLANKS);
+		f.fill(4, y0 + 1, 3, 4, y0 + 1, 8, slab(Blocks.DARK_OAK_SLAB, false));
+		for (int v = 3; v <= 8; v += 2) {
+			f.set(1, y0, v, barrel());
+			f.set(1, y0 + 1, v, barrel());
+		}
+		f.set(2, y0, 8, Blocks.BREWING_STAND);
+		f.set(1, y0, 4, Blocks.CAULDRON);
+		f.set(4, y0 + 1, 4, standing());
+
+		// Tavern tables and benches on the right side (u = 6..10).
+		for (int v : new int[]{3, 7}) {
+			f.set(7, y0, v, f.stairs(Blocks.SPRUCE_STAIRS, -1, 0, false));
+			f.set(8, y0, v, Blocks.SPRUCE_FENCE);
+			f.set(8, y0 + 1, v, Blocks.BROWN_CARPET);
+			f.set(9, y0, v, f.stairs(Blocks.SPRUCE_STAIRS, 1, 0, false));
+		}
+
+		// Dark entrance to the Ale Cellar in the north-east corner of the tavern (u = 11..15, v = 2..8).
+		f.fill(11, y0, 2, 15, y0 + 3, 8, Blocks.DEEPSLATE_BRICKS);
+		f.fill(12, y0, 3, 14, y0 + 2, 7, AIR);
+		// Open dark archway facing the tavern room at u = 11, v = 3..4 (right where Tavern Keeper Mirko stands at u=11, v=3).
+		f.fill(11, y0, 3, 11, y0 + 1, 4, AIR);
+		f.set(11, y0 + 2, 3, f.stairs(Blocks.DEEPSLATE_BRICK_STAIRS, 0, -1, true));
+		f.set(11, y0 + 2, 4, f.stairs(Blocks.DEEPSLATE_BRICK_STAIRS, 0, -1, true));
+		f.set(10, y0 + 2, 2, Blocks.SOUL_LANTERN.defaultBlockState());
+
+		// Staircase descending down (v = 4..8, y = y0 - 1 down to y0 - 5) into the Ale Cellar.
+		int cellarY = y0 - 5;
+		f.fill(2, cellarY - 1, 1, 15, y0 - 1, d - 1, Blocks.DEEPSLATE_BRICKS);
+		f.fill(3, cellarY, 2, 14, cellarY + 3, d - 2, AIR);
+		f.fill(3, cellarY - 1, 2, 14, cellarY - 1, d - 2, Blocks.COBBLESTONE);
+		for (int step = 0; step < 5; step++) {
+			int sy = y0 - 1 - step;
+			int sv = 4 + step;
+			f.fill(12, sy, sv, 14, sy + 3, sv, AIR);
+			f.set(13, sy, sv, f.stairs(Blocks.DEEPSLATE_BRICK_STAIRS, 0, -1, false));
+			f.set(12, sy, sv, f.stairs(Blocks.DEEPSLATE_BRICK_STAIRS, 0, -1, false));
+		}
+
+		// Furnish the dark Ale Cellar with rows of ale casks, hay bales (wheat store), cobwebs, and dim soul lanterns.
+		for (int u = 3; u <= 9; u += 3) {
+			f.set(u, cellarY, 2, barrel());
+			f.set(u, cellarY + 1, 2, barrel());
+			f.set(u, cellarY, d - 2, barrel());
+			f.set(u, cellarY + 1, d - 2, barrel());
+		}
+		f.set(4, cellarY, 5, hay());
+		f.set(5, cellarY, 5, hay());
+		f.set(4, cellarY + 1, 5, hay());
+		f.set(8, cellarY, 5, Blocks.BREWING_STAND);
+		f.set(7, cellarY + 3, 5, Blocks.SOUL_LANTERN.defaultBlockState().setValue( net.minecraft.world.level.block.state.properties.BlockStateProperties.HANGING, true));
+		f.set(3, cellarY + 3, 2, Blocks.COBWEB);
+		f.set(10, cellarY + 3, d - 2, Blocks.COBWEB);
+
+		// Chandeliers in the main tavern hall.
+		f.set(6, y0 + 3, 4, hanging());
+		f.set(10, y0 + 3, 6, hanging());
+	}
+
+	/**
+	 * The Old Mechanic's Workshop on the west side of the square: workbenches, copper coils, an anvil,
+	 * blast furnaces, and a miniature mock-up of the Castle Generator on the table.
+	 */
+	private static void buildMechanicWorkshop(Frame f, int w, int d) {
+		int y0 = G + 1;
+		f.fill(1, y0, 1, w - 2, y0 + 3, d - 2, AIR);
+		f.fill(1, y0 - 1, 1, w - 2, y0 - 1, d - 2, Blocks.COBBLESTONE);
+
+		// Central workbench table where Old Mechanic Radovan tinkers with the Generator Disruptor (u = 7..9, v = 6).
+		f.set(7, y0, 6, Blocks.CRAFTING_TABLE);
+		f.set(8, y0, 6, Blocks.SMITHING_TABLE);
+		f.set(9, y0, 6, Blocks.COPPER_BLOCK);
+		f.set(9, y0 + 1, 6, Blocks.LIGHTNING_ROD);
+		f.set(7, y0 + 1, 6, standing());
+
+		// Heavy machinery, blast furnaces, and copper conduits along the walls.
+		f.set(2, y0, 2, Blocks.BLAST_FURNACE);
+		f.set(3, y0, 2, Blocks.BLAST_FURNACE);
+		f.fill(2, y0 + 1, 2, 3, y0 + 3, 2, Blocks.COBBLESTONE_WALL);
+		f.set(5, y0, 2, Blocks.ANVIL);
+		f.set(6, y0, 2, Blocks.GRINDSTONE);
+
+		// A mini prototype of Doom's generator & dismantled Doombot parts in the corner (u = 12..14, v = 3..7).
+		f.fill(13, y0, 4, 14, y0 + 1, 5, Blocks.COPPER_BLOCK);
+		f.set(13, y0 + 2, 4, Blocks.REDSTONE_LAMP);
+		f.set(14, y0 + 2, 5, Blocks.LIGHTNING_ROD);
+		f.set(14, y0, 8, barrel());
+		f.set(15, y0, 8, barrel());
+		f.set(15, y0 + 1, 8, standing());
+
+		// Lectern with resistance blueprints.
+		f.set(4, y0, 7, Blocks.LECTERN);
+		f.set(5, y0 + 3, 5, hanging());
+		f.set(11, y0 + 3, 5, hanging());
 	}
 
 	private static void clockTower() {

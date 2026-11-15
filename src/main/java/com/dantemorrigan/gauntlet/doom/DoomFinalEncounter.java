@@ -1,0 +1,783 @@
+package com.dantemorrigan.gauntlet.doom;
+
+import com.dantemorrigan.gauntlet.GauntletConfig;
+import com.dantemorrigan.gauntlet.GauntletGesture;
+import com.dantemorrigan.gauntlet.GauntletState;
+import com.dantemorrigan.gauntlet.InfinityGauntlet;
+import com.dantemorrigan.gauntlet.ModEntities;
+import com.dantemorrigan.gauntlet.ModItems;
+import com.dantemorrigan.gauntlet.ModParticles;
+import com.dantemorrigan.gauntlet.Stone;
+import com.dantemorrigan.gauntlet.boss.ShipWreck;
+import com.dantemorrigan.gauntlet.boss.Thanos;
+import com.dantemorrigan.gauntlet.boss.ThanosEncounter;
+import com.dantemorrigan.gauntlet.net.ModNetwork;
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.codecs.RecordCodecBuilder;
+import net.fabricmc.fabric.api.attachment.v1.AttachmentRegistry;
+import net.fabricmc.fabric.api.attachment.v1.AttachmentType;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
+import net.fabricmc.fabric.api.event.player.AttackBlockCallback;
+import net.fabricmc.fabric.api.event.player.AttackEntityCallback;
+import net.fabricmc.fabric.api.event.player.UseItemCallback;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.util.Mth;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.EntitySpawnReason;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.LightningBolt;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.levelgen.Heightmap;
+import net.minecraft.world.phys.Vec3;
+
+import java.util.EnumSet;
+import java.util.List;
+import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+
+/**
+ * Task 4 Storyline: When Doctor Doom steals the player's incomplete Infinity Gauntlet (<= 5 stones) in Latveria:
+ * <ol>
+ *   <li><b>Cutscene 1 (Theft & Teleport)</b>: Doom equips the Gauntlet on his left arm and teleports out of Latveria.</li>
+ *   <li><b>Overworld Compass & Sandy-Fiery Battlefield</b>: A quest compass leads players in the Overworld to a massive
+ *       sandy-fiery arena (radius 36) where Doom stands waiting with the Gauntlet.</li>
+ *   <li><b>Approach Pushback & Cutscene 2 (Thanos Arrives & Dome Duel)</b>: Approaching Doom triggers a shockwave pushback
+ *       and Thanos's arrival from Sanctuary II; Thanos focuses entirely on Doom, and an impenetrable Energy Dome (radius 20)
+ *       rises over their duel while the player watches from outside.</li>
+ *   <li><b>Stormbreaker Dome Shatter & Cutscene 3 (Thanos's Death & Ship Crash)</b>: Holding Stormbreaker near the dome
+ *       unlocks a prompt/action to shatter the barrier; Doom then executes Thanos and shoots down Sanctuary II, which crashes.</li>
+ *   <li><b>Final Battle (Gauntlet Doom vs Player)</b>: Doom turns to the player combining Gauntlet stone abilities and magic.</li>
+ *   <li><b>Victory Cutscene (Green Dust & Gauntlet Return)</b>: Defeated Doom drops to one knee and dissolves into green dust
+ *       while the Infinity Gauntlet flies along a smooth arc and equips directly onto the player's left hand (offhand).</li>
+ * </ol>
+ */
+public final class DoomFinalEncounter {
+	public static final int STAGE_NONE = 0;
+	public static final int STAGE_THEFT_CUTSCENE = 1;
+	public static final int STAGE_WAITING_OVERWORLD = 2;
+	public static final int STAGE_THANOS_ARRIVAL = 3;
+	public static final int STAGE_DOME_DUEL = 4;
+	public static final int STAGE_KILL_THANOS_CUTSCENE = 5;
+	public static final int STAGE_FINAL_BOSS = 6;
+	public static final int STAGE_VICTORY_CUTSCENE = 7;
+	public static final int STAGE_DONE = 8;
+
+	public static final double ARENA_RADIUS = 36.0;
+	public static final double DOME_RADIUS = 20.0;
+
+	private record SavedState(int stage, BlockPos arenaPos, int stoneMask, boolean arenaBuilt, String ownerUuid) {
+		static final Codec<SavedState> CODEC = RecordCodecBuilder.create(i -> i.group(
+				Codec.INT.fieldOf("stage").forGetter(SavedState::stage),
+				BlockPos.CODEC.fieldOf("arenaPos").forGetter(SavedState::arenaPos),
+				Codec.INT.fieldOf("stoneMask").forGetter(SavedState::stoneMask),
+				Codec.BOOL.fieldOf("arenaBuilt").forGetter(SavedState::arenaBuilt),
+				Codec.STRING.fieldOf("ownerUuid").forGetter(SavedState::ownerUuid)
+		).apply(i, SavedState::new));
+	}
+
+	private static final AttachmentType<SavedState> STATE = AttachmentRegistry.<SavedState>builder()
+			.persistent(SavedState.CODEC)
+			.buildAndRegister(InfinityGauntlet.id("doom_final_encounter"));
+
+	private static boolean loaded;
+	private static int stage = STAGE_NONE;
+	private static int stageTicks = 0;
+	private static BlockPos arenaPos = BlockPos.ZERO;
+	private static int stoneMask = 0x1F; // default 5 stones
+	private static boolean arenaBuilt = false;
+	private static UUID ownerId;
+	private static ItemStack stolenGauntlet = ItemStack.EMPTY;
+
+	private static DoctorDoom doom;
+	private static Thanos thanos;
+	private static Vec3 shipHover = Vec3.ZERO;
+	private static Vec3 shipDir = new Vec3(0, 0, 1);
+	private static float shipYaw = 0f;
+	private static Vec3 crashSite = null;
+	private static int crashAge = -1;
+	private static CompletableFuture<List<ShipWreck.Part>> wreckPlan;
+	private static ShipWreck.Build wreckBuild;
+
+	public static void init() {
+		ServerTickEvents.END_SERVER_TICK.register(DoomFinalEncounter::tick);
+		ServerLifecycleEvents.SERVER_STOPPED.register(s -> resetRuntime());
+		ServerPlayNetworking.registerGlobalReceiver(ModNetwork.DoomBreakDome.TYPE, (payload, ctx) -> tryBreakDome(ctx.player()));
+
+		// Also allow left-clicking or right-clicking with Stormbreaker near the dome to shatter it!
+		UseItemCallback.EVENT.register((player, level, hand) -> {
+			if (player instanceof ServerPlayer sp && stage == STAGE_DOME_DUEL && player.getItemInHand(hand).is(ModItems.STORMBREAKER)) {
+				if (canBreakDome(sp) && tryBreakDome(sp)) {
+					return InteractionResult.SUCCESS;
+				}
+			}
+			return InteractionResult.PASS;
+		});
+		AttackBlockCallback.EVENT.register((player, level, hand, pos, dir) -> {
+			if (player instanceof ServerPlayer sp && stage == STAGE_DOME_DUEL && holdsStormbreaker(sp) && canBreakDome(sp)) {
+				if (tryBreakDome(sp)) return InteractionResult.SUCCESS;
+			}
+			return InteractionResult.PASS;
+		});
+		AttackEntityCallback.EVENT.register((player, level, hand, entity, hitResult) -> {
+			if (player instanceof ServerPlayer sp && stage == STAGE_DOME_DUEL && holdsStormbreaker(sp) && canBreakDome(sp)) {
+				if (tryBreakDome(sp)) return InteractionResult.SUCCESS;
+			}
+			return InteractionResult.PASS;
+		});
+	}
+
+	public static void resetRuntime() {
+		loaded = false;
+		stage = STAGE_NONE;
+		stageTicks = 0;
+		arenaPos = BlockPos.ZERO;
+		stoneMask = 0x1F;
+		arenaBuilt = false;
+		ownerId = null;
+		stolenGauntlet = ItemStack.EMPTY;
+		doom = null;
+		thanos = null;
+		crashSite = null;
+		crashAge = -1;
+		wreckPlan = null;
+		wreckBuild = null;
+	}
+
+	private static void load(MinecraftServer server) {
+		if (loaded) return;
+		loaded = true;
+		SavedState s = server.overworld().getAttached(STATE);
+		if (s != null) {
+			stage = s.stage();
+			arenaPos = s.arenaPos();
+			stoneMask = s.stoneMask();
+			arenaBuilt = s.arenaBuilt();
+			ownerId = s.ownerUuid().isEmpty() ? null : UUID.fromString(s.ownerUuid());
+			stolenGauntlet = buildGauntletFromMask(stoneMask);
+			if (stage == STAGE_THEFT_CUTSCENE) stage = STAGE_WAITING_OVERWORLD;
+			if (stage == STAGE_THANOS_ARRIVAL || stage == STAGE_KILL_THANOS_CUTSCENE) stage = STAGE_WAITING_OVERWORLD;
+			if (stage == STAGE_VICTORY_CUTSCENE) stage = STAGE_DONE;
+		}
+	}
+
+	private static void save(MinecraftServer server) {
+		server.overworld().setAttached(STATE, new SavedState(
+				stage, arenaPos, stoneMask, arenaBuilt, ownerId == null ? "" : ownerId.toString()));
+	}
+
+	public static boolean isActive(MinecraftServer server) {
+		load(server);
+		return stage >= STAGE_THEFT_CUTSCENE && stage < STAGE_DONE;
+	}
+
+	public static int currentStage(MinecraftServer server) {
+		load(server);
+		return stage;
+	}
+
+	public static BlockPos arenaPosition(MinecraftServer server) {
+		load(server);
+		return arenaPos;
+	}
+
+	public static int packStoneMask(ItemStack gauntlet) {
+		int mask = 0;
+		Set<Stone> inserted = GauntletState.inserted(gauntlet);
+		for (Stone st : inserted) mask |= (1 << st.ordinal());
+		return mask == 0 ? 0x1F : mask;
+	}
+
+	public static ItemStack buildGauntletFromMask(int mask) {
+		ItemStack stack = new ItemStack(ModItems.GAUNTLET);
+		Set<Stone> stones = EnumSet.noneOf(Stone.class);
+		Stone[] all = Stone.values();
+		for (int i = 0; i < all.length; i++) {
+			if ((mask & (1 << i)) != 0) stones.add(all[i]);
+		}
+		GauntletState.setInserted(stack, stones);
+		return stack;
+	}
+
+	/** Called when Doom steals the player's incomplete Gauntlet in Latveria. */
+	public static void onGauntletStolen(MinecraftServer server, ServerPlayer victim, ItemStack stolen) {
+		load(server);
+		stolenGauntlet = stolen.copy();
+		stoneMask = packStoneMask(stolen);
+		ownerId = victim == null ? null : victim.getUUID();
+		ServerLevel overworld = server.overworld();
+		BlockPos origin = overworld.getRespawnData().pos();
+		if (victim != null) {
+			// Check if victim has a return pos in Overworld
+			origin = victim.blockPosition();
+			if (victim.level().dimension() != Level.OVERWORLD) {
+				origin = overworld.getRespawnData().pos();
+			}
+		}
+		// Pick a battlefield site ~200 blocks away in Overworld
+		double angle = overworld.getRandom().nextDouble() * Math.TAU;
+		int ax = origin.getX() + (int) Math.round(Math.cos(angle) * 210);
+		int az = origin.getZ() + (int) Math.round(Math.sin(angle) * 210);
+		arenaPos = new BlockPos(ax, 72, az);
+		arenaBuilt = false;
+		stage = STAGE_THEFT_CUTSCENE;
+		stageTicks = 0;
+		save(server);
+	}
+
+	public static void syncTheftCutscene(ServerLevel latveria, DoctorDoom bossEntity, int totalTicks) {
+		for (ServerPlayer p : latveria.players()) {
+			ServerPlayNetworking.send(p, new ModNetwork.DoomFinalSync(
+					STAGE_THEFT_CUTSCENE, 0, bossEntity.position(), bossEntity.getId(), -1, stoneMask));
+		}
+	}
+
+	public static boolean holdsStormbreaker(ServerPlayer p) {
+		return p.getMainHandItem().is(ModItems.STORMBREAKER) || p.getOffhandItem().is(ModItems.STORMBREAKER);
+	}
+
+	public static boolean canBreakDome(ServerPlayer p) {
+		if (stage != STAGE_DOME_DUEL || p.level().dimension() != Level.OVERWORLD) return false;
+		Vec3 c = Vec3.atBottomCenterOf(arenaPos);
+		double dist = p.position().distanceTo(c);
+		return dist <= DOME_RADIUS + 8.5;
+	}
+
+	public static boolean tryBreakDome(ServerPlayer p) {
+		if (!holdsStormbreaker(p) || !canBreakDome(p)) return false;
+		ServerLevel level = (ServerLevel) p.level();
+		stage = STAGE_KILL_THANOS_CUTSCENE;
+		stageTicks = 0;
+		save(level.getServer());
+		Vec3 c = Vec3.atBottomCenterOf(arenaPos);
+		// Lightning bolt from Stormbreaker onto the dome!
+		LightningBolt bolt = EntityType.LIGHTNING_BOLT.create(level, EntitySpawnReason.EVENT);
+		if (bolt != null) {
+			bolt.setVisualOnly(true);
+			bolt.snapTo(c.x, c.y + DOME_RADIUS * 0.6, c.z);
+			level.addFreshEntity(bolt);
+		}
+		level.playSound(null, arenaPos, SoundEvents.TRIDENT_THUNDER.value(), SoundSource.PLAYERS, 3.0f, 0.8f);
+		level.playSound(null, arenaPos, SoundEvents.GLASS_BREAK, SoundSource.BLOCKS, 3.0f, 0.55f);
+		level.playSound(null, arenaPos, SoundEvents.BEACON_DEACTIVATE, SoundSource.BLOCKS, 2.5f, 0.6f);
+		for (ServerPlayer sp : level.players()) {
+			if (sp.position().distanceTo(c) < 120) {
+				DoomFx.send(sp, DoomFx.CUTSCENE, doom != null ? doom.getId() : -1, c, 0, 180);
+				DoomFx.send(sp, DoomFx.SHAKE, 0, c, 1.4f, 25);
+				DoomFx.send(sp, DoomFx.FLASH, 0, c, 1.0f, 16);
+			}
+		}
+		syncAll(level.getServer());
+		return true;
+	}
+
+	public static void onDoomDefeatedStart(ServerLevel level, DoctorDoom defeatedDoom, ServerPlayer killer) {
+		if (stage != STAGE_FINAL_BOSS) return;
+		stage = STAGE_VICTORY_CUTSCENE;
+		stageTicks = 0;
+		if (killer != null) ownerId = killer.getUUID();
+		save(level.getServer());
+		Vec3 c = defeatedDoom.position();
+		for (ServerPlayer sp : level.players()) {
+			if (sp.position().distanceTo(c) < 120) {
+				DoomFx.send(sp, DoomFx.CUTSCENE, defeatedDoom.getId(), c, 0, 128);
+			}
+		}
+		syncAll(level.getServer());
+	}
+
+	private static void tick(MinecraftServer server) {
+		load(server);
+		if (stage == STAGE_NONE || stage == STAGE_DONE) return;
+		stageTicks++;
+		ServerLevel overworld = server.overworld();
+
+		if (stage == STAGE_THEFT_CUTSCENE) {
+			if (stageTicks >= 136) {
+				stage = STAGE_WAITING_OVERWORLD;
+				stageTicks = 0;
+				save(server);
+				syncAll(server);
+			}
+			return;
+		}
+
+		// Sync compass & state periodically
+		if (stageTicks % 15 == 0) {
+			syncAll(server);
+		}
+
+		// Tick ship crash if active
+		if (crashAge >= 0) {
+			tickShipCrash(overworld);
+		}
+
+		// Find nearest player in Overworld near the arena
+		ServerPlayer nearest = null;
+		double bestDist = Double.POSITIVE_INFINITY;
+		for (ServerPlayer p : overworld.players()) {
+			if (!p.isAlive() || p.isSpectator()) continue;
+			double d = Math.hypot(p.getX() - (arenaPos.getX() + 0.5), p.getZ() - (arenaPos.getZ() + 0.5));
+			if (d < bestDist) {
+				bestDist = d;
+				nearest = p;
+			}
+		}
+
+		// Build the Sandy-Fiery Battlefield as soon as a player gets within 110 blocks
+		if (!arenaBuilt && nearest != null && bestDist <= 110) {
+			buildSandyFieryArena(overworld);
+			arenaBuilt = true;
+			save(server);
+		}
+
+		if (!arenaBuilt) return;
+		Vec3 center = Vec3.atBottomCenterOf(arenaPos);
+
+		switch (stage) {
+			case STAGE_WAITING_OVERWORLD -> {
+				ensureDoomPresent(overworld, center);
+				if (doom != null && stageTicks % 8 == 0) {
+					overworld.sendParticles(ModParticles.DOOM_RUNE_MOTE, doom.getX(), doom.getY() + 1.5, doom.getZ(), 2, 0.4, 0.4, 0.4, 0.02);
+				}
+				if (nearest != null && !nearest.isCreative() && nearest.position().distanceTo(center) <= 16.5) {
+					// Push player back and start Cutscene 2 (Thanos Arrival & Dome Duel)!
+					Vec3 dir = nearest.position().subtract(center);
+					Vec3 flat = new Vec3(dir.x, 0, dir.z);
+					flat = flat.lengthSqr() < 1e-4 ? new Vec3(0, 0, 1) : flat.normalize();
+					Vec3 pushTo = center.add(flat.scale(23.5));
+					nearest.teleportTo(pushTo.x, center.y + 0.5, pushTo.z);
+					nearest.setDeltaMovement(flat.scale(1.1).add(0, 0.45, 0));
+					nearest.hurtMarked = true;
+					if (doom != null) doom.face(nearest.position());
+					DoomFx.flat(overworld, ModParticles.DOOM_SLAM_WAVE, center, 8);
+					DoomFx.sound(overworld, center, SoundEvents.WARDEN_SONIC_BOOM, 2.0f, 0.8f);
+					DoomFx.line(overworld, center, 80, "doom.arena_push");
+					beginThanosArrival(overworld, center, nearest);
+				}
+			}
+			case STAGE_THANOS_ARRIVAL -> tickThanosArrival(overworld, center, stageTicks);
+			case STAGE_DOME_DUEL -> tickDomeDuel(overworld, center);
+			case STAGE_KILL_THANOS_CUTSCENE -> tickKillThanosCutscene(overworld, center, stageTicks);
+			case STAGE_FINAL_BOSS -> tickFinalBoss(overworld, center, nearest);
+			case STAGE_VICTORY_CUTSCENE -> tickVictoryCutscene(overworld, center, stageTicks);
+		}
+	}
+
+	private static void ensureDoomPresent(ServerLevel overworld, Vec3 center) {
+		if (!overworld.isLoaded(arenaPos)) return;
+		if (doom == null || doom.isRemoved() || !doom.isAlive()) {
+			doom = ModEntities.DOCTOR_DOOM.create(overworld, EntitySpawnReason.EVENT);
+			if (doom == null) return;
+			if (stolenGauntlet.isEmpty()) stolenGauntlet = buildGauntletFromMask(stoneMask);
+			doom.setupArenaWait(center, stolenGauntlet);
+			doom.snapTo(center.x, center.y, center.z, 0f, 0f);
+			overworld.addFreshEntity(doom);
+		}
+	}
+
+	private static void beginThanosArrival(ServerLevel overworld, Vec3 center, ServerPlayer triggerPlayer) {
+		stage = STAGE_THANOS_ARRIVAL;
+		stageTicks = 0;
+		save(overworld.getServer());
+		ensureDoomPresent(overworld, center);
+		if (doom != null) {
+			Vec3 doomSpot = center.add(-5.5, 0, 0);
+			doom.teleportTo(doomSpot.x, center.y, doomSpot.z);
+			doom.face(center.add(5.5, 0, 0));
+		}
+		shipHover = center.add(28, 76, 0);
+		shipDir = new Vec3(-1, 0, 0);
+		shipYaw = (float) Math.toDegrees(Math.atan2(-shipDir.x, -shipDir.z));
+		for (ServerPlayer p : overworld.players()) {
+			if (p.position().distanceTo(center) < 180) {
+				ServerPlayNetworking.send(p, new ModNetwork.ThanosFx(ThanosEncounter.FX_SHIP_ARRIVE, 0, shipHover, shipDir, shipYaw, 90));
+				DoomFx.send(p, DoomFx.CUTSCENE, doom != null ? doom.getId() : -1, center, 0, 168);
+			}
+		}
+		overworld.playSound(null, arenaPos, SoundEvents.BEACON_AMBIENT, SoundSource.HOSTILE, 3.0f, 0.4f);
+		syncAll(overworld.getServer());
+	}
+
+	private static void tickThanosArrival(ServerLevel overworld, Vec3 center, int t) {
+		keepPlayersOutsideDome(overworld, center);
+		Vec3 landing = center.add(5.5, 0, 0);
+		if (t == 55) {
+			for (ServerPlayer p : overworld.players()) {
+				if (p.position().distanceTo(center) < 180) {
+					ServerPlayNetworking.send(p, new ModNetwork.ThanosFx(ThanosEncounter.FX_BEAM, 0, landing, shipHover, shipYaw, 55));
+				}
+			}
+			overworld.playSound(null, BlockPos.containing(landing), SoundEvents.BEACON_ACTIVATE, SoundSource.HOSTILE, 4f, 0.5f);
+		}
+		if (t == 68) {
+			if (thanos != null && !thanos.isRemoved()) thanos.discard();
+			thanos = ModEntities.THANOS.create(overworld, EntitySpawnReason.EVENT);
+			if (thanos != null) {
+				thanos.setHasGauntlet(false);
+				thanos.snapTo(landing.x, landing.y + 22, landing.z, 90f, 0f);
+				thanos.faceTowards(center.add(-5.5, 0, 0));
+				thanos.script(Thanos.A_DESCEND, landing.add(0, 22, 0), landing, 36);
+				overworld.addFreshEntity(thanos);
+			}
+		}
+		if (t == 104 && thanos != null) {
+			for (ServerPlayer p : overworld.players()) {
+				if (p.position().distanceTo(center) < 180) {
+					ServerPlayNetworking.send(p, new ModNetwork.ThanosFx(ThanosEncounter.FX_IMPACT, 0, landing, Vec3.ZERO, 1.4f, 0));
+				}
+			}
+			overworld.playSound(null, BlockPos.containing(landing), SoundEvents.GENERIC_EXPLODE.value(), SoundSource.HOSTILE, 3f, 0.5f);
+			thanos.faceTowards(center.add(-5.5, 0, 0));
+			thanos.pose(Thanos.A_INTRO);
+			ThanosEncounter.line(thanos, ThanosEncounter.LINE_GIVE_STONES);
+		}
+		if (t == 136) {
+			DoomFx.line(overworld, center, 90, "doom.thanos_reply");
+			if (doom != null) doom.face(landing);
+		}
+		if (t == 156) {
+			// Dome rises around Doom and Thanos!
+			overworld.playSound(null, arenaPos, SoundEvents.RESPAWN_ANCHOR_SET_SPAWN, SoundSource.HOSTILE, 3.0f, 0.6f);
+			overworld.playSound(null, arenaPos, SoundEvents.BEACON_ACTIVATE, SoundSource.HOSTILE, 3.0f, 0.8f);
+			DoomFx.flat(overworld, ModParticles.DOOM_SLAM_WAVE, center, 16);
+		}
+		if (t >= 168) {
+			stage = STAGE_DOME_DUEL;
+			stageTicks = 0;
+			save(overworld.getServer());
+			if (doom != null && thanos != null) {
+				doom.beginDuelWithThanos(thanos, center);
+				thanos.beginDuelWithMob(doom);
+			}
+			syncAll(overworld.getServer());
+		}
+	}
+
+	private static void tickDomeDuel(ServerLevel overworld, Vec3 center) {
+		keepPlayersOutsideDome(overworld, center);
+		if (!overworld.isLoaded(arenaPos)) return;
+		ensureDoomPresent(overworld, center);
+		if (thanos == null || thanos.isRemoved() || !thanos.isAlive()) {
+			Vec3 landing = center.add(5.5, 0, 0);
+			thanos = ModEntities.THANOS.create(overworld, EntitySpawnReason.EVENT);
+			if (thanos != null) {
+				thanos.setHasGauntlet(false);
+				thanos.snapTo(landing.x, landing.y, landing.z, 90f, 0f);
+				overworld.addFreshEntity(thanos);
+			}
+		}
+		if (doom != null && thanos != null) {
+			if (!doom.fighting()) doom.beginDuelWithThanos(thanos, center);
+			if (!thanos.fighting()) thanos.beginDuelWithMob(doom);
+			// Keep both combatants inside the dome radius (16.5 blocks) and healthy
+			clampInsideDome(doom, center, 16.0);
+			clampInsideDome(thanos, center, 16.0);
+			doom.setHealth(doom.getMaxHealth());
+			thanos.setHealth(thanos.getMaxHealth());
+		}
+	}
+
+	private static void clampInsideDome(net.minecraft.world.entity.LivingEntity entity, Vec3 center, double maxR) {
+		Vec3 off = entity.position().subtract(center);
+		double d = Math.hypot(off.x, off.z);
+		if (d > maxR) {
+			Vec3 clamped = center.add(off.x * (maxR / d), 0, off.z * (maxR / d));
+			entity.teleportTo(clamped.x, center.y, clamped.z);
+		}
+	}
+
+	private static void keepPlayersOutsideDome(ServerLevel overworld, Vec3 center) {
+		for (ServerPlayer p : overworld.players()) {
+			if (!p.isAlive() || p.isSpectator()) continue;
+			Vec3 off = p.position().subtract(center);
+			double d = Math.hypot(off.x, off.z);
+			if (d < DOME_RADIUS + 0.6 && off.y < DOME_RADIUS + 2) {
+				Vec3 dir = d < 1e-3 ? new Vec3(0, 0, 1) : new Vec3(off.x / d, 0, off.z / d);
+				Vec3 out = center.add(dir.scale(DOME_RADIUS + 1.2));
+				p.teleportTo(out.x, Math.max(center.y, p.getY()), out.z);
+				p.setDeltaMovement(dir.scale(0.55).add(0, 0.2, 0));
+				p.hurtMarked = true;
+				overworld.sendParticles(ParticleTypes.END_ROD, out.x, p.getY() + 1.0, out.z, 8, 0.3, 0.4, 0.3, 0.05);
+				overworld.playSound(null, p.blockPosition(), SoundEvents.SHIELD_BLOCK.value(), SoundSource.BLOCKS, 0.9f, 1.4f);
+			}
+		}
+	}
+
+	private static void tickKillThanosCutscene(ServerLevel overworld, Vec3 center, int t) {
+		ensureDoomPresent(overworld, center);
+		if (t == 1) {
+			// Dome shatters into glowing fragments!
+			for (int i = 0; i < 90; i++) {
+				double theta = overworld.getRandom().nextDouble() * Math.TAU;
+				double phi = overworld.getRandom().nextDouble() * (Math.PI * 0.48);
+				double r = DOME_RADIUS * Math.cos(phi);
+				double x = center.x + Math.cos(theta) * r;
+				double y = center.y + DOME_RADIUS * Math.sin(phi);
+				double z = center.z + Math.sin(theta) * r;
+				overworld.sendParticles(ParticleTypes.END_ROD, x, y, z, 2, 0.3, 0.3, 0.3, 0.12);
+				overworld.sendParticles(ModParticles.DOOM_RUNE_MOTE, x, y, z, 1, 0.2, 0.2, 0.2, 0.05);
+			}
+			if (doom != null) {
+				doom.teleportTo(center.x - 3.5, center.y, center.z);
+				if (thanos != null) doom.face(thanos.position());
+			}
+			if (thanos != null) {
+				thanos.teleportTo(center.x + 3.5, center.y, center.z);
+				thanos.faceTowards(center.add(-3.5, 0, 0));
+				thanos.pose(Thanos.A_STAGGER);
+			}
+		}
+		if (t == 30 && doom != null && thanos != null) {
+			// Doom channels all stones + magic into Thanos!
+			DoomVfx.on(overworld, DoomVfx.CHARGE, doom, 1.6f, 35, DoomVfx.SUN);
+			DoomFx.sound(overworld, center, SoundEvents.BEACON_POWER_SELECT, 2.5f, 0.55f);
+			DoomFx.line(overworld, center, 100, "doom.kill_thanos_1");
+		}
+		if (t >= 45 && t <= 85 && doom != null && thanos != null && t % 2 == 0) {
+			Vec3 from = doom.position().add(0, 1.7, 0);
+			Vec3 to = thanos.position().add(0, 1.5, 0);
+			DoomVfx.line(overworld, DoomVfx.TRAIL, from, to, 0.65f, 4, DoomVfx.SUN);
+			DoomVfx.line(overworld, DoomVfx.TRAIL, from, to, 0.38f, 4, DoomVfx.GREEN);
+		}
+		if (t == 86 && thanos != null) {
+			Vec3 tPos = thanos.position();
+			DoomVfx.at(overworld, DoomVfx.COLUMN, tPos.add(0, 0.1, 0), 3.2f, 20, DoomVfx.EDICT_GREEN);
+			DoomVfx.at(overworld, DoomVfx.IMPACT, tPos.add(0, 1.5, 0), 3.4f, 18, DoomVfx.SUN);
+			DoomFx.sound(overworld, tPos, SoundEvents.WARDEN_SONIC_BOOM, 3.0f, 0.6f);
+			DoomFx.sound(overworld, tPos, SoundEvents.GENERIC_EXPLODE.value(), 2.5f, 0.55f);
+			DoomFx.near(overworld, center, 100, DoomFx.SHAKE, 0, 1.5f, 20);
+			DoomFx.near(overworld, center, 100, DoomFx.FLASH, 0, 0.9f, 14);
+			thanos.killInCutscene(overworld);
+		}
+		if (t == 105 && doom != null) {
+			// Doom fires a colossal beam into the sky at Sanctuary II!
+			DoomFx.line(overworld, center, 100, "doom.kill_thanos_2");
+			Vec3 from = doom.position().add(0, 2.0, 0);
+			DoomVfx.line(overworld, DoomVfx.TRAIL, from, shipHover, 1.4f, 26, DoomVfx.EDICT_GREEN);
+			DoomVfx.line(overworld, DoomVfx.TRAIL, from, shipHover, 0.8f, 26, DoomVfx.SUN);
+			overworld.playSound(null, arenaPos, SoundEvents.WARDEN_SONIC_BOOM, SoundSource.HOSTILE, 4.0f, 0.5f);
+			for (ServerPlayer p : overworld.players()) {
+				if (p.position().distanceTo(center) < 200) {
+					ServerPlayNetworking.send(p, new ModNetwork.ThanosFx(ThanosEncounter.FX_DRAGON_RAY, 0, shipHover, from, 0, 20));
+				}
+			}
+		}
+		if (t == 120) {
+			// Sanctuary II explodes and crashes down!
+			startShipCrash(overworld, center);
+		}
+		if (t == 155 && doom != null) {
+			DoomFx.line(overworld, center, 100, "doom.final_challenge");
+		}
+		if (t >= 180) {
+			stage = STAGE_FINAL_BOSS;
+			stageTicks = 0;
+			save(overworld.getServer());
+			if (doom != null) {
+				doom.beginFinalPlayerFight(center);
+			}
+			syncAll(overworld.getServer());
+		}
+	}
+
+	private static void startShipCrash(ServerLevel overworld, Vec3 center) {
+		int cx = BlockPos.containing(shipHover).getX() + 45;
+		int cz = BlockPos.containing(shipHover).getZ() + 25;
+		int cy = overworld.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, cx, cz);
+		crashSite = new Vec3(cx + 0.5, cy, cz + 0.5);
+		crashAge = 0;
+		if (GauntletConfig.get().thanosShipWreck) {
+			float yaw = shipYaw + 28f, roll = 19f;
+			wreckPlan = CompletableFuture.supplyAsync(() -> ShipWreck.plan(yaw, -27f, roll));
+		}
+		for (ServerPlayer p : overworld.players()) {
+			if (p.position().distanceTo(center) < 260) {
+				ServerPlayNetworking.send(p, new ModNetwork.ThanosFx(
+						ThanosEncounter.FX_SHIP_CRASH, 2, shipHover, crashSite, shipYaw, ThanosEncounter.CRASH_TICKS));
+			}
+		}
+		overworld.playSound(null, BlockPos.containing(shipHover), SoundEvents.WITHER_DEATH, SoundSource.HOSTILE, 8f, 0.4f);
+	}
+
+	private static void tickShipCrash(ServerLevel overworld) {
+		crashAge++;
+		if (crashAge == ThanosEncounter.CRASH_TICKS && crashSite != null) {
+			overworld.explode(null, crashSite.x, crashSite.y + 2, crashSite.z, 7f, Level.ExplosionInteraction.NONE);
+			overworld.playSound(null, BlockPos.containing(crashSite), SoundEvents.GENERIC_EXPLODE.value(), SoundSource.HOSTILE, 14f, 0.3f);
+		}
+		if (crashAge > ThanosEncounter.CRASH_TICKS && wreckPlan != null && wreckBuild == null && wreckPlan.isDone() && !wreckPlan.isCompletedExceptionally()) {
+			wreckBuild = new ShipWreck.Build(overworld, BlockPos.containing(crashSite), wreckPlan.join());
+		}
+		if (wreckBuild != null && !wreckBuild.done()) {
+			wreckBuild.step(2000);
+			if (wreckBuild.done()) {
+				for (ServerPlayer p : overworld.players()) {
+					if (p.position().distanceTo(crashSite) < 260) {
+						ServerPlayNetworking.send(p, new ModNetwork.ThanosFx(ThanosEncounter.FX_WRECK_DONE, 0, crashSite, Vec3.ZERO, 0, 0));
+					}
+				}
+			}
+		}
+		if (crashAge > ThanosEncounter.CRASH_TICKS + 400) {
+			crashAge = -1;
+		}
+	}
+
+	private static void tickFinalBoss(ServerLevel overworld, Vec3 center, ServerPlayer nearest) {
+		if (!overworld.isLoaded(arenaPos)) return;
+		if (doom == null || doom.isRemoved()) {
+			if (nearest != null && nearest.position().distanceTo(center) < 64) {
+				ensureDoomPresent(overworld, center);
+				if (doom != null) doom.beginFinalPlayerFight(center);
+			}
+		}
+	}
+
+	private static void tickVictoryCutscene(ServerLevel overworld, Vec3 center, int t) {
+		ServerPlayer winner = ownerId == null ? null : overworld.getServer().getPlayerList().getPlayer(ownerId);
+		if (winner == null || winner.level() != overworld || !winner.isAlive()) {
+			for (ServerPlayer p : overworld.players()) {
+				if (p.isAlive() && !p.isSpectator() && p.position().distanceTo(center) < 96) {
+					winner = p;
+					break;
+				}
+			}
+		}
+		if (t == 60) {
+			overworld.playSound(null, arenaPos, SoundEvents.BEACON_ACTIVATE, SoundSource.PLAYERS, 2.5f, 1.2f);
+		}
+		if (t == 114 && winner != null) {
+			// Equip the stolen Infinity Gauntlet directly onto the player's left hand (EquipmentSlot.OFFHAND)!
+			if (stolenGauntlet.isEmpty()) stolenGauntlet = buildGauntletFromMask(stoneMask);
+			ItemStack currentOffhand = winner.getOffhandItem();
+			if (!currentOffhand.isEmpty() && !currentOffhand.is(ModItems.GAUNTLET)) {
+				if (!winner.getInventory().add(currentOffhand.copy())) {
+					winner.drop(currentOffhand.copy(), false);
+				}
+			}
+			winner.setItemSlot(EquipmentSlot.OFFHAND, stolenGauntlet.copy());
+			winner.inventoryMenu.broadcastChanges();
+			GauntletGesture.start(winner);
+			overworld.playSound(null, winner.blockPosition(), SoundEvents.ARMOR_EQUIP_NETHERITE.value(), SoundSource.PLAYERS, 1.8f, 0.85f);
+			overworld.playSound(null, winner.blockPosition(), SoundEvents.UI_TOAST_CHALLENGE_COMPLETE, SoundSource.PLAYERS, 1.5f, 1.0f);
+		}
+		if (t >= 128) {
+			MinecraftServer server = overworld.getServer();
+			ThanosEncounter.markDefeated(server);
+			ServerLevel latveria = server.getLevel(Latveria.LEVEL);
+			List<UUID> victors = winner != null ? List.of(winner.getUUID()) : (ownerId != null ? List.of(ownerId) : List.of());
+			if (latveria != null && !victors.isEmpty()) {
+				Latveria.conquer(latveria, victors);
+			}
+			for (ServerPlayer p : overworld.players()) {
+				if (p.position().distanceTo(center) < 128) {
+					ServerPlayNetworking.send(p, new ModNetwork.QuestAlert(
+							Component.translatable("msg.infinity_gauntlet.latveria.doom.final_victory_alert"), 0));
+					ServerPlayNetworking.send(p, new ModNetwork.ThanosFx(ThanosEncounter.FX_END, 0, Vec3.ZERO, Vec3.ZERO, 0, 0));
+				}
+			}
+			stage = STAGE_DONE;
+			stageTicks = 0;
+			save(server);
+			syncAll(server);
+		}
+	}
+
+	/** Shapes the huge Sandy-Fiery Battlefield in the Overworld at {@link #arenaPos}. */
+	private static void buildSandyFieryArena(ServerLevel overworld) {
+		int cx = arenaPos.getX();
+		int cz = arenaPos.getZ();
+		overworld.getChunk(cx >> 4, cz >> 4);
+		int baseY = overworld.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, cx, cz);
+		baseY = Mth.clamp(baseY, overworld.getSeaLevel() + 1, 140);
+		arenaPos = new BlockPos(cx, baseY, cz);
+		var rng = overworld.getRandom();
+		int r = (int) ARENA_RADIUS;
+
+		for (int dx = -r - 3; dx <= r + 3; dx++) {
+			for (int dz = -r - 3; dz <= r + 3; dz++) {
+				double dist = Math.hypot(dx, dz);
+				if (dist > r + 2.5) continue;
+				int x = cx + dx, z = cz + dz;
+				overworld.getChunk(x >> 4, z >> 4);
+				// Clear trees/leaves/obstacles above the arena
+				for (int y = baseY + 1; y <= baseY + 18; y++) {
+					BlockPos up = new BlockPos(x, y, z);
+					if (!overworld.getBlockState(up).isAir()) {
+						overworld.setBlock(up, Blocks.AIR.defaultBlockState(), 2);
+					}
+				}
+				// Fill support underneath if over a dip or water
+				for (int y = baseY - 4; y < baseY; y++) {
+					BlockPos under = new BlockPos(x, y, z);
+					overworld.setBlock(under, Blocks.SANDSTONE.defaultBlockState(), 2);
+				}
+				// Surface block: sandy-fiery mix of sand, red sand, magma, netherrack, and scorched blackstone
+				BlockPos floor = new BlockPos(x, baseY, z);
+				double noise = Math.sin(dx * 0.23) * Math.cos(dz * 0.23) + (rng.nextDouble() - 0.5) * 0.8;
+				BlockState surface;
+				if (dist > r - 1.8) {
+					surface = rng.nextBoolean() ? Blocks.BLACKSTONE.defaultBlockState() : Blocks.MAGMA_BLOCK.defaultBlockState();
+				} else if (noise > 0.55) {
+					surface = Blocks.MAGMA_BLOCK.defaultBlockState();
+				} else if (noise > 0.25) {
+					surface = Blocks.RED_SAND.defaultBlockState();
+				} else if (noise < -0.45) {
+					surface = Blocks.NETHERRACK.defaultBlockState();
+				} else if (noise < -0.2) {
+					surface = Blocks.BLACKSTONE.defaultBlockState();
+				} else {
+					surface = Blocks.SAND.defaultBlockState();
+				}
+				overworld.setBlock(floor, surface, 3);
+
+				// Scattered eternal flames on netherrack/magma outside the immediate center
+				if (dist > 6.5 && dist < r - 2 && (surface.is(Blocks.NETHERRACK) || surface.is(Blocks.MAGMA_BLOCK)) && rng.nextInt(5) == 0) {
+					overworld.setBlock(floor.above(), Blocks.FIRE.defaultBlockState(), 3);
+				}
+			}
+		}
+
+		// Scorched obsidian/blackstone spires around the rim of the battlefield
+		for (int i = 0; i < 12; i++) {
+			double a = i * (Math.TAU / 12.0);
+			int px = cx + (int) Math.round(Math.cos(a) * (r - 1));
+			int pz = cz + (int) Math.round(Math.sin(a) * (r - 1));
+			int h = 3 + (i % 3);
+			for (int dy = 1; dy <= h; dy++) {
+				BlockPos spire = new BlockPos(px, baseY + dy, pz);
+				overworld.setBlock(spire, dy == h ? Blocks.MAGMA_BLOCK.defaultBlockState() : Blocks.BLACKSTONE.defaultBlockState(), 3);
+			}
+			overworld.setBlock(new BlockPos(px, baseY + h + 1, pz), Blocks.FIRE.defaultBlockState(), 3);
+		}
+	}
+
+	public static void syncAll(MinecraftServer server) {
+		Vec3 c = Vec3.atBottomCenterOf(arenaPos);
+		int dId = doom != null && !doom.isRemoved() ? doom.getId() : -1;
+		int tId = thanos != null && !thanos.isRemoved() ? thanos.getId() : -1;
+		ModNetwork.DoomFinalSync pkt = new ModNetwork.DoomFinalSync(stage, stageTicks, c, dId, tId, stoneMask);
+		for (ServerPlayer p : server.getPlayerList().getPlayers()) {
+			ServerPlayNetworking.send(p, pkt);
+		}
+	}
+
+	private DoomFinalEncounter() {}
+}

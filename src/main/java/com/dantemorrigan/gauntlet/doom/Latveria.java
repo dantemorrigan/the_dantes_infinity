@@ -175,19 +175,28 @@ public final class Latveria {
 
 	public static void init() {
 		DoomItems.Heart.init();
+		LatveriaQuests.init();
 		// The whole gauntlet beaten: a bearer who would fall to Doom is spared for the ascension instead.
+		// If the bearer has <= 5 stones, Doom steals the gauntlet and teleports to the Overworld!
 		net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents.ALLOW_DEATH.register((entity, source, amount) -> {
 			if (!(entity instanceof ServerPlayer p) || p.level().dimension() != LEVEL || boss == null || !boss.isAlive()) return true;
-			if (boss.ascending()) { p.setHealth(1); return false; }
+			if (boss.ascending() || boss.stealingGauntlet()) { p.setHealth(2); return false; }
 			if (!boss.fighting() || !(source.getEntity() instanceof DoctorDoom || source.getEntity() instanceof Doombot b && !b.allied())) return true;
 			var g = com.dantemorrigan.gauntlet.GauntletState.activeGauntlet(p);
-			if (g.isEmpty() || com.dantemorrigan.gauntlet.GauntletState.inserted(g).size() < 6) return true;
-			p.setHealth(1);
-			boss.ascend(p.level(), p);
-			return false;
+			if (!g.isEmpty() && com.dantemorrigan.gauntlet.GauntletState.inserted(g).size() >= 6) {
+				p.setHealth(1);
+				boss.ascend(p.level(), p);
+				return false;
+			}
+			if (DoctorDoom.canStealGauntletFrom(p)) {
+				p.setHealth(6);
+				boss.stealGauntletAndFlee(p.level(), p);
+				return false;
+			}
+			return true;
 		});
 		net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents.ALLOW_DAMAGE.register((entity, source, amount) ->
-				!(entity instanceof ServerPlayer && entity.level().dimension() == LEVEL && boss != null && boss.ascending()));
+				!(entity instanceof ServerPlayer && entity.level().dimension() == LEVEL && boss != null && (boss.ascending() || boss.stealingGauntlet())));
 		net.fabricmc.fabric.api.event.player.PlayerBlockBreakEvents.BEFORE.register((level, player, pos, state, be) -> {
 			if (level.dimension() != LEVEL) return true;
 			if (player.isCreative()) { bypass = true; return true; }
@@ -214,6 +223,7 @@ public final class Latveria {
 			logoDue.clear();
 			DoomCombat.clear();
 			DoomArmor.clear();
+			LatveriaQuests.resetRuntime();
 		});
 		ServerChunkEvents.CHUNK_LOAD.register((level, chunk, fresh) -> {
 			if (level.dimension() == LEVEL && furnitureChunks.contains(chunk.getPos().pack())) toFurnish.add(chunk.getPos().pack());
@@ -223,6 +233,11 @@ public final class Latveria {
 			if (!(player instanceof ServerPlayer sp) || level.dimension() != LEVEL) return InteractionResult.PASS;
 			BlockPos p = hit.getBlockPos(), g = LatveriaPlan.GENERATOR;
 			if (LatveriaCourt.isThrone(p) && LatveriaCourt.sit(sp)) return InteractionResult.SUCCESS;
+			if (LatveriaQuests.isGeneratorBlock(p) && (sp.getMainHandItem().is(ModItems.GENERATOR_DISRUPTOR)
+					|| sp.getOffhandItem().is(ModItems.GENERATOR_DISRUPTOR)
+					|| LatveriaQuests.UNDER_CASTLE_GEN_BOX.contains(p.getX() + 0.5, p.getY() + 0.5, p.getZ() + 0.5))) {
+				return LatveriaQuests.attachDisruptor(sp, p) ? InteractionResult.SUCCESS : InteractionResult.PASS;
+			}
 			if (Math.abs(p.getX() - g.getX()) > 2 || Math.abs(p.getZ() - g.getZ()) > 2 || Math.abs(p.getY() - g.getY()) > 5) return InteractionResult.PASS;
 			return shutGenerator(sp) ? InteractionResult.SUCCESS : InteractionResult.PASS;
 		});
@@ -358,6 +373,10 @@ public final class Latveria {
 		int f = LatveriaPlan.FLOOR;
 		PLACES.put("arrival", new double[]{0.5, LatveriaPlan.VALLEY_Y + 1, 122.5, 180});
 		PLACES.put("square", new double[]{0.5, LatveriaPlan.VALLEY_Y + 1, 45.5, 180});
+		PLACES.put("workshop", new double[]{-27.5, LatveriaPlan.VALLEY_Y + 1, 16.5, 90});
+		PLACES.put("tavern", new double[]{27.5, LatveriaPlan.VALLEY_Y + 1, 15.5, 270});
+		PLACES.put("cellar", new double[]{32.5, LatveriaPlan.VALLEY_Y - 4, 15.5, 270});
+		PLACES.put("under_generator", new double[]{0.5, LatveriaPlan.FLOOR - 13, -248.5, 0});
 		PLACES.put("watchtower", new double[]{11.5, LatveriaPlan.VALLEY_Y + 18, -59.5, 180});
 		PLACES.put("road", new double[]{0.5, LatveriaPlan.roadHeight(-120) + 1.6, -112.5, 180});
 		PLACES.put("gate", new double[]{0.5, f, -186.5, 180});
@@ -538,11 +557,13 @@ public final class Latveria {
 			return;
 		}
 		for (int n = 0; n < 2 && !toFurnish.isEmpty(); n++) furnish(level, toFurnish.poll());
+		LatveriaQuests.ensureNpcs(level);
 		Searchlights.tick(level);
 		LatveriaHunt.tick(level);
 		LatveriaCourt.tick(level);
 		// A copy: leaving through the gate takes the player out of this level's list while we walk it.
 		for (ServerPlayer p : List.copyOf(level.players())) {
+			LatveriaQuests.checkCloakProximity(level, p);
 			Integer due = logoDue.get(p.getUUID());
 			if (due != null) {
 				if (due <= 0) { logoDue.remove(p.getUUID()); DoomFx.send(p, DoomFx.LOGO, 1, p.position(), 0, 200); }
@@ -613,6 +634,15 @@ public final class Latveria {
 			if (level.isLoaded(LatveriaPlan.GENERATOR) && level.getBlockState(LatveriaPlan.GENERATOR).is(Blocks.SEA_LANTERN)) {
 				edit(() -> level.setBlockAndUpdate(LatveriaPlan.GENERATOR, Blocks.COAL_BLOCK.defaultBlockState()));
 			}
+			BlockPos ug = LatveriaQuests.UNDER_CASTLE_GEN;
+			if (level.isLoaded(ug) && level.getBlockState(new BlockPos(0, LatveriaPlan.FLOOR - 11, -242)).is(Blocks.SEA_LANTERN)) {
+				edit(() -> {
+					int gy = LatveriaPlan.FLOOR - 13;
+					for (BlockPos p : BlockPos.betweenClosed(-3, gy + 2, -245, 3, gy + 7, -239)) {
+						if (level.getBlockState(p).is(Blocks.SEA_LANTERN)) level.setBlockAndUpdate(p, Blocks.COAL_BLOCK.defaultBlockState());
+					}
+				});
+			}
 		}
 	}
 
@@ -662,7 +692,7 @@ public final class Latveria {
 
 	private static void fight(ServerLevel level) {
 		if (boss != null && boss.isRemoved()) boss = null;
-		if ((flags & CONQUERED) != 0) return;
+		if ((flags & CONQUERED) != 0 || DoomFinalEncounter.isActive(level.getServer())) return;
 		boolean anyone = false;
 		for (ServerPlayer p : level.players()) anyone |= inArena(p);
 		if (boss == null) {
@@ -691,6 +721,29 @@ public final class Latveria {
 		}
 		ServerPlayer v = victim == null ? null : level.getServer().getPlayerList().getPlayer(victim);
 		if (v != null) GauntletSilence.silence(v, 600);
+		callOff(level);
+	}
+
+	/**
+	 * After Doom steals the incomplete Infinity Gauntlet (<= 5 stones) and teleports out of Latveria: opens the castle
+	 * doors, calms the hunt, gives a Latveria Key if needed, and alerts the challengers to return to the Overworld.
+	 */
+	public static void onDoomStolenFled(ServerLevel level, java.util.UUID victim) {
+		openGates(level);
+		LatveriaHunt.clear();
+		for (ServerPlayer p : List.copyOf(level.players())) {
+			p.setHealth(p.getMaxHealth());
+			p.removeAllEffects();
+			grantAccess(p);
+			if (!p.getInventory().contains(new ItemStack(ModItems.LATVERIA_KEY))) {
+				ItemStack key = new ItemStack(ModItems.LATVERIA_KEY);
+				if (!p.getInventory().add(key)) p.drop(key, false);
+			}
+			DoomFx.tell(p, "doom.stolen_fled_hint");
+			net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking.send(p,
+					new com.dantemorrigan.gauntlet.net.ModNetwork.QuestAlert(
+							net.minecraft.network.chat.Component.translatable("msg.infinity_gauntlet.latveria.doom.stolen_alert"), 1));
+		}
 		callOff(level);
 	}
 
@@ -766,17 +819,19 @@ public final class Latveria {
 			level.playSound(null, p.blockPosition(), SoundEvents.UI_TOAST_CHALLENGE_COMPLETE, SoundSource.PLAYERS, 1f, 0.9f);
 		}
 		if (first == null) return;
-		for (Doombot b : level.getEntitiesOfClass(Doombot.class, new net.minecraft.world.phys.AABB(-400, 0, -500, 400, 320, 400), b -> b.isAlive() && !b.allied())) b.obey(first);
+		LatveriaHunt.clear();
+		for (Doombot b : level.getEntitiesOfClass(Doombot.class, new net.minecraft.world.phys.AABB(-400, 0, -500, 400, 320, 400), b -> b.isAlive() && !b.isForged())) {
+			b.becomeStatue(first);
+		}
 		for (int side = -1; side <= 1; side += 2) {
 			Doombot guard = ModEntities.DOOMBOT.create(level, EntitySpawnReason.EVENT);
 			if (guard == null) continue;
 			guard.setup(Doombot.ROYAL_GUARD, -1);
 			guard.snapTo(side * 4 + 0.5, LatveriaPlan.FLOOR, -286.5, 0f, 0);
 			level.addFreshEntity(guard);
-			guard.obey(first);
-			guard.setGuarding(true);
+			guard.becomeStatue(first);
 		}
-		// The whole army falls in, in ranks in the throne room, and waits there.
+		// The whole army falls in, in ranks in the throne room, and stands as eternal grey statues.
 		LatveriaCourt.parade(level, level.getEntitiesOfClass(Doombot.class, new net.minecraft.world.phys.AABB(-400, 0, -500, 400, 320, 400),
 				b -> b.isAlive() && b.allied() && !b.decoy()));
 	}

@@ -44,7 +44,7 @@ public class Doombot extends PathfinderMob {
 	public static final int A_IDLE = 0, A_ALERT = 1, A_ATTACK = 2, A_STAGGER = 3, A_SALUTE = 4, A_ACTIVATE = 5;
 	public static final int FLAG_ALLIED = 1, FLAG_SHIELD = 2, FLAG_WARD = 4, FLAG_FLYING = 8, FLAG_DECOY = 16;
 	/** What a hunter knows: something is there ("?") or it has the intruder ("!"). */
-	public static final int FLAG_SUSPICIOUS = 32, FLAG_ALERTED = 64;
+	public static final int FLAG_SUSPICIOUS = 32, FLAG_ALERTED = 64, FLAG_DORMANT = 128;
 	/** A decoy stands as tall as Doom himself (2.4 blocks) and only lasts so long. */
 	public static final double DECOY_SCALE = 2.4 / 1.95;
 	public static final int DECOY_LIFE = 600;
@@ -172,6 +172,41 @@ public class Doombot extends PathfinderMob {
 	}
 
 	public boolean allied() { return flag(FLAG_ALLIED); }
+
+	public boolean dormant() { return flag(FLAG_DORMANT); }
+
+	public boolean isForged() { return forged; }
+
+	/**
+	 * Permanently powers down the Doombot: its eyes go out, its body turns grey, its head bows down,
+	 * and it stands motionless as a statue forever, never despawning.
+	 */
+	public void becomeStatue(ServerPlayer owner) {
+		if (owner != null) {
+			this.commander = owner.getUUID();
+			setFlag(FLAG_ALLIED, true);
+		}
+		if (squad >= 0 && this.level() instanceof ServerLevel sl) {
+			Latveria.onBotDeath(sl.getServer(), squad);
+		}
+		this.targetId = null;
+		this.squad = -1;
+		this.guarding = true;
+		this.home = this.position();
+		setFlag(FLAG_DORMANT, true);
+		setFlag(FLAG_SHIELD, false);
+		setFlag(FLAG_WARD, false);
+		setFlag(FLAG_FLYING, false);
+		setFlag(FLAG_SUSPICIOUS, false);
+		setFlag(FLAG_ALERTED, false);
+		this.setNoGravity(false);
+		this.getNavigation().stop();
+		this.setDeltaMovement(Vec3.ZERO);
+		this.yBodyRot = this.getYRot();
+		this.yHeadRot = this.getYRot();
+		this.setXRot(34.0F);
+		setAction(A_IDLE);
+	}
 
 	public UUID commander() { return commander; }
 
@@ -350,9 +385,14 @@ public class Doombot extends PathfinderMob {
 	}
 
 	private LivingEntity findTarget(ServerLevel level) {
+		if (dormant()) return null;
 		LivingEntity best = null;
 		double bestD = Double.MAX_VALUE;
 		for (LivingEntity e : level.getEntitiesOfClass(LivingEntity.class, this.getBoundingBox().inflate(26, 12, 26), this::foe)) {
+			// A player disguised in the Latverian Citizen Cloak is ignored unless they come too close or break order.
+			if (e instanceof ServerPlayer sp && !allied() && LatveriaQuests.isCloakActive(level, sp)) {
+				if (!LatveriaQuests.checkCloakProximity(level, sp)) continue;
+			}
 			// A hunter only fights the intruder once it has found them (the hunt decides), not on a glimpse.
 			if (e instanceof Player pl && LatveriaHunt.hunter(this) && !LatveriaHunt.engaged(pl)) continue;
 			double d = e.distanceToSqr(this);
@@ -365,6 +405,13 @@ public class Doombot extends PathfinderMob {
 	@Override
 	protected void customServerAiStep(ServerLevel level) {
 		super.customServerAiStep(level);
+		if (dormant()) {
+			this.getNavigation().stop();
+			this.setDeltaMovement(0, this.getDeltaMovement().y, 0);
+			this.yHeadRot = this.yBodyRot;
+			this.setXRot(34.0F);
+			return;
+		}
 		actionTicks++;
 			if (this.isDeadOrDying()) return;
 			if (Latveria.boss() != null && Latveria.boss().ascending()) {
@@ -381,9 +428,10 @@ public class Doombot extends PathfinderMob {
 					return;
 				}
 			}
-		if (!allied() && Latveria.conquered(level.getServer())) {
+		if (!forged && Latveria.conquered(level.getServer())) {
 			ServerPlayer owner = Latveria.anyOwner(level.getServer());
-			if (owner != null && owner.level() == level) obey(owner);
+			becomeStatue(owner);
+			return;
 		}
 		if (wardTicks > 0 && --wardTicks == 0) setFlag(FLAG_WARD, false);
 		int action = action();
@@ -831,6 +879,7 @@ public class Doombot extends PathfinderMob {
 		}
 		output.putBoolean("Decoy", decoy());
 		output.putBoolean("Forged", forged);
+		output.putBoolean("Dormant", dormant());
 		if (commander != null) output.putString("Commander", commander.toString());
 	}
 
@@ -840,6 +889,7 @@ public class Doombot extends PathfinderMob {
 		this.entityData.set(VARIANT, Math.clamp(input.getIntOr("Variant", 0), 0, 5));
 		squad = input.getIntOr("Squad", -1);
 		setFlag(FLAG_ALLIED, input.getBooleanOr("Allied", false));
+		setFlag(FLAG_DORMANT, input.getBooleanOr("Dormant", false));
 		guarding = input.getBooleanOr("Guarding", false);
 		float savedYaw = input.getFloatOr("ParkYaw", Float.NaN);
 		if (!Float.isNaN(savedYaw)) {
@@ -850,6 +900,11 @@ public class Doombot extends PathfinderMob {
 		String id = input.getStringOr("Commander", "");
 		commander = id.isEmpty() ? null : UUID.fromString(id);
 		applyVariant();
+		if (dormant()) {
+			setFlag(FLAG_FLYING, false);
+			this.setNoGravity(false);
+			this.setXRot(34.0F);
+		}
 		if (input.getBooleanOr("Decoy", false)) makeDecoy();
 		if (input.getBooleanOr("Forged", false)) {
 			forged = true;

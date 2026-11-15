@@ -257,6 +257,7 @@ public final class ThanosEncounter {
 		GauntletConfig cfg = GauntletConfig.get();
 		if (!cfg.thanosEnabled || server.overworld().getGameTime() % 40 != 0) return;
 		if (cfg.thanosOnce && defeatedForever(server)) return;
+		if (com.dantemorrigan.gauntlet.doom.DoomFinalEncounter.isActive(server)) return;
 		long now = server.overworld().getGameTime();
 		for (ServerPlayer p : server.getPlayerList().getPlayers()) {
 			if (p.isCreative() || p.isSpectator() || !p.isAlive() || p.isSleeping()) continue;

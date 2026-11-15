@@ -71,6 +71,18 @@ public final class GauntletState {
 		return false;
 	}
 
+	/** Replaces all stones inside the gauntlet with the given set of stones and refreshes visual flags. */
+	public static void setInserted(ItemStack gauntlet, Set<Stone> stones) {
+		NonNullList<ItemStack> items = NonNullList.withSize(N, ItemStack.EMPTY);
+		for (Stone s : Stone.values()) {
+			if (stones.contains(s)) {
+				items.set(s.ordinal(), new ItemStack(s.item()));
+			}
+		}
+		gauntlet.set(DataComponents.CONTAINER, ItemContainerContents.fromItems(items));
+		refresh(gauntlet);
+	}
+
 	public static Set<Stone> inUse(ItemStack gauntlet) {
 		Set<Stone> set = EnumSet.noneOf(Stone.class);
 		CustomModelData data = gauntlet.get(DataComponents.CUSTOM_MODEL_DATA);

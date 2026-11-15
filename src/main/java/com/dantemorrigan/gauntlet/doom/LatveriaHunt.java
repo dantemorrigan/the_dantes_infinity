@@ -158,6 +158,7 @@ public final class LatveriaHunt {
 	/** The intruder is in a searchlight's beam: true once the detection is full and the alarm should sound. */
 	static boolean lit(ServerLevel level, ServerPlayer p) {
 		if (graced(p)) return false;
+		if (LatveriaQuests.isCloakActive(level, p) && (hunt == null || hunt.phase != Phase.CHASE)) return false;
 		raise(p, 0.3f);
 		if (hunt != null && hunt.quarry.equals(p.getUUID())) seen(level, p);
 		return meter(p) >= 1 && (hunt == null || hunt.phase == Phase.OUTBOUND || hunt.phase == Phase.HOTZONE || hunt.phase == Phase.SEARCH);
@@ -171,7 +172,7 @@ public final class LatveriaHunt {
 	public static boolean hunter(Doombot bot) { return bot.entityTags().contains(TAG); }
 
 	/** Struck by the intruder: there is no hiding from the one who was hit. */
-	static void attacked(ServerLevel level, ServerPlayer p) {
+	public static void attacked(ServerLevel level, ServerPlayer p) {
 		if (hunt == null || !p.getUUID().equals(hunt.quarry) || hunt.phase == Phase.OUTBOUND) return;
 		METER.put(p.getUUID(), 1f);
 		seen(level, p);
@@ -534,6 +535,14 @@ public final class LatveriaHunt {
 
 	private static void senses(ServerLevel level, ServerPlayer p, long now) {
 		if (graced(p)) return;
+		if (LatveriaQuests.isCloakActive(level, p)) {
+			if (!com.dantemorrigan.gauntlet.GauntletState.activeGauntlet(p).isEmpty()
+					&& !com.dantemorrigan.gauntlet.GauntletState.inUse(com.dantemorrigan.gauntlet.GauntletState.activeGauntlet(p)).isEmpty()) {
+				LatveriaQuests.exposeCloak(level, p, p.position());
+			} else if (!LatveriaQuests.checkCloakProximity(level, p) && hunt.phase != Phase.CHASE) {
+				return;
+			}
+		}
 		Vec3 eye = p.getEyePosition();
 		// Noise: how far the intruder can be heard right now.
 		Vec3 last = LAST_POS.getOrDefault(p.getUUID(), p.position());

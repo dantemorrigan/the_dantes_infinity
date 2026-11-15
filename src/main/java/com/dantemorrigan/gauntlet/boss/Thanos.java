@@ -97,6 +97,7 @@ public class Thanos extends Monster {
 	private int scriptTicks, scriptAge;
 	private ThanosSword thrown;
 	private Runnable onDefeatDone;
+	private LivingEntity duelRival;
 
 	public Thanos(EntityType<? extends Thanos> type, Level level) {
 		super(type, level);
@@ -213,6 +214,125 @@ public class Thanos extends Monster {
 
 	public void onDefeatDone(Runnable r) { this.onDefeatDone = r; }
 
+	/** Struck down by Doom during the dome shatter cutscene: kneels and dissolves into ash. */
+	public void killInCutscene(ServerLevel level) {
+		this.duelRival = null;
+		this.scripted = true;
+		this.setInvulnerable(true);
+		this.getNavigation().stop();
+		if (thrown != null) { thrown.discard(); thrown = null; }
+		setFlag(FLAG_SWORD_OUT, false);
+		setFlag(FLAG_GAUNTLET, false);
+		setAction(A_KNEEL);
+		this.setHealth(0);
+		this.dead = true;
+	}
+
+	/** Starts a choreographed duel against another boss (Doctor Doom inside the dome), ignoring players. */
+	public void beginDuelWithMob(LivingEntity rival) {
+		this.duelRival = rival;
+		this.scripted = false;
+		this.scriptFrom = this.scriptTo = null;
+		this.setNoGravity(false);
+		this.noPhysics = false;
+		this.setInvulnerable(true);
+		setFlag(FLAG_FIGHT, true);
+		this.cooldown = 12;
+		setAction(A_IDLE);
+	}
+
+	private void tickRivalDuel(ServerLevel level, LivingEntity rival) {
+		GauntletConfig cfg = GauntletConfig.get();
+		this.getLookControl().setLookAt(rival, 30f, 30f);
+		int action = action();
+		switch (action) {
+			case A_SWING -> {
+				this.getNavigation().stop();
+				if (actionTicks < 8) faceTowards(rival.position());
+				if (actionTicks == 6) level.playSound(null, this.blockPosition(), SoundEvents.PLAYER_ATTACK_SWEEP, SoundSource.HOSTILE, 2f, 0.5f);
+				if (actionTicks == 10) {
+					Vec3 arc = this.position().add(0, 1.7, 0).add(forward().scale(2.0));
+					level.sendParticles(ModParticles.THANOS_SWORD_ARC, arc.x, arc.y, arc.z, 0, 1.0, 0, 0, 1);
+					if (this.distanceTo(rival) <= 5.5) {
+						Vec3 p = rival.position().add(0, 1.4, 0);
+						level.sendParticles(ModParticles.THANOS_SWORD_SPARKS, p.x, p.y, p.z, 0, 1.2, 0, 0, 1);
+						level.playSound(null, rival.blockPosition(), SoundEvents.ANVIL_LAND, SoundSource.HOSTILE, 1.4f, 0.7f);
+					}
+				}
+				if (actionTicks >= 24) setAction(A_IDLE);
+			}
+			case A_BACKHAND -> {
+				this.getNavigation().stop();
+				if (actionTicks < 6) faceTowards(rival.position());
+				if (actionTicks == 7) {
+					level.playSound(null, this.blockPosition(), SoundEvents.PLAYER_ATTACK_KNOCKBACK, SoundSource.HOSTILE, 2f, 0.5f);
+					if (this.distanceTo(rival) <= 5.0) {
+						Vec3 push = horizontal(rival.position().subtract(this.position())).scale(1.4).add(0, 0.35, 0);
+						rival.setDeltaMovement(push);
+						level.playSound(null, rival.blockPosition(), SoundEvents.ANVIL_LAND, SoundSource.HOSTILE, 1.2f, 0.6f);
+					}
+				}
+				if (actionTicks >= 20) setAction(A_IDLE);
+			}
+			case A_LEAP -> {
+				int windup = 8;
+				if (actionTicks < windup) {
+					faceTowards(leapTo);
+					this.setDeltaMovement(Vec3.ZERO);
+					return;
+				}
+				if (actionTicks == windup) {
+					level.playSound(null, this.blockPosition(), SoundEvents.RAVAGER_ROAR, SoundSource.HOSTILE, 1.4f, 0.8f);
+					level.sendParticles(ModParticles.THANOS_SLAM_DUST, this.getX(), this.getY() + 0.2, this.getZ(), 0, 0.8, 0, 0, 1);
+				}
+				int t = actionTicks - windup;
+				float k = Math.min(1f, (t + 1) / (float) leapDuration);
+				double apex = 5 + horizontalDistance(leapFrom, leapTo) * 0.2;
+				Vec3 next = leapFrom.lerp(leapTo, k).add(0, 4 * apex * k * (1 - k), 0);
+				this.setDeltaMovement(next.subtract(this.position()));
+				this.hurtMarked = true;
+				this.fallDistance = 0;
+				if (k > 0.5f) faceTowards(leapTo);
+				if (k >= 1f || (k > 0.6f && this.onGround())) slam(level);
+			}
+			case A_SLAM -> { if (actionTicks >= 22) setAction(A_IDLE); }
+			case A_ROAR -> { this.getNavigation().stop(); if (actionTicks >= 32) setAction(A_IDLE); }
+			case A_RAGE_QUAKE -> tickQuake(level, cfg);
+			default -> {
+				double d = this.distanceTo(rival);
+				if (cooldown > 0) cooldown--;
+				if (cooldown <= 0) {
+					if (d <= 4.2) {
+						setAction(this.random.nextFloat() < 0.65f ? A_SWING : A_BACKHAND);
+						cooldown = 16;
+						return;
+					}
+					if (d > 6.5 && this.random.nextFloat() < 0.14f) {
+						this.leapFrom = this.position();
+						Vec3 flat = horizontal(rival.position().subtract(this.position()));
+						double dist = Math.min(14, horizontalDistance(rival.position(), this.position()));
+						Vec3 land = this.position().add(flat.scale(Math.max(0, dist - 1.5)));
+						this.leapTo = new Vec3(land.x, rival.getY(), land.z);
+						this.leapDuration = 18;
+						setAction(A_LEAP);
+						cooldown = 24;
+						return;
+					}
+					if (this.random.nextFloat() < 0.05f) {
+						setAction(A_RAGE_QUAKE);
+						cooldown = 36;
+						return;
+					}
+				}
+				if (d > 2.6) {
+					if (this.tickCount % 4 == 0) this.getNavigation().moveTo(rival, 1.15);
+				} else {
+					this.getNavigation().stop();
+				}
+			}
+		}
+	}
+
 	// ------------------------------------------------------------------ ticking
 
 	@Override
@@ -239,6 +359,10 @@ public class Thanos extends Monster {
 		super.customServerAiStep(level);
 		actionTicks++;
 		if (scripted || this.isDeadOrDying()) return;
+		if (duelRival != null && duelRival.isAlive() && duelRival.level() == level) {
+			tickRivalDuel(level, duelRival);
+			return;
+		}
 		ServerPlayer target = target();
 		if (target == null || !target.isAlive() || target.level() != level) {
 			this.getNavigation().stop();

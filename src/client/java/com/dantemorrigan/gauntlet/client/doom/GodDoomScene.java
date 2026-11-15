@@ -75,7 +75,8 @@ public final class GodDoomScene {
 
 	/** The scene's camera: {position, point looked at}, or null when the player's own view is kept. */
 	public static Vec3[] shot(float partial) {
-		if (!active || age < 24) return null;
+		if (!active) return DoomFinalClient.shot(partial);
+		if (age < 24) return null;
 		Entity d = doom();
 		if (d == null) return null;
 		float t = age + partial;

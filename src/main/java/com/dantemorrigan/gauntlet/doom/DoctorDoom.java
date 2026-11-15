@@ -46,16 +46,17 @@ import java.util.UUID;
 public class DoctorDoom extends Monster {
 	public static final int A_IDLE = 0, A_INTRO = 1, A_COMBO = 2, A_BOLT = 3, A_BASTION = 4, A_DROP = 5, A_SLAM = 6, A_SHIFT = 7,
 			A_RIFT = 8, A_SORCERY = 9, A_HEX = 10, A_SUNS = 11, A_NOVA = 12, A_EDICT = 13, A_LIGHTNING = 14, A_CLEAVE = 15,
-			A_SMASH = 16, A_STAGGER = 17, A_DEFEAT = 18, A_TAUNT = 19, A_SIPHON = 20, A_DECOY = 21, A_ASCEND = 22;
+			A_SMASH = 16, A_STAGGER = 17, A_DEFEAT = 18, A_TAUNT = 19, A_SIPHON = 20, A_DECOY = 21, A_ASCEND = 22, A_STEAL_FLEE = 23;
 	/** Clip of each action, in action order. */
 	public static final String[] CLIPS = {"idle", "intro", "armored_combo", "gauntlet_bolt", "iron_bastion", "doombot_drop", "jet_slam",
 			"phase_shift", "rift_step", "sorcery_bolt", "hex_barrage", "seven_suns", "arcane_nova", "latverian_edict", "lightning_call",
-			"cleave", "overhead_smash", "stagger_heavy", "defeat", "taunt", "infinity_siphon", "decoy_gambit", "ascension"};
-	private static final int[] TICKS = {0, 100, 39, 38, 87, 53, 59, 42, 38, 55, 48, 119, 60, 126, 52, 30, 32, 32, 72, 48, 100, 42, 480};
+			"cleave", "overhead_smash", "stagger_heavy", "defeat", "taunt", "infinity_siphon", "decoy_gambit", "ascension", "taunt"};
+	private static final int[] TICKS = {0, 100, 39, 38, 87, 53, 59, 42, 38, 55, 48, 119, 60, 126, 52, 30, 32, 32, 72, 48, 100, 42, 480, 140};
 	/** The siphon: wind-up, then the pull until it completes; blows that break it, and how long a drained gauntlet stays silent. */
 	public static final int SIPHON_START = 14, SIPHON_DONE = 92, SIPHON_SILENCE = 300;
 	public static final float SIPHON_BREAK = 30;
-	public static final int FLAG_FIGHT = 1, FLAG_SHIELD = 2, FLAG_EXPOSED = 4, FLAG_CASTING = 8, FLAG_GOD = 16;
+	public static final int FLAG_FIGHT = 1, FLAG_SHIELD = 2, FLAG_EXPOSED = 4, FLAG_CASTING = 8, FLAG_GOD = 16,
+			FLAG_FINAL_ARENA = 32, FLAG_GAUNTLET_BOSS = 64, FLAG_DUSTING = 128;
 	/** The ascension: its length, and the tick he turns into God Emperor Doom. */
 	public static final int ASCEND_TICKS = 480, ASCEND_TURN = 60;
 	public static final int EDICT_BLAST = 80;
@@ -81,6 +82,8 @@ public class DoctorDoom extends Monster {
 	private boolean nodesUp;
 	private final List<Vec3> suns = new ArrayList<>();
 	private final Set<UUID> challengers = new HashSet<>();
+	private LivingEntity duelOpponent;
+	private Vec3 arenaCenter;
 
 	public DoctorDoom(EntityType<? extends DoctorDoom> type, Level level) {
 		super(type, level);
@@ -153,14 +156,17 @@ public class DoctorDoom extends Monster {
 	}
 
 	private boolean valid(ServerPlayer p) {
-		return p.isAlive() && !p.isSpectator() && !p.isCreative() && p.level() == this.level() && LatveriaPlan.ARENA_BOX.inflate(3).contains(p.position());
+		if (!p.isAlive() || p.isSpectator() || p.isCreative() || p.level() != this.level()) return false;
+		if (arenaCenter != null) return p.position().distanceToSqr(arenaCenter) <= 72 * 72;
+		return LatveriaPlan.ARENA_BOX.inflate(3).contains(p.position());
 	}
 
 	private boolean foe(LivingEntity e) {
+		if (duelOpponent != null && e == duelOpponent) return true;
 		return e instanceof Player p && !p.isSpectator() && !p.isCreative() || e instanceof Doombot b && b.allied();
 	}
 
-	private void face(Vec3 p) {
+	public void face(Vec3 p) {
 		float yaw = (float) (Mth.atan2(p.z - this.getZ(), p.x - this.getX()) * Mth.RAD_TO_DEG) - 90f;
 		this.setYRot(yaw);
 		this.yBodyRot = yaw;
@@ -169,7 +175,157 @@ public class DoctorDoom extends Monster {
 
 	public boolean ascending() { return action() == A_ASCEND; }
 
+	public boolean stealingGauntlet() { return action() == A_STEAL_FLEE; }
+
 	public boolean god() { return flag(FLAG_GOD); }
+
+	public boolean finalBoss() { return flag(FLAG_GAUNTLET_BOSS); }
+
+	public boolean dusting() { return flag(FLAG_DUSTING); }
+
+	public void setArenaCenter(Vec3 center) { this.arenaCenter = center; }
+
+	public void setupArenaWait(Vec3 center, net.minecraft.world.item.ItemStack gauntlet) {
+		this.arenaCenter = center;
+		this.duelOpponent = null;
+		this.setItemSlot(net.minecraft.world.entity.EquipmentSlot.OFFHAND, gauntlet.copy());
+		this.setInvulnerable(true);
+		setFlag(FLAG_FINAL_ARENA, true);
+		setFlag(FLAG_FIGHT, false);
+		setAction(A_IDLE);
+	}
+
+	public void beginDuelWithThanos(LivingEntity thanos, Vec3 center) {
+		this.arenaCenter = center;
+		this.duelOpponent = thanos;
+		this.setInvulnerable(true);
+		setFlag(FLAG_FINAL_ARENA, true);
+		setFlag(FLAG_FIGHT, true);
+		this.entityData.set(PHASE, 3);
+		setAction(A_IDLE);
+		this.cooldown = 10;
+	}
+
+	public void beginFinalPlayerFight(Vec3 center) {
+		this.arenaCenter = center;
+		this.duelOpponent = null;
+		this.setInvulnerable(false);
+		setFlag(FLAG_FINAL_ARENA, true);
+		setFlag(FLAG_GAUNTLET_BOSS, true);
+		setFlag(FLAG_FIGHT, true);
+		this.entityData.set(PHASE, 3);
+		var attr = this.getAttribute(Attributes.MAX_HEALTH);
+		if (attr != null) attr.setBaseValue(620);
+		this.setHealth(this.getMaxHealth());
+		this.bar.setName(Component.translatable("boss.infinity_gauntlet.doom.gauntlet_name"));
+		setAction(A_IDLE);
+		this.cooldown = 16;
+	}
+
+	/** True if {@code p} carries an Infinity Gauntlet with 5 or fewer stones (eligible for theft). */
+	public static boolean canStealGauntletFrom(ServerPlayer p) {
+		return !findIncompleteGauntlet(p).isEmpty();
+	}
+
+	public static net.minecraft.world.item.ItemStack findIncompleteGauntlet(ServerPlayer p) {
+		var active = com.dantemorrigan.gauntlet.GauntletState.activeGauntlet(p);
+		if (!active.isEmpty() && com.dantemorrigan.gauntlet.GauntletState.inserted(active).size() <= 5) return active;
+		var inv = p.getInventory();
+		for (int i = 0; i < inv.getContainerSize(); i++) {
+			var s = inv.getItem(i);
+			if (s.is(com.dantemorrigan.gauntlet.ModItems.GAUNTLET)
+					&& !Boolean.TRUE.equals(s.get(com.dantemorrigan.gauntlet.ModComponents.SNAPPED))
+					&& com.dantemorrigan.gauntlet.GauntletState.inserted(s).size() <= 5) {
+				return s;
+			}
+		}
+		return net.minecraft.world.item.ItemStack.EMPTY;
+	}
+
+	/**
+	 * Steals the player's incomplete Infinity Gauntlet (<= 5 stones), equips it on Doom's left arm, plays the theft
+	 * cutscene, and teleports Doom out of Latveria to the Overworld sandy-fiery battlefield!
+	 */
+	public boolean stealGauntletAndFlee(ServerLevel level, ServerPlayer victim) {
+		if (ascending() || stealingGauntlet() || this.isDeadOrDying()) return false;
+		net.minecraft.world.item.ItemStack stolen = net.minecraft.world.item.ItemStack.EMPTY;
+		if (victim != null) {
+			var off = victim.getOffhandItem();
+			if (off.is(com.dantemorrigan.gauntlet.ModItems.GAUNTLET) && com.dantemorrigan.gauntlet.GauntletState.inserted(off).size() <= 5) {
+				stolen = off.copy();
+				victim.setItemSlot(net.minecraft.world.entity.EquipmentSlot.OFFHAND, net.minecraft.world.item.ItemStack.EMPTY);
+			} else {
+				var inv = victim.getInventory();
+				for (int i = 0; i < inv.getContainerSize(); i++) {
+					var s = inv.getItem(i);
+					if (s.is(com.dantemorrigan.gauntlet.ModItems.GAUNTLET) && com.dantemorrigan.gauntlet.GauntletState.inserted(s).size() <= 5) {
+						stolen = s.copy();
+						inv.setItem(i, net.minecraft.world.item.ItemStack.EMPTY);
+						break;
+					}
+				}
+			}
+		}
+		if (stolen.isEmpty()) {
+			stolen = new net.minecraft.world.item.ItemStack(com.dantemorrigan.gauntlet.ModItems.GAUNTLET);
+			com.dantemorrigan.gauntlet.GauntletState.setInserted(stolen, java.util.EnumSet.of(
+					com.dantemorrigan.gauntlet.Stone.POWER, com.dantemorrigan.gauntlet.Stone.SPACE,
+					com.dantemorrigan.gauntlet.Stone.REALITY, com.dantemorrigan.gauntlet.Stone.SOUL,
+					com.dantemorrigan.gauntlet.Stone.MIND));
+		}
+		if (victim != null) {
+			com.dantemorrigan.gauntlet.ability.AbilityController.cancel(victim);
+			ascendVictim = victim.getUUID();
+		}
+		this.setItemSlot(net.minecraft.world.entity.EquipmentSlot.OFFHAND, stolen.copy());
+		DoomFinalEncounter.onGauntletStolen(level.getServer(), victim, stolen);
+		this.setInvulnerable(true);
+		setAction(A_STEAL_FLEE);
+		return true;
+	}
+
+	private void stealFlee(ServerLevel level, int t) {
+		this.setInvulnerable(true);
+		this.getNavigation().stop();
+		Vec3 at = this.position();
+		if (t == 1) {
+			ascendFrom = LatveriaPlan.THRONE.add(0, 0.2, 2.5);
+			this.setDeltaMovement(Vec3.ZERO);
+			this.setPos(ascendFrom.x, ascendFrom.y, ascendFrom.z);
+			this.setYRot(0);
+			this.yBodyRot = this.yHeadRot = 0;
+			for (ServerPlayer p : level.players()) {
+				DoomFx.send(p, DoomFx.CUTSCENE, this.getId(), ascendFrom, 0, 136);
+			}
+			DoomFinalEncounter.syncTheftCutscene(level, this, 140);
+			DoomFx.sound(level, ascendFrom, SoundEvents.BEACON_POWER_SELECT, 2.5f, 0.6f);
+			DoomVfx.on(level, DoomVfx.CHARGE, this, 1.4f, 25, DoomVfx.SUN);
+		}
+		if (t == 24) {
+			DoomFx.near(level, at, 120, DoomFx.FLASH, 0, 1.1f, 16);
+			DoomFx.near(level, at, 120, DoomFx.SHAKE, 0, 1.0f, 16);
+			DoomVfx.at(level, DoomVfx.IMPACT, at.add(0, 1.7, 0), 2.5f, 18, DoomVfx.SUN);
+			DoomFx.sound(level, at, SoundEvents.WARDEN_SONIC_BOOM, 2.0f, 1.2f);
+			DoomFx.line(level, at, 120, "doom.steal_1");
+		}
+		if (t == 72) {
+			DoomFx.line(level, at, 120, "doom.steal_2");
+			DoomFx.sound(level, at, SoundEvents.EVOKER_PREPARE_SUMMON, 2.0f, 0.65f);
+		}
+		if (t == 92) {
+			DoomFx.bill(level, ModParticles.DOOM_RIFT_STEP, at.add(0, 1.4, -1.5), 2.2);
+			DoomFx.sound(level, at, SoundEvents.END_PORTAL_SPAWN, 2.2f, 0.7f);
+		}
+		if (t == 124) {
+			DoomFx.bill(level, ModParticles.DOOM_PHASE_SHIFT, at.add(0, 1.4, 0), 2.5);
+			DoomFx.flat(level, ModParticles.DOOM_SLAM_WAVE, at, 6);
+			DoomFx.near(level, at, 120, DoomFx.FLASH, 0, 1.0f, 14);
+			DoomFx.sound(level, at, SoundEvents.ENDERMAN_TELEPORT, 2.5f, 0.55f);
+		}
+		if (t >= 136) {
+			Latveria.onDoomStolenFled(level, ascendVictim);
+		}
+	}
 
 	/**
 	 * Doom beats the whole Infinity Gauntlet (its power siphoned, or its bearer struck down) and ascends: God Emperor Doom,
@@ -242,10 +398,11 @@ public class DoctorDoom extends Monster {
 		this.setHealth((float) (want * share));
 	}
 
-	/** A challenger whose Infinity Gauntlet works and holds at least one stone. */
+	/** A challenger whose Infinity Gauntlet works and holds at least one stone (or any incomplete gauntlet to steal). */
 	public static boolean siphonable(ServerPlayer p) {
 		var g = com.dantemorrigan.gauntlet.GauntletState.activeGauntlet(p);
-		return !g.isEmpty() && !com.dantemorrigan.gauntlet.GauntletState.inserted(g).isEmpty() && !GauntletSilence.silenced(p);
+		if (!g.isEmpty() && !GauntletSilence.silenced(p)) return true;
+		return canStealGauntletFrom(p);
 	}
 
 	/** Where the challenger's gauntlet is: the off hand, at chest height. */
@@ -316,6 +473,11 @@ public class DoctorDoom extends Monster {
 				ascend(level, victim);
 				return;
 			}
+			// If the gauntlet has 5 or fewer stones, Doom seizes the gauntlet itself and teleports away to hunt the last stone!
+			if (victim != null && canStealGauntletFrom(victim) && !finalBoss()) {
+				stealGauntletAndFlee(level, victim);
+				return;
+			}
 			this.heal(this.getMaxHealth() * 0.08f);
 			GauntletSilence.silence(victim, SIPHON_SILENCE);
 			com.dantemorrigan.gauntlet.ability.AbilityController.cancel(victim);
@@ -351,6 +513,10 @@ public class DoctorDoom extends Monster {
 			}
 			return;
 		}
+		if (action == A_STEAL_FLEE) {
+			stealFlee(level, actionTicks);
+			return;
+		}
 		if (!fighting()) return;
 		if (exposed > 0 && --exposed == 0) setFlag(FLAG_EXPOSED, false);
 		sinceSuns++;
@@ -358,6 +524,10 @@ public class DoctorDoom extends Monster {
 		sinceDrop++;
 		sinceSiphon++;
 		sinceDecoy++;
+		if (duelOpponent != null && duelOpponent.isAlive() && duelOpponent.level() == level) {
+			tickDuelWithMob(level, duelOpponent);
+			return;
+		}
 		ServerPlayer target = target(level);
 		for (ServerPlayer p : level.players()) if (valid(p) && challengers.add(p.getUUID())) scaleForChallengers();
 		if (action != A_IDLE) {
@@ -368,8 +538,10 @@ public class DoctorDoom extends Monster {
 		}
 		// The stages turn at two thirds and one third of his health.
 		float hp = this.getHealth() / this.getMaxHealth();
-		if (phase() == 1 && hp <= 0.66f) { this.entityData.set(PHASE, 2); DoomFx.line(level, this.position(), 64, "doom.phase_2"); setAction(A_SHIFT); return; }
-		if (phase() == 2 && hp <= 0.33f) { this.entityData.set(PHASE, 3); DoomFx.line(level, this.position(), 64, "doom.phase_3"); sinceEdict = 340; setAction(A_NOVA); return; }
+		if (!finalBoss()) {
+			if (phase() == 1 && hp <= 0.66f) { this.entityData.set(PHASE, 2); DoomFx.line(level, this.position(), 64, "doom.phase_2"); setAction(A_SHIFT); return; }
+			if (phase() == 2 && hp <= 0.33f) { this.entityData.set(PHASE, 3); DoomFx.line(level, this.position(), 64, "doom.phase_3"); sinceEdict = 340; setAction(A_NOVA); return; }
+		}
 		if (target == null) {
 			this.getNavigation().stop();
 			return;
@@ -377,20 +549,109 @@ public class DoctorDoom extends Monster {
 		this.getLookControl().setLookAt(target, 30, 30);
 		if (passive) { this.getNavigation().stop(); return; }
 		double d = this.distanceTo(target);
-		if (d > 3.2) this.getNavigation().moveTo(target, 1.0);
+		if (d > 3.2) this.getNavigation().moveTo(target, finalBoss() ? 1.15 : 1.0);
 		else this.getNavigation().stop();
 		if (cooldown > 0) { cooldown--; return; }
 		choose(level, target, d);
 	}
 
+	private void tickDuelWithMob(ServerLevel level, LivingEntity rival) {
+		int action = action();
+		this.getLookControl().setLookAt(rival, 30, 30);
+		if (action != A_IDLE) {
+			this.getNavigation().stop();
+			if (action != A_SLAM && actionTicks < 18) face(rival.position());
+			Vec3 at = this.position();
+			switch (action) {
+				case A_COMBO -> {
+					if (actionTicks == 8) DoomFx.sound(level, at, SoundEvents.PLAYER_ATTACK_SWEEP, 1.2f, 0.6f);
+					if (actionTicks == 12 || actionTicks == 17 || actionTicks == 20) {
+						DoomFx.bill(level, ModParticles.DOOM_ARMORED_COMBO, hand(), 1.2);
+						if (this.distanceTo(rival) <= 4.5) DoomVfx.at(level, DoomVfx.IMPACT, rival.position().add(0, 1.4, 0), 1.4f, 10, DoomVfx.SUN);
+					}
+				}
+				case A_BOLT -> {
+					if (actionTicks == 10) {
+						aim = rival.position().add(0, 1.4, 0);
+						DoomVfx.on(level, DoomVfx.CHARGE, this, 0.8f, 8, DoomVfx.SUN);
+					}
+					if (actionTicks == 18 && aim != null) {
+						Vec3 dir = aim.subtract(hand()).normalize();
+						DoomCombat.fire(level, this, hand(), dir.scale(2.2), 4, 0.35, 1.2, 35, null, 0, DoomVfx.SUN, 0.38f, e -> e == rival);
+						DoomFx.sound(level, at, SoundEvents.BLAZE_SHOOT, 1.3f, 0.8f);
+					}
+				}
+				case A_SORCERY -> {
+					if (actionTicks == 12) DoomVfx.on(level, DoomVfx.CHARGE, this, 0.8f, 10, DoomVfx.GREEN);
+					if (actionTicks == 22) {
+						Vec3 fwd = Vec3.directionFromRotation(0, this.getYRot());
+						for (int i = -1; i <= 1; i++) {
+							Vec3 dir = fwd.yRot(i * 0.4f).add(0, 0.1, 0).normalize();
+							DoomCombat.fire(level, this, hand(), dir.scale(0.85), 3, 0.35, 0, 70, rival, 0.08, DoomVfx.GREEN, 0.42f, e -> e == rival);
+						}
+						DoomFx.sound(level, at, SoundEvents.EVOKER_CAST_SPELL, 1.3f, 0.8f);
+					}
+				}
+				case A_HEX -> {
+					if (actionTicks == 8 || actionTicks == 18 || actionTicks == 28 || actionTicks == 38) {
+						Vec3 dir = rival.position().add(0, 1.4, 0).subtract(hand()).normalize();
+						DoomCombat.fire(level, this, hand(), dir.scale(1.8), 3, 0.3, 0, 45, null, 0, DoomVfx.GREEN, 0.34f, e -> e == rival);
+						DoomFx.sound(level, at, SoundEvents.SHULKER_SHOOT, 1f, 1.3f);
+					}
+				}
+				case A_RIFT -> {
+					if (actionTicks == 7) { DoomFx.bill(level, ModParticles.DOOM_RIFT_STEP, at.add(0, 1.4, 0), 0); DoomFx.sound(level, at, SoundEvents.ENDERMAN_TELEPORT, 1.2f, 0.6f); }
+					if (actionTicks == 14) {
+						double a = this.random.nextDouble() * Math.TAU;
+						Vec3 center = arenaCenter != null ? arenaCenter : at;
+						Vec3 to = center.add(Math.cos(a) * 8, 0, Math.sin(a) * 8);
+						this.teleportTo(to.x, center.y, to.z);
+						DoomFx.bill(level, ModParticles.DOOM_RIFT_STEP, to.add(0, 1.4, 0), 0);
+						face(rival.position());
+					}
+				}
+				default -> {}
+			}
+			if (actionTicks >= TICKS[action]) setAction(A_IDLE);
+			return;
+		}
+		double d = this.distanceTo(rival);
+		if (d > 3.6) this.getNavigation().moveTo(rival, 1.1);
+		else this.getNavigation().stop();
+		if (cooldown > 0) { cooldown--; return; }
+		cooldown = 12;
+		face(rival.position());
+		float r = this.random.nextFloat();
+		if (d <= 4.2) setAction(A_COMBO);
+		else if (r < 0.3f) setAction(A_BOLT);
+		else if (r < 0.6f) setAction(A_SORCERY);
+		else if (r < 0.82f) setAction(A_HEX);
+		else setAction(A_RIFT);
+	}
+
 	private void choose(ServerLevel level, ServerPlayer target, double d) {
 		int phase = phase();
 		float r = this.random.nextFloat();
+		if (finalBoss()) {
+			cooldown = 12;
+			face(target.position());
+			if (sinceSuns > 320 && r < 0.45f) { sinceSuns = 0; setAction(A_SUNS); return; }
+			if (d <= 4.6) {
+				setAction(r < 0.45f ? A_COMBO : r < 0.75f ? A_SMASH : A_CLEAVE);
+				return;
+			}
+			if (r < 0.22f) setAction(A_SLAM);
+			else if (r < 0.42f) setAction(A_RIFT);
+			else if (r < 0.62f) setAction(A_SORCERY);
+			else if (r < 0.82f) setAction(A_HEX);
+			else setAction(A_LIGHTNING);
+			return;
+		}
 		cooldown = phase == 1 ? 26 : phase == 2 ? 20 : 14;
 		face(target.position());
-		if (phase == 3 && sinceEdict > 420) { sinceEdict = 0; setAction(A_EDICT); return; }
+		if (phase == 3 && sinceEdict > 420 && arenaCenter == null) { sinceEdict = 0; setAction(A_EDICT); return; }
 		// Doom has always wanted the cosmic power others carry: a challenger with the Infinity Gauntlet is a temptation.
-		if (phase == 3 && sinceSiphon > 520 && d <= 18 && this.hasLineOfSight(target) && siphonable(target)) {
+		if (phase >= 2 && sinceSiphon > 300 && d <= 20 && this.hasLineOfSight(target) && siphonable(target) && arenaCenter == null) {
 			sinceSiphon = 0;
 			siphonId = target.getUUID();
 			setAction(A_SIPHON);
@@ -536,8 +797,9 @@ public class DoctorDoom extends Monster {
 			case A_RIFT -> {
 				if (t == 7) { DoomFx.bill(level, ModParticles.DOOM_RIFT_STEP, at.add(0, 1.4, 0), 0); DoomFx.sound(level, at, SoundEvents.ENDERMAN_TELEPORT, 1.2f, 0.6f); }
 				if (t == 14) {
-					Vec3 to = target == null ? LatveriaPlan.ARENA : clampToArena(target.position().add(Vec3.directionFromRotation(0, target.getYRot()).scale(-6)));
-					this.teleportTo(to.x, LatveriaPlan.FLOOR, to.z);
+					Vec3 to = target == null ? (arenaCenter != null ? arenaCenter : LatveriaPlan.ARENA)
+							: clampToArena(target.position().add(Vec3.directionFromRotation(0, target.getYRot()).scale(-6)));
+					this.teleportTo(to.x, to.y, to.z);
 					DoomFx.bill(level, ModParticles.DOOM_RIFT_STEP, to.add(0, 1.4, 0), 0);
 					if (target != null) face(target.position());
 				}
@@ -545,12 +807,14 @@ public class DoctorDoom extends Monster {
 				if (t == 30) cooldown = 0;
 			}
 			case A_SORCERY -> {
-				if (t == 12) { DoomVfx.on(level, DoomVfx.CHARGE, this, 0.7f, 10, DoomVfx.GREEN); DoomFx.sound(level, at, SoundEvents.EVOKER_PREPARE_ATTACK, 1.2f, 0.9f); }
+				if (t == 12) { DoomVfx.on(level, DoomVfx.CHARGE, this, 0.7f, 10, finalBoss() ? DoomVfx.SUN : DoomVfx.GREEN); DoomFx.sound(level, at, SoundEvents.EVOKER_PREPARE_ATTACK, 1.2f, 0.9f); }
 				if (t == 22) {
 					Vec3 fwd = Vec3.directionFromRotation(0, this.getYRot());
-					for (int i = -1; i <= 1; i++) {
-						Vec3 dir = fwd.yRot(i * 0.5f).add(0, 0.15, 0).normalize();
-						DoomCombat.fire(level, this, hand(), dir.scale(0.62), 8, 0.35, 0, 110, target, 0.08, DoomVfx.GREEN, 0.40f, this::foe);
+					int spread = finalBoss() ? 2 : 1;
+					for (int i = -spread; i <= spread; i++) {
+						Vec3 dir = fwd.yRot(i * 0.35f).add(0, 0.15, 0).normalize();
+						DoomCombat.fire(level, this, hand(), dir.scale(finalBoss() ? 0.78 : 0.62), finalBoss() ? 11 : 8, 0.35, 0, 110, target, 0.08,
+								(finalBoss() && i % 2 == 0) ? DoomVfx.SUN : DoomVfx.GREEN, 0.42f, this::foe);
 					}
 					DoomFx.sound(level, at, SoundEvents.EVOKER_CAST_SPELL, 1.3f, 0.8f);
 				}
@@ -558,9 +822,10 @@ public class DoctorDoom extends Monster {
 			case A_HEX -> {
 				if ((t == 8 || t == 18 || t == 28 || t == 38) && target != null) {
 					Vec3 lead = target.position().add(0, 1, 0).add(target.getDeltaMovement().scale(6));
-					for (int i = 0; i < (t == 38 ? 2 : 1); i++) {
+					for (int i = 0; i < (t == 38 || finalBoss() ? 2 : 1); i++) {
 						Vec3 dir = lead.subtract(hand()).normalize().yRot(i == 0 ? 0 : 0.25f);
-						DoomCombat.fire(level, this, hand(), dir.scale(1.7), 7, 0.3, 0, 50, null, 0, DoomVfx.GREEN, 0.32f, this::foe);
+						DoomCombat.fire(level, this, hand(), dir.scale(finalBoss() ? 2.0 : 1.7), finalBoss() ? 10 : 7, 0.3, 0, 50, null, 0,
+								finalBoss() && i == 1 ? DoomVfx.SUN : DoomVfx.GREEN, 0.34f, this::foe);
 					}
 					DoomFx.sound(level, at, SoundEvents.SHULKER_SHOOT, 1f, 1.3f);
 				}
@@ -571,7 +836,8 @@ public class DoctorDoom extends Monster {
 				if (t >= 36 && t <= 78 && (t - 36) % 7 == 0 && target != null) {
 					Vec3 mark = clampToArena(target.position().add(target.getDeltaMovement().multiply(8, 0, 8)));
 					suns.add(new Vec3(mark.x, t + 13, mark.z));
-					Vec3 ground = new Vec3(mark.x, LatveriaPlan.FLOOR, mark.z);
+					double gy = arenaCenter != null ? arenaCenter.y : LatveriaPlan.FLOOR;
+					Vec3 ground = new Vec3(mark.x, gy, mark.z);
 					DoomVfx.at(level, DoomVfx.EDICT, ground.add(0, 0.05, 0), 1.7f, 13, DoomVfx.SUN);
 					// One of the seven leaves its orbit and falls on the mark in 13 ticks.
 					int left = 7 - (t - 36) / 7;
@@ -583,7 +849,8 @@ public class DoctorDoom extends Monster {
 					Vec3 s = suns.get(i);
 					if ((int) s.y != t) continue;
 					suns.remove(i);
-					Vec3 hit = new Vec3(s.x, LatveriaPlan.FLOOR, s.z);
+					double gy = arenaCenter != null ? arenaCenter.y : LatveriaPlan.FLOOR;
+					Vec3 hit = new Vec3(s.x, gy, s.z);
 					DoomVfx.at(level, DoomVfx.IMPACT, hit.add(0, 0.5, 0), 2.6f, 10, DoomVfx.SUN);
 					DoomVfx.at(level, DoomVfx.SLAM, hit.add(0, 0.05, 0), 3.2f, 12, DoomVfx.SUN);
 					DoomFx.sound(level, hit, SoundEvents.GENERIC_EXPLODE.value(), 1f, 1.3f);
@@ -595,13 +862,24 @@ public class DoctorDoom extends Monster {
 			case A_LIGHTNING -> {
 				if (t == 12 && target != null) {
 					aim = clampToArena(target.position());
-					DoomFx.flat(level, ModParticles.DOOM_DROP_MARKER, aim, 2);
+					DoomFx.flat(level, ModParticles.DOOM_DROP_MARKER, aim, finalBoss() ? 3.2 : 2);
+					if (finalBoss()) {
+						// Space/Soul Stone gravity pull toward the blast zone before lightning & meteor strike!
+						Vec3 pull = aim.subtract(target.position()).normalize().scale(0.65);
+						target.push(pull.x, 0.15, pull.z);
+						target.hurtMarked = true;
+						DoomFx.sound(level, at, SoundEvents.RESPAWN_ANCHOR_CHARGE, 1.5f, 0.7f);
+					}
 				}
 				if (t == 31 && aim != null) {
 					LightningBolt bolt = EntityType.LIGHTNING_BOLT.create(level, EntitySpawnReason.EVENT);
 					if (bolt != null) { bolt.setVisualOnly(true); bolt.snapTo(aim.x, aim.y, aim.z); level.addFreshEntity(bolt); }
-					strike(level, aim, 3.2, 16, 0.6);
-					expose(20);
+					if (finalBoss()) {
+						DoomVfx.at(level, DoomVfx.IMPACT, aim.add(0, 0.8, 0), 3.0f, 14, DoomVfx.SUN);
+						DoomVfx.at(level, DoomVfx.SLAM, aim.add(0, 0.05, 0), 4.2f, 16, DoomVfx.GREEN);
+					}
+					strike(level, aim, finalBoss() ? 4.4 : 3.2, finalBoss() ? 19 : 16, 0.8);
+					expose(28);
 				}
 			}
 			case A_CLEAVE -> {
@@ -624,13 +902,24 @@ public class DoctorDoom extends Monster {
 	private void strike(ServerLevel level, Vec3 at, double reach, float damage, double push) {
 		for (LivingEntity e : level.getEntitiesOfClass(LivingEntity.class, new net.minecraft.world.phys.AABB(at, at).inflate(reach, 2.5, reach), this::foe)) {
 			if (e.position().subtract(at).horizontalDistance() > reach + 0.4) continue;
-			if (!DoomCombat.hurt(level, e, this, damage)) continue;
+			float finalDamage = damage;
+			if (finalBoss() && com.dantemorrigan.gauntlet.uru.UruArmor.fullSet(e)) {
+				finalDamage = damage * 0.45f;
+				com.dantemorrigan.gauntlet.uru.UruArmor.absorbed(level, e, damage - finalDamage);
+			}
+			if (!DoomCombat.hurt(level, e, this, finalDamage)) continue;
 			Vec3 dir = e.position().subtract(this.position()).normalize();
 			e.knockback(push, -dir.x, -dir.z);
 		}
 	}
 
-	private static Vec3 clampToArena(Vec3 p) {
+	private Vec3 clampToArena(Vec3 p) {
+		if (arenaCenter != null) {
+			Vec3 off = p.subtract(arenaCenter);
+			double d = Math.hypot(off.x, off.z);
+			if (d > 28) off = off.scale(28.0 / d);
+			return new Vec3(arenaCenter.x + off.x, arenaCenter.y, arenaCenter.z + off.z);
+		}
 		var box = LatveriaPlan.ARENA_BOX.deflate(2.5);
 		return new Vec3(Mth.clamp(p.x, box.minX, box.maxX), LatveriaPlan.FLOOR, Mth.clamp(p.z, box.minZ + 6, box.maxZ));
 	}
@@ -779,16 +1068,21 @@ public class DoctorDoom extends Monster {
 				|| source.is(DamageTypes.LIGHTNING_BOLT) || source.getEntity() instanceof Doombot b && !b.allied()) return false;
 		boolean axe = source.is(Stormbreaker.DAMAGE);
 		float scaled = Math.min(amount, MAX_HIT);
+		if (finalBoss()) {
+			scaled = axe ? Math.min(amount * 1.25f, 65f) : Math.min(amount * 0.55f, 18f);
+		}
 		if (flag(FLAG_SHIELD)) {
 			// The shield is whole: nothing gets through it, neither a fist, a beam nor the axe.
 			DoomFx.sound(level, this.position(), SoundEvents.SHIELD_BLOCK.value(), 1.2f, 0.6f);
 			DoomVfx.on(level, DoomVfx.SHIELD_HIT, this, 2.0f, 8, DoomVfx.GREEN);
 			return false;
-		} else if (phase() == 1) scaled *= Latveria.generatorOff(level.getServer()) ? 0.8f : 0.45f;
+		} else if (!finalBoss() && phase() == 1) scaled *= Latveria.generatorOff(level.getServer()) ? 0.8f : 0.45f;
 		if (flag(FLAG_EXPOSED)) scaled *= 1.6f;
 		// One blow never skips a stage.
-		float floor = this.getMaxHealth() * (phase() == 1 ? 0.66f : phase() == 2 ? 0.33f : 0);
-		if (this.getHealth() > floor && floor > 0) scaled = Math.min(scaled, this.getHealth() - floor + 0.5f);
+		if (!finalBoss()) {
+			float floor = this.getMaxHealth() * (phase() == 1 ? 0.66f : phase() == 2 ? 0.33f : 0);
+			if (this.getHealth() > floor && floor > 0) scaled = Math.min(scaled, this.getHealth() - floor + 0.5f);
+		}
 		if (axe) this.invulnerableTime = 0;
 		boolean hurt = super.hurtServer(level, source, scaled);
 		if (!hurt) return false;
@@ -809,12 +1103,17 @@ public class DoctorDoom extends Monster {
 		if (was || !(this.level() instanceof ServerLevel level)) return;
 		// Everyone standing in the hall at the end shares the victory, even if the last blow came at once.
 		for (ServerPlayer p : level.players()) {
-			if (p.isAlive() && !p.isSpectator() && LatveriaPlan.ARENA_BOX.inflate(3).contains(p.position())) challengers.add(p.getUUID());
+			if (valid(p)) challengers.add(p.getUUID());
 		}
 		if (nodesUp) placeNodes(level, false);
 		this.entityData.set(ACTION, A_DEFEAT, true);
 		bar.removeAllPlayers();
-		DoomFx.line(level, this.position(), 64, "doom.defeat_1");
+		if (finalBoss()) {
+			DoomFx.line(level, this.position(), 80, "doom.final_defeat_1");
+			DoomFinalEncounter.onDoomDefeatedStart(level, this, source.getEntity() instanceof ServerPlayer sp ? sp : null);
+		} else {
+			DoomFx.line(level, this.position(), 64, "doom.defeat_1");
+		}
 	}
 
 	@Override
@@ -822,6 +1121,31 @@ public class DoctorDoom extends Monster {
 		this.deathTime++;
 		this.setDeltaMovement(0, Math.min(0, this.getDeltaMovement().y), 0);
 		if (!(this.level() instanceof ServerLevel level)) return;
+		if (finalBoss()) {
+			if (this.deathTime == 35) {
+				setFlag(FLAG_DUSTING, true);
+				DoomFx.line(level, this.position(), 80, "doom.final_defeat_2");
+				DoomFx.sound(level, this.position(), SoundEvents.SAND_BREAK, 2f, 0.55f);
+			}
+			if (this.deathTime >= 35 && this.deathTime <= 115 && this.deathTime % 2 == 0) {
+				float k = (this.deathTime - 35) / 80f;
+				level.sendParticles(new net.minecraft.core.particles.DustParticleOptions(0x28E066, 1.5f),
+						this.getX(), this.getY() + 1.1 + k * 0.6, this.getZ(), 28, 0.55, 0.85, 0.55, 0.03);
+				level.sendParticles(new net.minecraft.core.particles.DustParticleOptions(0x88FFAA, 1.1f),
+						this.getX(), this.getY() + 1.0 + k * 0.5, this.getZ(), 16, 0.45, 0.75, 0.45, 0.02);
+				level.sendParticles(net.minecraft.core.particles.ParticleTypes.SOUL_FIRE_FLAME,
+						this.getX(), this.getY() + 1.0, this.getZ(), 6, 0.4, 0.6, 0.4, 0.02);
+				if (this.deathTime % 10 == 0) DoomFx.sound(level, this.position(), SoundEvents.SAND_STEP, 1.5f, 0.65f);
+			}
+			if (this.deathTime == 60) {
+				// The gauntlet leaves Doom's dissolving arm and flies to the player!
+				this.setItemSlot(net.minecraft.world.entity.EquipmentSlot.OFFHAND, net.minecraft.world.item.ItemStack.EMPTY);
+			}
+			if (this.deathTime >= 120 && !this.isRemoved()) {
+				this.remove(RemovalReason.KILLED);
+			}
+			return;
+		}
 		if (this.deathTime == 50) DoomFx.line(level, this.position(), 64, "doom.defeat_2");
 		if (this.deathTime == 90) {
 			DoomFx.bill(level, ModParticles.DOOM_PHASE_SHIFT, this.position().add(0, 1.2, 0), 0);

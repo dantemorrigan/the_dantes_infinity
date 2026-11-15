@@ -213,5 +213,36 @@ public final class DoomItems {
 		}
 	}
 
+	/** Armor material for the Latverian Citizen Cloak worn over the chest. */
+	public static final net.minecraft.world.item.equipment.ArmorMaterial CLOAK_MATERIAL = new net.minecraft.world.item.equipment.ArmorMaterial(18,
+			java.util.Map.of(
+					net.minecraft.world.item.equipment.ArmorType.HELMET, 1,
+					net.minecraft.world.item.equipment.ArmorType.CHESTPLATE, 4,
+					net.minecraft.world.item.equipment.ArmorType.LEGGINGS, 2,
+					net.minecraft.world.item.equipment.ArmorType.BOOTS, 1,
+					net.minecraft.world.item.equipment.ArmorType.BODY, 4),
+			12, SoundEvents.ARMOR_EQUIP_LEATHER, 0.0f, 0.0f,
+			net.minecraft.tags.TagKey.create(net.minecraft.core.registries.Registries.ITEM, com.dantemorrigan.gauntlet.InfinityGauntlet.id("repairs_doom_armor")),
+			net.minecraft.resources.ResourceKey.create(net.minecraft.world.item.equipment.EquipmentAssets.ROOT_ID, com.dantemorrigan.gauntlet.InfinityGauntlet.id("latveria_cloak")));
+
+	/** Old Mechanic Radovan's Generator Disruptor: attaches to the huge generator under Castle Doom. */
+	public static final class Disruptor extends Item {
+		public Disruptor(Properties properties) { super(properties); }
+
+		@Override
+		public InteractionResult useOn(UseOnContext context) {
+			if (!(context.getPlayer() instanceof ServerPlayer p)) return InteractionResult.SUCCESS;
+			if (LatveriaQuests.attachDisruptor(p, context.getClickedPos())) return InteractionResult.SUCCESS;
+			return InteractionResult.PASS;
+		}
+
+		@Override
+		public InteractionResult use(Level level, Player player, InteractionHand hand) {
+			if (!(player instanceof ServerPlayer p)) return InteractionResult.SUCCESS;
+			if (LatveriaQuests.attachDisruptor(p, p.blockPosition())) return InteractionResult.SUCCESS;
+			return InteractionResult.PASS;
+		}
+	}
+
 	private DoomItems() {}
 }

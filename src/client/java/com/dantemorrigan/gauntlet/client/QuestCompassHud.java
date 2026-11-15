@@ -59,6 +59,15 @@ final class QuestCompassHud {
             y += 24;
         }
 
+        Vec3 doomArena = com.dantemorrigan.gauntlet.client.doom.DoomFinalClient.compassSite();
+        if (doomArena != null && !player.isSpectator()) {
+            Target doomTarget = new Target("hud.infinity_gauntlet.quest_compass.doom_arena", doomArena.x, doomArena.z);
+            if (doomTarget.distanceFrom(player) > 22.0) {
+                renderTarget(graphics, mc, player, doomTarget, y, 0xFF3CE88A);
+                y += 24;
+            }
+        }
+
         Skyfall current = skyfall;
         if (current == null) return;
         if (current.level != mc.level || mc.level.getGameTime() >= current.expires) {

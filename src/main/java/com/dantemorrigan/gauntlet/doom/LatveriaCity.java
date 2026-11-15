@@ -30,6 +30,14 @@ final class LatveriaCity {
 		landmarks();
 		blocks();
 		LatveriaProps.dress();
+		// Extra townsfolk strolling the streets, square, and market lanes.
+		for (int[] p : new int[][]{
+				{-12, 22}, {12, 22}, {-14, 38}, {14, 38}, {-10, 54}, {10, 54},
+				{0, 14}, {0, 62}, {-38, 12}, {38, 12}, {-38, 52}, {38, 52},
+				{-22, 72}, {22, 72}, {-16, 100}, {16, 100}
+		}) {
+			LatveriaPlan.VILLAGERS.add(new net.minecraft.core.BlockPos(p[0], G + 1, p[1]));
+		}
 	}
 
 	// ------------------------------------------------------------------ streets

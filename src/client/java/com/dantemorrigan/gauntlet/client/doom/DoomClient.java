@@ -56,8 +56,8 @@ public final class DoomClient {
 	/** Doom's last spoken line and its age in ticks: during the entrance it is shown as a subtitle inside the letterbox. */
 	private static Component subtitle;
 
-	/** A letterboxed scene is playing (Doom's entrance, the ascension): the rest of the HUD steps aside. */
-	public static boolean cinematic() { return barsAge >= 0 || GodDoomScene.active(); }
+	/** A letterboxed scene is playing (Doom's entrance, the ascension, or the final gauntlet storyline): the rest of the HUD steps aside. */
+	public static boolean cinematic() { return barsAge >= 0 || GodDoomScene.active() || DoomFinalClient.inCutscene(); }
 	private static int subtitleAge;
 	private static float flashStrength;
 	// Music.
@@ -148,7 +148,10 @@ public final class DoomClient {
 		HudElementRegistry.addFirst(InfinityGauntlet.id("latveria_filter"), (g, delta) -> filter(g));
 		HudElementRegistry.addLast(InfinityGauntlet.id("doom_hud"), (g, delta) -> hud(g));
 		HudElementRegistry.addLast(InfinityGauntlet.id("latveria_stealth"), (g, delta) -> stealth(g));
+		ClientPlayNetworking.registerGlobalReceiver(ModNetwork.LatveriaDialogOpen.TYPE, (pkt, ctx) ->
+				Minecraft.getInstance().setScreen(new LatveriaDialogScreen(pkt.entityId(), pkt.role(), pkt.flags())));
 		GodDoomScene.init();
+		DoomFinalClient.init();
 		DoomTooltips.init();
 	}
 

@@ -40,6 +40,67 @@ final class LatveriaCastle {
 		facade();
 		banners();
 		weather();
+		underCastleGenerator();
+	}
+
+	/**
+	 * A massive subterranean generator vault deep beneath Castle Doom (y = F - 14 .. F - 2, z = -252 .. -232),
+	 * accessible from the East Wing laboratory staircase or a maintenance tunnel under the eastern cliff.
+	 */
+	private static void underCastleGenerator() {
+		int gy = F - 13;
+		// Vault shell and chamber interior
+		fill(-13, gy - 1, -253, 13, F - 2, -231, WALL);
+		fill(-11, gy, -251, 11, F - 3, -233, AIR);
+		fill(-11, gy - 1, -251, 11, gy - 1, -233, WALL2);
+
+		// Heavy blackstone pillars supporting the keep above
+		for (int px : new int[]{-10, 10}) {
+			for (int pz : new int[]{-250, -242, -234}) {
+				fill(px, gy, pz, px, F - 3, pz, BLACK);
+			}
+		}
+
+		// The Huge Generator Core in the center of the vault (x = -4..4, z = -246..-238)
+		fill(-5, gy, -247, 5, gy, -237, BLACK);
+		fill(-4, gy + 1, -246, 4, gy + 8, -238, Blocks.COPPER_BLOCK);
+		fill(-3, gy + 2, -245, 3, gy + 7, -239, Blocks.SEA_LANTERN);
+		fill(-2, gy + 1, -244, 2, F - 2, -240, Blocks.COPPER_BLOCK);
+		// Iron bar cage and copper coils around the core
+		for (int x = -4; x <= 4; x += 2) {
+			fill(x, gy + 2, -246, x, gy + 7, -246, Blocks.IRON_BARS);
+			fill(x, gy + 2, -238, x, gy + 7, -238, Blocks.IRON_BARS);
+		}
+		for (int z = -246; z <= -238; z += 2) {
+			fill(-4, gy + 2, z, -4, gy + 7, z, Blocks.IRON_BARS);
+			fill(4, gy + 2, z, 4, gy + 7, z, Blocks.IRON_BARS);
+		}
+		// Lightning rods and control consoles on all 4 sides of the generator
+		for (int x : new int[]{-6, 6}) {
+			for (int z : new int[]{-245, -239}) {
+				fill(x, gy, z, x, gy + 4, z, Blocks.WAXED_OXIDIZED_CUT_COPPER);
+				set(x, gy + 5, z, Blocks.SEA_LANTERN);
+				set(x, gy + 6, z, Blocks.LIGHTNING_ROD);
+			}
+		}
+		// Chandeliers lighting the vault
+		for (int x : new int[]{-8, 0, 8}) {
+			set(x, F - 3, -249, hanging());
+			set(x, F - 3, -235, hanging());
+		}
+
+		// Staircase connecting the East Wing Laboratory (x = 26, y = F, z = -266..-242) down to the Generator Vault
+		fill(12, gy, -244, 27, gy + 3, -240, AIR);
+		fill(12, gy - 1, -244, 27, gy - 1, -240, WALL2);
+		for (int step = 0; step < 13; step++) {
+			int sy = gy + step;
+			int sz = -243 - step;
+			fill(25, sy, sz, 27, sy + 4, sz, AIR);
+			fill(25, sy - 1, sz, 27, sy - 1, sz, WALL2);
+			for (int sx = 25; sx <= 27; sx++) {
+				set(sx, sy, sz, stairs(Blocks.DEEPSLATE_BRICK_STAIRS, Direction.NORTH, false));
+			}
+		}
 	}
 
 	// ------------------------------------------------------------------ the outer wall

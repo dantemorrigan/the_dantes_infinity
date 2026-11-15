@@ -37,11 +37,13 @@ public final class DoomRenderers {
 	private static final class BotAssets {
 		static final GeoModel[] MODELS = new GeoModel[6];
 		static final Identifier[] TEXTURES = new Identifier[6];
+		static final Identifier[] STATUE_TEXTURES = new Identifier[6];
 		static final Map<String, GeoAnimation> CLIPS = GeoAnimation.load(InfinityGauntlet.id("doctor_doom/doombot.animation.json"));
 		static {
 			for (int i = 0; i < 6; i++) {
 				MODELS[i] = GeoModel.load(InfinityGauntlet.id("doctor_doom/doombot_" + Doombot.NAMES[i] + ".geo.json"));
 				TEXTURES[i] = InfinityGauntlet.id("textures/entity/doctor_doom/doombot_" + Doombot.NAMES[i] + ".png");
+				STATUE_TEXTURES[i] = InfinityGauntlet.id("textures/entity/doctor_doom/doombot_" + Doombot.NAMES[i] + "_statue.png");
 			}
 		}
 	}
@@ -67,8 +69,11 @@ public final class DoomRenderers {
 		boolean god;
 		float bodyYaw, actionTime, walkPos, walkSpeed, deathTime, headPitch, headYaw;
 		int action, phase;
-		boolean hurt, shield, exposed;
+		boolean hurt, shield, exposed, dusting;
+		net.minecraft.world.item.ItemStack offhand = net.minecraft.world.item.ItemStack.EMPTY;
 	}
+
+	private static final net.minecraft.client.renderer.item.ItemStackRenderState DOOM_GAUNTLET_STATE = new net.minecraft.client.renderer.item.ItemStackRenderState();
 
 	public static final class Doom extends EntityRenderer<DoctorDoom, DoomState> {
 		public Doom(EntityRendererProvider.Context context) {
@@ -100,6 +105,8 @@ public final class DoomRenderers {
 			s.shield = e.flag(DoctorDoom.FLAG_SHIELD);
 			s.exposed = e.flag(DoctorDoom.FLAG_EXPOSED);
 			s.god = e.flag(DoctorDoom.FLAG_GOD);
+			s.dusting = e.flag(DoctorDoom.FLAG_DUSTING);
+			s.offhand = e.getOffhandItem().copy();
 		}
 
 		@Override
@@ -116,16 +123,36 @@ public final class DoomRenderers {
 			} else {
 				play(DoomAssets.CLIPS, bones, DoctorDoom.CLIPS[Math.min(s.action, DoctorDoom.CLIPS.length - 1)], s.actionTime, 1);
 			}
-			float fade = s.deathTime > 88 ? Mth.clamp(1 - (s.deathTime - 88) / 12f, 0, 1) : 1;
+			float fade = s.dusting ? Mth.clamp(1 - (s.deathTime - 35) / 80f, 0, 1)
+					: (s.deathTime > 88 ? Mth.clamp(1 - (s.deathTime - 88) / 12f, 0, 1) : 1);
 			int overlay = OverlayTexture.pack(OverlayTexture.u(0), OverlayTexture.v(s.hurt));
 			int light = s.god ? 0xF000F0 : lit(s.lightCoords);
-			int color = s.shield ? ARGB.color((int) (fade * 255), 200, 235, 255) : s.exposed ? ARGB.color((int) (fade * 255), 255, 226, 200)
+			int color = s.dusting ? ARGB.color((int) (fade * 255), (int) Mth.lerp(1 - fade, 255, 80), 255, (int) Mth.lerp(1 - fade, 255, 120))
+					: s.shield ? ARGB.color((int) (fade * 255), 200, 235, 255) : s.exposed ? ARGB.color((int) (fade * 255), 255, 226, 200)
 					: ARGB.color((int) (fade * 255), 255, 255, 255);
 			pose.pushPose();
 			pose.mulPose(Axis.YP.rotationDegrees(180f - s.bodyYaw));
 			Identifier tex = s.god ? DoomAssets.GOD : DoomAssets.TEXTURE;
 			var type = fade < 1 ? RenderTypes.entityTranslucent(tex) : RenderTypes.entityCutout(tex);
 			collector.submitCustomGeometry(pose, type, (p, out) -> DoomAssets.MODEL.render(stack(p), out, bones, light, overlay, (b, c) -> color));
+			if (!s.offhand.isEmpty() && s.offhand.is(com.dantemorrigan.gauntlet.ModItems.GAUNTLET)) {
+				var mc = net.minecraft.client.Minecraft.getInstance();
+				var worn = s.offhand.copy();
+				worn.set(net.minecraft.core.component.DataComponents.ITEM_MODEL, InfinityGauntlet.id("gauntlet_worn"));
+				mc.getItemModelResolver().updateForTopItem(DOOM_GAUNTLET_STATE, worn, net.minecraft.world.item.ItemDisplayContext.NONE, mc.level, null, 0);
+				GeoModel.BonePose armL = bones.getOrDefault("arm_l", new GeoModel.BonePose());
+				pose.pushPose();
+				pose.translate(6.28f / 16f, 26.65f / 16f, 0);
+				if (armL.rz != 0) pose.mulPose(Axis.ZP.rotationDegrees(armL.rz));
+				if (armL.ry != 0) pose.mulPose(Axis.YP.rotationDegrees(armL.ry));
+				if (armL.rx != 0) pose.mulPose(Axis.XP.rotationDegrees(armL.rx));
+				pose.translate(0, -8.5f / 16f, 0);
+				pose.mulPose(Axis.XP.rotationDegrees(180f));
+				pose.mulPose(Axis.YP.rotationDegrees(90f));
+				pose.scale(1.05f, 0.68f, 1.25f);
+				DOOM_GAUNTLET_STATE.submit(pose, collector, 0xF000F0, OverlayTexture.NO_OVERLAY, 0);
+				pose.popPose();
+			}
 			pose.popPose();
 			super.submit(s, pose, collector, camera);
 		}
@@ -134,7 +161,7 @@ public final class DoomRenderers {
 	public static final class BotState extends EntityRenderState {
 		float bodyYaw, actionTime, walkPos, walkSpeed, deathTime, headYaw, scale;
 		int action, variant;
-		boolean hurt, ward, allied, flying, decoy;
+		boolean hurt, ward, allied, flying, decoy, statue;
 	}
 
 	public static final class Bot extends EntityRenderer<Doombot, BotState> {
@@ -173,6 +200,7 @@ public final class DoomRenderers {
 		/** A hunter that senses something shows a yellow "?", one that has the intruder a red "!", as in a stealth game. */
 		@Override
 		protected boolean shouldShowName(Doombot e, double distanceSq) {
+			if (e.dormant()) return false;
 			return e.awareness() > 0 && distanceSq < 64 * 64 || super.shouldShowName(e, distanceSq);
 		}
 
@@ -206,14 +234,23 @@ public final class DoomRenderers {
 			s.allied = e.flag(Doombot.FLAG_ALLIED);
 			s.flying = e.flag(Doombot.FLAG_FLYING);
 			s.decoy = e.decoy();
+			s.statue = e.dormant();
 			s.scale = e.getScale();
 		}
 
 		@Override
 		public void submit(BotState s, PoseStack pose, SubmitNodeCollector collector, CameraRenderState camera) {
-			if (s.decoy) { decoy(s, pose, collector, camera); return; }
+			if (s.decoy && !s.statue) { decoy(s, pose, collector, camera); return; }
 			Map<String, GeoModel.BonePose> bones = new HashMap<>();
-			if (s.deathTime > 0) {
+			if (s.statue) {
+				// Powered-off eternal statue: head bowed down, arms hanging still.
+				GeoModel.BonePose head = bones.computeIfAbsent("head", k -> new GeoModel.BonePose());
+				head.rx = 34f;
+				head.ry = 0f;
+				head.rz = 0f;
+				bones.computeIfAbsent("arm_r", k -> new GeoModel.BonePose()).rx = 6f;
+				bones.computeIfAbsent("arm_l", k -> new GeoModel.BonePose()).rx = 6f;
+			} else if (s.deathTime > 0) {
 				play(BotAssets.CLIPS, bones, "shutdown", Math.min(s.deathTime / 20f, 2f), 1);
 			} else switch (s.action) {
 				case Doombot.A_ALERT -> play(BotAssets.CLIPS, bones, "alert", s.actionTime, 1);
@@ -232,13 +269,14 @@ public final class DoomRenderers {
 			}
 			int v = Mth.clamp(s.variant, 0, 5);
 			int overlay = OverlayTexture.pack(OverlayTexture.u(0), OverlayTexture.v(s.hurt));
-			int light = lit(s.lightCoords);
-			int color = s.ward ? ARGB.color(255, 170, 255, 190) : s.allied ? ARGB.color(255, 235, 255, 240) : -1;
+			int light = s.statue ? s.lightCoords : lit(s.lightCoords);
+			int color = s.statue ? ARGB.color(255, 200, 204, 210) : s.ward ? ARGB.color(255, 170, 255, 190) : s.allied ? ARGB.color(255, 235, 255, 240) : -1;
+			Identifier tex = s.statue ? BotAssets.STATUE_TEXTURES[v] : BotAssets.TEXTURES[v];
 			float scale = s.scale;
 			pose.pushPose();
 			pose.mulPose(Axis.YP.rotationDegrees(180f - s.bodyYaw));
 			pose.scale(scale, scale, scale);
-			collector.submitCustomGeometry(pose, RenderTypes.entityCutout(BotAssets.TEXTURES[v]), (p, out) ->
+			collector.submitCustomGeometry(pose, RenderTypes.entityCutout(tex), (p, out) ->
 					BotAssets.MODELS[v].render(stack(p), out, bones, light, overlay, (b, c) -> color));
 			pose.popPose();
 			super.submit(s, pose, collector, camera);

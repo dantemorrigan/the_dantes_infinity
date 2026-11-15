@@ -150,6 +150,7 @@ public final class LatveriaCourt {
 			Doombot bot = order.get(i);
 			DoomFx.bill(level, ModParticles.DOOM_PHASE_SHIFT, bot.position().add(0, 1, 0), 1.2);
 			bot.park(new Vec3(slot[0] + 0.5, LatveriaPlan.FLOOR, slot[1]), 180f);
+			if (!bot.isForged()) bot.becomeStatue(null);
 		}
 	}
 

@@ -530,7 +530,56 @@ public final class ModNetwork {
 		@Override public Type<DoomCast> type() { return TYPE; }
 	}
 
+	/** S2C: opens the RPG dialog screen for a Latverian NPC (Old Mechanic Radovan, Tavern Keeper Mirko, or a citizen). */
+	public record LatveriaDialogOpen(int entityId, int role, int flags) implements CustomPacketPayload {
+		public static final Type<LatveriaDialogOpen> TYPE = newType("latveria_dialog_open");
+		public static final StreamCodec<ByteBuf, LatveriaDialogOpen> CODEC = StreamCodec.composite(
+				ByteBufCodecs.VAR_INT, LatveriaDialogOpen::entityId,
+				ByteBufCodecs.VAR_INT, LatveriaDialogOpen::role,
+				ByteBufCodecs.VAR_INT, LatveriaDialogOpen::flags,
+				LatveriaDialogOpen::new);
+		@Override public Type<LatveriaDialogOpen> type() { return TYPE; }
+	}
+
+	/** C2S: executes a quest action chosen in the Latverian RPG dialog screen. */
+	public record LatveriaDialogAction(int entityId, int actionId) implements CustomPacketPayload {
+		public static final Type<LatveriaDialogAction> TYPE = newType("latveria_dialog_action");
+		public static final StreamCodec<ByteBuf, LatveriaDialogAction> CODEC = StreamCodec.composite(
+				ByteBufCodecs.VAR_INT, LatveriaDialogAction::entityId,
+				ByteBufCodecs.VAR_INT, LatveriaDialogAction::actionId,
+				LatveriaDialogAction::new);
+		@Override public Type<LatveriaDialogAction> type() { return TYPE; }
+	}
+
+	/**
+	 * S2C: syncs the Overworld Doom-with-Gauntlet final encounter (sandy-fiery arena compass, Thanos vs Doom dome duel,
+	 * cutscenes, and gauntlet return animation).
+	 */
+	public record DoomFinalSync(int stage, int ticks, Vec3 center, int doomId, int thanosId, int stoneMask) implements CustomPacketPayload {
+		public static final Type<DoomFinalSync> TYPE = newType("doom_final_sync");
+		public static final StreamCodec<ByteBuf, DoomFinalSync> CODEC = StreamCodec.composite(
+				ByteBufCodecs.VAR_INT, DoomFinalSync::stage,
+				ByteBufCodecs.VAR_INT, DoomFinalSync::ticks,
+				Vec3.STREAM_CODEC, DoomFinalSync::center,
+				ByteBufCodecs.VAR_INT, DoomFinalSync::doomId,
+				ByteBufCodecs.VAR_INT, DoomFinalSync::thanosId,
+				ByteBufCodecs.VAR_INT, DoomFinalSync::stoneMask,
+				DoomFinalSync::new);
+		@Override public Type<DoomFinalSync> type() { return TYPE; }
+	}
+
+	/** C2S: player shatters the energy dome over Doom & Thanos using Stormbreaker. */
+	public record DoomBreakDome() implements CustomPacketPayload {
+		public static final Type<DoomBreakDome> TYPE = newType("doom_break_dome");
+		public static final StreamCodec<ByteBuf, DoomBreakDome> CODEC = StreamCodec.unit(new DoomBreakDome());
+		@Override public Type<DoomBreakDome> type() { return TYPE; }
+	}
+
 	public static void init() {
+		PayloadTypeRegistry.clientboundPlay().register(LatveriaDialogOpen.TYPE, LatveriaDialogOpen.CODEC);
+		PayloadTypeRegistry.serverboundPlay().register(LatveriaDialogAction.TYPE, LatveriaDialogAction.CODEC);
+		PayloadTypeRegistry.clientboundPlay().register(DoomFinalSync.TYPE, DoomFinalSync.CODEC);
+		PayloadTypeRegistry.serverboundPlay().register(DoomBreakDome.TYPE, DoomBreakDome.CODEC);
 		PayloadTypeRegistry.clientboundPlay().register(DoomFx.TYPE, DoomFx.CODEC);
 		PayloadTypeRegistry.clientboundPlay().register(DoomSync.TYPE, DoomSync.CODEC);
 		PayloadTypeRegistry.serverboundPlay().register(DoomCast.TYPE, DoomCast.CODEC);

@@ -1,0 +1,14 @@
+{
+  "layers": {
+    "humanoid": [
+      {
+        "texture": "infinity_gauntlet:latveria_cloak"
+      }
+    ],
+    "humanoid_leggings": [
+      {
+        "texture": "infinity_gauntlet:latveria_cloak"
+      }
+    ]
+  }
+}

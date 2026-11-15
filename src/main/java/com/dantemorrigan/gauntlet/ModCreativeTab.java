@@ -60,6 +60,8 @@ public final class ModCreativeTab {
 				output.accept(ModItems.JADE_SHARD);
 				output.accept(ModItems.REPAIR_TOOL);
 				output.accept(ModItems.LATVERIA_BANNER);
+				output.accept(ModItems.GENERATOR_DISRUPTOR);
+				output.accept(ModItems.LATVERIA_CLOAK);
 				output.accept(ModItems.INFINITY_EXTRACTOR);
 				output.accept(ModItems.GAUNTLET_DOLL_SPAWN_EGG);
 			})

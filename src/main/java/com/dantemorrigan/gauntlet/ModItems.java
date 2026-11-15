@@ -114,6 +114,16 @@ public final class ModItems {
 	public static final Item JADE_SHARD = register("jade_shard", new Item.Properties().rarity(Rarity.UNCOMMON));
 	public static final Item REPAIR_TOOL = register("repair_tool", new Item.Properties().stacksTo(1));
 	public static final Item LATVERIA_BANNER = register("latveria_banner", new Item.Properties().rarity(Rarity.UNCOMMON));
+	public static final Item GENERATOR_DISRUPTOR = register("generator_disruptor", com.dantemorrigan.gauntlet.doom.DoomItems.Disruptor::new,
+			new Item.Properties().stacksTo(1).rarity(Rarity.EPIC).fireResistant()
+					.component(DataComponents.LORE, new net.minecraft.world.item.component.ItemLore(java.util.List.of(
+							net.minecraft.network.chat.Component.translatable("tooltip.infinity_gauntlet.generator_disruptor")))));
+	public static final Item LATVERIA_CLOAK = register("latveria_cloak",
+			new Item.Properties().humanoidArmor(com.dantemorrigan.gauntlet.doom.DoomItems.CLOAK_MATERIAL, net.minecraft.world.item.equipment.ArmorType.CHESTPLATE)
+					.rarity(Rarity.RARE)
+					.component(DataComponents.LORE, new net.minecraft.world.item.component.ItemLore(java.util.List.of(
+							net.minecraft.network.chat.Component.translatable("tooltip.infinity_gauntlet.latveria_cloak"),
+							net.minecraft.network.chat.Component.translatable("tooltip.infinity_gauntlet.latveria_cloak_warn")))));
 
 	private static Item.Properties doom(net.minecraft.world.item.equipment.ArmorType type) {
 		return new Item.Properties().humanoidArmor(com.dantemorrigan.gauntlet.doom.DoomArmor.MATERIAL, type).rarity(Rarity.EPIC).fireResistant();

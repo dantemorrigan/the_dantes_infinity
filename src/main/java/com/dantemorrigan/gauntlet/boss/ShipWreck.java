@@ -35,7 +35,7 @@ public final class ShipWreck {
 	public static final int SINK = 5;
 
 	/** One piece (the hull, or a wing): voxel offsets from the ship origin and a material id per voxel. */
-	static final class Part {
+	public static final class Part {
 		final String name;
 		final int[] dx, dy, dz;
 		final byte[] mat;
@@ -110,7 +110,7 @@ public final class ShipWreck {
 	}
 
 	/** Voxelizes the ship in its final pose. Pure math, safe on any thread; roughly 50-100k blocks. */
-	static List<Part> plan(float yawDeg, float pitchDeg, float rollDeg) {
+	public static List<Part> plan(float yawDeg, float pitchDeg, float rollDeg) {
 		Quaternionf rot = new Quaternionf().rotateY(yawDeg * (float) Math.PI / 180f).rotateX(pitchDeg * (float) Math.PI / 180f)
 				.rotateZ(rollDeg * (float) Math.PI / 180f);
 		Quaternionf inv = new Quaternionf(rot).invert();
@@ -222,7 +222,7 @@ public final class ShipWreck {
 		private boolean decorated;
 
 		/** {@code origin} is the impact point on the ground; the ship's center sits {@link #SINK} blocks below it. */
-		Build(ServerLevel level, BlockPos origin, List<Part> parts) {
+		public Build(ServerLevel level, BlockPos origin, List<Part> parts) {
 			this.level = level;
 			this.origin = origin;
 			this.parts = parts;

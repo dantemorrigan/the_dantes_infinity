@@ -71,11 +71,18 @@ public final class ModEntities {
 			EntityType.Builder.<com.dantemorrigan.gauntlet.doom.Doombot>of(com.dantemorrigan.gauntlet.doom.Doombot::new, MobCategory.MISC)
 					.sized(0.75f, 1.95f).eyeHeight(1.7f).fireImmune().clientTrackingRange(12).updateInterval(1).noLootTable().build(DOOMBOT_KEY));
 
+	private static final ResourceKey<EntityType<?>> LATVERIA_NPC_KEY = ResourceKey.create(Registries.ENTITY_TYPE, InfinityGauntlet.id("latveria_npc"));
+	/** Player-skinned Latverian resident or quest giver (Old Mechanic Radovan, Tavern Keeper Mirko, and townsfolk). */
+	public static final EntityType<com.dantemorrigan.gauntlet.doom.LatveriaNpc> LATVERIA_NPC = Registry.register(BuiltInRegistries.ENTITY_TYPE, LATVERIA_NPC_KEY,
+			EntityType.Builder.<com.dantemorrigan.gauntlet.doom.LatveriaNpc>of(com.dantemorrigan.gauntlet.doom.LatveriaNpc::new, MobCategory.MISC)
+					.sized(0.6f, 1.8f).eyeHeight(1.62f).fireImmune().clientTrackingRange(10).updateInterval(2).noLootTable().build(LATVERIA_NPC_KEY));
+
 	public static void init() {
 		FabricDefaultAttributeRegistry.register(TRIBUNAL, com.dantemorrigan.gauntlet.boss.LivingTribunal.attributes());
 		FabricDefaultAttributeRegistry.register(LOKI, Loki.createAttributes());
 		FabricDefaultAttributeRegistry.register(DOCTOR_DOOM, com.dantemorrigan.gauntlet.doom.DoctorDoom.createAttributes());
 		FabricDefaultAttributeRegistry.register(DOOMBOT, com.dantemorrigan.gauntlet.doom.Doombot.createAttributes());
+		FabricDefaultAttributeRegistry.register(LATVERIA_NPC, com.dantemorrigan.gauntlet.doom.LatveriaNpc.createAttributes());
 		FabricDefaultAttributeRegistry.register(THANOS, com.dantemorrigan.gauntlet.boss.Thanos.createAttributes());
 		FabricDefaultAttributeRegistry.register(GAUNTLET_DOLL, GauntletDoll.createAttributes());
 		FabricDefaultAttributeRegistry.register(MIND_ZOMBIE, com.dantemorrigan.gauntlet.stones.MindZombie.createAttributes());

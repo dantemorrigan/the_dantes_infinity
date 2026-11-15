@@ -85,7 +85,10 @@ public class InfinityGauntlet implements ModInitializer {
 		net.minecraft.core.Registry.register(net.minecraft.core.registries.BuiltInRegistries.CHUNK_GENERATOR, id("latveria"),
 				com.dantemorrigan.gauntlet.doom.LatveriaGenerator.CODEC);
 		com.dantemorrigan.gauntlet.doom.Latveria.init();
+		com.dantemorrigan.gauntlet.doom.DoomFinalEncounter.init();
 		com.dantemorrigan.gauntlet.doom.DoomArmor.init();
+		ServerPlayNetworking.registerGlobalReceiver(ModNetwork.LatveriaDialogAction.TYPE, (payload, context) ->
+				com.dantemorrigan.gauntlet.doom.LatveriaQuests.handleDialogAction(context.player(), payload.entityId(), payload.actionId()));
 		LOGGER.info("Infinity Gauntlet loaded");
 	}
 
