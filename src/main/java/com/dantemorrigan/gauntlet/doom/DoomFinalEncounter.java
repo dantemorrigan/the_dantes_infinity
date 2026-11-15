@@ -21,6 +21,7 @@ import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.event.player.AttackBlockCallback;
 import net.fabricmc.fabric.api.event.player.AttackEntityCallback;
 import net.fabricmc.fabric.api.event.player.UseItemCallback;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
@@ -47,6 +48,7 @@ import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.phys.Vec3;
 
 import java.util.EnumSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -82,19 +84,27 @@ public final class DoomFinalEncounter {
 	public static final double ARENA_RADIUS = 36.0;
 	public static final double DOME_RADIUS = 20.0;
 
-	private record SavedState(int stage, BlockPos arenaPos, int stoneMask, boolean arenaBuilt, String ownerUuid) {
+	private record SavedState(int stage, BlockPos arenaPos, int stoneMask, boolean arenaBuilt, String ownerUuid,
+			ItemStack gauntlet, String returnId, List<String> victors) {
 		static final Codec<SavedState> CODEC = RecordCodecBuilder.create(i -> i.group(
 				Codec.INT.fieldOf("stage").forGetter(SavedState::stage),
 				BlockPos.CODEC.fieldOf("arenaPos").forGetter(SavedState::arenaPos),
 				Codec.INT.fieldOf("stoneMask").forGetter(SavedState::stoneMask),
 				Codec.BOOL.fieldOf("arenaBuilt").forGetter(SavedState::arenaBuilt),
-				Codec.STRING.fieldOf("ownerUuid").forGetter(SavedState::ownerUuid)
+				Codec.STRING.fieldOf("ownerUuid").forGetter(SavedState::ownerUuid),
+				ItemStack.OPTIONAL_CODEC.optionalFieldOf("gauntlet", ItemStack.EMPTY).forGetter(SavedState::gauntlet),
+				Codec.STRING.optionalFieldOf("returnId", "").forGetter(SavedState::returnId),
+				Codec.STRING.listOf().optionalFieldOf("victors", List.of()).forGetter(SavedState::victors)
 		).apply(i, SavedState::new));
 	}
 
 	private static final AttachmentType<SavedState> STATE = AttachmentRegistry.<SavedState>builder()
 			.persistent(SavedState.CODEC)
 			.buildAndRegister(InfinityGauntlet.id("doom_final_encounter"));
+
+	// The receipt is stored in the same player save as the returned inventory stack.
+	private static final AttachmentType<String> GAUNTLET_RECEIPT = AttachmentRegistry.<String>builder()
+			.persistent(Codec.STRING).copyOnDeath().buildAndRegister(InfinityGauntlet.id("doom_gauntlet_receipt"));
 
 	private static boolean loaded;
 	private static int stage = STAGE_NONE;
@@ -103,6 +113,10 @@ public final class DoomFinalEncounter {
 	private static int stoneMask = 0x1F; // default 5 stones
 	private static boolean arenaBuilt = false;
 	private static UUID ownerId;
+	private static String returnId = "";
+	private static final Set<UUID> victors = new LinkedHashSet<>();
+	private static Vec3 theftCenter = Vec3.ZERO;
+	private static int theftDoomId = -1;
 	private static ItemStack stolenGauntlet = ItemStack.EMPTY;
 
 	private static DoctorDoom doom;
@@ -119,6 +133,10 @@ public final class DoomFinalEncounter {
 		ServerTickEvents.END_SERVER_TICK.register(DoomFinalEncounter::tick);
 		ServerLifecycleEvents.SERVER_STOPPED.register(s -> resetRuntime());
 		ServerPlayNetworking.registerGlobalReceiver(ModNetwork.DoomBreakDome.TYPE, (payload, ctx) -> tryBreakDome(ctx.player()));
+		ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
+			load(server);
+			sync(handler.getPlayer());
+		});
 
 		// Also allow left-clicking or right-clicking with Stormbreaker near the dome to shatter it!
 		UseItemCallback.EVENT.register((player, level, hand) -> {
@@ -151,6 +169,10 @@ public final class DoomFinalEncounter {
 		stoneMask = 0x1F;
 		arenaBuilt = false;
 		ownerId = null;
+		returnId = "";
+		victors.clear();
+		theftCenter = Vec3.ZERO;
+		theftDoomId = -1;
 		stolenGauntlet = ItemStack.EMPTY;
 		firesCleared = false;
 		doom = null;
@@ -171,16 +193,29 @@ public final class DoomFinalEncounter {
 			stoneMask = s.stoneMask();
 			arenaBuilt = s.arenaBuilt();
 			ownerId = s.ownerUuid().isEmpty() ? null : UUID.fromString(s.ownerUuid());
-			stolenGauntlet = buildGauntletFromMask(stoneMask);
-			if (stage == STAGE_THEFT_CUTSCENE) stage = STAGE_WAITING_OVERWORLD;
-			if (stage == STAGE_THANOS_ARRIVAL || stage == STAGE_KILL_THANOS_CUTSCENE) stage = STAGE_WAITING_OVERWORLD;
-			if (stage == STAGE_VICTORY_CUTSCENE) stage = STAGE_DONE;
+			stolenGauntlet = s.gauntlet().isEmpty() ? buildGauntletFromMask(stoneMask) : s.gauntlet().copy();
+			returnId = s.returnId();
+			s.victors().stream().map(UUID::fromString).forEach(victors::add);
+			if (stage == STAGE_THEFT_CUTSCENE || stage == STAGE_THANOS_ARRIVAL || stage == STAGE_DOME_DUEL
+					|| stage == STAGE_KILL_THANOS_CUTSCENE) {
+				stage = STAGE_WAITING_OVERWORLD;
+			}
+			if (stage == STAGE_VICTORY_CUTSCENE) {
+				// Resume settlement without replaying a camera sequence whose entities may have unloaded.
+				stageTicks = 209;
+				if (ownerId != null) victors.add(ownerId);
+			}
+			if (returnId.isEmpty() && stage > STAGE_NONE && stage < STAGE_DONE) {
+				returnId = (stage == STAGE_VICTORY_CUTSCENE ? "legacy:" : "") + UUID.randomUUID();
+				save(server);
+			}
 		}
 	}
 
 	private static void save(MinecraftServer server) {
 		server.overworld().setAttached(STATE, new SavedState(
-				stage, arenaPos, stoneMask, arenaBuilt, ownerId == null ? "" : ownerId.toString()));
+				stage, arenaPos, stoneMask, arenaBuilt, ownerId == null ? "" : ownerId.toString(),
+				stolenGauntlet.copy(), returnId, victors.stream().map(UUID::toString).toList()));
 	}
 
 	public static boolean isActive(MinecraftServer server) {
@@ -221,8 +256,11 @@ public final class DoomFinalEncounter {
 	public static void onGauntletStolen(MinecraftServer server, ServerPlayer victim, ItemStack stolen) {
 		load(server);
 		stolenGauntlet = stolen.copy();
+		GauntletState.setInUse(stolenGauntlet, EnumSet.noneOf(Stone.class));
 		stoneMask = packStoneMask(stolen);
 		ownerId = victim == null ? null : victim.getUUID();
+		returnId = UUID.randomUUID().toString();
+		victors.clear();
 		ServerLevel overworld = server.overworld();
 		BlockPos origin = overworld.getRespawnData().pos();
 		if (victim != null) {
@@ -243,19 +281,19 @@ public final class DoomFinalEncounter {
 		save(server);
 	}
 
-	public static void syncTheftCutscene(ServerLevel latveria, DoctorDoom bossEntity, int totalTicks) {
-		for (ServerPlayer p : latveria.players()) {
-			ServerPlayNetworking.send(p, new ModNetwork.DoomFinalSync(
-					STAGE_THEFT_CUTSCENE, 0, bossEntity.position(), bossEntity.getId(), -1, stoneMask));
-		}
+	public static void syncTheftCutscene(ServerLevel latveria, DoctorDoom bossEntity) {
+		theftCenter = bossEntity.position();
+		theftDoomId = bossEntity.getId();
+		syncAll(latveria.getServer());
 	}
 
-	public static boolean holdsStormbreaker(ServerPlayer p) {
-		return p.getMainHandItem().is(ModItems.STORMBREAKER) || p.getOffhandItem().is(ModItems.STORMBREAKER);
+	private static boolean holdsStormbreaker(ServerPlayer p) {
+		return com.dantemorrigan.gauntlet.stormbreaker.Stormbreaker.guarded(p);
 	}
 
 	public static boolean canBreakDome(ServerPlayer p) {
-		if (stage != STAGE_DOME_DUEL || p.level().dimension() != Level.OVERWORLD) return false;
+		if (stage != STAGE_DOME_DUEL || p.level().dimension() != Level.OVERWORLD
+				|| !p.isAlive() || p.isSpectator()) return false;
 		Vec3 c = centre();
 		double dist = p.position().distanceTo(c);
 		return dist <= DOME_RADIUS + 8.5;
@@ -280,7 +318,6 @@ public final class DoomFinalEncounter {
 		level.playSound(null, arenaPos, SoundEvents.BEACON_DEACTIVATE, SoundSource.BLOCKS, 2.5f, 0.6f);
 		for (ServerPlayer sp : level.players()) {
 			if (sp.position().distanceTo(c) < 120) {
-				DoomFx.send(sp, DoomFx.CUTSCENE, doom != null ? doom.getId() : -1, c, 0, 180);
 				DoomFx.send(sp, DoomFx.SHAKE, 0, c, 1.4f, 25);
 				DoomFx.send(sp, DoomFx.FLASH, 0, c, 1.0f, 16);
 			}
@@ -293,23 +330,27 @@ public final class DoomFinalEncounter {
 		if (stage != STAGE_FINAL_BOSS) return;
 		stage = STAGE_VICTORY_CUTSCENE;
 		stageTicks = 0;
-		if (killer != null) ownerId = killer.getUUID();
-		save(level.getServer());
-		Vec3 c = defeatedDoom.position();
-		for (ServerPlayer sp : level.players()) {
-			if (sp.position().distanceTo(c) < 120) {
-				DoomFx.send(sp, DoomFx.CUTSCENE, defeatedDoom.getId(), c, 0, 128);
-			}
+		victors.addAll(defeatedDoom.challengers());
+		if (killer != null) {
+			victors.add(killer.getUUID());
+			if (ownerId == null) ownerId = killer.getUUID();
 		}
+		if (ownerId != null) victors.add(ownerId);
+		save(level.getServer());
 		syncAll(level.getServer());
 	}
 
 	private static void tick(MinecraftServer server) {
 		load(server);
-		if (stage == STAGE_NONE || stage == STAGE_DONE) return;
+		if (stage == STAGE_NONE) return;
+		if (stage == STAGE_DONE) {
+			if (server.getTickCount() % 20 == 0) returnGauntlet(server);
+			return;
+		}
 		stageTicks++;
 		ServerLevel overworld = server.overworld();
 
+		if (stageTicks % 15 == 0 && (stage != STAGE_VICTORY_CUTSCENE || stageTicks < 210)) syncAll(server);
 		if (stage == STAGE_THEFT_CUTSCENE) {
 			if (stageTicks >= 136) {
 				stage = STAGE_WAITING_OVERWORLD;
@@ -320,14 +361,10 @@ public final class DoomFinalEncounter {
 			return;
 		}
 
-		// Sync compass & state periodically
-		if (stageTicks % 15 == 0) {
-			syncAll(server);
-		}
-
-		// Tick ship crash if active
-		if (crashAge >= 0) {
-			tickShipCrash(overworld);
+		if (crashAge >= 0) tickShipCrash(overworld);
+		if (stage == STAGE_VICTORY_CUTSCENE) {
+			tickVictoryCutscene(overworld, centre(), stageTicks);
+			return;
 		}
 
 		// Find nearest player in Overworld near the arena
@@ -382,7 +419,6 @@ public final class DoomFinalEncounter {
 			case STAGE_DOME_DUEL -> tickDomeDuel(overworld, center);
 			case STAGE_KILL_THANOS_CUTSCENE -> tickKillThanosCutscene(overworld, center, stageTicks);
 			case STAGE_FINAL_BOSS -> tickFinalBoss(overworld, center, nearest);
-			case STAGE_VICTORY_CUTSCENE -> tickVictoryCutscene(overworld, center, stageTicks);
 		}
 	}
 
@@ -419,7 +455,6 @@ public final class DoomFinalEncounter {
 		for (ServerPlayer p : overworld.players()) {
 			if (p.position().distanceTo(center) < 180) {
 				ServerPlayNetworking.send(p, new ModNetwork.ThanosFx(ThanosEncounter.FX_SHIP_ARRIVE, 0, shipHover, shipDir, shipYaw, 90));
-				DoomFx.send(p, DoomFx.CUTSCENE, doom != null ? doom.getId() : -1, center, 0, 168);
 			}
 		}
 		overworld.playSound(null, arenaPos, SoundEvents.BEACON_AMBIENT, SoundSource.HOSTILE, 3.0f, 0.4f);
@@ -662,53 +697,58 @@ public final class DoomFinalEncounter {
 	}
 
 	private static void tickVictoryCutscene(ServerLevel overworld, Vec3 center, int t) {
-		ServerPlayer winner = ownerId == null ? null : overworld.getServer().getPlayerList().getPlayer(ownerId);
-		if (winner == null || winner.level() != overworld || !winner.isAlive()) {
-			for (ServerPlayer p : overworld.players()) {
-				if (p.isAlive() && !p.isSpectator() && p.position().distanceTo(center) < 96) {
-					winner = p;
-					break;
-				}
-			}
-		}
+		MinecraftServer server = overworld.getServer();
 		if (t == 60) {
 			overworld.playSound(null, arenaPos, SoundEvents.BEACON_ACTIVATE, SoundSource.PLAYERS, 2.5f, 1.2f);
 		}
-		if (t == 114 && winner != null) {
-			// Equip the stolen Infinity Gauntlet directly onto the player's left hand (EquipmentSlot.OFFHAND)!
-			if (stolenGauntlet.isEmpty()) stolenGauntlet = buildGauntletFromMask(stoneMask);
-			ItemStack currentOffhand = winner.getOffhandItem();
-			if (!currentOffhand.isEmpty() && !currentOffhand.is(ModItems.GAUNTLET)) {
-				if (!winner.getInventory().add(currentOffhand.copy())) {
-					winner.drop(currentOffhand.copy(), false);
-				}
+		if (t >= 114) returnGauntlet(server);
+		if (t < 210) return;
+		ThanosEncounter.markDefeated(server);
+		ServerLevel latveria = server.getLevel(Latveria.LEVEL);
+		if (latveria != null && !victors.isEmpty()) Latveria.conquer(latveria, victors);
+		for (ServerPlayer p : overworld.players()) {
+			if (p.position().distanceTo(center) < 128) {
+				ServerPlayNetworking.send(p, new ModNetwork.QuestAlert(
+						Component.translatable("msg.infinity_gauntlet.latveria.doom.final_victory_alert"), 0));
+				ServerPlayNetworking.send(p, new ModNetwork.ThanosFx(ThanosEncounter.FX_END, 0, Vec3.ZERO, Vec3.ZERO, 0, 0));
 			}
-			winner.setItemSlot(EquipmentSlot.OFFHAND, stolenGauntlet.copy());
-			winner.inventoryMenu.broadcastChanges();
-			GauntletGesture.start(winner);
-			overworld.playSound(null, winner.blockPosition(), SoundEvents.ARMOR_EQUIP_NETHERITE.value(), SoundSource.PLAYERS, 1.8f, 0.85f);
-			overworld.playSound(null, winner.blockPosition(), SoundEvents.UI_TOAST_CHALLENGE_COMPLETE, SoundSource.PLAYERS, 1.5f, 1.0f);
 		}
-		if (t >= 210) {
-			MinecraftServer server = overworld.getServer();
-			ThanosEncounter.markDefeated(server);
-			ServerLevel latveria = server.getLevel(Latveria.LEVEL);
-			List<UUID> victors = winner != null ? List.of(winner.getUUID()) : (ownerId != null ? List.of(ownerId) : List.of());
-			if (latveria != null && !victors.isEmpty()) {
-				Latveria.conquer(latveria, victors);
-			}
-			for (ServerPlayer p : overworld.players()) {
-				if (p.position().distanceTo(center) < 128) {
-					ServerPlayNetworking.send(p, new ModNetwork.QuestAlert(
-							Component.translatable("msg.infinity_gauntlet.latveria.doom.final_victory_alert"), 0));
-					ServerPlayNetworking.send(p, new ModNetwork.ThanosFx(ThanosEncounter.FX_END, 0, Vec3.ZERO, Vec3.ZERO, 0, 0));
-				}
-			}
-			stage = STAGE_DONE;
-			stageTicks = 0;
-			save(server);
-			syncAll(server);
+		stage = STAGE_DONE;
+		stageTicks = 0;
+		save(server);
+		syncAll(server);
+	}
+
+	private static void returnGauntlet(MinecraftServer server) {
+		if (ownerId == null || returnId.isEmpty() || stolenGauntlet.isEmpty()) return;
+		ServerPlayer owner = server.getPlayerList().getPlayer(ownerId);
+		if (owner == null || !owner.isAlive() || owner.isSpectator() || returnId.equals(owner.getAttached(GAUNTLET_RECEIPT))) return;
+		// Old victory saves do not record whether the old cutscene already delivered the reconstructed gauntlet.
+		if (returnId.startsWith("legacy:") && hasGauntletWithSameStones(owner)) {
+			owner.setAttached(GAUNTLET_RECEIPT, returnId);
+			return;
 		}
+		boolean equipped = owner.getOffhandItem().isEmpty();
+		if (equipped) {
+			owner.setItemSlot(EquipmentSlot.OFFHAND, stolenGauntlet.copy());
+		} else if (owner.getInventory().getFreeSlot() < 0 || !owner.getInventory().add(stolenGauntlet.copy())) {
+			return; // Keep the claim pending until the owner frees a slot.
+		}
+		owner.setAttached(GAUNTLET_RECEIPT, returnId);
+		owner.inventoryMenu.broadcastChanges();
+		if (equipped) GauntletGesture.start(owner);
+		owner.level().playSound(null, owner.blockPosition(), SoundEvents.ARMOR_EQUIP_NETHERITE.value(), SoundSource.PLAYERS, 1.8f, 0.85f);
+		owner.level().playSound(null, owner.blockPosition(), SoundEvents.UI_TOAST_CHALLENGE_COMPLETE, SoundSource.PLAYERS, 1.5f, 1.0f);
+	}
+
+	private static boolean hasGauntletWithSameStones(ServerPlayer owner) {
+		var inventory = owner.getInventory();
+		for (int i = 0; i < inventory.getContainerSize(); i++) {
+			ItemStack stack = inventory.getItem(i);
+			if (stack.is(ModItems.GAUNTLET) && packStoneMask(stack) == stoneMask) return true;
+		}
+		ItemStack offhand = owner.getOffhandItem();
+		return offhand.is(ModItems.GAUNTLET) && packStoneMask(offhand) == stoneMask;
 	}
 
 	/** The middle of the battlefield, standing height: one above the floor block at {@link #arenaPos}, so nobody is placed inside the ground. */
@@ -796,13 +836,26 @@ public final class DoomFinalEncounter {
 	}
 
 	public static void syncAll(MinecraftServer server) {
-		Vec3 c = centre();
+		for (ServerPlayer p : server.getPlayerList().getPlayers()) sync(p);
+	}
+
+	private static void sync(ServerPlayer viewer) {
+		if (!ServerPlayNetworking.canSend(viewer, ModNetwork.DoomFinalSync.TYPE)) return;
+		ServerPlayer owner = ownerId == null ? null : viewer.level().getServer().getPlayerList().getPlayer(ownerId);
+		if (stage == STAGE_THEFT_CUTSCENE && viewer.level().dimension() == Latveria.LEVEL && theftDoomId >= 0) {
+			int actor = owner != null && owner.level() == viewer.level() ? owner.getId() : -1;
+			ServerPlayNetworking.send(viewer, new ModNetwork.DoomFinalSync(stage, stageTicks, theftCenter, theftDoomId, -1, stoneMask, actor));
+			return;
+		}
+		if (stage < STAGE_WAITING_OVERWORLD || viewer.level().dimension() != Level.OVERWORLD) {
+			ServerPlayNetworking.send(viewer, new ModNetwork.DoomFinalSync(STAGE_NONE, 0, Vec3.ZERO, -1, -1, 0, -1));
+			return;
+		}
 		int dId = doom != null && !doom.isRemoved() ? doom.getId() : -1;
 		int tId = thanos != null && !thanos.isRemoved() ? thanos.getId() : -1;
-		ModNetwork.DoomFinalSync pkt = new ModNetwork.DoomFinalSync(stage, stageTicks, c, dId, tId, stoneMask);
-		for (ServerPlayer p : server.getPlayerList().getPlayers()) {
-			ServerPlayNetworking.send(p, pkt);
-		}
+		int recipient = stage == STAGE_VICTORY_CUTSCENE && owner != null && owner.level() == viewer.level()
+				&& owner.isAlive() && owner.position().distanceToSqr(centre()) <= 96 * 96 ? owner.getId() : -1;
+		ServerPlayNetworking.send(viewer, new ModNetwork.DoomFinalSync(stage, stageTicks, centre(), dId, tId, stoneMask, recipient));
 	}
 
 	public static void debugTpArena(ServerPlayer player) {

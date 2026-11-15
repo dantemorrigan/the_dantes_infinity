@@ -1,8 +1,6 @@
 package com.dantemorrigan.gauntlet.doom;
 
 import com.dantemorrigan.gauntlet.ModItems;
-import com.dantemorrigan.gauntlet.net.ModNetwork;
-import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.chat.Component;
@@ -56,7 +54,6 @@ public class LatveriaNpc extends PathfinderMob {
 
 	private BlockPos anchorPos = BlockPos.ZERO;
 	private int greetCooldown;
-	private long lastInteractGameTime = -100L;
 
 	public LatveriaNpc(EntityType<? extends LatveriaNpc> type, Level level) {
 		super(type, level);
@@ -204,17 +201,11 @@ public class LatveriaNpc extends PathfinderMob {
 	protected InteractionResult mobInteract(Player player, InteractionHand hand) {
 		if (hand != InteractionHand.MAIN_HAND) return InteractionResult.PASS;
 		if (level() instanceof ServerLevel serverLevel && player instanceof ServerPlayer sp) {
-			long now = serverLevel.getGameTime();
-			if (now - lastInteractGameTime < 8L) {
-				return InteractionResult.SUCCESS_SERVER;
-			}
-			lastInteractGameTime = now;
+			if (!LatveriaQuests.openDialog(sp, this, role())) return InteractionResult.SUCCESS_SERVER;
 			getLookControl().setLookAt(sp, 35.0F, 35.0F);
 			triggerTalk(30);
 			boolean conquered = Latveria.conquered(serverLevel.getServer());
 			playVoiceMurmur(serverLevel, conquered);
-			int stateFlags = LatveriaQuests.dialogFlagsFor(sp, this);
-			ServerPlayNetworking.send(sp, new ModNetwork.LatveriaDialogOpen(getId(), role(), stateFlags));
 			return InteractionResult.SUCCESS_SERVER;
 		}
 		return InteractionResult.SUCCESS;

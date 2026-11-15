@@ -303,7 +303,9 @@ public final class Stormbreaker {
             case StormNetwork.AIR_SWING -> {
                 if (PowerAbility.pick(p, 4.5).getType() == HitResult.Type.MISS) swing(p, null);
             }
-            case StormNetwork.PRIMARY_START -> primary(p);
+            case StormNetwork.PRIMARY_START -> {
+                if (!com.dantemorrigan.gauntlet.doom.DoomFinalEncounter.tryBreakDome(p)) primary(p);
+            }
             case StormNetwork.PRIMARY_RELEASE -> releaseGroundCharge(p);
             default -> { }
         }

@@ -6,6 +6,7 @@ import com.dantemorrigan.gauntlet.ModItems;
 import com.dantemorrigan.gauntlet.net.ModNetwork;
 import net.fabricmc.fabric.api.event.player.AttackEntityCallback;
 import net.fabricmc.fabric.api.event.player.UseEntityCallback;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.component.DataComponents;
@@ -61,10 +62,12 @@ public final class LatveriaQuests {
 	public static final AABB UNDER_CASTLE_GEN_BOX = new AABB(-8, LatveriaPlan.CASTLE_Y - 14, -274, 9, LatveriaPlan.CASTLE_Y - 4, -258);
 
 	private static final Map<UUID, Long> CLOAK_EXPOSED_UNTIL = new HashMap<>();
-	private static final Map<UUID, Long> LAST_DIALOG_TICK = new HashMap<>();
+	private record Dialog(ServerLevel level, UUID npc, long opened, long lastAction, long lastTalk) {}
+	private static final Map<UUID, Dialog> DIALOGS = new HashMap<>();
 	private static boolean basementChecked;
 
 	public static void init() {
+		ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> DIALOGS.remove(handler.getPlayer().getUUID()));
 		// Attacking anything in Latveria while wearing the cloak breaks order and exposes the player.
 		AttackEntityCallback.EVENT.register((player, world, hand, entity, hitResult) -> {
 			if (!world.isClientSide() && world instanceof ServerLevel level && level.dimension() == Latveria.LEVEL
@@ -82,18 +85,13 @@ public final class LatveriaQuests {
 		UseEntityCallback.EVENT.register((player, world, hand, entity, hitResult) -> {
 			if (hand == InteractionHand.MAIN_HAND && world instanceof ServerLevel level && level.dimension() == Latveria.LEVEL
 					&& entity instanceof Villager villager && player instanceof ServerPlayer sp) {
-				long now = level.getGameTime();
-				if (now - LAST_DIALOG_TICK.getOrDefault(sp.getUUID(), -100L) < 8) {
-					return InteractionResult.SUCCESS_SERVER;
-				}
-				LAST_DIALOG_TICK.put(sp.getUUID(), now);
+				int role = LatveriaNpc.ROLE_CITIZEN_1 + Math.floorMod(villager.getUUID().hashCode(), 4);
+				if (!openDialog(sp, villager, role)) return InteractionResult.SUCCESS_SERVER;
 				boolean conquered = Latveria.conquered(level.getServer());
 				float pitch = 0.92f + (level.getRandom().nextFloat() - 0.5f) * 0.16f;
 				level.playSound(null, villager.getX(), villager.getY(), villager.getZ(),
 						conquered ? SoundEvents.VILLAGER_CELEBRATE : SoundEvents.VILLAGER_AMBIENT,
 						SoundSource.NEUTRAL, 0.85f, pitch);
-				int role = LatveriaNpc.ROLE_CITIZEN_1 + (Math.abs(villager.getUUID().hashCode()) % 4);
-				ServerPlayNetworking.send(sp, new ModNetwork.LatveriaDialogOpen(villager.getId(), role, dialogFlagsFor(sp, null)));
 				return InteractionResult.SUCCESS_SERVER;
 			}
 			return InteractionResult.PASS;
@@ -102,7 +100,7 @@ public final class LatveriaQuests {
 
 	public static void resetRuntime() {
 		CLOAK_EXPOSED_UNTIL.clear();
-		LAST_DIALOG_TICK.clear();
+		DIALOGS.clear();
 		basementChecked = false;
 	}
 
@@ -223,16 +221,42 @@ public final class LatveriaQuests {
 		return player.getInventory().countItem(item) > 0;
 	}
 
-	public static void handleDialogAction(ServerPlayer player, int entityId, int actionId) {
-		if (!(player.level() instanceof ServerLevel level)) return;
-		Entity entity = level.getEntity(entityId);
-		if (entity != null && entity.distanceToSqr(player) > 144.0) return;
-
+	static boolean openDialog(ServerPlayer player, Entity npc, int role) {
+		ServerLevel level = player.level();
+		if (level.dimension() != Latveria.LEVEL || !player.isAlive() || player.isSpectator()
+				|| npc.level() != level || !npc.isAlive() || npc.distanceToSqr(player) > 144
+				|| !ServerPlayNetworking.canSend(player, ModNetwork.LatveriaDialogOpen.TYPE)) return false;
 		long now = level.getGameTime();
-		if (actionId != ACTION_TALK_SOUND) {
-			if (now - LAST_DIALOG_TICK.getOrDefault(player.getUUID(), -100L) < 6) return;
-			LAST_DIALOG_TICK.put(player.getUUID(), now);
-		}
+		Dialog previous = DIALOGS.get(player.getUUID());
+		if (previous != null && previous.level() == level && now - previous.opened() < 8) return false;
+		DIALOGS.put(player.getUUID(), new Dialog(level, npc.getUUID(), now, now - 6, now - 6));
+		ServerPlayNetworking.send(player, new ModNetwork.LatveriaDialogOpen(npc.getId(), role, dialogFlagsFor(player, null)));
+		return true;
+	}
+
+	public static void handleDialogAction(ServerPlayer player, int entityId, int actionId) {
+		ServerLevel level = player.level();
+		if (level.dimension() != Latveria.LEVEL || !player.isAlive() || player.isSpectator()) return;
+		Dialog dialog = DIALOGS.get(player.getUUID());
+		long now = level.getGameTime();
+		if (dialog == null || dialog.level() != level || now - dialog.opened() > 2400) return;
+		Entity entity = level.getEntity(entityId);
+		if (entity == null || !entity.isAlive() || !entity.getUUID().equals(dialog.npc())
+				|| entity.distanceToSqr(player) > 144 || !player.hasLineOfSight(entity)) return;
+		int role = entity instanceof LatveriaNpc npc ? npc.role() : entity instanceof Villager ? LatveriaNpc.ROLE_CITIZEN_1 : -1;
+		boolean permitted = switch (actionId) {
+			case ACTION_CLAIM_DISRUPTOR -> role == LatveriaNpc.ROLE_MECHANIC && !Latveria.generatorOff(level.getServer());
+			case ACTION_TRADE_WHEAT_FOR_CLOAK -> role == LatveriaNpc.ROLE_TAVERN_KEEPER;
+			case ACTION_CITIZEN_BLESSING -> role >= LatveriaNpc.ROLE_CITIZEN_1 && role <= LatveriaNpc.ROLE_CITIZEN_4
+					&& Latveria.conquered(level.getServer());
+			case ACTION_TALK_SOUND -> role >= 0;
+			default -> false;
+		};
+		if (!permitted) return;
+		boolean talking = actionId == ACTION_TALK_SOUND;
+		if (now - (talking ? dialog.lastTalk() : dialog.lastAction()) < 6) return;
+		DIALOGS.put(player.getUUID(), new Dialog(level, dialog.npc(), now,
+				talking ? dialog.lastAction() : now, talking ? now : dialog.lastTalk()));
 
 		if (entity instanceof LatveriaNpc npc) {
 			npc.triggerTalk(30);

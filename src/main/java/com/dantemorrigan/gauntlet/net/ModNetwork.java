@@ -563,16 +563,19 @@ public final class ModNetwork {
 	 * S2C: syncs the Overworld Doom-with-Gauntlet final encounter (sandy-fiery arena compass, Thanos vs Doom dome duel,
 	 * cutscenes, and gauntlet return animation).
 	 */
-	public record DoomFinalSync(int stage, int ticks, Vec3 center, int doomId, int thanosId, int stoneMask) implements CustomPacketPayload {
-		public static final Type<DoomFinalSync> TYPE = newType("doom_final_sync");
-		public static final StreamCodec<ByteBuf, DoomFinalSync> CODEC = StreamCodec.composite(
-				ByteBufCodecs.VAR_INT, DoomFinalSync::stage,
-				ByteBufCodecs.VAR_INT, DoomFinalSync::ticks,
-				Vec3.STREAM_CODEC, DoomFinalSync::center,
-				ByteBufCodecs.VAR_INT, DoomFinalSync::doomId,
-				ByteBufCodecs.VAR_INT, DoomFinalSync::thanosId,
-				ByteBufCodecs.VAR_INT, DoomFinalSync::stoneMask,
-				DoomFinalSync::new);
+	public record DoomFinalSync(int stage, int ticks, Vec3 center, int doomId, int thanosId, int stoneMask, int recipientId) implements CustomPacketPayload {
+		public static final Type<DoomFinalSync> TYPE = newType("doom_final_sync_v2");
+		public static final StreamCodec<ByteBuf, DoomFinalSync> CODEC = StreamCodec.of((buf, payload) -> {
+			ByteBufCodecs.VAR_INT.encode(buf, payload.stage());
+			ByteBufCodecs.VAR_INT.encode(buf, payload.ticks());
+			Vec3.STREAM_CODEC.encode(buf, payload.center());
+			ByteBufCodecs.VAR_INT.encode(buf, payload.doomId());
+			ByteBufCodecs.VAR_INT.encode(buf, payload.thanosId());
+			ByteBufCodecs.VAR_INT.encode(buf, payload.stoneMask());
+			ByteBufCodecs.VAR_INT.encode(buf, payload.recipientId());
+		}, buf -> new DoomFinalSync(ByteBufCodecs.VAR_INT.decode(buf), ByteBufCodecs.VAR_INT.decode(buf),
+				Vec3.STREAM_CODEC.decode(buf), ByteBufCodecs.VAR_INT.decode(buf), ByteBufCodecs.VAR_INT.decode(buf),
+				ByteBufCodecs.VAR_INT.decode(buf), ByteBufCodecs.VAR_INT.decode(buf)));
 		@Override public Type<DoomFinalSync> type() { return TYPE; }
 	}
 

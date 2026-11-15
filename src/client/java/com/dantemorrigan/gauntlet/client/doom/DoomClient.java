@@ -402,14 +402,17 @@ public final class DoomClient {
 			g.fill(0, 0, w, h, ARGB.color((int) (Mth.clamp(a, 0, 1) * 96), 190, 255, 205));
 		}
 		GodDoomScene.hudUnder(g);
-		if (barsAge >= 0) {
-			float k = Mth.clamp(Math.min(barsAge / 12f, (barsTicks - barsAge) / 12f), 0, 1);
+		boolean finale = DoomFinalClient.inCutscene();
+		int cinematicAge = finale ? DoomFinalClient.cutsceneAge() : barsAge;
+		int cinematicLength = finale ? DoomFinalClient.cutsceneDuration() : barsTicks;
+		if (cinematicAge >= 0) {
+			float k = Mth.clamp(Math.min(cinematicAge / 12f, (cinematicLength - cinematicAge) / 12f), 0, 1);
 			int bar = (int) (h * 0.13f * k);
 			g.fill(0, 0, w, bar, 0xFF000000);
 			g.fill(0, h - bar, w, h, 0xFF000000);
 			// Name and title in the top bar; Doom's words as subtitles in the bottom one, where the bars would hide the chat.
-			if (barsAge > 30 && barsTicks - barsAge > 14 && bar >= 22) {
-				int a = (int) (255 * Mth.clamp((barsAge - 30) / 15f, 0, 1));
+			if (cinematicAge > 30 && cinematicLength - cinematicAge > 14 && bar >= 22) {
+				int a = (int) (255 * Mth.clamp((cinematicAge - 30) / 15f, 0, 1));
 				if (a > 8) {
 					boolean god = GodDoomScene.crowned();
 					g.centeredText(mc.font, Component.translatable(god ? "boss.infinity_gauntlet.doom.god_name" : "entity.infinity_gauntlet.doctor_doom").withStyle(net.minecraft.ChatFormatting.BOLD),

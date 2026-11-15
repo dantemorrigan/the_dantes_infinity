@@ -45,6 +45,12 @@ jobs:
           LIBGL_ALWAYS_SOFTWARE: 'true'
           ALSOFT_DRIVERS: 'null'
         run: xvfb-run -a ./gradlew runClientGameTest -PonlyTest=TribunalCosmicTest
+      - name: Latveria and Doom release regression
+        timeout-minutes: 15
+        env:
+          LIBGL_ALWAYS_SOFTWARE: 'true'
+          ALSOFT_DRIVERS: 'null'
+        run: xvfb-run -a ./gradlew runClientGameTest -PonlyTest=DoomReleaseTest
       - name: cosmos screenshots and logs
         if: always()
         uses: actions/upload-artifact@v7

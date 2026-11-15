@@ -2,22 +2,18 @@ package com.dantemorrigan.gauntlet.client.doom;
 
 import com.dantemorrigan.gauntlet.InfinityGauntlet;
 import com.dantemorrigan.gauntlet.ModItems;
-import com.dantemorrigan.gauntlet.client.fx.ClientPower;
 import com.dantemorrigan.gauntlet.doom.DoomFinalEncounter;
 import com.dantemorrigan.gauntlet.net.ModNetwork;
-import com.mojang.blaze3d.platform.InputConstants;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext;
 import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents;
 import net.minecraft.ChatFormatting;
-import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.renderer.item.ItemStackRenderState;
@@ -36,16 +32,12 @@ import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
-import org.lwjgl.glfw.GLFW;
 
 /**
  * Client visuals, camera shots, 3D Energy Dome, Stormbreaker Dome-Break HUD button/tooltip, and Flying Gauntlet
  * animation for the Task 4 Doom & Thanos Final Storyline.
  */
 public final class DoomFinalClient {
-	public static final KeyMapping BREAK_DOME_KEY = KeyMappingHelper.registerKeyMapping(new KeyMapping(
-			"key.infinity_gauntlet.break_dome", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_G, ClientPower.CATEGORY));
-
 	private static final Identifier WHITE_TEX = InfinityGauntlet.id("textures/gui/doctor_doom/state_active.png");
 	private static final Identifier FROSTED_TEX = InfinityGauntlet.id("textures/fx/doom/dome_frosted.png");
 	private static final Identifier GLOW_TEX = InfinityGauntlet.id("textures/fx/doom/glow.png");
@@ -56,6 +48,7 @@ public final class DoomFinalClient {
 	private static Vec3 center = Vec3.ZERO;
 	private static int doomId = -1;
 	private static int thanosId = -1;
+	private static int recipientId = -1;
 	private static int stoneMask = 0x1F;
 	private static Vec3 lastDoomPos = Vec3.ZERO;
 
@@ -63,6 +56,7 @@ public final class DoomFinalClient {
 		ClientPlayNetworking.registerGlobalReceiver(ModNetwork.DoomFinalSync.TYPE, (pkt, ctx) -> {
 			if (stage != pkt.stage()) {
 				localTicks = pkt.ticks();
+				lastDoomPos = Vec3.ZERO;
 			} else if (Math.abs(localTicks - pkt.ticks()) > 8) {
 				localTicks = pkt.ticks();
 			}
@@ -70,6 +64,7 @@ public final class DoomFinalClient {
 			center = pkt.center();
 			doomId = pkt.doomId();
 			thanosId = pkt.thanosId();
+			recipientId = pkt.recipientId();
 			stoneMask = pkt.stoneMask();
 		});
 		ClientPlayConnectionEvents.DISCONNECT.register((h, mc) -> reset());
@@ -84,6 +79,7 @@ public final class DoomFinalClient {
 		center = Vec3.ZERO;
 		doomId = -1;
 		thanosId = -1;
+		recipientId = -1;
 		lastDoomPos = Vec3.ZERO;
 	}
 
@@ -99,10 +95,24 @@ public final class DoomFinalClient {
 	public static boolean gauntletFight() { return stage == DoomFinalEncounter.STAGE_FINAL_BOSS; }
 
 	public static boolean inCutscene() {
-		return stage == DoomFinalEncounter.STAGE_THEFT_CUTSCENE
-				|| stage == DoomFinalEncounter.STAGE_THANOS_ARRIVAL
-				|| stage == DoomFinalEncounter.STAGE_KILL_THANOS_CUTSCENE
-				|| stage == DoomFinalEncounter.STAGE_VICTORY_CUTSCENE;
+		Minecraft mc = Minecraft.getInstance();
+		int duration = cutsceneDuration();
+		if (mc.level == null || mc.player == null || duration == 0 || localTicks >= duration
+				|| mc.player.position().distanceToSqr(center) > 96 * 96) return false;
+		return mc.level.dimension() == (stage == DoomFinalEncounter.STAGE_THEFT_CUTSCENE
+				? com.dantemorrigan.gauntlet.doom.Latveria.LEVEL : Level.OVERWORLD);
+	}
+
+	static int cutsceneAge() { return localTicks; }
+
+	static int cutsceneDuration() {
+		return switch (stage) {
+			case DoomFinalEncounter.STAGE_THEFT_CUTSCENE -> 136;
+			case DoomFinalEncounter.STAGE_THANOS_ARRIVAL -> 225;
+			case DoomFinalEncounter.STAGE_KILL_THANOS_CUTSCENE -> 250;
+			case DoomFinalEncounter.STAGE_VICTORY_CUTSCENE -> 210;
+			default -> 0;
+		};
 	}
 
 	private static void tick(Minecraft mc) {
@@ -110,24 +120,14 @@ public final class DoomFinalClient {
 		if (stage != DoomFinalEncounter.STAGE_NONE && stage != DoomFinalEncounter.STAGE_DONE) {
 			localTicks++;
 		}
-		Entity d = doomId >= 0 ? mc.level.getEntity(doomId) : null;
-		if (d != null) lastDoomPos = d.position();
-
-		while (BREAK_DOME_KEY.consumeClick()) {
-			if (stage == DoomFinalEncounter.STAGE_DOME_DUEL
-					&& holdsStormbreakerClient(mc)
-					&& mc.player.position().distanceTo(center) <= DoomFinalEncounter.DOME_RADIUS + 8.5) {
-				if (ClientPlayNetworking.canSend(ModNetwork.DoomBreakDome.TYPE)) {
-					ClientPlayNetworking.send(new ModNetwork.DoomBreakDome());
-					mc.player.swing(net.minecraft.world.InteractionHand.MAIN_HAND);
-				}
-			}
-		}
+		Entity d = inCutscene() && doomId >= 0 ? mc.level.getEntity(doomId) : null;
+		if (d instanceof com.dantemorrigan.gauntlet.doom.DoctorDoom) lastDoomPos = d.position();
 
 		// Spawn trail particles along the flying Gauntlet during Victory Cutscene (ticks 58..114)
-		if (stage == DoomFinalEncounter.STAGE_VICTORY_CUTSCENE && localTicks >= 58 && localTicks <= 114) {
+		Entity recipient = inCutscene() ? recipient(mc) : null;
+		if (stage == DoomFinalEncounter.STAGE_VICTORY_CUTSCENE && recipient != null && localTicks >= 58 && localTicks <= 114) {
 			float k = Mth.clamp((localTicks - 58) / 56f, 0, 1);
-			Vec3 gPos = gauntletFlightPos(mc, k, 0f);
+			Vec3 gPos = gauntletFlightPos(recipient, k, 0f);
 			mc.level.addParticle(new DustParticleOptions(0x28E066, 1.3f), gPos.x, gPos.y, gPos.z, 0, 0.02, 0);
 			mc.level.addParticle(new DustParticleOptions(0xFFD866, 1.2f), gPos.x, gPos.y, gPos.z, 0, 0.01, 0);
 			mc.level.addParticle(ParticleTypes.END_ROD, gPos.x, gPos.y, gPos.z, 0, 0.01, 0);
@@ -142,7 +142,7 @@ public final class DoomFinalClient {
 	/** Camera override for the 4 cutscenes: returns {cameraPos, lookAtPos} or null when player view is active. */
 	public static Vec3[] shot(float partial) {
 		Minecraft mc = Minecraft.getInstance();
-		if (mc.level == null || mc.player == null) return null;
+		if (!inCutscene()) return null;
 		float t = localTicks + partial;
 
 		if (stage == DoomFinalEncounter.STAGE_THEFT_CUTSCENE && mc.level.dimension() == com.dantemorrigan.gauntlet.doom.Latveria.LEVEL) {
@@ -208,7 +208,8 @@ public final class DoomFinalClient {
 		if (stage == DoomFinalEncounter.STAGE_VICTORY_CUTSCENE && mc.level.dimension() == Level.OVERWORLD) {
 			if (mc.player.position().distanceTo(center) > 96) return null;
 			Vec3 dPos = lastDoomPos.lengthSqr() > 1 ? lastDoomPos : center;
-			if (t < 60) {
+			Entity recipient = recipient(mc);
+			if (t < 60 || recipient == null) {
 				// Orbiting kneeling Doom as he dissolves into green dust
 				double a = t * 0.025;
 				Vec3 cam = dPos.add(Math.sin(a) * 5.2, 2.0, Math.cos(a) * 5.2);
@@ -217,8 +218,8 @@ public final class DoomFinalClient {
 			} else {
 				// Tracking the Infinity Gauntlet as it flies to the player's left hand!
 				float k = Mth.clamp((t - 58) / 56f, 0, 1);
-				Vec3 gPos = gauntletFlightPos(mc, k, partial);
-				Vec3 pPos = mc.player.getPosition(partial);
+				Vec3 gPos = gauntletFlightPos(recipient, k, partial);
+				Vec3 pPos = recipient.getPosition(partial);
 				Vec3 side = new Vec3(-(pPos.z - dPos.z), 0, pPos.x - dPos.x);
 				side = side.lengthSqr() < 1e-4 ? new Vec3(1, 0, 0) : side.normalize();
 				Vec3 cam = gPos.add(side.scale(3.4)).add(0, 1.1, 0);
@@ -229,11 +230,16 @@ public final class DoomFinalClient {
 		return null;
 	}
 
-	private static Vec3 gauntletFlightPos(Minecraft mc, float k, float partial) {
+	private static Entity recipient(Minecraft mc) {
+		Entity entity = recipientId >= 0 ? mc.level.getEntity(recipientId) : null;
+		return entity instanceof net.minecraft.world.entity.player.Player ? entity : null;
+	}
+
+	private static Vec3 gauntletFlightPos(Entity recipient, float k, float partial) {
 		float smooth = k * k * (3 - 2 * k);
 		Vec3 from = (lastDoomPos.lengthSqr() > 1 ? lastDoomPos : center).add(0, 1.35, 0);
-		Vec3 pPos = mc.player.getPosition(partial);
-		Vec3 look = mc.player.getViewVector(partial);
+		Vec3 pPos = recipient.getPosition(partial);
+		Vec3 look = recipient.getViewVector(partial);
 		Vec3 right = new Vec3(-look.z, 0, look.x).normalize();
 		// Player's left hand position
 		Vec3 to = pPos.add(0, 1.15, 0).subtract(right.scale(0.42)).add(look.scale(0.35));
@@ -266,18 +272,19 @@ public final class DoomFinalClient {
 		}
 
 		// 2. Render the Flying Infinity Gauntlet during Theft (t < 24) or Victory Return (t = 58..115)
-		if (stage == DoomFinalEncounter.STAGE_THEFT_CUTSCENE && t < 24 && mc.level.dimension() == com.dantemorrigan.gauntlet.doom.Latveria.LEVEL) {
+		Entity recipient = inCutscene() ? recipient(mc) : null;
+		if (stage == DoomFinalEncounter.STAGE_THEFT_CUTSCENE && t < 24 && recipient != null) {
 			Entity d = doomId >= 0 ? mc.level.getEntity(doomId) : null;
 			if (d != null) {
 				float k = Mth.clamp(t / 24f, 0, 1);
-				Vec3 from = mc.player.getPosition(partial).add(0, 1.2, 0);
+				Vec3 from = recipient.getPosition(partial).add(0, 1.2, 0);
 				Vec3 to = d.getPosition(partial).add(0, 1.7, 0);
 				Vec3 pos = from.lerp(to, k).add(0, Math.sin(k * Math.PI) * 1.4, 0);
 				renderFlyingGauntlet(ctx, mc, pose, cam, pos, t * 14f);
 			}
-		} else if (stage == DoomFinalEncounter.STAGE_VICTORY_CUTSCENE && t >= 58 && t <= 115 && mc.level.dimension() == Level.OVERWORLD) {
+		} else if (stage == DoomFinalEncounter.STAGE_VICTORY_CUTSCENE && t >= 58 && t <= 115 && recipient != null) {
 			float k = Mth.clamp((t - 58) / 56f, 0, 1);
-			Vec3 pos = gauntletFlightPos(mc, k, partial);
+			Vec3 pos = gauntletFlightPos(recipient, k, partial);
 			renderFlyingGauntlet(ctx, mc, pose, cam, pos, t * 12f);
 		}
 	}
@@ -459,8 +466,8 @@ public final class DoomFinalClient {
 		int maxTextW = Math.min(w - 32, 340);
 
 		if (hasAxe) {
-			Component btn = Component.translatable("hud.infinity_gauntlet.dome.break_button",
-					BREAK_DOME_KEY.getTranslatedKeyMessage()).withStyle(ChatFormatting.AQUA, ChatFormatting.BOLD);
+			Component btn = Component.translatable("hud.infinity_gauntlet.dome.break_button")
+					.withStyle(ChatFormatting.AQUA, ChatFormatting.BOLD);
 			Component tip = Component.translatable("hud.infinity_gauntlet.dome.break_tooltip").withStyle(ChatFormatting.GRAY);
 			var btnLines = mc.font.split(btn, maxTextW);
 			var tipLines = mc.font.split(tip, maxTextW);

@@ -312,10 +312,7 @@ public class DoctorDoom extends Monster {
 			this.setPos(ascendFrom.x, ascendFrom.y, ascendFrom.z);
 			this.setYRot(0);
 			this.yBodyRot = this.yHeadRot = 0;
-			for (ServerPlayer p : level.players()) {
-				DoomFx.send(p, DoomFx.CUTSCENE, this.getId(), ascendFrom, 0, 136);
-			}
-			DoomFinalEncounter.syncTheftCutscene(level, this, 140);
+			DoomFinalEncounter.syncTheftCutscene(level, this);
 			DoomFx.sound(level, ascendFrom, SoundEvents.BEACON_POWER_SELECT, 2.5f, 0.6f);
 			DoomVfx.on(level, DoomVfx.CHARGE, this, 1.4f, 25, DoomVfx.SUN);
 		}
@@ -368,6 +365,7 @@ public class DoctorDoom extends Monster {
 			this.setYRot(0);
 			this.yBodyRot = this.yHeadRot = 0;
 			for (ServerPlayer p : level.players()) {
+				if (p.position().distanceToSqr(ascendFrom) > 96 * 96) continue;
 				DoomFx.send(p, DoomFx.GOD, this.getId(), ascendFrom, 0, ASCEND_TICKS);
 				DoomFx.send(p, DoomFx.CUTSCENE, this.getId(), ascendFrom, 0, ASCEND_TICKS - 24);
 			}
@@ -1468,6 +1466,12 @@ public class DoctorDoom extends Monster {
 	@Override
 	public boolean isPushable() {
 		return false;
+	}
+
+	@Override
+	public boolean shouldBeSaved() {
+		// Both story encounters recreate their boss from world state when the arena is loaded again.
+		return arenaCenter == null && this.level().dimension() != Latveria.LEVEL;
 	}
 
 	@Override

@@ -176,10 +176,15 @@ public final class Latveria {
 	public static void init() {
 		DoomItems.Heart.init();
 		LatveriaQuests.init();
+		net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
+			ServerPlayer player = handler.getPlayer();
+			if (isOwner(player)) reward(player);
+		});
 		// The whole gauntlet beaten: a bearer who would fall to Doom is spared for the ascension instead.
 		// If the bearer has <= 5 stones, Doom steals the gauntlet and teleports to the Overworld!
 		net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents.ALLOW_DEATH.register((entity, source, amount) -> {
-			if (!(entity instanceof ServerPlayer p) || p.level().dimension() != LEVEL || boss == null || !boss.isAlive()) return true;
+			if (!(entity instanceof ServerPlayer p) || p.level().dimension() != LEVEL || boss == null || !boss.isAlive()
+					|| !LatveriaPlan.ARENA_BOX.inflate(3).contains(p.position())) return true;
 			if (boss.ascending() || boss.stealingGauntlet()) { p.setHealth(2); return false; }
 			if (!boss.fighting() || !(source.getEntity() instanceof DoctorDoom || source.getEntity() instanceof Doombot b && !b.allied())) return true;
 			var g = com.dantemorrigan.gauntlet.GauntletState.activeGauntlet(p);
@@ -196,7 +201,8 @@ public final class Latveria {
 			return true;
 		});
 		net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents.ALLOW_DAMAGE.register((entity, source, amount) ->
-				!(entity instanceof ServerPlayer && entity.level().dimension() == LEVEL && boss != null && (boss.ascending() || boss.stealingGauntlet())));
+				!(entity instanceof ServerPlayer p && p.level().dimension() == LEVEL && boss != null
+						&& LatveriaPlan.ARENA_BOX.inflate(3).contains(p.position()) && (boss.ascending() || boss.stealingGauntlet())));
 		net.fabricmc.fabric.api.event.player.PlayerBlockBreakEvents.BEFORE.register((level, player, pos, state, be) -> {
 			if (level.dimension() != LEVEL) return true;
 			if (player.isCreative()) { bypass = true; return true; }
@@ -814,7 +820,8 @@ public final class Latveria {
 		if ((flags & CONQUERED) != 0) {
 			for (UUID id : victors) {
 				ServerPlayer p = server.getPlayerList().getPlayer(id);
-				if (p != null) { owners.add(id); reward(p); }
+				owners.add(id);
+				if (p != null) reward(p);
 			}
 			save(server);
 			return;
@@ -823,8 +830,8 @@ public final class Latveria {
 		ServerPlayer first = null;
 		for (UUID id : victors) {
 			ServerPlayer p = server.getPlayerList().getPlayer(id);
-			if (p == null) continue;
 			owners.add(id);
+			if (p == null) continue;
 			if (first == null || p.level() == level) first = p;
 			reward(p);
 		}
