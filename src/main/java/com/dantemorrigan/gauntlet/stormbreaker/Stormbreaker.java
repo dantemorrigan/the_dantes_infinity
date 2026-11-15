@@ -500,7 +500,8 @@ public final class Stormbreaker {
                     pos.set(x, y, z);
                     if (level.isOutsideBuildHeight(pos)) continue;
                     var block = level.getBlockState(pos);
-                    if (!block.isAir() && !block.hasBlockEntity() && block.getFluidState().isEmpty()
+                    // The Power Stone's Orb in its meteorite is never torn out by the wave: only a hand may take it.
+                    if (!block.isAir() && !block.is(com.dantemorrigan.gauntlet.ModBlocks.POWER_ORB) && !block.hasBlockEntity() && block.getFluidState().isEmpty()
                             && block.getDestroySpeed(level, pos) >= 0 && CoopRules.canEdit(player, level, pos)) {
                         level.removeBlock(pos, false);
                     }
@@ -677,6 +678,7 @@ public final class Stormbreaker {
             if (hit.getType() == HitResult.Type.MISS) return true;
             BlockPos pos = hit.getBlockPos();
             if (!CoopRules.canEdit(p, level, pos) || level.getBlockState(pos).getDestroySpeed(level, pos) < 0
+                    || level.getBlockState(pos).is(com.dantemorrigan.gauntlet.ModBlocks.POWER_ORB)
                     || !level.destroyBlock(pos, false, p)) return false;
             StormFx.BLOCK_SHARDS.play(level, hit.getLocation(), 1.55);
             StormFx.IMPACT.play(level, hit.getLocation(), .88);

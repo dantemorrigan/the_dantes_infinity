@@ -50,9 +50,12 @@ import java.util.List;
 import java.util.Map;
 
 public final class StormbreakerClient {
-    private static final KeyMapping THROW = key("throw", GLFW.GLFW_KEY_X);
-    private static final KeyMapping WRATH = key("wrath", GLFW.GLFW_KEY_H);
-    private static final KeyMapping FLIGHT = key("flight", GLFW.GLFW_KEY_J);
+    // The left-hand row: Z throws, X calls Heaven's Wrath, C toggles flight. The older keys (H and J) stay as a second set.
+    private static final KeyMapping THROW = key("throw", GLFW.GLFW_KEY_Z);
+    private static final KeyMapping WRATH = key("wrath", GLFW.GLFW_KEY_X);
+    private static final KeyMapping FLIGHT = key("flight", GLFW.GLFW_KEY_C);
+    private static final KeyMapping WRATH_ALT = key("wrath_alt", GLFW.GLFW_KEY_H);
+    private static final KeyMapping FLIGHT_ALT = key("flight_alt", GLFW.GLFW_KEY_J);
     private static final KeyMapping RECALL = key("recall", GLFW.GLFW_KEY_K);
     private static final Map<Integer, Animation> ANIMATIONS = new HashMap<>();
     private static final Map<String, Long> COOLDOWNS = new HashMap<>();
@@ -132,7 +135,7 @@ public final class StormbreakerClient {
         storm = null;
         SKY_BOLTS.clear();
         primaryActive = false;
-        flightDown = FLIGHT.isDown();
+        flightDown = FLIGHT.isDown() || FLIGHT_ALT.isDown();
         recallDown = RECALL.isDown();
         ANIMATIONS.clear();
         COOLDOWNS.clear();
@@ -149,12 +152,15 @@ public final class StormbreakerClient {
         boolean controls = canUse(mc);
         boolean held = controls && mc.player.getMainHandItem().is(ModItems.STORMBREAKER);
         if (consume(THROW) && held) send(StormNetwork.THROW);
-        if (consume(WRATH) && held) send(StormNetwork.WRATH);
+        boolean wrathClick = consume(WRATH);
+        wrathClick |= consume(WRATH_ALT);
+        if (wrathClick && held) send(StormNetwork.WRATH);
         boolean flightClick = consume(FLIGHT);
+        flightClick |= consume(FLIGHT_ALT);
         boolean recallClick = consume(RECALL);
         if (!flightDown && flightClick && held) send(StormNetwork.FLIGHT);
         if (!recallDown && recallClick && controls) send(StormNetwork.RECALL);
-        flightDown = FLIGHT.isDown();
+        flightDown = FLIGHT.isDown() || FLIGHT_ALT.isDown();
         recallDown = RECALL.isDown();
         if (primaryActive && (!held || !mc.options.keyAttack.isDown())) {
             primaryActive = false;
